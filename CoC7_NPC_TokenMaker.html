@@ -449,7 +449,7 @@
         function rollAbilities() {
             ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(label => {
                 const d = document.getElementById('dice-'+label).value.trim();
-                document.getElementById('val-'+label).value = d ? rollDice(d)*5 : '';
+                if(d) document.getElementById('val-'+label).value = rollDice(d)*5;
             });
             updateStats();
         }
