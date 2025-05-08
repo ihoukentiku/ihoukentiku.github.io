@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>違法建築のTRPG用便利ツール</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    header {
+      background-color: #4A90E2;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .description {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .tool-card {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .tool-card:hover {
+      transform: scale(1.02);
+    }
+
+    .thumbnail {
+      flex: 0 0 150px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .tool-info {
+      flex: 1;
+      padding: 1rem;
+    }
+
+    .tool-title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .tool-desc {
+      font-size: 0.95rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <header>違法建築のTRPG用便利ツール</header>
+  <div class="container">
+    <p class="description">TRPGのための便利なツールをまとめています</p>
+
+    <div class="tool-card" onclick="location.href='https://example.com/tool1'">
+      <div class="thumbnail" style="background-image: url('https://via.placeholder.com/150')"></div>
+      <div class="tool-info">
+        <div class="tool-title">新クトゥルフ神話TRPG NPC駒メーカー</div>
+        <div class="tool-desc">即席でココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
