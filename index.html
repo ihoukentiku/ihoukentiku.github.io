@@ -7,18 +7,16 @@
     body {
       margin: 0;
       font-family: 'Helvetica Neue', sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
+      background: #f4f4f9;
     }
 
     header {
-      background-color: #4A90E2;
+      background: linear-gradient(to right, #4a90e2, #357ABD);
       color: white;
-      padding: 2rem;
+      padding: 1.5rem;
       text-align: center;
       font-size: 2rem;
       font-weight: bold;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
     .container {
@@ -27,49 +25,48 @@
       padding: 0 1rem;
     }
 
-    .description {
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
-      text-align: center;
-    }
-
     .tool-card {
       display: flex;
-      align-items: center;
       background: white;
       border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin: 1.5rem 0;
       overflow: hidden;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
     }
 
     .tool-card:hover {
       transform: scale(1.02);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
     }
 
     .thumbnail {
-      flex: 0 0 150px;
-      height: 100px;
-      background-size: cover;
-      background-position: center;
+      flex: 1.2;
+      min-width: 0;
     }
 
-    .tool-info {
-      flex: 1;
-      padding: 1rem;
+    .thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
-    .tool-title {
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      font-size: 1.1rem;
+    .description {
+      flex: 1.8;
+      padding: 1.5rem;
     }
 
-    .tool-desc {
-      font-size: 0.95rem;
+    .description h3 {
+      margin-top: 0;
+      font-size: 1.4rem;
+    }
+
+    .description p {
       color: #555;
+      font-size: 0.95rem;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -78,11 +75,13 @@
   <div class="container">
     <p class="description">TRPGのための便利なツールをまとめています</p>
 
-    <div class="tool-card" onclick="location.href='CoC7_NPC_TokenMaker.html'">
-      <div class="thumbnail" style="background-image: url('photos/CoC7_NPC_TokenMaker.png')"></div>
-      <div class="tool-info">
-        <div class="tool-title">新クトゥルフ神話TRPG NPC駒メーカー</div>
-        <div class="tool-desc">即席でココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</div>
+    <div class="tool-card" onclick="location.href='npc.html'">
+      <div class="thumbnail">
+        <img src="./photo/CoC7_NPC_TokenMaker.png" alt="NPC">
+      </div>
+      <div class="description">
+        <h3>新クトゥルフ神話TRPG NPC駒メーカー</h3>
+        <p>即席でココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
       </div>
     </div>
 
