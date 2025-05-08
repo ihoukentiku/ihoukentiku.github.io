@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>マスク作成ツール</title>
+        <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Kaisei+Opti&family=Kokoro&family=Mochiy+Pop+P+One&family=M+PLUS+Rounded+1c:wght@400;700&family=Mystery+Quest&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP&family=Potta+One&family=RocknRoll+One&family=Sawarabi+Gothic&family=Sawarabi+Mincho&family=Shippori+Antique&family=Stick&family=Train+One&family=UnifrakturMaguntia&family=Yuji+Syuku&family=Zen+Kurenaido&display=swap" rel="stylesheet">
+    <style>
+        <style>
+            body {
+                font-family: 'Noto Sans JP', sans-serif;
+                background: #f7f8fa;
+                padding: 20px;
+                color: #333;
+                text-align: left;
+            }
+            h1 {
+                font-size: 28px;
+                border-bottom: 2px solid #ccc;
+                padding-bottom: 5px;
+                margin-bottom: 20px;
+                margin-top: 10px;
+            }
+            .section {
+                background: white;
+                padding: 15px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                margin-bottom: 20px;
+                align-items: center;
+            }
+            .section > div {
+                align-items: center;
+                margin-bottom: 10px;
+                margin-right: 20px;
+            }
+            .section > div:last-child {
+                margin-bottom: 0;
+            }
+            label {
+                font-weight: bold;
+                margin-right: 5px;
+            }
+            input[type="text"], input[type="number"], select {
+                box-sizing: border-box;
+                font-size: 18px;
+                padding: 0px 5px 0px 5px;
+                height: 30px;
+                border: 1px solid #888;
+                border-radius: 4px;
+                vertical-align: middle;
+            }
+            input[type="number"] {
+                width: 80px;
+            }
+            input[type="color"] {
+                box-sizing: border-box;
+                height: 30px;
+                border: 1px solid #aaa;
+                border-radius: 4px;
+                vertical-align: middle;
+                padding: 0;
+            }
+            input[type="range"] {
+                vertical-align: middle;
+                width: 150px;
+                margin-right: 5px;
+            }
+            input[type="checkbox"] {
+                vertical-align: middle;
+                width: 20px;
+                height: 20px;
+                margin-right: 5px;
+            }
+            button {
+                background-color: #FFF;
+                color: black;
+                padding: 6px 12px;
+                border: 1px solid #888;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color .2s;
+                font-weight: bold;
+                margin-right: 10px;
+                margin-top: 0;
+            }
+            button:hover {
+                background-color: #3D7BCD;
+            }
+            .settings {
+                margin-bottom: 15px;
+                align-items: center;
+            }
+            .settings > * {
+                margin-right: 10px;
+            }
+            .settings > *:last-child {
+                margin-right: 0;
+                margin-bottom: 0;
+            }
+
+            .drow-canvas {
+                background: repeating-linear-gradient(to bottom, black, black 2px, transparent 0, transparent 200px),
+                    repeating-linear-gradient(to bottom, gray, gray 1px, transparent 0, transparent 40px),
+                    repeating-linear-gradient(to right, black, black 2px, transparent 0, transparent 200px),
+                    repeating-linear-gradient(to right, gray, gray 1px, transparent 0, transparent 40px);
+            }
+            .canvas-wrapper {
+                width: 800px;
+                position: relative;
+                border: 1px solid black;
+                margin-top: 20px;
+            }
+            .canvas-wrapper canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                transform-origin: top left;
+            }
+            .active {
+                background-color: #448AD4;
+                border: none;
+                color: white;
+            }
+            .path-point {
+                width: 6px;
+                height: 6px;
+                background: white;
+                position: absolute;
+                transform: translate(-3px, -3px);
+            }
+            #opacityValue, #textOpacityValue {
+                margin-left: 5px;
+                font-weight: normal;
+                display: inline-block;
+                min-width: 2em;
+                text-align: right;
+            }
+            select {
+                width: 150px;
+            }
+            #textInput {
+                width: 200px;
+            }
+            label input[type="checkbox"] {
+                margin-right: 0;
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1>マスク作成ツール</h1>
+
+        <div class="section">
+            <div class="settings">
+                <button id="gridMode" onclick="setMode('grid')" class="active">マス目モード</button>
+                <button id="pathMode" onclick="setMode('path')">パスモード</button>
+                <button id="textMode" onclick="setMode('text')">文字入力モード</button>
+            </div>
+            <div class="settings">
+                <input type="file" id="uploadImage" accept="image/*" onchange="uploadBackground()">
+                <label>画像倍率 <input type="number" id="imageScale" value="100" min="0" max="1000" oninput="updateScale()"></label>
+                <label id="cutToggle">マス目で切り抜く<input type="checkbox" id="gridCut" unchecked></label>
+                <button onclick="downloadImage()" style="background-color: #448AD4; border: none; color: white;">ダウンロード</button>
+            </div>
+            <div class="settings">
+                <button id="penMode" onclick="setTool('pen')" class="active" style="display: inline">ペン</button>
+                <button id="eraserMode" onclick="setTool('eraser')" style="display: inline">消しゴム</button>
+                <label id="maskColorLabel" style="display: inline">マスクの色 <input type="color" id="maskColor" value="#000000" onchange="updateColors()"></label>
+                <label id="snapToggle" style="display: none">スナップ<input type="checkbox" id="snapCheck" checked></label>
+                <label id="fontSelectLabel" style="display: none">フォント
+                    <select id="fontSelect" style="width: 210px;">
+                        <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
+                        <option value="'Noto Serif JP', serif">Noto Serif JP</option>
+                        <option value="'Sawarabi Gothic', sans-serif">さわらびゴシック</option>
+                        <option value="'Sawarabi Mincho', serif">さわらび明朝</option>
+                        <option value="'Shippori Antique', sans-serif">しっぽりアンティーク</option>
+                        <option value="'DotGothic16', sans-serif">DotGothic16</option>
+                        <option value="'M PLUS Rounded 1c', sans-serif">M PLUS Rounded 1c</option>
+                        <option value="'Train One', sans-serif">Train One</option>
+                        <option value="'Stick', sans-serif">Stick</option>
+                        <option value="'Kaisei Opti', serif">Kaisei Opti</option>
+                        <option value="'Mochiy Pop P One', sans-serif">Mochiy Pop P One</option>
+                        <option value="'Potta One', cursive">Potta One</option>
+                        <option value="'RocknRoll One', sans-serif">RocknRoll One</option>
+                    </select>
+                </label>
+                <label id="fontSizeLabel" style="display: none">サイズ <input type="number" id="fontSize" value="80" min="0" max="1000"></label>
+                <label id="textColorLabel" style="display: none">文字色 <input type="color" id="textColor" value="#FFFFFF"></label>
+                <input id="textInput" type="text" style="display: none; margin: none" placeholder="追加する文字を入力">
+                <button id="textAdd" style="display: none; background-color: #448AD4; border: none; color: white;" onclick="textSet()">追加</button>
+            </div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="backgroundCanvas" width="4000" height="4000"></canvas>
+            <canvas id="maskCanvas" width="4000" height="4000" class="drow-canvas"></canvas>
+        </div>
+
+    <script>
+        const bgCanvas = document.getElementById("backgroundCanvas");
+        const bgCtx = bgCanvas.getContext("2d");
+        const canvas = document.getElementById("maskCanvas");
+        const ctx = canvas.getContext("2d");
+        let currentColor = document.getElementById("maskColor").value;
+        let mode = "grid";
+        let tool = "pen";
+        let masks = [];
+        let paths = [];
+        let fillpaths = [];
+        let texts = [];
+        let isDrawing = false;
+        let isDragging = false;
+        let dragTarget = null;
+        let rangeX = 0;
+        let rangeY = 0;
+
+        function setMode(newMode) {
+            mode = newMode;
+            paths = [];
+            document.querySelectorAll(".settings button").forEach(btn => btn.classList.remove("active"));
+            document.getElementById(newMode + "Mode").classList.add("active");
+
+            document.getElementById("penMode").style.display = "none";
+            document.getElementById("eraserMode").style.display = "none";
+            document.getElementById("maskColorLabel").style.display = "none";
+            document.getElementById("snapToggle").style.display = "none";
+            document.getElementById("fontSelectLabel").style.display = "none";
+            document.getElementById("fontSizeLabel").style.display = "none";
+            document.getElementById("textColorLabel").style.display = "none";
+            document.getElementById("textInput").style.display = "none";
+            document.getElementById("textAdd").style.display = "none";
+
+            if (newMode === "grid") {
+                document.getElementById("penMode").style.display = "inline";
+                document.getElementById("eraserMode").style.display = "inline";
+                document.getElementById("maskColorLabel").style.display = "inline";
+                setTool(tool);
+            } else if (newMode === "path") {
+                document.getElementById("maskColorLabel").style.display = "inline";
+                document.getElementById("snapToggle").style.display = "inline";
+            } else if (newMode === "text") {
+                document.getElementById("fontSelectLabel").style.display = "inline";
+                document.getElementById("fontSizeLabel").style.display = "inline";
+                document.getElementById("textColorLabel").style.display = "inline";
+                document.getElementById("textInput").style.display = "inline";
+                document.getElementById("textAdd").style.display = "inline";
+            }
+
+            draw();
+        }
+
+        function setTool(toolType) {
+            tool = toolType;
+            document.getElementById("penMode").classList.remove("active");
+            document.getElementById("eraserMode").classList.remove("active");
+            document.getElementById(toolType + "Mode").classList.add("active");
+        }
+
+        function updateColors() {
+            currentColor = document.getElementById("maskColor").value;
+            draw();
+        }
+
+        canvas.addEventListener("mousedown", (e) => {
+            isDrawing = true;
+
+            const x = Math.floor(e.offsetX / 40) * 40;
+            const y = Math.floor(e.offsetY / 40) * 40;
+
+            if (mode === "grid") {
+                if (tool === "pen") {
+                    const index = masks.findIndex(mask => mask.x === x && mask.y === y);
+                    index !== -1 ? masks[index].color = currentColor : masks.push({ x, y, color: currentColor });
+                } else if (tool === "eraser") {
+                    masks = masks.filter(mask => !(mask.x === x && mask.y === y));
+                }
+            } else if (mode === "text") {
+                dragTarget = texts.findLast(text =>
+                    e.offsetX >= text.x && e.offsetX <= text.x + ctx.measureText(text.text).width &&
+                    e.offsetY >= text.y - text.size && e.offsetY <= text.y
+                                           );
+                if (dragTarget) {
+                    rangeX = dragTarget.x - e.offsetX;
+                    rangeY = dragTarget.y - e.offsetY;
+                    isDragging = true;
+                }
+            }
+            draw();
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            const x = Math.floor(e.offsetX / 40) * 40;
+            const y = Math.floor(e.offsetY / 40) * 40;
+
+            if (isDrawing && mode === "grid") {
+                if (tool === "pen") {
+                    const index = masks.findIndex(mask => mask.x === x && mask.y === y);
+                    index !== -1 ? masks[index].color = currentColor : masks.push({ x, y, color: currentColor });
+                } else if (tool === "eraser") {
+                    masks = masks.filter(mask => !(mask.x === x && mask.y === y));
+                }
+            } else if (isDragging && mode === "text" && dragTarget) {
+                dragTarget.x = e.offsetX + rangeX;
+                dragTarget.y = e.offsetY + rangeY;
+            }
+            draw();
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            isDrawing = false;
+            isDragging = false;
+            dragTarget = null;
+        });
+
+        canvas.addEventListener("click", (e) => {
+            if (mode === "path") {
+                const x = Math.floor((e.offsetX + 20) / 40) * 40;
+                const y = Math.floor((e.offsetY + 20) / 40) * 40;
+                const snap = document.getElementById("snapCheck").checked;
+
+                let snapPoint = paths.find(point =>
+                    Math.abs(point.x - e.offsetX) < 10 && Math.abs(point.y - e.offsetY) < 10
+                                          );
+
+                let point = snapPoint ? { x: snapPoint.x, y: snapPoint.y } : { x: e.offsetX, y: e.offsetY };
+
+                if (snap) point = { x, y };
+
+                paths.push(point);
+
+                if (paths.length > 1) {
+                    const lastPoint = paths[paths.length - 2];
+                    ctx.strokeStyle = "red";
+                    ctx.beginPath();
+                    ctx.moveTo(lastPoint.x, lastPoint.y);
+                    ctx.lineTo(point.x, point.y);
+                    ctx.stroke();
+                }
+
+                if (paths.length > 2 && snapPoint) {
+                    fillpaths.push({ points: paths, color: currentColor });
+                    paths = [];
+                }
+            }
+            draw();
+        });
+
+        canvas.addEventListener("dblclick", (e) => {
+            const targetText = texts.findLast(text =>
+                e.offsetX >= text.x && e.offsetX <= text.x + ctx.measureText(text.text).width &&
+                e.offsetY >= text.y - text.size && e.offsetY <= text.y
+                                             );
+
+            if (targetText) {
+                texts = texts.filter(text => text !== targetText);
+                draw();
+                return;
+            }
+
+            for (let i = fillpaths.length - 1; i >= 0; i--) {
+                const path = fillpaths[i];
+                ctx.beginPath();
+                ctx.moveTo(path.points[0].x, path.points[0].y);
+                path.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+                ctx.closePath();
+
+                if (ctx.isPointInPath(e.offsetX, e.offsetY)) {
+                    fillpaths.splice(i, 1);
+                    paths.splice(-2, 2);
+                    draw();
+                    break;
+                }
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "z") {
+                e.preventDefault();
+
+                if (mode === "path" && paths.length > 0) {
+                    paths.pop();
+                    draw();
+                }
+            }
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            masks.forEach(mask => {
+                ctx.fillStyle = mask.color;
+                ctx.fillRect(mask.x, mask.y, 40, 40);
+            });
+
+            fillpaths.forEach(path => {
+                ctx.fillStyle = path.color;
+                ctx.beginPath();
+                ctx.moveTo(path.points[0].x, path.points[0].y);
+                path.points.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            paths.forEach((point, index) => {
+                if (index > 0) {
+                    const prev = paths[index - 1];
+                    ctx.beginPath();
+                    ctx.moveTo(prev.x, prev.y);
+                    ctx.lineTo(point.x, point.y);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = "white";
+                ctx.fillRect(point.x - 3, point.y - 3, 6, 6);
+            });
+
+            texts.forEach(text => {
+                ctx.font = `${text.size}px ${text.font}`;
+                ctx.fillStyle = text.color;
+                ctx.fillText(text.text, text.x, text.y);
+            });
+        }
+
+        function uploadBackground() {
+            const file = document.getElementById("uploadImage").files[0];
+            if (!file) return;
+
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(bgCanvas.width / img.width, bgCanvas.height / img.height);
+                const newWidth = img.width * scale;
+                const newHeight = img.height * scale;
+
+                bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+                bgCtx.drawImage(img, 0, 0, newWidth, newHeight);
+            };
+            img.src = URL.createObjectURL(file);
+        }
+
+        function updateScale() {
+            const scale = document.getElementById("imageScale").value / 100;
+            bgCanvas.style.transform = `scale(${scale})`;
+            draw();
+        }
+
+        function textSet() {
+            const text = document.getElementById("textInput").value;
+            if (text) {
+                texts.push({
+                    x: 0,
+                    y: document.getElementById("fontSize").value,
+                    text,
+                    font: document.getElementById("fontSelect").value,
+                    size: document.getElementById("fontSize").value,
+                    color: document.getElementById("textColor").value
+                });
+                draw();
+            }
+        }
+
+        function downloadImage() {
+            const gridcut = document.getElementById("gridCut").checked;
+
+            let minX = Math.min(...masks.map(m => m.x), ...fillpaths.flatMap(fp => fp.points.map(p => p.x)));
+            let maxX = Math.max(...masks.map(m => m.x + 40), ...fillpaths.flatMap(fp => fp.points.map(p => p.x)));
+            let minY = Math.min(...masks.map(m => m.y), ...fillpaths.flatMap(fp => fp.points.map(p => p.y)));
+            let maxY = Math.max(...masks.map(m => m.y + 40), ...fillpaths.flatMap(fp => fp.points.map(p => p.y)));
+
+            if (gridcut) {
+                minX = Math.floor(minX / 40) * 40;
+                maxX = Math.ceil(maxX / 40) * 40;
+                minY = Math.floor(minY / 40) * 40;
+                maxY = Math.ceil(maxY / 40) * 40;
+            }
+
+            const croppedWidth = maxX - minX;
+            const croppedHeight = maxY - minY;
+
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = croppedWidth;
+            tempCanvas.height = croppedHeight;
+            const tempCtx = tempCanvas.getContext("2d");
+
+            tempCtx.clearRect(0, 0, croppedWidth, croppedHeight);
+
+            masks.forEach(mask => {
+                tempCtx.fillStyle = mask.color;
+                tempCtx.fillRect(mask.x - minX, mask.y - minY, 40, 40);
+            });
+
+            fillpaths.forEach(path => {
+                tempCtx.fillStyle = path.color;
+                tempCtx.beginPath();
+                tempCtx.moveTo(path.points[0].x - minX, path.points[0].y - minY);
+                path.points.slice(1).forEach(p => tempCtx.lineTo(p.x - minX, p.y - minY));
+                tempCtx.closePath();
+                tempCtx.fill();
+            });
+
+            texts.forEach(text => {
+                tempCtx.font = `${text.size}px ${text.font}`;
+                tempCtx.fillStyle = text.color;
+                tempCtx.fillText(text.text, text.x - minX, text.y - minY);
+            });
+
+            const link = document.createElement('a');
+            link.download = 'mask.png';
+            link.href = tempCanvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+</body>
+</html>
