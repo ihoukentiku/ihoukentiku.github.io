@@ -1,141 +1,173 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>違法建築のTRPG用便利ツール</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Helvetica Neue', sans-serif;
-      background: #f4f4f9;
-    }
+    <head>
+        <meta charset="UTF-8">
+        <title>違法建築のTRPG用便利ツール</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: 'Helvetica Neue', sans-serif;
+                background: #f4f4f9;
+            }
 
-    header {
-      background: linear-gradient(to right, #4a90e2, #357ABD);
-      color: white;
-      padding: 1.5rem;
-      text-align: center;
-      font-size: 2rem;
-      font-weight: bold;
-    }
+            header {
+                background: linear-gradient(to right, #4a90e2, #357ABD);
+                color: white;
+                padding: 1.5rem;
+                text-align: center;
+                font-size: 2rem;
+                font-weight: bold;
+            }
 
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
+            .container {
+                max-width: 900px;
+                margin: 2rem auto;
+                padding: 0 1rem;
+            }
 
-    .tool-card {
-      display: flex;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      margin: 1.5rem 0;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.3s ease;
-    }
+            .top-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
 
-    .tool-card:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-    }
+            .top-bar .description {
+                font-size: 1.1rem;
+                color: #333;
+            }
 
-    .thumbnail {
-      flex: 0.7;
-      min-width: 0;
-    }
+            .top-bar .bug-report {
+                font-size: 0.9rem;
+                color: #666;
+            }
 
-    .thumbnail img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+            .top-bar .bug-report a {
+                color: #4A90E2;
+                text-decoration: none;
+            }
 
-    .description {
-      flex: 1.8;
-      padding: 1.5rem;
-    }
+            .top-bar .bug-report a:hover {
+                text-decoration: underline;
+            }
 
-    .description h3 {
-      margin-top: 0;
-      font-size: 1.4rem;
-    }
+            .tool-card {
+                display: flex;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                margin: 1.5rem 0;
+                overflow: hidden;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.3s ease;
+            }
 
-    .description p {
-      color: #555;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-  </style>
-</head>
-<body>
-  <header>違法建築のTRPG用便利ツール</header>
-  <div class="container">
-    <p class="description">TRPGのための便利なツールをまとめています</p>
+            .tool-card:hover {
+                transform: scale(1.02);
+                box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            }
 
-    <div class="tool-card" onclick="location.href='coc7_npc_token.html'">
-      <div class="thumbnail">
-        <img src="photos/coc7_npc_token.png">
-      </div>
-      <div class="description">
-        <h3>新クトゥルフ神話TRPG NPCコマ作成ツール</h3>
-        <p>即席でCoC7版のココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
-      </div>
-    </div>
+            .thumbnail {
+                flex: 0.7;
+                min-width: 0;
+            }
 
-    <div class="tool-card" onclick="location.href='coc6_npc_token.html'">
-      <div class="thumbnail">
-        <img src="photos/coc7_npc_token.png">
-      </div>
-      <div class="description">
-        <h3>クトゥルフ神話TRPG NPCコマ作成ツール</h3>
-        <p>即席でCoC6版のココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
-      </div>
-    </div>
+            .thumbnail img {
+                width: 100%;
+                height: 180px;
+                object-fit: cover;
+                display: block;
+            }
 
-    <div class="tool-card" onclick="location.href='damage_sum.html'">
-      <div class="thumbnail">
-        <img src="photos/damage_sum.png">
-      </div>
-      <div class="description">
-        <h3>連続ダメージ計算ツール</h3>
-        <p>BCDiceなどのダメージログから装甲適用後の合計ダメージを計算し、HP減少コマンドを生成します。使い方はシンプル！装甲値を入力してダメージログを貼り付け、計算実行を押すだけ！合計ダメージと、クリックでコピーできるHP減少コマンドが表示されます。セッションでのダメージ処理にお役立てください。</p>
-      </div>
-    </div>
+            .description {
+                flex: 1.8;
+                padding: 1.5rem;
+            }
 
-    <div class="tool-card" onclick="location.href='grid_maker.html'">
-      <div class="thumbnail">
-        <img src="photos/grid_maker.png">
-      </div>
-      <div class="description">
-        <h3>グリッド作成ツール</h3>
-        <p></p>
-      </div>
-    </div>
+            .description h3 {
+                margin-top: 0;
+                font-size: 1.4rem;
+            }
 
-    <div class="tool-card" onclick="location.href='grid_ruler.html'">
-      <div class="thumbnail">
-        <img src="photos/grid_ruler.png">
-      </div>
-      <div class="description">
-        <h3>グリッド定規作成ツール</h3>
-        <p></p>
-      </div>
-    </div>
+            .description p {
+                color: #555;
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
+        </style>
+    </head>
+    <body>
+        <header>違法建築のTRPG用便利ツール</header>
 
-    <div class="tool-card" onclick="location.href='mask_maker.html'">
-      <div class="thumbnail">
-        <img src="photos/mask_maker.png">
-      </div>
-      <div class="description">
-        <h3>マスク作成ツール</h3>
-        <p></p>
-      </div>
-    </div>
+        <div class="container">
+            <div class="top-bar">
+                <p class="description">TRPGのための便利なツールをまとめています。</p>
+                <div class="bug-report">
+                    バグ報告等は <a href="https://x.com/ihoukentiku" target="_blank">XのDM</a> まで
+                </div>
+            </div>
 
-    
-  </div>
-</body>
+            <div class="tool-card" onclick="location.href='coc7_npc_token.html'">
+                <div class="thumbnail">
+                    <img src="photos/coc7_npc_token.png">
+                </div>
+                <div class="description">
+                    <h3>新クトゥルフ神話TRPG NPCコマ作成ツール</h3>
+                    <p>即席でCoC7版のココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
+                </div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='coc6_npc_token.html'">
+                <div class="thumbnail">
+                    <img src="photos/coc7_npc_token.png">
+                </div>
+                <div class="description">
+                    <h3>クトゥルフ神話TRPG NPCコマ作成ツール</h3>
+                    <p>即席でCoC6版のココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
+                </div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='damage_sum.html'">
+                <div class="thumbnail">
+                    <img src="photos/damage_sum.png">
+                </div>
+                <div class="description">
+                    <h3>連続ダメージ計算ツール</h3>
+                    <p>BCDiceなどのダメージログから装甲適用後の合計ダメージを計算し、HP減少コマンドを生成します。使い方はシンプル！装甲値を入力してダメージログを貼り付け、計算実行を押すだけ！合計ダメージと、クリックでコピーできるHP減少コマンドが表示されます。セッションでのダメージ処理にお役立てください。</p>
+                </div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='grid_maker.html'">
+                <div class="thumbnail">
+                    <img src="photos/grid_maker.png">
+                </div>
+                <div class="description">
+                    <h3>グリッド作成ツール</h3>
+                    <p></p>
+                </div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='grid_ruler.html'">
+                <div class="thumbnail">
+                    <img src="photos/grid_ruler.png">
+                </div>
+                <div class="description">
+                    <h3>グリッド定規作成ツール</h3>
+                    <p></p>
+                </div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='mask_maker.html'">
+                <div class="thumbnail">
+                    <img src="photos/mask_maker.png">
+                </div>
+                <div class="description">
+                    <h3>マスク作成ツール</h3>
+                    <p></p>
+                </div>
+            </div>
+        </div>
+    </body>
 </html>
