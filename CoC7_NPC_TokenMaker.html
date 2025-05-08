@@ -5,103 +5,211 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CoC7 NPC駒メーカー</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; max-width: 750px; }
-        table { width: 100%; border-collapse: collapse;}
-        table, th, td { border: 1px solid #000; }
-        th, td { text-align: center; }
-        td input { width: 100%; border: none; }
-        input[type="text"], input[type="number"], select { box-sizing: border-box; font-size: 16px; height: 25px;}
-        h3 { margin-bottom: 5px;}
-        .section { margin-bottom: 15px; }
-        button { margin-right: 5px; }
-        .del-btn { cursor: pointer; padding: 1px; border: none; background: none; margin-right: 0px}
-        #message { margin-left: 10px; font-weight: bold; }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #f7f8fa;
+            margin: auto;
+            padding: 20px;
+            max-width: 800px;
+            color: #333;
+        }
+        
+        h1 {
+            font-size: 28px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+        
+        h3 {
+            margin-bottom: 5px;
+            margin-top: 0px;
+        }
+
+        div {
+            margin:10px;
+        }
+        
+        .section {
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 2px;
+            border: 1px solid #888;
+            text-align: center;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        td input {
+            width: 100%;
+            border: none;
+        }
+
+        input, select, textarea {
+            border: 1px solid #888;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            padding: 10px
+        }
+
+        input[type="text"], input[type="number"], select {
+            box-sizing: border-box;
+            font-size: 18px;
+            padding: 0px 5px 0px 5px;
+            height: 30px;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button, 
+        input[type="number"]::-webkit-inner-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+            -moz-appearance:textfield; 
+        } 
+
+        
+        button {
+            background-color: #448AD4;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color .2s;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #3D7BCD;
+        }
+        
+        .del-btn {
+            cursor: pointer;
+            padding: 1px;
+            border: none;
+            background: none;
+            margin-right: 0px;
+            vertical-align: middle;
+            height:30px;
+            width:30px;
+        }
+
+        .del-btn:hover {
+            background-color: #ccc;
+        }
+        
+        #message {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+    
     </style>
 </head>
 <body>
     <h1>CoC7 NPC駒メーカー</h1>
 
     <div class="section">
-        <label>名前 <input type="text" id="nameInput"></label>
-    </div>
-
-    <div class="section">
+        <div>
+            <label>名前 <input type="text" id="nameInput"></label>
+        </div>
+        <div>
         <button onclick="saveData()">保存</button>
         <label for="loadKey">呼び出すデータ</label>
-        <select id="loadKey">
+        <select id="loadKey" style="margin-right:5px">
             <option value="">-- 選択してください --</option>
         </select>
         <button onclick="loadData()">読み込み</button>
         <button onclick="deleteData()">削除</button>
         <span id="saveMessage"></span>
+        </div>
     </div>
 
     <div class="section">
-        <table id="abilityTable" >
-            <tr>
-                <th style="width:70px">能力値</th><th>STR</th><th>CON</th><th>POW</th><th>DEX</th><th>APP</th><th>SIZ</th><th>INT</th><th>EDU</th>
-            </tr>
-            <tr id="diceRow">
-                <td>ダイス</td>
-                <td><input type="text" id="dice-STR"></td>
-                <td><input type="text" id="dice-CON"></td>
-                <td><input type="text" id="dice-POW"></td>
-                <td><input type="text" id="dice-DEX"></td>
-                <td><input type="text" id="dice-APP"></td>
-                <td><input type="text" id="dice-SIZ"></td>
-                <td><input type="text" id="dice-INT"></td>
-                <td><input type="text" id="dice-EDU"></td>
-            </tr>
-            <tr id="valueRow">
-                <td>能力値</td>
-                <td><input type="number" id="val-STR" class="val"></td>
-                <td><input type="number" id="val-CON" class="val"></td>
-                <td><input type="number" id="val-POW" class="val"></td>
-                <td><input type="number" id="val-DEX" class="val"></td>
-                <td><input type="number" id="val-APP" class="val"></td>
-                <td><input type="number" id="val-SIZ" class="val"></td>
-                <td><input type="number" id="val-INT" class="val"></td>
-                <td><input type="number" id="val-EDU" class="val"></td>
-            </tr>
-        </table>
+        <div>
+            <table id="abilityTable" >
+                <tr>
+                    <th style="width:70px">能力値</th><th>STR</th><th>CON</th><th>POW</th><th>DEX</th><th>APP</th><th>SIZ</th><th>INT</th><th>EDU</th>
+                </tr>
+                <tr id="diceRow">
+                    <td>ダイス</td>
+                    <td><input type="text" id="dice-STR"></td>
+                    <td><input type="text" id="dice-CON"></td>
+                    <td><input type="text" id="dice-POW"></td>
+                    <td><input type="text" id="dice-DEX"></td>
+                    <td><input type="text" id="dice-APP"></td>
+                    <td><input type="text" id="dice-SIZ"></td>
+                    <td><input type="text" id="dice-INT"></td>
+                    <td><input type="text" id="dice-EDU"></td>
+                </tr>
+                <tr id="valueRow">
+                    <td>能力値</td>
+                    <td><input type="number" id="val-STR" class="val"></td>
+                    <td><input type="number" id="val-CON" class="val"></td>
+                    <td><input type="number" id="val-POW" class="val"></td>
+                    <td><input type="number" id="val-DEX" class="val"></td>
+                    <td><input type="number" id="val-APP" class="val"></td>
+                    <td><input type="number" id="val-SIZ" class="val"></td>
+                    <td><input type="number" id="val-INT" class="val"></td>
+                    <td><input type="number" id="val-EDU" class="val"></td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <label style="margin-right:5px">正気度<input type="checkbox" id="sanToggle" value="no" style="width:20px; height:20px; vertical-align: middle;"></label>
+            <label>HP <input type="number" id="hp" style="width:50px; margin-right:10px"></label>
+            <label>MP <input type="number" id="mp" style="width:50px; margin-right:10px"></label>
+            <label id="sanLabel" style="display:none">SAN <input type="number" id="san" style="width:50px; margin-right:10px"></label>
+            <label>DB <input type="text" id="db" style="width:70px; margin-right:10px"></label>
+            <label>ビルド <input type="number" id="build" style="width:50px; margin-right:10px"></label>
+            <label>MOV <input type="number" id="mov" style="width:50px"></label>
+        </div>
     </div>
 
     <div class="section">
-        <label style="margin-right:5px">正気度<input type="checkbox" id="sanToggle" value="no" style="width:20px; height:20px; vertical-align: middle;"></label>
-        <label>HP <input type="number" id="hp" style="width:50px"></label>
-        <label>MP <input type="number" id="mp" style="width:50px"></label>
-        <label id="sanLabel" style="display:none">SAN <input type="number" id="san" style="width:50px"></label>
-        <label>DB <input type="text" id="db" style="width:50px"></label>
-        <label>ビルド <input type="number" id="build" style="width:50px"></label>
-        <label>MOV <input type="number" id="mov" style="width:50px"></label>
+        <div>
+            <button id="rollBtn">ロール</button>
+            <button id="copyBtn">コピー</button>
+            <button id="rollCopyBtn">ロール＆コピー</button>
+            <span id="message"></span>
+        </div>
+        <div>
+            <button id="cpCopyBtn">チャパレコピー</button>
+            <button id="rollCpCopyBtn">ロール＆チャパレコピー</button>
+        </div>
     </div>
 
     <div class="section">
-        <button id="rollBtn">ロール</button>
-        <button id="copyBtn">コピー</button>
-        <button id="rollCopyBtn">ロール＆コピー</button>
-        <span id="message"></span>
-    </div>
-
-    <div class="section">
-        <button id="cpCopyBtn">チャパレコピー</button>
-        <button id="rollCpCopyBtn">ロール＆チャパレコピー</button>
-    </div>
-
-    <div class="section">
-        <h3>技能</h3>
-        <table id="skillsTable" style="width:240px">
-            <tr><th style="width:150px">技能名</th><th style="width:80px">技能値</th><th style="width:25px"></th></tr>
-        </table>
-        <button id="addSkillBtn">＋</button>
-    </div>
-
-    <div class="section">
-        <h3>その他コマンド(ダメージ等)</h3>
-        <table id="damageTable" style="width:500px">
-            <tr><th>名称</th><th>コマンド</th><th  style="width:25px"></th></tr>
-        </table>
-        <button id="addDamageBtn">＋</button>
+        <div style="margin-top:5px">
+            <h3>技能</h3>
+            <table id="skillsTable" style="max-width:340px">
+                <tr><th>技能名</th><th style="width:60px">技能値</th><th style="width:30px"></th></tr>
+            </table>
+            <button id="addSkillBtn">＋</button>
+        </div>
+        <div>
+            <h3>その他コマンド(ダメージ等)</h3>
+            <table id="damageTable" style="max-width: 530px;">
+                <tr><th>名称</th><th>コマンド</th><th  style="width:30px"></th></tr>
+            </table>
+            <button id="addDamageBtn">＋</button>
+        </div>
     </div>
 
     <div class="section">
