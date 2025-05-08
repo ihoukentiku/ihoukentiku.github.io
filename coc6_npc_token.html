@@ -184,7 +184,7 @@
             <label>MP <input type="number" id="mp" style="width:50px; margin-right:10px"></label>
             <label id="sanLabel" style="display:none">SAN <input type="number" id="san" style="width:50px; margin-right:10px"></label>
             <label>DB <input type="text" id="db" style="width:70px; margin-right:10px"></label>
-            <label>MOV <input type="number" id="mov" style="width:50px"></label>
+            <label>移動率 <input type="number" id="mov" style="width:50px"></label>
         </div>
     </div>
 
@@ -570,7 +570,7 @@
 
             params.push({label:'DB', value: document.getElementById('db').value});
             const m = document.getElementById('mov').value;
-            if(m) params.push({label:'MOV', value: m});
+            if(m) params.push({label:'移動率', value: m});
 
             document.querySelectorAll('#skillsTable tr').forEach((tr,i) => {
                 if (i === 0) return;
