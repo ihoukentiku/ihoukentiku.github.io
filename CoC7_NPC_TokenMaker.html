@@ -127,17 +127,17 @@
 
     <div class="section">
         <div>
-            <label>名前 <input type="text" id="nameInput"></label>
+            <button onclick="saveData()">保存</button>
+            <label for="loadKey">呼び出すデータ</label>
+            <select id="loadKey" style="margin-right:5px">
+                <option value="">-- 選択してください --</option>
+            </select>
+            <button onclick="loadData()">読み込み</button>
+            <button onclick="deleteData()">削除</button>
+            <span id="saveMessage"></span>
         </div>
         <div>
-        <button onclick="saveData()">保存</button>
-        <label for="loadKey">呼び出すデータ</label>
-        <select id="loadKey" style="margin-right:5px">
-            <option value="">-- 選択してください --</option>
-        </select>
-        <button onclick="loadData()">読み込み</button>
-        <button onclick="deleteData()">削除</button>
-        <span id="saveMessage"></span>
+            <label>名前 <input type="text" id="nameInput"></label>
         </div>
     </div>
 
