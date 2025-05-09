@@ -247,7 +247,7 @@
             loadKeySelect.innerHTML = '<option value="">-- 選択してください --</option>';
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-if (key.startsWith('coc7_savedData_')) {
+                if (key.startsWith('coc7_savedData_')) {
                     const option = document.createElement('option');
                     option.value = key;
                     option.textContent = key.substring('coc7_savedData_'.length);
