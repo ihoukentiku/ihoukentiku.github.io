@@ -247,10 +247,10 @@
             loadKeySelect.innerHTML = '<option value="">-- 選択してください --</option>';
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith('savedData_')) { 
+if (key.startsWith('coc7_savedData_')) {
                     const option = document.createElement('option');
                     option.value = key;
-                    option.textContent = key.substring('savedData_'.length);
+                    option.textContent = key.substring('coc7_savedData_'.length);
                     loadKeySelect.appendChild(option);
                 }
             }
@@ -280,7 +280,7 @@
 
             const skills = [];
             const skillsTable = document.getElementById('skillsTable');
-            for (let i = 1; i < skillsTable.rows.length; i++) { 
+            for (let i = 1; i < skillsTable.rows.length; i++) {
                 const row = skillsTable.rows[i];
                 const skillNameInput = row.cells[0].querySelector('input[type="text"]');
                 const skillValueInput = row.cells[1].querySelector('input[type="number"]');
@@ -311,12 +311,12 @@
             dataToSave.mov = document.getElementById('mov').value;
 
             dataToSave.memoInput = document.getElementById('memoInput').value;
-                                   
-            const key = `savedData_${saveName}`;
+
+            const key = `coc7_savedData_${saveName}`;
             localStorage.setItem(key, JSON.stringify(dataToSave));
             showSaveMessage('保存しました');
-            saveNameInput.value = ''; 
-            updateDataList(); 
+            saveNameInput.value = '';
+            updateDataList();
         }
 
         function loadData() {
@@ -325,13 +325,13 @@
                 showSaveMessage('読み込むデータを選択してください');
                 return;
             }
-        
+
             const savedDataJSON = localStorage.getItem(selectedKey);
             if (savedDataJSON) {
                 const savedData = JSON.parse(savedDataJSON);
-        
+
                 document.getElementById('nameInput').value = savedData.nameInput || '';
-        
+
                 if (savedData.abilities) {
                     ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(l => {
                         const diceInput = document.getElementById('dice-'+l);
@@ -347,16 +347,16 @@
                              valInput.value = '';
                         }
                     });
-                } 
-        
+                }
+
                 const skillsTable = document.getElementById('skillsTable');
                 while (skillsTable.rows.length > 1) {
                     skillsTable.deleteRow(1);
                 }
-        
+
                 if (savedData.skills && savedData.skills.length > 0) {
                     savedData.skills.forEach(skill => {
-                        addRow('skillsTable'); 
+                        addRow('skillsTable');
                         const newRow = skillsTable.rows[skillsTable.rows.length - 1];
                         newRow.cells[0].querySelector('input[type="text"]').value = skill.name;
                         newRow.cells[1].querySelector('input[type="number"]').value = skill.value;
@@ -366,40 +366,40 @@
                 while (skillsTable.rows.length <= MIN_ROWS) {
                      addRow('skillsTable');
                 }
-        
+
                 const damageTable = document.getElementById('damageTable');
                 while (damageTable.rows.length > 1) {
                     damageTable.deleteRow(1);
                 }
-        
+
                 if (savedData.commands && savedData.commands.length > 0) {
                     savedData.commands.forEach(command => {
                         addRow('damageTable');
                         const newRow = damageTable.rows[damageTable.rows.length - 1];
                         newRow.cells[0].querySelector('input[type="text"]').value = command.name;
-                        newRow.cells[1].querySelector('input[type="text"]').value = command.command; 
+                        newRow.cells[1].querySelector('input[type="text"]').value = command.command;
                     });
                 }
-                
+
                 while (damageTable.rows.length <= MIN_ROWS) {
                      addRow('damageTable');
                 }
-        
+
                 const movInput = document.getElementById('mov');
                 if (savedData.hasOwnProperty('mov')) {
                     movInput.value = savedData.mov;
                 } else {
                     movInput.value = '';
                 }
-        
+
                 const memoInput = document.getElementById('memoInput');
                 if (savedData.hasOwnProperty('memoInput')) {
                     memoInput.value = savedData.memoInput;
                 } else {
-                    memoInput.value = ''; 
+                    memoInput.value = '';
                 }
-        
-                updateStats(); 
+
+                updateStats();
                 showSaveMessage('読み込みました');
             } else {
                 showSaveMessage('データが見つかりませんでした');
@@ -412,11 +412,11 @@
                 showSaveMessage('削除するデータを選択してください');
                 return;
             }
-        
-            if (confirm(`「${selectedKey.substring('savedData_'.length)}」のデータを削除してもよろしいですか？`)) {
+
+            if (confirm(`「${selectedKey.substring('coc7_savedData_'.length)}」のデータを削除してもよろしいですか？`)) {
                 localStorage.removeItem(selectedKey);
                 showSaveMessage('データを削除しました');
-                updateDataList(); 
+                updateDataList();
             }
         }
         
