@@ -4,15 +4,15 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-T4SJ8S23EC');
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        
+        gtag('config', 'G-T4SJ8S23EC');
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>連続ダメージ計算ツール</title>
+    <title>連続ダメージ自動計算ツール｜違法建築のTRPG便利ツール</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -57,8 +57,8 @@
         }
 
         textarea {
-             min-height: 100px;
-             resize: vertical;
+            min-height: 100px;
+            resize: vertical;
         }
 
 
@@ -71,7 +71,7 @@
             cursor: pointer;
             transition: background-color .2s;
             font-weight: bold;
-            display: block;
+            /* display: block; */
             width: 100%;
             box-sizing: border-box;
         }
@@ -115,13 +115,18 @@
     </style>
 </head>
 <body>
-    <h1>連続ダメージ計算ツール</h1>
+    <div style="position: relative;">
+        <h1 style="margin: 0;">連続ダメージ自動計算ツール</h1>
+        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
+            <button style="padding: 6px 12px;">ホームページへ</button>
+        </a>
+    </div>
 
     <div class="section">
-        <label for="armorValue">装甲値を入力してください:</label>
+        <label for="armorValue">装甲値を入力してください</label>
         <input type="number" id="armorValue" value="0">
 
-        <label for="damageRolls">BCDiceのダメージロール結果を入力してください:</label>
+        <label for="damageRolls">BCDiceのダメージロール結果を入力してください</label>
         <textarea id="damageRolls" rows="10" placeholder="例：
 ランドルフ・カーター - 今日 00:00
 x3 1D10+2 拳銃 #1

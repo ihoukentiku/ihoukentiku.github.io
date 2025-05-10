@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>グリッドペイントツール</title>
+    <title>グリッドペイントツール｜違法建築のTRPG便利ツール</title>
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Mochiy+Pop+P+One&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP&family=Shippori+Antique&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -64,13 +64,7 @@
             vertical-align: middle;
         }
         input[type="number"] {
-            width: 50px;
-        }
-        input[type="number"]::-webkit-outer-spin-button, 
-        input[type="number"]::-webkit-inner-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-            -moz-appearance:textfield; 
+            width: 50px; 
         } 
         input[type="color"] {
             box-sizing: border-box;
@@ -241,7 +235,12 @@
     </style>
 </head>
 <body>
-    <h1>グリッドペイントツール</h1>
+    <div style="position: relative;">
+        <h1 style="margin-left: 10px;">グリッドペイントツール</h1>
+        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 3px; left: 600px;">
+            <button style="padding: 6px 12px;">ホームページへ</button>
+        </a>
+    </div>
     <div class="tub">
             <button id="cellModeButton" onclick="setMode('cell')" class="active">グリッド設定</button>
             <button id="gridModeButton" onclick="setMode('grid')">マス目モード</button>
@@ -269,7 +268,7 @@
                 <label>サイズ(px) <input type="number" id="coordFontSizeInput" value="24" min="1"></label>
                 <label>透明度 <input type="range" id="coordOpacityInput" min="0" max="1" step="0.01" value="1"><span id="coordOpacityValueSpan">100%</span></label>
                 <label>位置
-                    <select id="coordPositionSelect" style="font-size: 14px;">
+                    <select id="coordPositionSelect" style="font-size: 15px; height: 28px;">
                         <option value="top">上</option>
                         <option value="middle" selected>中央</option>
                         <option value="bottom">下</option>
@@ -579,11 +578,10 @@
 
         // キャンバス上のマウスイベントリスナー
         canvasWrapper.addEventListener("mousedown", (e) => {
-            if (e.button === 1 || e.ctrlKey) { // ミドルマウスボタン
+            if (e.button === 1 || e.ctrlKey) {
                 isPanning = true;
                 panStartX = e.clientX;
                 panStartY = e.clientY;
-                // style.left/topは'px'を含むので、offsetLeft/Topから数値を取得
                 initialContainerLeft = canvasContainer.offsetLeft;
                 initialContainerTop = canvasContainer.offsetTop;
                 canvasWrapper.style.cursor = 'all-scroll'; // カーソル変更

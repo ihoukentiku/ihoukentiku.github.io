@@ -4,15 +4,15 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
     
-      gtag('config', 'G-T4SJ8S23EC');
+        gtag('config', 'G-T4SJ8S23EC');
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC6 NPCコマ作成ツール</title>
+    <title>CoC6 NPCコマ作成ツール｜違法建築のTRPG便利ツール</title>
     <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
@@ -139,14 +139,19 @@
     </style>
 </head>
 <body>
-    <h1>CoC6 NPCコマ作成ツール</h1>
+    <div style="position: relative;">
+        <h1 style="margin: 0;">CoC6 NPCコマ作成ツール</h1>
+        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
+            <button>ホームページへ</button>
+        </a>
+    </div>
+
 
     <div class="section">
         <div>
             <button onclick="saveData()">保存</button>
-            <label for="loadKey">呼び出すデータ</label>
             <select id="loadKey" style="margin-right:5px">
-                <option value="">-- 選択してください --</option>
+                <option value="">-- 保存したデータを選択 --</option>
             </select>
             <button onclick="loadData()">読み込み</button>
             <button onclick="deleteData()">削除</button>
@@ -212,7 +217,7 @@
 
     <div class="section">
         <div style="margin-top:5px">
-             <div style="display: flex; align-items: center; margin: 0">
+            <div style="display: flex; align-items: center; margin: 0">
                 <h3>技能</h3>
                 <div style="margin: 0px 0px 0px 10px"> <label>コマンド形式 </label>
                     <input type="radio" id="ccRadio" name="commandType" value="CC" checked>
@@ -258,7 +263,7 @@
         }
 
         function updateDataList() {
-            loadKeySelect.innerHTML = '<option value="">-- 選択してください --</option>';
+            loadKeySelect.innerHTML = '<option value="">-- 保存したデータを選択 --</option>';
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('savedData_')) {
@@ -279,7 +284,7 @@
 
             const dataToSave = {};
 
-        　　dataToSave.nameInput = saveName;
+            dataToSave.nameInput = saveName;
 
             const abilities = {};
             ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(l => {
@@ -380,7 +385,7 @@
                 }
 
                 while (skillsTable.rows.length <= MIN_ROWS) {
-                     addRow('skillsTable');
+                    addRow('skillsTable');
                 }
 
                 const damageTable = document.getElementById('damageTable');

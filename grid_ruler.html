@@ -4,15 +4,15 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
     
-      gtag('config', 'G-T4SJ8S23EC');
+    gtag('config', 'G-T4SJ8S23EC');
     </script>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>グリッド定規作成ツール</title>
+        <title>グリッド定規作成ツール｜違法建築のTRPG便利ツール</title>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
         <style>
             body {
@@ -99,20 +99,25 @@
                 min-width: 2em;
                 text-align: right;
             }
-             select {
+            select {
                 width: 120px;
             }
 
         </style>
     </head>
     <body>
-        <h1>グリッド定規作成ツール</h1>
+    <div style="position: relative;">
+        <h1 style="margin: 0;">グリッド定規作成ツール</h1>
+        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
+            <button style="padding: 6px 12px;">ホームページへ</button>
+        </a>
+    </div>
 
         <div class="section">
             <div>
                 <label for="distance">範囲 <input type="number" id="distance" min="1" value="5"></label>
                 <label for="opacity">マスの透明度
-                    <input type="range" id="opacity" min="0" max="1" step="0.1" value="0.5" oninput="updateOpacityLabel()">
+                    <input type="range" id="opacity" min="0" max="1" step="0.1" value="1" oninput="updateOpacityLabel()">
                     <span id="opacityValue">1</span>
                 </label>
                 <label for="textOpacity">数字の透明度
