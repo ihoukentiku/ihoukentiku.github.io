@@ -18,6 +18,13 @@
             color: #333;
             display: flex;
             flex-direction: column;
+            background-color: #fff;
+            background-image:
+                linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%),
+                linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%);
+            background-size: 20px 20px;
+            background-position: 0 4px, 10px 14px;
+            background-repeat: repeat;
         }
         h1 {
             background-color: #f7f8fa;
@@ -465,12 +472,13 @@
         let lastMouseCol, lastMouseRow; // ドラッグ時の最後のマウス座標(セル単位)
         
         let lineStartPoint = null; // 線ツール使用時の始点
-        let scale = 1; //キャンパスの倍率
+        let scale = 0.5; //キャンパスの倍率
 
         const history = [];         // 履歴保存用配列
         const MAX_HISTORY = 50;     // 保存する履歴の最大数
 
         // --- 初期化 ---
+        canvasWrapper.style.cursor = 'default'; //マウスカーソルをデフォルトにする
         drawAll();                // 初期描画実行
         saveHistoryState();       // 初期状態を履歴に保存
 
@@ -578,7 +586,7 @@
                 // style.left/topは'px'を含むので、offsetLeft/Topから数値を取得
                 initialContainerLeft = canvasContainer.offsetLeft;
                 initialContainerTop = canvasContainer.offsetTop;
-                canvasWrapper.style.cursor = 'grabbing'; // カーソル変更
+                canvasWrapper.style.cursor = 'all-scroll'; // カーソル変更
                 e.preventDefault(); // デフォルトのミドルクリック動作（オートスクロール等）を防止
                 return; // 他のmousedown処理をスキップ
             }
@@ -592,6 +600,7 @@
             if (e.button === 0 && currentMode === 'back') {
                 isDraggingBackground = true;
                 canvasWrapper.classList.add('dragging'); // ドラッグ中のカーソル表示
+                canvasWrapper.style.cursor = 'grabbing'
                 lastMouseX = x;
                 lastMouseY = y;
                 return; // 背景ドラッグ時は他の描画処理をスキップ
@@ -626,6 +635,7 @@
                 });
 
                 if (dragTargetText) { // テキストが見つかればドラッグ開始
+                    canvasWrapper.style.cursor = 'grabbing'
                     isDraggingText = true;
                     lastMouseCol = col;
                     lastMouseRow = row;
@@ -711,7 +721,7 @@
         canvasWrapper.addEventListener("mouseup", (e) => {
             if (isPanning) {
                 isPanning = false;
-                canvasWrapper.style.cursor = 'grab'; // カーソルを元に戻す
+                canvasWrapper.style.cursor = 'default'; // カーソルを元に戻す
                 return;
             }
 
@@ -724,6 +734,7 @@
             if (isDraggingBackground) {
                 isDraggingBackground = false;
                 canvasWrapper.classList.remove('dragging');
+                canvasWrapper.style.cursor = 'default';
                 return;
             }
 
@@ -731,6 +742,7 @@
             if (isDraggingText && currentMode === 'text') {
                 isDraggingText = false;
                 dragTargetText = null;
+                canvasWrapper.style.cursor = 'default';
                 saveHistoryState(); // テキスト移動完了後に履歴保存
                 return;
             }
@@ -756,6 +768,7 @@
                 isDraggingBackground = false;
                 isDraggingText = false;
                 canvasWrapper.classList.remove('dragging');
+                canvasWrapper.style.cursor = 'default';
                 startPoint = null;
                 dragTarget = null;
                 drawAll();
@@ -1275,7 +1288,7 @@
             });
         }
 
-        // 履歴から復元（アンドゥ）する関数
+        // 履歴から復元する関数
         function undo() {
             // 履歴が1つより多い場合 (現在の状態の他に、戻るべき過去の状態がある場合)
             if (history.length > 1) { 
