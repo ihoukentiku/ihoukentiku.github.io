@@ -4,17 +4,16 @@
         <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
     
-      gtag('config', 'G-T4SJ8S23EC');
+        gtag('config', 'G-T4SJ8S23EC');
     </script>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>マスク作成ツール</title>
         <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Kaisei+Opti&family=Kokoro&family=Mochiy+Pop+P+One&family=M+PLUS+Rounded+1c:wght@400;700&family=Mystery+Quest&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP&family=Potta+One&family=RocknRoll+One&family=Sawarabi+Gothic&family=Sawarabi+Mincho&family=Shippori+Antique&family=Stick&family=Train+One&family=UnifrakturMaguntia&family=Yuji+Syuku&family=Zen+Kurenaido&display=swap" rel="stylesheet">
-    <style>
         <style>
             body {
                 font-family: 'Noto Sans JP', sans-serif;
@@ -202,8 +201,8 @@
         </div>
 
         <div class="canvas-wrapper">
-            <canvas id="backgroundCanvas" width="4000" height="4000"></canvas>
-            <canvas id="maskCanvas" width="4000" height="4000" class="drow-canvas"></canvas>
+            <canvas id="backgroundCanvas" width="2000" height="1000"></canvas>
+            <canvas id="maskCanvas" width="2000" height="1000" class="drow-canvas"></canvas>
         </div>
 
     <script>
@@ -288,7 +287,7 @@
                 dragTarget = texts.findLast(text =>
                     e.offsetX >= text.x && e.offsetX <= text.x + ctx.measureText(text.text).width &&
                     e.offsetY >= text.y - text.size && e.offsetY <= text.y
-                                           );
+                );
                 if (dragTarget) {
                     rangeX = dragTarget.x - e.offsetX;
                     rangeY = dragTarget.y - e.offsetY;
@@ -330,7 +329,7 @@
 
                 let snapPoint = paths.find(point =>
                     Math.abs(point.x - e.offsetX) < 10 && Math.abs(point.y - e.offsetY) < 10
-                                          );
+                );
 
                 let point = snapPoint ? { x: snapPoint.x, y: snapPoint.y } : { x: e.offsetX, y: e.offsetY };
 
@@ -359,7 +358,7 @@
             const targetText = texts.findLast(text =>
                 e.offsetX >= text.x && e.offsetX <= text.x + ctx.measureText(text.text).width &&
                 e.offsetY >= text.y - text.size && e.offsetY <= text.y
-                                             );
+            );
 
             if (targetText) {
                 texts = texts.filter(text => text !== targetText);

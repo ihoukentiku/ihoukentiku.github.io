@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グリッドペイントツール</title>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Mochiy+Pop+P+One&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP&family=Shippori+Antique&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #f7f8fa;
+            min-width: 1000px;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            background-color: #f7f8fa;
+            font-size: 28px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            margin-top: 10px;
+            z-index: 98;
+            margin: 0;
+        }
+
+        .section {
+        background: white;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        align-items: center;
+        border-radius: 0 0 5px 5px;
+        z-index: 99;
+        position: sticky;
+        top: 42px;
+        }
+
+        label {
+            font-weight: bold;
+            align-items: center;
+            height: 25px;
+        }
+
+        input[type="text"], input[type="number"], select {
+            box-sizing: border-box;
+            font-size: 16px;
+            padding: 4px 5px;
+            height: 25px;
+            border: 1px solid #888;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+        input[type="number"] {
+            width: 50px;
+        }
+        input[type="number"]::-webkit-outer-spin-button, 
+        input[type="number"]::-webkit-inner-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+            -moz-appearance:textfield; 
+        } 
+        input[type="color"] {
+            box-sizing: border-box;
+            height: 25px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            vertical-align: middle;
+            padding: 0;
+            width: 40px;
+        }
+        input[type="range"] {
+            vertical-align: middle;
+            width: 120px;
+            margin-right: 5px;
+        }
+        input[type="checkbox"] {
+            vertical-align: middle;
+            width: 16px; 
+            height: 16px; 
+            margin-right: 5px;
+            margin-left: 5px;
+        }
+        button {
+            background-color: #448AD4;
+            color: white;
+            box-sizing: border-box;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        button:hover, button:hover.nonactive, .tub > button:hover {
+            background-color: #3D7BCD;
+        }
+        button.nonactive {
+            background-color: #ffffff;
+            border: 1px solid #888;
+            color: black;
+        }
+        .settings {
+            margin-bottom: 15px;
+            align-items: center;
+            display: none;
+        }
+        .settings > * {
+            margin-right: 10px;
+            align-items: center;
+        }
+        .settings > div {
+            margin-bottom: 10px;
+        }
+        .settings > div:last-child {
+            margin-bottom: 0px;
+        }
+        .settings > div * {
+            margin-right: 10px;
+        }
+        .settings > *:last-child {
+            margin-right: 0;
+        }
+
+        .tub {
+        display: flex;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: #448AD4;
+        }
+        .tub > button {
+            background-color: #448AD4;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 10px; 
+            margin: 0;
+            cursor: pointer;
+        }
+        .tub > button.active {
+            background-color: white; 
+            color: #333;
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            z-index: 2; 
+            margin-bottom: -1px; 
+            font-weight: bold;
+        }
+        .tub > button.active::before {
+            content: "";
+            display: block;
+            position: absolute;
+            bottom: 0;
+            left: -10px;
+            width: 10px;
+            height: 10px;
+            bottom: 1px;
+            border-bottom-right-radius: 8px;
+            box-shadow: 3px 2px 0 0 white;
+            z-index: 2;
+        }
+        .tub > button.active::after {
+            content: "";
+            display: block;
+            position: absolute;
+            bottom: 0;
+            right: -10px;
+            width: 10px;
+            height: 10px;
+            bottom: 1px;
+            border-bottom-left-radius: 8px;
+            box-shadow: -3px 2px 0 0 white;
+            z-index: 2;
+        }
+        .canvas-wrapper {
+            border: none;
+            overflow: hidden;
+            cursor: grab;
+            flex-grow: 1;
+            display: flex;
+        }
+        .canvas-container {
+            position: relative;
+            transform-origin: top left;
+        }
+        .canvas-wrapper.dragging {
+            cursor: grabbing;
+        }
+
+        .canvas-container {
+            position: absolute;
+            top: 214px;
+            left: 0;
+            transform-origin: top left;
+        }
+
+        .canvas-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .path-point {
+            width: 6px;
+            height: 6px;
+            background: white;
+            position: absolute;
+            transform: translate(-3px, -3px);
+        }
+        #opacityValue, #textOpacityValue {
+            margin-left: 5px;
+            font-weight: normal;
+            display: inline-block;
+            min-width: 2em;
+            text-align: right;
+        }
+        #textInput {
+            width: 180px;
+            font-size: 16px;
+        }
+        label input[type="checkbox"] {
+            margin-right: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>グリッドペイントツール</h1>
+    <div class="tub">
+            <button id="cellModeButton" onclick="setMode('cell')" class="active">グリッド設定</button>
+            <button id="gridModeButton" onclick="setMode('grid')">マス目モード</button>
+            <button id="lineModeButton" onclick="setMode('line')">線モード</button>
+            <button id="pathModeButton" onclick="setMode('path')">パスモード</button>
+            <button id="textModeButton" onclick="setMode('text')">文字入力モード</button>
+            <button id="backModeButton" onclick="setMode('back')">背景設定</button>
+            <button id="downModeButton" onclick="setMode('down')">ダウンロード</button>
+    </div>
+    <div class="section">
+        <div class="settings" id="cellSettings" style="display: inline">
+            <div>
+                <label>1マスのサイズ(px) <input type="number" id="cellSizeInput" value="100" min="1"></label>
+                <label>横のマス数 <input type="number" id="colsInput" value="15" min="1"></label>
+                <label>縦のマス数 <input type="number" id="rowsInput" value="10" min="1"></label>
+            </div>
+            <div>
+                <label>グリッドの太さ(px) <input type="number" id="gridLineWidthInput" value="2" min="1"></label>
+                <label id="gridColorLabel">グリッドの色 <input type="color" id="gridColorInput" value="#000000"></label>
+                <label>透明度 <input type="range" id="gridOpacityInput" min="0" max="1" step="0.01" value="1"><span id="gridOpacityValueSpan">100%</span></label>
+            </div>
+            <div>
+                <label>座標を表示<input type="checkbox" id="showCoordinatesCheckInput"></label>
+                <label>座標の色 <input type="color" id="coordColorInput" value="#000000"></label>
+                <label>サイズ(px) <input type="number" id="coordFontSizeInput" value="24" min="1"></label>
+                <label>透明度 <input type="range" id="coordOpacityInput" min="0" max="1" step="0.01" value="1"><span id="coordOpacityValueSpan">100%</span></label>
+                <label>位置
+                    <select id="coordPositionSelect" style="font-size: 14px;">
+                        <option value="top">上</option>
+                        <option value="middle" selected>中央</option>
+                        <option value="bottom">下</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+        <div class="settings" id="gridSettings">
+            <button id="penToolButton" onclick="setTool('pen')">ペン</button>
+            <button id="eraserToolButton" onclick="setTool('eraser')" class="nonactive">消しゴム</button>
+            <label>描画色 <input type="color" id="drawColorInput" value="#000000"></label>
+            <label>透明度 <input type="range" id="masksOpacityInput" min="0" max="1" step="0.01" value="1"><span id="masksOpacityValueSpan">100%</span></label>
+        </div>
+        <div class="settings" id="lineSettings">
+            <label>線の色 <input type="color" id="lineColorInput" value="#000000"></label>
+            <label>線の太さ <input type="number" id="lineWidthInput" value="2" min="1"></label>
+            <label>スナップ <input type="checkbox" id="snapCheckLineInput" checked></label>
+            <label>透明度 <input type="range" id="lineOpacityInput" min="0" max="1" step="0.01" value="1"><span id="lineOpacityValueSpan">100%</span></label>
+        </div>
+        <div class="settings" id="pathSettings">
+            <label>塗りつぶし色 <input type="color" id="fillColorInput" value="#000000"></label>
+            <label>スナップ <input type="checkbox" id="snapCheckPathInput" checked></label>
+            <label>透明度 <input type="range" id="fillPathOpacityInput" min="0" max="1" step="0.01" value="1"><span id="fillPathOpacityValueSpan">100%</span></label>
+        </div>
+        <div class="settings" id="textSettings">
+            <label id="fontSelectLabel">フォント
+                <select id="fontSelect" style="width: 180px;">
+                    <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
+                    <option value="'Noto Serif JP', serif">Noto Serif JP</option>
+                    <option value="'Shippori Antique', sans-serif">しっぽりアンティーク</option>
+                    <option value="'DotGothic16', sans-serif">DotGothic16</option>
+                    <option value="'Mochiy Pop P One', sans-serif">Mochiy Pop P One</option>
+                </select>
+            </label>
+            <label id="fontSizeLabel">サイズ <input type="number" id="fontSizeInput" value="80" min="0" max="1000"></label>
+            <label id="textColorLabel">文字色 <input type="color" id="textColorInput" value="#000000"></label>
+            <input id="textInput" type="text" placeholder="追加する文字を入力">
+            <button id="textAddButton" class="never" onclick="addText()">追加</button>
+            <label>透明度 <input type="range" id="textOpacityInput" min="0" max="1" step="0.01" value="1"><span id="textOpacityValueSpan">100%</span></label>
+        </div>
+        <div class="settings" id="backSettings">
+            <div>
+                <label>背景色 <input type="color" id="bgColorInput" value="#FFFFFF"></label>
+                <label>透明度 <input type="range" id="bgColorOpacityInput" min="0" max="1" step="0.01" value="0"><span id="bgColorOpacityValueSpan">0%</span></label>
+            </div>
+            <div>
+                <label>背景画像 <input type="file" id="uploadImageInput" accept="image/*"></label>
+                <button class="never" onclick="resetBackground()">背景リセット</button>
+                <label>画像透明度 <input type="range" id="bgOpacityInput" min="0" max="1" step="0.01" value="1"><span id="bgOpacityValueSpan">100%</span></label>
+            </div>
+            <div>
+                <label>X <input type="number" id="bgOffsetXInput" value="0"></label>
+                <label>Y <input type="number" id="bgOffsetYInput" value="0"></label>
+                <label>倍率 <input type="range" id="zoomSlider" min="0" max="5" step="0.01" value="1" style="width: 250px;"><span id="zoomValue">100%</span></label>
+            </div>
+        </div>
+        <div class="settings" id="downSettings">
+            <label>背景 <input type="checkbox" id="bgCheckInput"></label>
+            <label>グリッド <input type="checkbox" id="gridCheckInput"></label>
+            <button onclick="downloadImage()" class="never">ダウンロード</button>
+        </div>
+    </div>
+
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="solidBackgroundCanvas"></canvas>
+            <canvas id="backgroundCanvas"></canvas>
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM要素 ---
+        const canvasWrapper = document.getElementById("canvasWrapper");
+        const canvasContainer = document.getElementById("canvasContainer");
+        const solidBackgroundCanvas = document.getElementById("solidBackgroundCanvas");
+        const backgroundCanvas = document.getElementById("backgroundCanvas");
+        const drawingCanvas = document.getElementById("drawingCanvas");
+
+        const solidBgCtx = solidBackgroundCanvas.getContext("2d");
+        const bgCtx = backgroundCanvas.getContext("2d");
+        const ctx = drawingCanvas.getContext("2d");
+
+        // モード設定パネル
+        const gridSettingsPanel = document.getElementById("gridSettings");
+        const lineSettingsPanel = document.getElementById("lineSettings");
+        const pathSettingsPanel = document.getElementById("pathSettings");
+        const textSettingsPanel = document.getElementById("textSettings");
+        const cellSettingsPanel = document.getElementById("cellSettings");
+        const backSettingsPanel = document.getElementById("backSettings");
+        const downSettingsPanel = document.getElementById("downSettings");
+
+        // セル設定入力
+        const cellSizeInput = document.getElementById("cellSizeInput");
+        const colsInput = document.getElementById("colsInput");
+        const rowsInput = document.getElementById("rowsInput");
+        const zoomSlider = document.getElementById("zoomSlider");
+        const gridLineWidthInput = document.getElementById("gridLineWidthInput");
+        const gridColorInput = document.getElementById("gridColorInput");
+        const gridOpacityInput = document.getElementById("gridOpacityInput");
+        const gridOpacityValueSpan = document.getElementById("gridOpacityValueSpan");
+        const showCoordinatesCheckInput = document.getElementById("showCoordinatesCheckInput");
+        const coordColorInput = document.getElementById("coordColorInput");
+        const coordFontSizeInput = document.getElementById("coordFontSizeInput");
+        const coordOpacityInput = document.getElementById("coordOpacityInput");
+        const coordOpacityValueSpan = document.getElementById("coordOpacityValueSpan");
+        const coordPositionSelect = document.getElementById("coordPositionSelect");
+
+        // グリッドモード入力
+        const drawColorInput = document.getElementById("drawColorInput");
+        const masksOpacityInput = document.getElementById("masksOpacityInput");
+        const masksOpacityValueSpan = document.getElementById("masksOpacityValueSpan");
+
+        // 線モード入力
+        const lineColorInput = document.getElementById("lineColorInput");
+        const lineWidthInput = document.getElementById("lineWidthInput");
+        const snapCheckLineInput = document.getElementById("snapCheckLineInput");
+        const lineOpacityInput = document.getElementById("lineOpacityInput");
+        const lineOpacityValueSpan = document.getElementById("lineOpacityValueSpan");
+
+        // パスモード入力
+        const fillColorInput = document.getElementById("fillColorInput");
+        const snapCheckPathInput = document.getElementById("snapCheckPathInput");
+        const fillPathOpacityInput = document.getElementById("fillPathOpacityInput");
+        const fillPathOpacityValueSpan = document.getElementById("fillPathOpacityValueSpan");
+
+        // テキストモード入力
+        const fontSelect = document.getElementById("fontSelect");
+        const fontSizeInput = document.getElementById("fontSizeInput");
+        const textColorInput = document.getElementById("textColorInput");
+        const textInput = document.getElementById("textInput");
+        const textOpacityInput = document.getElementById("textOpacityInput");
+        const textOpacityValueSpan = document.getElementById("textOpacityValueSpan");
+
+        // 背景設定入力
+        const bgColorInput = document.getElementById("bgColorInput");
+        const bgColorOpacityInput = document.getElementById("bgColorOpacityInput");
+        const bgColorOpacityValueSpan = document.getElementById("bgColorOpacityValueSpan");
+        const uploadImageInput = document.getElementById("uploadImageInput");
+        const bgOffsetXInput = document.getElementById("bgOffsetXInput");
+        const bgOffsetYInput = document.getElementById("bgOffsetYInput");
+        const zoomValueSpan = document.getElementById("zoomValue");
+        const bgOpacityInput = document.getElementById("bgOpacityInput");
+        const bgOpacityValueSpan = document.getElementById("bgOpacityValueSpan");
+
+        // ダウンロード設定入力
+        const bgCheckInput = document.getElementById("bgCheckInput");
+        const gridCheckInput = document.getElementById("gridCheckInput");
+
+        // --- 状態変数 ---
+        let currentMode = "cell"; // 現在のモード: cell, grid, line, path, text, back, down
+        let currentTool = "pen";  // 現在のツール: pen, eraser (グリッドモード用)
+
+        let cellSize = parseInt(cellSizeInput.value);
+        let cols = parseInt(colsInput.value);
+        let rows = parseInt(rowsInput.value);
+        let gridLineWidth = parseInt(gridLineWidthInput.value);
+        let gridColor = gridColorInput.value;
+        let gridOpacity = parseFloat(gridOpacityInput.value);
+        let showCoordinates = showCoordinatesCheckInput.checked;
+        let coordColor = coordColorInput.value;
+        let coordFontSize = parseInt(coordFontSizeInput.value);
+        let coordOpacity = parseFloat(coordOpacityInput.value);
+        let coordTextBaseline = coordPositionSelect.value;
+
+        let drawColor = drawColorInput.value;
+        let masksOpacity = parseFloat(masksOpacityInput.value);
+
+        let lineColor = lineColorInput.value;
+        let lineWidth = parseInt(lineWidthInput.value);
+        let lineOpacity = parseFloat(lineOpacityInput.value);
+
+        let fillColor = fillColorInput.value;
+        let fillPathOpacity = parseFloat(fillPathOpacityInput.value);
+
+        let textOpacity = parseFloat(textOpacityInput.value);
+
+        let currentBgColor = bgColorInput.value;
+        let bgColorOpacity = parseFloat(bgColorOpacityInput.value);
+        let bgImage = null;
+        let bgImageOffsetX = parseInt(bgOffsetXInput.value);
+        let bgImageOffsetY = parseInt(bgOffsetYInput.value);
+        let zoomLevel = parseFloat(zoomSlider.value);
+        let bgImageOpacity = parseFloat(bgOpacityInput.value);
+
+        let masks = [];     // マス目の塗りつぶし情報: { col: 列, row: 行, color: 色 }
+        let lines = [];     // 線情報: { col1, row1, col2, row2, color, width }
+        let paths = [];     // 描画中のパスの点: { points: [{col, row}] }
+        let fillPaths = []; // 塗りつぶし済みのパス情報: { points: [{col, row}], color }
+        let texts = [];     // テキスト情報: { col, row, text, font, size, color }
+
+        let isDrawing = false;          // マウス描画中フラグ
+        let isDraggingBackground = false; // 背景ドラッグ中フラグ
+        let isDraggingText = false;     // テキストドラッグ中フラグ
+        let isPanning = false;          // キャンバスコンテナのパン（視点移動）中フラグ
+        let panStartX, panStartY;       // パン開始時のマウス座標
+        let initialContainerLeft, initialContainerTop; // パン開始時のコンテナのleft/top値  
+        let dragTargetText = null;      // ドラッグ対象のテキスト要素
+        let lastMouseX, lastMouseY;     // ドラッグ時の最後のマウス座標(ピクセル)
+        let lastMouseCol, lastMouseRow; // ドラッグ時の最後のマウス座標(セル単位)
+        
+        let lineStartPoint = null; // 線ツール使用時の始点
+        let scale = 1; //キャンパスの倍率
+
+        const history = [];         // 履歴保存用配列
+        const MAX_HISTORY = 50;     // 保存する履歴の最大数
+
+        // --- 初期化 ---
+        drawAll();                // 初期描画実行
+        saveHistoryState();       // 初期状態を履歴に保存
+
+        // --- イベントリスナー ---
+
+        // 設定関連の入力変更リスナー
+        cellSizeInput.addEventListener("input", () => { cellSize = parseInt(cellSizeInput.value); drawAll(); });
+        colsInput.addEventListener("input", () => { cols = parseInt(colsInput.value); drawAll(); });
+        rowsInput.addEventListener("input", () => { rows = parseInt(rowsInput.value); drawAll(); });
+        gridLineWidthInput.addEventListener("input", () => { gridLineWidth = parseInt(gridLineWidthInput.value); drawAll(); });
+        gridColorInput.addEventListener("input", () => { gridColor = gridColorInput.value; drawAll(); });
+        showCoordinatesCheckInput.addEventListener("input", () => { showCoordinates = showCoordinatesCheckInput.checked; drawAll(); });
+        coordColorInput.addEventListener("input", () => { coordColor = coordColorInput.value; drawAll(); });
+        coordFontSizeInput.addEventListener("input", () => { coordFontSize = parseInt(coordFontSizeInput.value); drawAll(); });
+        coordPositionSelect.addEventListener('change', () => { coordTextBaseline = coordPositionSelect.value; drawAll(); });
+        
+        drawColorInput.addEventListener("input", () => { drawColor = drawColorInput.value; });
+        lineColorInput.addEventListener("input", () => { lineColor = lineColorInput.value; });
+        lineWidthInput.addEventListener("input", () => { lineWidth = parseInt(lineWidthInput.value); });
+        fillColorInput.addEventListener("input", () => { fillColor = fillColorInput.value; });
+
+        bgOffsetXInput.addEventListener("input", () => { bgImageOffsetX = parseInt(bgOffsetXInput.value); drawBackground(); });
+        bgOffsetYInput.addEventListener("input", () => { bgImageOffsetY = parseInt(bgOffsetYInput.value); drawBackground(); });
+        
+        bgColorInput.addEventListener('input', () => { currentBgColor = bgColorInput.value; drawSolidBackground(); });
+
+        zoomSlider.addEventListener("input", () => {
+            zoomLevel = parseFloat(zoomSlider.value);
+            zoomValueSpan.textContent = `${Math.round(zoomLevel * 100)}%`;
+            drawAll();
+        });
+
+        // 透明度関連の入力リスナー
+        masksOpacityInput.addEventListener("input", () => {
+            masksOpacity = parseFloat(masksOpacityInput.value);
+            masksOpacityValueSpan.textContent = `${Math.round(masksOpacity * 100)}%`;
+            drawAll();
+        });
+        lineOpacityInput.addEventListener("input", () => {
+            lineOpacity = parseFloat(lineOpacityInput.value);
+            lineOpacityValueSpan.textContent = `${Math.round(lineOpacity * 100)}%`;
+            drawAll();
+        });
+        fillPathOpacityInput.addEventListener("input", () => {
+            fillPathOpacity = parseFloat(fillPathOpacityInput.value);
+            fillPathOpacityValueSpan.textContent = `${Math.round(fillPathOpacity * 100)}%`;
+            drawAll();
+        });
+        textOpacityInput.addEventListener("input", () => {
+            textOpacity = parseFloat(textOpacityInput.value);
+            textOpacityValueSpan.textContent = `${Math.round(textOpacity * 100)}%`;
+            drawAll();
+        });
+        gridOpacityInput.addEventListener("input", () => {
+            gridOpacity = parseFloat(gridOpacityInput.value);
+            gridOpacityValueSpan.textContent = `${Math.round(gridOpacity * 100)}%`;
+            drawAll();
+        });
+        coordOpacityInput.addEventListener("input", () => {
+            coordOpacity = parseFloat(coordOpacityInput.value);
+            coordOpacityValueSpan.textContent = `${Math.round(coordOpacity * 100)}%`;
+            drawAll();
+        });
+        bgOpacityInput.addEventListener("input", () => {
+            bgImageOpacity = parseFloat(bgOpacityInput.value);
+            bgOpacityValueSpan.textContent = `${Math.round(bgImageOpacity * 100)}%`;
+            drawBackground();
+        });
+        bgColorOpacityInput.addEventListener("input", () => {
+            bgColorOpacity = parseFloat(bgColorOpacityInput.value);
+            bgColorOpacityValueSpan.textContent = `${Math.round(bgColorOpacity * 100)}%`;
+            drawSolidBackground();
+        });
+        
+        // 背景画像アップロード時のリスナー
+        uploadImageInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    bgImage = img;
+                    // 画像ロード時にオフセットとスケールを初期化
+                    bgImageOffsetX = 0;
+                    bgImageOffsetY = 0;
+                    zoomLevel = 1;
+                    bgOffsetXInput.value = 0;
+                    bgOffsetYInput.value = 0;
+                    zoomSlider.value = 1;
+                    drawBackground(); // 背景のみ再描画
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // キャンバス上のマウスイベントリスナー
+        canvasWrapper.addEventListener("mousedown", (e) => {
+            if (e.button === 1 || e.ctrlKey) { // ミドルマウスボタン
+                isPanning = true;
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                // style.left/topは'px'を含むので、offsetLeft/Topから数値を取得
+                initialContainerLeft = canvasContainer.offsetLeft;
+                initialContainerTop = canvasContainer.offsetTop;
+                canvasWrapper.style.cursor = 'grabbing'; // カーソル変更
+                e.preventDefault(); // デフォルトのミドルクリック動作（オートスクロール等）を防止
+                return; // 他のmousedown処理をスキップ
+            }
+
+            const rect = canvasWrapper.getBoundingClientRect();
+            const { x, y } = getCanvasCoordinates(e);
+            const col = x / cellSize;        // セル単位の列座標
+            const row = y / cellSize;        // セル単位の行座標
+
+            // 背景ドラッグ開始判定 (左クリックかつ背景モード)
+            if (e.button === 0 && currentMode === 'back') {
+                isDraggingBackground = true;
+                canvasWrapper.classList.add('dragging'); // ドラッグ中のカーソル表示
+                lastMouseX = x;
+                lastMouseY = y;
+                return; // 背景ドラッグ時は他の描画処理をスキップ
+            }
+
+            isDrawing = true; // 描画開始
+
+            if (currentMode === "grid") {
+                const currentCellCol = Math.floor(col);
+                const currentCellRow = Math.floor(row);
+                if (currentTool === "pen") {
+                    const existingMaskIndex = masks.findIndex(mask => mask.col === currentCellCol && mask.row === currentCellRow);
+                    if (existingMaskIndex !== -1) { // 既存マスクがあれば色を更新
+                        masks[existingMaskIndex].color = drawColor;
+                    } else { // なければ新規追加
+                        masks.push({ col: currentCellCol, row: currentCellRow, color: drawColor });
+                    }
+                } else if (currentTool === "eraser") { // 消しゴムツール
+                    masks = masks.filter(mask => !(mask.col === currentCellCol && mask.row === currentCellRow));
+                }
+            } else if (currentMode === "line") { // 線モード
+                const startCol = snapCheckLineInput.checked ? Math.round(col) : col; // スナップ有効なら丸める
+                const startRow = snapCheckLineInput.checked ? Math.round(row) : row;
+                lineStartPoint = { col: startCol, row: startRow };
+            } else if (currentMode === "text") { // テキストモード
+                // クリック位置のテキストを検索 (最後に描画されたものが最前面)
+                dragTargetText = texts.findLast(text => {
+                    ctx.font = `${text.size * cellSize}px ${text.font}`; // 正確な幅計算のためにフォント設定
+                    const textWidthCells = ctx.measureText(text.text).width / cellSize; // セル単位の幅
+                    // クリック位置がテキストのバウンディングボックス内か判定
+                    return col >= text.col && col <= text.col + textWidthCells && row >= text.row - text.size && row <= text.row;
+                });
+
+                if (dragTargetText) { // テキストが見つかればドラッグ開始
+                    isDraggingText = true;
+                    lastMouseCol = col;
+                    lastMouseRow = row;
+                } else {
+                    isDrawing = false; // テキストが見つからなければ描画は行わない
+                }
+            }
+            drawAll(); // マウスダウン時の状態を即時描画
+        });
+
+        canvasWrapper.addEventListener("mousemove", (e) => {
+            if (isPanning) {
+                const deltaX = e.clientX - panStartX;
+                const deltaY = e.clientY - panStartY;
+                canvasContainer.style.left = (initialContainerLeft + deltaX) + 'px';
+                canvasContainer.style.top = (initialContainerTop + deltaY) + 'px';
+                // パン中は描画内容の更新は不要なため、drawAll() は呼び出さない
+                return;
+            }
+            const rect = canvasWrapper.getBoundingClientRect();
+            const { x, y } = getCanvasCoordinates(e);
+            const col = x / cellSize;
+            const row = y / cellSize;
+
+            // 背景ドラッグ中の処理
+            if (isDraggingBackground) {
+                const deltaX = x - lastMouseX;
+                const deltaY = y - lastMouseY;
+                bgImageOffsetX += deltaX;
+                bgImageOffsetY += deltaY;
+                bgOffsetXInput.value = Math.round(bgImageOffsetX); // UIに反映
+                bgOffsetYInput.value = Math.round(bgImageOffsetY); // UIに反映
+                lastMouseX = x;
+                lastMouseY = y;
+                drawBackground(); // 背景のみ再描画
+                return;
+            }
+
+            // テキストドラッグ中の処理
+            if (isDraggingText && currentMode === 'text' && dragTargetText) {
+                const deltaCol = col - lastMouseCol;
+                const deltaRow = row - lastMouseRow;
+                dragTargetText.col += deltaCol;
+                dragTargetText.row += deltaRow;
+                lastMouseCol = col;
+                lastMouseRow = row;
+                drawAll(); // 全体を再描画
+                return;
+            }
+
+            // 描画中でない、または背景/テキストドラッグ中は処理しない
+            if (!isDrawing || isDraggingBackground || isDraggingText) return;
+
+            if (currentMode === "grid") {
+                const currentCellCol = Math.floor(col);
+                const currentCellRow = Math.floor(row);
+                if (currentTool === "pen") {
+                    const existingMaskIndex = masks.findIndex(mask => mask.col === currentCellCol && mask.row === currentCellRow);
+                    if (existingMaskIndex === -1) { // 新規のセルなら追加
+                        masks.push({ col: currentCellCol, row: currentCellRow, color: drawColor });
+                    } else { // 既存のセルでもドラッグ中に色が変わるように更新
+                        masks[existingMaskIndex].color = drawColor;
+                    }
+                } else if (currentTool === "eraser") {
+                    masks = masks.filter(mask => !(mask.col === currentCellCol && mask.row === currentCellRow));
+                }
+                drawAll(); // グリッドモードは連続的に描画
+            } else if (currentMode === "line" && lineStartPoint) { // 線モードで始点が決まっている場合 (プレビュー描画)
+                drawAll(); // 一旦全消去して再描画 (以前のプレビュー線を消すため)
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = lineWidth;
+                ctx.globalAlpha = lineOpacity; // 透明度設定
+                ctx.beginPath();
+                ctx.moveTo(lineStartPoint.col * cellSize, lineStartPoint.row * cellSize);
+                const finalCol = snapCheckLineInput.checked ? Math.round(col) : col;
+                const finalRow = snapCheckLineInput.checked ? Math.round(row) : row;
+                ctx.lineTo(finalCol * cellSize, finalRow * cellSize);
+                ctx.stroke();
+                ctx.globalAlpha = 1.0; // 透明度リセット
+            }
+        });
+
+        canvasWrapper.addEventListener("mouseup", (e) => {
+            if (isPanning) {
+                isPanning = false;
+                canvasWrapper.style.cursor = 'grab'; // カーソルを元に戻す
+                return;
+            }
+
+            const rect = canvasWrapper.getBoundingClientRect();
+            const { x, y } = getCanvasCoordinates(e);
+            const col = x / cellSize;
+            const row = y / cellSize;
+
+            // 背景ドラッグ終了
+            if (isDraggingBackground) {
+                isDraggingBackground = false;
+                canvasWrapper.classList.remove('dragging');
+                return;
+            }
+
+            // テキストドラッグ終了
+            if (isDraggingText && currentMode === 'text') {
+                isDraggingText = false;
+                dragTargetText = null;
+                saveHistoryState(); // テキスト移動完了後に履歴保存
+                return;
+            }
+
+            if (!isDrawing) return; // 描画中でなければ何もしない
+            isDrawing = false; // 描画終了
+
+            if (currentMode === "line" && lineStartPoint) { // 線モードで描画確定
+                const finalCol = snapCheckLineInput.checked ? Math.round(col) : col;
+                const finalRow = snapCheckLineInput.checked ? Math.round(row) : row;
+                lines.push({ col1: lineStartPoint.col, row1: lineStartPoint.row, col2: finalCol, row2: finalRow, color: lineColor, width: lineWidth });
+                lineStartPoint = null; // 始点をリセット
+                saveHistoryState(); // 履歴保存
+            } else if (currentMode === "grid") { // グリッドモードの描画はmousemoveで処理済み、mouseupでは履歴保存のみ
+                saveHistoryState();
+            }
+            drawAll(); // 最終的な状態を描画
+        });
+
+        canvasContainer.addEventListener("mouseleave", () => {
+            if (isDrawing || isDraggingBackground || isDraggingText) {
+                isDrawing = false;
+                isDraggingBackground = false;
+                isDraggingText = false;
+                canvasWrapper.classList.remove('dragging');
+                startPoint = null;
+                dragTarget = null;
+                drawAll();
+            }
+        });
+
+        // パスモード時のクリックイベント (点を追加)
+        drawingCanvas.addEventListener("click", (e) => {
+            // 他のドラッグ操作中や描画操作中は無視
+            if (isDraggingBackground || isDrawing || isDraggingText) return;
+
+            if (currentMode === "path") {
+                const rect = drawingCanvas.getBoundingClientRect();
+                const { x, y } = getCanvasCoordinates(e);
+                const col = x / cellSize;
+                const row = y / cellSize;
+                const snap = snapCheckPathInput.checked;
+
+                let point = { col: col, row: row };
+                if (snap) { // スナップ有効
+                    point = { col: Math.round(col), row: Math.round(row) };
+                } else { // スナップ無効時、既存のパス点に近ければ吸着 (見た目上の補助)
+                    const existingSnapPoint = paths.find(p => Math.abs(p.col - col) < 0.1 && Math.abs(p.row - row) < 0.1); // 閾値0.1セル
+                    if (existingSnapPoint) {
+                        point = { col: existingSnapPoint.col, row: existingSnapPoint.row };
+                    }
+                }
+                paths.push(point); // 現在描画中のパスに点を追加
+
+                // 3点以上あり、かつ最後の点が始点に近ければパスを閉じて図形を確定
+                if (paths.length > 2) {
+                    const firstPoint = paths[0];
+                    const lastPoint = paths[paths.length - 1];
+                    if (Math.abs(lastPoint.col - firstPoint.col) < 0.1 && Math.abs(lastPoint.row - firstPoint.row) < 0.1) { // 閾値0.1セル
+                        paths[paths.length - 1] = { col: firstPoint.col, row: firstPoint.row }; // 最後の点を始点に合わせる
+                        fillPaths.push({ points: [...paths], color: fillColor }); // 確定したパスを保存
+                        paths = []; // 描画中のパスをクリア
+                    }
+                }
+                saveHistoryState(); // 履歴保存
+                drawAll(); // 再描画
+            }
+        });
+        
+        // ダブルクリックイベント (要素削除)
+        drawingCanvas.addEventListener("dblclick", (e) => {
+            const rect = drawingCanvas.getBoundingClientRect();
+            const { pixelX, pixelY } = getCanvasCoordinates(e);
+            const clickCol = pixelX / cellSize;   // セル単位の列座標
+            const clickRow = pixelY / cellSize;   // セル単位の行座標
+
+            // テキスト削除 (テキストモード時)
+            if (currentMode === "text") {
+                const targetTextIndex = texts.findLastIndex(text => {
+                    ctx.font = `${text.size * cellSize}px ${text.font}`;
+                    const textWidthInCells = ctx.measureText(text.text).width / cellSize;
+                    return clickCol >= text.col && clickCol <= text.col + textWidthInCells && clickRow >= text.row - text.size && clickRow <= text.row;
+                });
+                if (targetTextIndex !== -1) {
+                    texts.splice(targetTextIndex, 1); // テキストを削除
+                    saveHistoryState();
+                    drawAll();
+                    return; // テキスト削除後は他の要素削除判定を行わない
+                }
+            }
+
+            // パス図形削除 (パスモード時)
+            if (currentMode === "path") {
+                for (let i = fillPaths.length - 1; i >= 0; i--) { // 後ろから探索 (削除時のインデックスずれを防ぐ)
+                    const path = fillPaths[i];
+                    ctx.beginPath();
+                    if (path.points.length > 0) {
+                        ctx.moveTo(path.points[0].col * cellSize, path.points[0].row * cellSize);
+                        path.points.slice(1).forEach(p => ctx.lineTo(p.col * cellSize, p.row * cellSize));
+                    }
+                    ctx.closePath();
+                    // isPointInPath は現在のパスに対して判定するため、対象パスを描画してから判定
+                    if (ctx.isPointInPath(pixelX, pixelY)) {
+                        fillPaths.splice(i, 1); // パス図形を削除
+                        paths = []; // 描画中のパスもクリア
+                        saveHistoryState();
+                        drawAll();
+                        break; // 最初の見つかった図形のみ削除
+                    }
+                }
+            }
+
+            // 線削除 (線モード時)
+            if (currentMode === "line") {
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i];
+                    const p1 = { x: line.col1 * cellSize, y: line.row1 * cellSize }; // 線分の始点 (ピクセル)
+                    const p2 = { x: line.col2 * cellSize, y: line.row2 * cellSize }; // 線分の終点 (ピクセル)
+                    const p = { x: pixelX, y: pixelY }; // クリック座標 (ピクセル)
+                    const distance = distToSegment(p, p1, p2); // 点と線分の距離
+                    const DELETE_THRESHOLD = 10; // 削除判定の閾値 (ピクセル)
+                    if (distance < DELETE_THRESHOLD) {
+                        lines.splice(i, 1); // 線を削除
+                        lineStartPoint = null; // 線ツール開始点をクリア
+                        saveHistoryState();
+                        drawAll();
+                        break; // 最初の見つかった線のみ削除
+                    }
+                }
+            }
+        });
+
+        // キーボードイベント (Ctrl+Zで元に戻す)
+        document.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "z") {
+                e.preventDefault(); // ブラウザのデフォルト動作をキャンセル
+                undo();
+            }
+        });
+
+        // マウスホイールイベント (ズーム)
+        canvasWrapper.addEventListener("wheel", (e) => {
+            e.preventDefault(); // デフォルトのスクロールを無効化
+
+            const delta = e.deltaY * -0.005; // ホイール量からズーム量に変換
+            const newscale = Math.max(0.1, Math.min(3, scale + delta)); // ズームレベルを制限 (0.1から3倍)
+
+            // マウス位置を基準にズームするためのオフセット計算
+            const rect = canvasWrapper.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left; // ラッパー内でのマウスX座標
+            const mouseY = e.clientY - rect.top; // ラッパー内でのマウスY座標
+
+            // ズーム前のCanvasContainer内のマウス位置 (Canvas座標ではない)
+            const mouseCanvasXBefore = mouseX - canvasContainer.offsetLeft;
+            const mouseCanvasYBefore = mouseY - canvasContainer.offsetTop;
+
+            const scaleChange = newscale / scale;
+
+            // 新しいCanvasContainerのオフセット
+            const newContainerLeft = mouseX - mouseCanvasXBefore * scaleChange;
+            const newContainerTop = mouseY - mouseCanvasYBefore * scaleChange;
+
+            scale = newscale;
+
+            // 新しいオフセットをCanvasContainerに適用
+            canvasContainer.style.left = `${newContainerLeft}px`;
+            canvasContainer.style.top = `${newContainerTop}px`;
+
+            drawAll(); // Canvasのtransformを更新
+        });
+
+        // --- ユーティリティ関数 ---
+        // 点pから線分v-wへの最短距離を計算 (ピクセル座標用)
+        function distToSegment(p, v, w) {
+            const l2 = (w.x - v.x) ** 2 + (w.y - v.y) ** 2; // 線分の長さの2乗
+            if (l2 === 0) return Math.sqrt((p.x - v.x) ** 2 + (p.y - v.y) ** 2); // 線分が点の場合 (vとwが同じ座標)
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t)); // tを0から1の範囲にクランプ (線分上に射影)
+            const projectionX = v.x + t * (w.x - v.x); // 最短距離となる線分上の点のX座標
+            const projectionY = v.y + t * (w.y - v.y); // 最短距離となる線分上の点のY座標
+            return Math.sqrt((p.x - projectionX) ** 2 + (p.y - projectionY) ** 2); // 点pと射影点との距離
+        }
+
+        //マウスの座標をキャンパス内の座標に変換
+        function getCanvasCoordinates(e) {
+            // マウスイベント座標 (ビューポート基準)
+            const clientX = e.clientX;
+            const clientY = e.clientY;
+
+            // Canvasコンテナの現在のオフセット (ラッパー基準、style.left/topから取得)
+            const containerLeft = canvasContainer.offsetLeft;
+            const containerTop = canvasContainer.offsetTop;
+
+            // Canvasコンテナ内でのマウス位置 (ピクセル単位、コンテナの左上基準、スケーリング前)
+            // = (ラッパー内マウス位置 - コンテナのオフセット)
+            const mouseXInContainer = clientX - containerLeft;
+            const mouseYInContainer = clientY - containerTop;
+
+            // スケーリングを考慮して、論理的なキャンバス座標に変換
+            // = コンテナ内マウス位置 / 現在のズームレベル
+            const logicalX = mouseXInContainer / scale;
+            const logicalY = mouseYInContainer / scale;
+
+            return { x: logicalX, y: logicalY };
+        }
+
+        // --- モード・ツール設定関数 ---
+        function setMode(newMode) {
+            currentMode = newMode;
+            lineStartPoint = null; // モード切替時に線ツールの始点をリセット
+            paths = [];        // モード切替時に描画中パスをリセット
+
+            // 全てのモードボタンからアクティブクラスを削除
+            document.querySelectorAll("#gridModeButton, #lineModeButton, #pathModeButton, #textModeButton, #cellModeButton, #backModeButton, #downModeButton").forEach(btn => btn.classList.remove("active"));
+            // 選択されたモードのボタンにアクティブクラスを追加
+            document.getElementById(newMode + "ModeButton").classList.add("active");
+
+            // 全ての設定パネルを非表示
+            gridSettingsPanel.style.display = 'none';
+            lineSettingsPanel.style.display = 'none';
+            pathSettingsPanel.style.display = 'none';
+            textSettingsPanel.style.display = 'none';
+            cellSettingsPanel.style.display = 'none';
+            backSettingsPanel.style.display = 'none';
+            downSettingsPanel.style.display = 'none';
+
+            // 選択されたモードに対応する設定パネルを表示
+            if (newMode === "cell") cellSettingsPanel.style.display = 'inline';
+            else if (newMode === "line") lineSettingsPanel.style.display = 'inline';
+            else if (newMode === "path") pathSettingsPanel.style.display = 'inline';
+            else if (newMode === "text") textSettingsPanel.style.display = 'inline';
+            else if (newMode === "grid") gridSettingsPanel.style.display = 'inline';
+            else if (newMode === "back") backSettingsPanel.style.display = 'inline';
+            else if (newMode === "down") downSettingsPanel.style.display = 'inline';
+        }
+
+        function setTool(toolType) {
+            currentTool = toolType;
+            // 全てのツールボタンからアクティブクラスを削除
+            document.querySelectorAll("#penToolButton, #eraserToolButton").forEach(btn => btn.classList.add("nonactive"));
+            // 選択されたツールのボタンにアクティブクラスを追加
+            document.getElementById(toolType + "ToolButton").classList.remove("nonactive");
+        }
+
+
+// --- キャンバスサイズ調整関数 ---
+        function updateCanvasSize() {
+            const calculatedWidth = cols * cellSize;
+            const calculatedHeight = rows * cellSize;
+
+            // 各Canvas要素の実際の描画サイズを更新
+            [solidBackgroundCanvas, backgroundCanvas, drawingCanvas, canvasContainer].forEach(canvas => {
+                canvas.width = calculatedWidth;
+                canvas.height = calculatedHeight;
+            });
+
+            canvasContainer.style.transform = `scale(${scale})`;
+        }
+
+        // --- 描画関数 ---
+        // 全体描画関数
+        function drawAll() {
+            updateCanvasSize(); // まずキャンバスサイズを更新
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); // メイン描画キャンバスをクリア
+
+            drawSolidBackground(); // 単色背景を描画 (solidBackgroundCanvas へ)
+            drawBackground();    // 背景画像を描画 (backgroundCanvas へ)
+
+            // メインの drawingCanvas (ctx) への描画処理
+            // マス目 (masks) の描画
+            ctx.globalAlpha = masksOpacity;
+            masks.forEach(mask => {
+                ctx.fillStyle = mask.color;
+                ctx.fillRect(mask.col * cellSize, mask.row * cellSize, cellSize, cellSize);
+            });
+            ctx.globalAlpha = 1.0; // 透明度をリセット
+
+            // 線 (lines) の描画
+            ctx.globalAlpha = lineOpacity;
+            lines.forEach(line => {
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = line.width;
+                ctx.beginPath();
+                ctx.moveTo(line.col1 * cellSize, line.row1 * cellSize);
+                ctx.lineTo(line.col2 * cellSize, line.row2 * cellSize);
+                ctx.stroke();
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 塗りつぶしパス (fillPaths) の描画
+            ctx.globalAlpha = fillPathOpacity;
+            fillPaths.forEach(path => {
+                ctx.fillStyle = path.color;
+                if (path.points.length > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(path.points[0].col * cellSize, path.points[0].row * cellSize);
+                    path.points.slice(1).forEach(point => ctx.lineTo(point.col * cellSize, point.row * cellSize));
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 文字 (texts) の描画
+            ctx.globalAlpha = textOpacity;
+            texts.forEach(text => {
+                ctx.font = `${text.size * cellSize}px ${text.font}`; // フォントサイズはセルサイズ基準でピクセル値に変換
+                ctx.fillStyle = text.color;
+                ctx.fillText(text.text, text.col * cellSize, text.row * cellSize); // テキストのrowはベースラインのY座標(セル単位)
+            });
+            ctx.globalAlpha = 1.0;
+
+            drawGridAndCoordinates(); // グリッドと座標を描画 (メインの drawingCanvas へ)
+
+            // 描画中のパス (プレビュー)
+            if (currentMode === "path" && paths.length > 0) {
+                ctx.strokeStyle = "red"; // プレビューは赤線
+                ctx.lineWidth = 2;
+                ctx.fillStyle = "red"; // プレビュー点は赤塗り
+                paths.forEach((point, index) => {
+                    const pointSize = 3; // プレビュー点のサイズ
+                    ctx.beginPath();
+                    ctx.arc(point.col * cellSize, point.row * cellSize, pointSize, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (index > 0) { // 2点目以降は前の点と線を結ぶ
+                        const prev = paths[index - 1];
+                        ctx.beginPath();
+                        ctx.moveTo(prev.col * cellSize, prev.row * cellSize);
+                        ctx.lineTo(point.col * cellSize, point.row * cellSize);
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+
+        // グリッドと座標を描画する関数
+        function drawGridAndCoordinates() {
+            // グリッド線描画
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = gridLineWidth;
+            ctx.globalAlpha = gridOpacity;
+            for (let x = 0; x <= cols; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * cellSize, 0);
+                ctx.lineTo(x * cellSize, drawingCanvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= rows; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * cellSize);
+                ctx.lineTo(drawingCanvas.width, y * cellSize);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1.0; // 透明度リセット
+
+            // 座標表示
+            if (showCoordinates) {
+                ctx.globalAlpha = coordOpacity;
+                ctx.fillStyle = coordColor;
+                ctx.font = `${coordFontSize}px 'Arial'`; // 座標のフォントとサイズ
+                ctx.textAlign = 'center';
+                ctx.textBaseline = coordTextBaseline;
+                for (let c = 0; c < cols; c++) {
+                    for (let r = 0; r < rows; r++) {
+                        const centerX = c * cellSize + cellSize / 2; // セルの中央X座標 (ピクセル)
+                        let textY; // テキストの描画基準Y座標 (ピクセル)
+                        if (coordTextBaseline === 'top') {
+                             textY = r * cellSize + cellSize/25; // セルの上端 + 少しオフセット
+                        } else if (coordTextBaseline === 'bottom') {
+                             textY = (r + 1) * cellSize - cellSize/50; // セルの下端 - 少しオフセット
+                        } else {
+                             textY = r * cellSize + cellSize / 2; // セルの中央Y
+                        }
+                        ctx.fillText(`${r}-${c}`, centerX, textY); // 表示形式: 行-列
+                    }
+                }
+                ctx.globalAlpha = 1.0; // 透明度リセット
+                //テキストアライメントをデフォルトに戻す
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+            }
+        }
+
+        // 背景画像描画関数 (backgroundCanvas へ)
+        function drawBackground() {
+            bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height); // クリア
+            if (bgImage) { // 背景画像があれば描画
+                bgCtx.globalAlpha = bgImageOpacity; // 透明度設定
+                bgCtx.drawImage(bgImage, bgImageOffsetX, bgImageOffsetY, bgImage.width * zoomLevel, bgImage.height * zoomLevel);
+                bgCtx.globalAlpha = 1.0; // 透明度リセット
+            }
+        }
+
+        // 単色背景描画関数 (solidBackgroundCanvas へ)
+        function drawSolidBackground() {
+            solidBgCtx.clearRect(0, 0, solidBackgroundCanvas.width, solidBackgroundCanvas.height); // クリア
+            solidBgCtx.globalAlpha = bgColorOpacity; // 透明度設定
+            solidBgCtx.fillStyle = currentBgColor;   // 背景色設定
+            solidBgCtx.fillRect(0, 0, solidBackgroundCanvas.width, solidBackgroundCanvas.height); // 塗りつぶし
+            solidBgCtx.globalAlpha = 1.0; // 透明度リセット
+        }
+
+        // --- アクション関数 ---
+        // 背景リセット関数
+        function resetBackground() {
+            bgImage = null;
+            bgImageOffsetX = 0;
+            bgImageOffsetY = 0;
+            zoomLevel = 1;
+            bgOffsetXInput.value = 0; // UI入力もリセット
+            bgOffsetYInput.value = 0;
+            zoomSlider.value = 1;
+            uploadImageInput.value = ''; // ファイル選択もリセット
+            drawBackground(); // 背景再描画
+        }
+
+        // テキスト追加関数
+        function addText() {
+            const textContent = textInput.value;
+            if (textContent) { // テキスト入力があれば追加
+                texts.push({
+                    col: 0, // 初期位置X (セル単位)
+                    row: parseFloat(fontSizeInput.value) / cellSize, // 初期位置Y (ベースライン、セル単位、フォントサイズ分下げる)
+                    text: textContent,
+                    font: fontSelect.value,
+                    size: parseFloat(fontSizeInput.value) / cellSize, // フォントサイズ (セル単位)
+                    color: textColorInput.value
+                });
+                textInput.value = ''; // 入力欄をクリア
+                saveHistoryState(); // 履歴保存
+                drawAll(); // 再描画
+            }
+        }
+
+        // 画像ダウンロード関数
+        function downloadImage() {
+            const downloadCanvas = document.createElement("canvas"); // ダウンロード用の一時Canvasを作成
+            downloadCanvas.width = drawingCanvas.width;
+            downloadCanvas.height = drawingCanvas.height;
+            const dlCtx = downloadCanvas.getContext("2d");
+
+            // 背景描画 (チェックされている場合)
+            if (bgCheckInput.checked) {
+                // 単色背景
+                dlCtx.globalAlpha = bgColorOpacity;
+                dlCtx.fillStyle = currentBgColor;
+                dlCtx.fillRect(0, 0, dlCtx.canvas.width, dlCtx.canvas.height);
+                dlCtx.globalAlpha = 1.0;
+                // 画像背景
+                if (bgImage) {
+                    dlCtx.globalAlpha = bgImageOpacity;
+                    dlCtx.drawImage(bgImage, bgImageOffsetX, bgImageOffsetY, bgImage.width * zoomLevel, bgImage.height * zoomLevel);
+                    dlCtx.globalAlpha = 1.0;
+                }
+            }
+
+            // マス目描画
+            dlCtx.globalAlpha = masksOpacity;
+            masks.forEach(mask => {
+                dlCtx.fillStyle = mask.color;
+                dlCtx.fillRect(mask.col * cellSize, mask.row * cellSize, cellSize, cellSize);
+            });
+            dlCtx.globalAlpha = 1.0;
+
+            // 線描画
+            dlCtx.globalAlpha = lineOpacity;
+            lines.forEach(line => {
+                dlCtx.strokeStyle = line.color;
+                dlCtx.lineWidth = line.width;
+                dlCtx.beginPath();
+                dlCtx.moveTo(line.col1 * cellSize, line.row1 * cellSize);
+                dlCtx.lineTo(line.col2 * cellSize, line.row2 * cellSize);
+                dlCtx.stroke();
+            });
+            dlCtx.globalAlpha = 1.0;
+
+            // 塗りつぶしパス描画
+            dlCtx.globalAlpha = fillPathOpacity;
+            fillPaths.forEach(path => {
+                dlCtx.fillStyle = path.color;
+                if (path.points.length > 0) {
+                    dlCtx.beginPath();
+                    dlCtx.moveTo(path.points[0].col*cellSize, path.points[0].row*cellSize);
+                    path.points.slice(1).forEach(point => dlCtx.lineTo(point.col*cellSize, point.row*cellSize));
+                    dlCtx.closePath();
+                    dlCtx.fill();
+                }
+            });
+            dlCtx.globalAlpha = 1.0;
+
+            // テキスト描画
+            dlCtx.globalAlpha = textOpacity;
+            texts.forEach(text => {
+                dlCtx.font = `${text.size * cellSize}px ${text.font}`;
+                dlCtx.fillStyle = text.color;
+                dlCtx.fillText(text.text, text.col * cellSize, text.row * cellSize);
+            });
+            dlCtx.globalAlpha = 1.0;
+
+            // グリッド描画 (チェックされている場合)
+            if (gridCheckInput.checked) {
+                dlCtx.strokeStyle = gridColor;
+                dlCtx.lineWidth = gridLineWidth;
+                dlCtx.globalAlpha = gridOpacity;
+                for (let x = 0; x <= cols; x++) {
+                    dlCtx.beginPath();
+                    dlCtx.moveTo(x * cellSize, 0);
+                    dlCtx.lineTo(x * cellSize, dlCtx.canvas.height);
+                    dlCtx.stroke();
+                }
+                for (let y = 0; y <= rows; y++) {
+                    dlCtx.beginPath();
+                    dlCtx.moveTo(0, y * cellSize);
+                    dlCtx.lineTo(dlCtx.canvas.width, y * cellSize);
+                    dlCtx.stroke();
+                }
+                dlCtx.globalAlpha = 1.0;
+                // 必要であれば、ダウンロード画像にも座標を描画する処理を追加
+                // if (showCoordinates) { ... dlCtx に座標を描画 ... }
+            }
+
+            // ダウンロードリンクを作成してクリック
+            const link = document.createElement('a');
+            link.download = 'grid_paint_export.png'; // ダウンロードファイル名
+            link.href = downloadCanvas.toDataURL("image/png"); // PNG形式で画像データを取得
+            link.click();
+        }
+
+        // --- 履歴管理関数 ---
+        // 履歴を保存する関数
+        function saveHistoryState() {
+            if (history.length >= MAX_HISTORY) { // 履歴が最大数を超えたら古いものから削除
+                history.shift();
+            }
+            // 現在の各描画要素の状態をディープコピーして保存
+            history.push({
+                masks: JSON.parse(JSON.stringify(masks)),
+                lines: JSON.parse(JSON.stringify(lines)),
+                fillPaths: JSON.parse(JSON.stringify(fillPaths)),
+                texts: JSON.parse(JSON.stringify(texts)),
+                paths: JSON.parse(JSON.stringify(paths)) // 描画中のパスも保存 (アンドゥで復元するため)
+            });
+        }
+
+        // 履歴から復元（アンドゥ）する関数
+        function undo() {
+            // 履歴が1つより多い場合 (現在の状態の他に、戻るべき過去の状態がある場合)
+            if (history.length > 1) { 
+                history.pop(); // 現在の状態を履歴から削除
+                const prevState = history[history.length - 1]; // 1つ前の状態を取得
+                // 取得した状態を現在の状態に復元 (ディープコピー)
+                masks = JSON.parse(JSON.stringify(prevState.masks));
+                lines = JSON.parse(JSON.stringify(prevState.lines));
+                fillPaths = JSON.parse(JSON.stringify(prevState.fillPaths));
+                texts = JSON.parse(JSON.stringify(prevState.texts));
+                paths = JSON.parse(JSON.stringify(prevState.paths)); // 描画中のパスも復元
+                drawAll(); // 復元した状態で再描画
+            }
+        }
+    </script>
+</body>
+</html>
