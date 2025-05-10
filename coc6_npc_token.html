@@ -220,9 +220,9 @@
             <div style="display: flex; align-items: center; margin: 0">
                 <h3>技能</h3>
                 <div style="margin: 0px 0px 0px 10px"> <label>コマンド形式 </label>
-                    <input type="radio" id="ccRadio" name="commandType" value="CC" checked>
+                    <input type="radio" id="ccRadio" name="commandType" value="CC">
                     <label for="ccRadio">CC</label>
-                    <input type="radio" id="ccbRadio" name="commandType" value="CCB">
+                    <input type="radio" id="ccbRadio" name="commandType" value="CCB" checked>
                     <label for="ccbRadio">CCB</label>
                 </div>
             </div>
@@ -423,7 +423,7 @@
                 if (savedData.hasOwnProperty('commandType')) {
                     document.querySelector(`input[name="commandType"][value="${savedData.commandType}"]`).checked = true;
                 } else {
-                     document.getElementById('ccRadio').checked = true;
+                     document.getElementById('ccbRadio').checked = true;
                 }
 
 
