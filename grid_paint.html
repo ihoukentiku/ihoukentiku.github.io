@@ -64,8 +64,8 @@
             vertical-align: middle;
         }
         input[type="number"] {
-            width: 50px; 
-        } 
+            width: 60px;
+        }
         input[type="color"] {
             box-sizing: border-box;
             height: 25px;
@@ -82,8 +82,8 @@
         }
         input[type="checkbox"] {
             vertical-align: middle;
-            width: 16px; 
-            height: 16px; 
+            width: 16px;
+            height: 16px;
             margin-right: 5px;
             margin-left: 5px;
         }
@@ -144,17 +144,17 @@
             color: white;
             border: none;
             padding: 8px 15px;
-            border-radius: 10px; 
+            border-radius: 10px;
             margin: 0;
             cursor: pointer;
         }
         .tub > button.active {
-            background-color: white; 
+            background-color: white;
             color: #333;
             border-radius: 8px 8px 0 0;
             position: relative;
-            z-index: 2; 
-            margin-bottom: -1px; 
+            z-index: 2;
+            margin-bottom: -1px;
             font-weight: bold;
         }
         .tub > button.active::before {
@@ -186,7 +186,6 @@
         .canvas-wrapper {
             border: none;
             overflow: hidden;
-            cursor: grab;
             flex-grow: 1;
             display: flex;
         }
@@ -322,7 +321,9 @@
             <div>
                 <label>X <input type="number" id="bgOffsetXInput" value="0"></label>
                 <label>Y <input type="number" id="bgOffsetYInput" value="0"></label>
-                <label>倍率 <input type="range" id="zoomSlider" min="0" max="5" step="0.01" value="1" style="width: 250px;"><span id="zoomValue">100%</span></label>
+                <label>幅(px) <input type="number" id="bgWidthInput" value="0"></label>
+                <label>高さ(px) <input type="number" id="bgHeightInput" value="0"></label>
+                <label>縦横比を維持<input type="checkbox" id="bgAspectRatioCheckInput" checked></label>
             </div>
         </div>
         <div class="settings" id="downSettings">
@@ -365,7 +366,6 @@
         const cellSizeInput = document.getElementById("cellSizeInput");
         const colsInput = document.getElementById("colsInput");
         const rowsInput = document.getElementById("rowsInput");
-        const zoomSlider = document.getElementById("zoomSlider");
         const gridLineWidthInput = document.getElementById("gridLineWidthInput");
         const gridColorInput = document.getElementById("gridColorInput");
         const gridOpacityInput = document.getElementById("gridOpacityInput");
@@ -410,7 +410,9 @@
         const uploadImageInput = document.getElementById("uploadImageInput");
         const bgOffsetXInput = document.getElementById("bgOffsetXInput");
         const bgOffsetYInput = document.getElementById("bgOffsetYInput");
-        const zoomValueSpan = document.getElementById("zoomValue");
+        const bgWidthInput = document.getElementById("bgWidthInput");
+        const bgHeightInput = document.getElementById("bgHeightInput");
+        const bgAspectRatioCheckInput = document.getElementById("bgAspectRatioCheckInput"); // 縦横比維持チェックボックス
         const bgOpacityInput = document.getElementById("bgOpacityInput");
         const bgOpacityValueSpan = document.getElementById("bgOpacityValueSpan");
 
@@ -449,9 +451,12 @@
         let currentBgColor = bgColorInput.value;
         let bgColorOpacity = parseFloat(bgColorOpacityInput.value);
         let bgImage = null;
+        let bgImageWidth = 0;
+        let bgImageHeight = 0;
+        let bgImageRatio = {height:1, width:1};
+        let bgAspectRatioCheck = bgAspectRatioCheckInput.checked;
         let bgImageOffsetX = parseInt(bgOffsetXInput.value);
         let bgImageOffsetY = parseInt(bgOffsetYInput.value);
-        let zoomLevel = parseFloat(zoomSlider.value);
         let bgImageOpacity = parseFloat(bgOpacityInput.value);
 
         let masks = [];     // マス目の塗りつぶし情報: { col: 列, row: 行, color: 色 }
@@ -477,7 +482,6 @@
         const MAX_HISTORY = 50;     // 保存する履歴の最大数
 
         // --- 初期化 ---
-        canvasWrapper.style.cursor = 'default'; //マウスカーソルをデフォルトにする
         drawAll();                // 初期描画実行
         saveHistoryState();       // 初期状態を履歴に保存
 
@@ -493,7 +497,7 @@
         coordColorInput.addEventListener("input", () => { coordColor = coordColorInput.value; drawAll(); });
         coordFontSizeInput.addEventListener("input", () => { coordFontSize = parseInt(coordFontSizeInput.value); drawAll(); });
         coordPositionSelect.addEventListener('change', () => { coordTextBaseline = coordPositionSelect.value; drawAll(); });
-        
+
         drawColorInput.addEventListener("input", () => { drawColor = drawColorInput.value; });
         lineColorInput.addEventListener("input", () => { lineColor = lineColorInput.value; });
         lineWidthInput.addEventListener("input", () => { lineWidth = parseInt(lineWidthInput.value); });
@@ -501,13 +505,28 @@
 
         bgOffsetXInput.addEventListener("input", () => { bgImageOffsetX = parseInt(bgOffsetXInput.value); drawBackground(); });
         bgOffsetYInput.addEventListener("input", () => { bgImageOffsetY = parseInt(bgOffsetYInput.value); drawBackground(); });
-        
+
         bgColorInput.addEventListener('input', () => { currentBgColor = bgColorInput.value; drawSolidBackground(); });
 
-        zoomSlider.addEventListener("input", () => {
-            zoomLevel = parseFloat(zoomSlider.value);
-            zoomValueSpan.textContent = `${Math.round(zoomLevel * 100)}%`;
-            drawAll();
+        bgWidthInput.addEventListener("input", () => { 
+            bgImageWidth = parseInt(bgWidthInput.value);
+            if(bgAspectRatioCheck) {
+                bgImageHeight = Math.round(bgImageWidth * bgImageRatio.height / bgImageRatio.width);
+                bgHeightInput.value = bgImageHeight;
+            }
+            drawBackground();
+        });
+        bgHeightInput.addEventListener("input", () => { 
+            bgImageHeight = parseInt(bgHeightInput.value);
+            if(bgAspectRatioCheck) {
+                bgImageWidth = Math.round(bgImageHeight * bgImageRatio.width / bgImageRatio.height);
+                bgWidthInput.value = bgImageWidth;
+            }
+            drawBackground(); 
+        });
+        bgAspectRatioCheckInput.addEventListener("input", () => { 
+            bgAspectRatioCheck = bgAspectRatioCheckInput.checked;
+            if(bgImageHeight !== 0 && bgImageWidth !== 0) bgImageRatio = {height:bgImageHeight, width:bgImageWidth};
         });
 
         // 透明度関連の入力リスナー
@@ -551,7 +570,7 @@
             bgColorOpacityValueSpan.textContent = `${Math.round(bgColorOpacity * 100)}%`;
             drawSolidBackground();
         });
-        
+
         // 背景画像アップロード時のリスナー
         uploadImageInput.addEventListener("change", (event) => {
             const file = event.target.files[0];
@@ -563,12 +582,13 @@
                 img.onload = () => {
                     bgImage = img;
                     // 画像ロード時にオフセットとスケールを初期化
-                    bgImageOffsetX = 0;
-                    bgImageOffsetY = 0;
-                    zoomLevel = 1;
-                    bgOffsetXInput.value = 0;
-                    bgOffsetYInput.value = 0;
-                    zoomSlider.value = 1;
+                    bgImageOffsetX = bgOffsetXInput.value = backgroundCanvas.width = 0;
+                    bgImageOffsetY = bgOffsetYInput.value = backgroundCanvas.height = 0;
+                    backgroundCanvas.style.left = (bgImageOffsetX) + 'px';
+                    backgroundCanvas.style.top = (bgImageOffsetY) + 'px';
+                    bgImageWidth = bgWidthInput.value = backgroundCanvas.width = img.width;
+                    bgImageHeight = bgHeightInput.value = backgroundCanvas.height = img.height;
+                    bgImageRatio = {height:img.height, width:img.width};
                     drawBackground(); // 背景のみ再描画
                 };
                 img.src = e.target.result;
@@ -761,9 +781,8 @@
         });
 
         canvasContainer.addEventListener("mouseleave", () => {
-            if (isDrawing || isDraggingBackground || isDraggingText) {
+            if (isDrawing || isDraggingText) {
                 isDrawing = false;
-                isDraggingBackground = false;
                 isDraggingText = false;
                 canvasWrapper.classList.remove('dragging');
                 canvasWrapper.style.cursor = 'default';
@@ -993,7 +1012,7 @@
             const calculatedHeight = rows * cellSize;
 
             // 各Canvas要素の実際の描画サイズを更新
-            [solidBackgroundCanvas, backgroundCanvas, drawingCanvas, canvasContainer].forEach(canvas => {
+            [solidBackgroundCanvas, drawingCanvas, canvasContainer].forEach(canvas => {
                 canvas.width = calculatedWidth;
                 canvas.height = calculatedHeight;
             });
@@ -1115,7 +1134,7 @@
                         } else {
                              textY = r * cellSize + cellSize / 2; // セルの中央Y
                         }
-                        ctx.fillText(`${r}-${c}`, centerX, textY); // 表示形式: 行-列
+                        ctx.fillText(`${c}-${r}`, centerX, textY); // 表示形式: 行-列
                     }
                 }
                 ctx.globalAlpha = 1.0; // 透明度リセット
@@ -1127,10 +1146,14 @@
 
         // 背景画像描画関数 (backgroundCanvas へ)
         function drawBackground() {
+            backgroundCanvas.style.left = (bgImageOffsetX) + 'px';
+            backgroundCanvas.style.top = (bgImageOffsetY) + 'px';
+            backgroundCanvas.width = bgImageWidth;
+            backgroundCanvas.height = bgImageHeight;
             bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height); // クリア
             if (bgImage) { // 背景画像があれば描画
                 bgCtx.globalAlpha = bgImageOpacity; // 透明度設定
-                bgCtx.drawImage(bgImage, bgImageOffsetX, bgImageOffsetY, bgImage.width * zoomLevel, bgImage.height * zoomLevel);
+                bgCtx.drawImage(bgImage, 0, 0, bgImageWidth, bgImageHeight);
                 bgCtx.globalAlpha = 1.0; // 透明度リセット
             }
         }
@@ -1150,10 +1173,8 @@
             bgImage = null;
             bgImageOffsetX = 0;
             bgImageOffsetY = 0;
-            zoomLevel = 1;
             bgOffsetXInput.value = 0; // UI入力もリセット
             bgOffsetYInput.value = 0;
-            zoomSlider.value = 1;
             uploadImageInput.value = ''; // ファイル選択もリセット
             drawBackground(); // 背景再描画
         }
@@ -1193,7 +1214,7 @@
                 // 画像背景
                 if (bgImage) {
                     dlCtx.globalAlpha = bgImageOpacity;
-                    dlCtx.drawImage(bgImage, bgImageOffsetX, bgImageOffsetY, bgImage.width * zoomLevel, bgImage.height * zoomLevel);
+                    dlCtx.drawImage(bgImage, bgImageOffsetX, bgImageOffsetY, bgImageWidth, bgImageHeight);
                     dlCtx.globalAlpha = 1.0;
                 }
             }
