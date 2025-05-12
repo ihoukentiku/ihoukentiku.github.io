@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        gtag('config', 'G-T4SJ8S23EC');
-    </script> -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ヘクサ作成ツール｜違法建築のTRPG便利ツール</title>
@@ -54,13 +46,6 @@
             font-size: 18px;
             padding: 0px 5px 0px 5px;
             height: 30px;
-        }
-
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-            -moz-appearance:textfield;
         }
 
         input[type="number"] {
@@ -144,11 +129,19 @@
 
     <div class="section">
         <div>
-            <label>グリッドの色 <input type="color" id="gridColor" value="#000000"></label>
-            <label>グリッドの太さ <input type="number" id="lineWidth" value="2" min="1"> px</label>
+            <label>ヘックスの向き
+                <select id="orientation">
+                    <option value="horizontal" selected>横向き</option>
+                    <option value="vertical">縦向き</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>ヘックスの色 <input type="color" id="gridColor" value="#000000"></label>
+            <label>ヘックスの太さ <input type="number" id="lineWidth" value="2" min="1"> px</label>
             <label>
-                グリッドの透明度
-                <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" oninput="updateOpacityValue(this.value)">
+                ヘックスの透明度
+                <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01">
                 <span id="opacityValue">1.0</span>
             </label>
         </div>
@@ -166,11 +159,15 @@
                 <input type="checkbox" id="showCoordinates">
             </label>
             <label>座標の色 <input type="color" id="coordColor" value="#000000"></label>
-            <label>座標の文字サイズ(px) <input type="number" id="coordFontSize" value="18" min="1"></label>
+            <label>文字サイズ <input type="number" id="coordFontSize" value="20" min="1"> px</label>
+            <label>
+                座標の透明度
+                <input type="range" id="textOpacity" value="1.0" min="0.0" max="1.0" step="0.01">
+                <span id="opacityValue">1.0</span>
+            </label>
         </div>
 
         <div style="margin:0">
-            <button onclick="generateGrid()">生成</button>
             <button onclick="downloadGrid()">ダウンロード</button>
         </div>
     </div>
@@ -178,65 +175,60 @@
     <canvas id="gridCanvas"></canvas>
 
     <script>
-        // 透明度表示を更新する関数
-        function updateOpacityValue(value) {
-            document.getElementById('opacityValue').textContent = value;
-        }
-
-        // 16進数カラーコードと透明度からRGBA文字列を生成する関数
-        function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-
         // グリッドを生成する関数
         function generateGrid() {
             // 入力値を取得
+            const ori = document.getElementById('orientation').value === "vertical";
             const color = document.getElementById('gridColor').value;
             const lineWidth = parseInt(document.getElementById('lineWidth').value);
             const lineOpacity = parseFloat(document.getElementById('lineOpacity').value);
-            const cellSize = parseInt(document.getElementById('cellSize').value); // 六角形の高さの基準サイズ
-            const cols = parseInt(document.getElementById('cols').value);
-            const rows = parseInt(document.getElementById('rows').value);
+            const cellSize = parseInt(document.getElementById('cellSize').value);
+            let cols = parseInt(document.getElementById('cols').value);
+            let rows = parseInt(document.getElementById('rows').value);
             const showCoordinates = document.getElementById('showCoordinates').checked;
             const coordColor = document.getElementById('coordColor').value;
             const coordFontSize = parseInt(document.getElementById('coordFontSize').value);
             const fitGridCheck = document.getElementById('fitGridCheck').checked;
             const shiftCheck = document.getElementById('shiftCheck').checked;
-
             const canvas = document.getElementById('gridCanvas');
             const ctx = canvas.getContext('2d');
 
             const cellSizeX = fitGridCheck ? cellSize : cellSize/2*Math.sqrt(3);
             const offsetLeft = fitGridCheck ? 1/6 : 1/3;
 
+            if(ori) [cols, rows] = [rows, cols];
             canvas.width = fitGridCheck ? cellSizeX * (cols) : cellSizeX * (cols + 1/3);
             canvas.height = cellSize * (rows + 1) / 2;
+            if(ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.strokeStyle = hexToRgba(color, lineOpacity);
+            ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
 
             // 六角形を描画
-            for (let r = 0; r < ( rows / 2 ); r++) {
-                for (let c = 0; c < cols; c++) {
-                    const shiftHex = shiftCheck ? (1-c % 2) : (c % 2);
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    if (shiftCheck){
+                    if (r%2 == c%2) continue;
+                    }else{
+                    if (r%2 !== c%2) continue;
+                    }
                     const cx = (c + offsetLeft) * cellSizeX;
-                    const cy = r * cellSize + shiftHex * (cellSize / 2);
+                    const cy = r/2 * cellSize;
                     // 六角形の頂点座標 (左上からの相対座標)
                     const vertices = [
-                        { x: cx,                y: cy              }, // 左上
+                        { x: cx,                 y: cy              }, // 左上
                         { x: cx - cellSizeX*1/3, y: cy + cellSize/2 }, // 左端
-                        { x: cx,                y: cy + cellSize   }, // 左下
+                        { x: cx,                 y: cy + cellSize   }, // 左下
                         { x: cx + cellSizeX*2/3, y: cy + cellSize   }, // 右下
                         { x: cx + cellSizeX,     y: cy + cellSize/2 }, // 右端
                         { x: cx + cellSizeX*2/3, y: cy              }  // 右上
                     ];
+                    if(ori) vertices.forEach(v => [v.x, v.y] = [v.y, v.x]);
 
                     // パスを描画
+                    ctx.globalAlpha = lineOpacity;
                     ctx.beginPath();
                     ctx.moveTo(vertices[0].x, vertices[0].y);
                     for (let i = 1; i < vertices.length; i++) {
@@ -252,8 +244,12 @@
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         // 座標テキストは "(行, 列)" 形式で表示
-                        const coordinateText = `${c}-${r*2+shiftHex}`;
+                        const coordinateText = `${c}-${r}`;
+                        if(ori){
+                        ctx.fillText(coordinateText, cy + cellSize/2, cx + cellSizeX*1/3);
+                        }else{
                         ctx.fillText(coordinateText, cx + cellSizeX*1/3, cy + cellSize/2);
+                        }
                     }
                 }
             }
@@ -272,8 +268,32 @@
             link.click();
         }
 
-        // ページロード時に一度グリッドを生成
-        window.onload = generateGrid;
+        //イベントリスナー
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('orientation').addEventListener('change', generateGrid);
+            document.getElementById('gridColor').addEventListener('input', generateGrid);
+            document.getElementById('lineWidth').addEventListener('input', generateGrid);
+            document.getElementById('lineOpacity').addEventListener('input', function() {
+                document.getElementById('opacityValue').textContent = `${Math.round(document.getElementById('opacityValue').value*100)}%`;
+                generateGrid();
+            });
+            document.getElementById('cellSize').addEventListener('input', generateGrid);
+            document.getElementById('cols').addEventListener('input', generateGrid);
+            document.getElementById('rows').addEventListener('input', generateGrid);
+            document.getElementById('fitGridCheck').addEventListener('input', generateGrid);
+            document.getElementById('shiftCheck').addEventListener('input', generateGrid);
+            document.getElementById('showCoordinates').addEventListener('input', generateGrid);
+            document.getElementById('coordColor').addEventListener('input', generateGrid);
+            document.getElementById('coordFontSize').addEventListener('input', generateGrid);
+            document.getElementById('lineOpacity').addEventListener('input', function() {
+                document.getElementById('opacityValue').textContent = `${Math.round(document.getElementById('opacityValue').value*100)}%`;
+                generateGrid();
+            });
+
+            // ページロード時に一度グリッドを生成
+            generateGrid();
+        });
+
 
     </script>
 </body>
