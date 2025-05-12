@@ -50,20 +50,39 @@
             margin-right: 10px;
         }
 
-        input[type="number"], select {
+        input[type="text"], input[type="number"], select {
             box-sizing: border-box;
+            border-radius: 4px;
             font-size: 18px;
             padding: 0px 5px 0px 5px;
             height: 30px;
-            border: 1px solid #888;
-            border-radius: 4px;
-            width: 80px;
-            vertical-align: middle;
         }
 
+        input[type="number"] {
+            border: 1px solid #888;
+            border-radius: 4px;
+            box-sizing: border-box;
+            width: 50px;
+            height: 30px;
+            font-size: 18px;
+            padding: 0px 5px 0px 5px;
+            vertical-align: middle;
+        }
+        input[type="color"] {
+            height: 30px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
         input[type="range"] {
             vertical-align: middle;
             width: 150px;
+        }
+        input[type="checkbox"] {
+            vertical-align: middle;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
         }
 
         canvas {
@@ -94,10 +113,8 @@
         }
 
         #opacityValue, #textOpacityValue {
-            margin-left: 5px;
-            font-weight: normal;
             display: inline-block;
-            min-width: 2em;
+            width: 45px;
             text-align: right;
         }
         select {
@@ -129,13 +146,13 @@
             </label>
         </div>
         <div>
-            <label for="distance">範囲 <input type="number" id="distance" min="1" value="5"></label>
             <label for="distanceMethod">距離計測方法
                 <select id="distanceMethod">
                     <option value="manhattan">マス数</option>
                     <option value="euclidean">直線距離</option>
                 </select>
             </label>
+            <label for="distance">範囲 <input type="number" id="distance" min="1" value="5"></label>
             <label for="textOpacity">数字の透明度
                 <input type="range" id="textOpacity" min="0" max="1" step="0.01" value="1">
                 <span id="textOpacityValue">100%</span>
