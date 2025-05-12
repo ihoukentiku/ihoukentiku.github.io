@@ -185,8 +185,8 @@
             // 入力値を取得
             const ori = document.getElementById('orientation').value === "vertical";
             const color = document.getElementById('gridColor').value;
-            const lineWidth = 1 - Math.sqrt( 1 - parseInt(document.getElementById('lineWidth').value));
-            const lineOpacity = parseFloat(document.getElementById('lineOpacity').value);
+            const lineWidth = parseInt(document.getElementById('lineWidth').value);
+            const lineOpacity = 1 - Math.sqrt( 1 - parseFloat(document.getElementById('lineOpacity').value));
             const cellSize = parseInt(document.getElementById('cellSize').value);
             let cols = parseInt(document.getElementById('cols').value);
             let rows = parseInt(document.getElementById('rows').value);
