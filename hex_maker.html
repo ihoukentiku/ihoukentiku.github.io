@@ -43,6 +43,7 @@
 
         input[type="text"], input[type="number"], select {
             box-sizing: border-box;
+            border-radius: 4px;
             font-size: 18px;
             padding: 0px 5px 0px 5px;
             height: 30px;
@@ -52,14 +53,14 @@
             border: 1px solid #888;
             border-radius: 4px;
             box-sizing: border-box;
-            width: 60px;
+            width: 50px;
             height: 30px;
             font-size: 18px;
             padding: 0px 5px 0px 5px;
             vertical-align: middle;
         }
         input[type="color"] {
-            height: 35px;
+            height: 30px;
             border: 1px solid #aaa;
             border-radius: 4px;
             vertical-align: middle;
@@ -102,11 +103,9 @@
             background-color: #3D7BCD;
         }
 
-        #opacityValue {
-            margin-left: 5px;
-            font-weight: normal;
+        #lineOpacityValue, #coordOpacityValue {
             display: inline-block;
-            min-width: 2em;
+            width: 45px;
             text-align: right;
         }
 
@@ -116,7 +115,7 @@
             border-top: 1px dashed #888;
         }
         #coordinateSettings label {
-            margin-right: 20px;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -135,14 +134,12 @@
                     <option value="vertical">縦向き</option>
                 </select>
             </label>
-        </div>
-        <div>
             <label>ヘックスの色 <input type="color" id="gridColor" value="#000000"></label>
-            <label>ヘックスの太さ <input type="number" id="lineWidth" value="2" min="1"> px</label>
+            <label>線の太さ <input type="number" id="lineWidth" value="2" min="1"> px</label>
             <label>
-                ヘックスの透明度
+                透明度
                 <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01">
-                <span id="opacityValue">1.0</span>
+                <span id="lineOpacityValue">100%</span>
             </label>
         </div>
         <div>
@@ -158,12 +155,20 @@
                 座標を表示
                 <input type="checkbox" id="showCoordinates">
             </label>
+            <label>位置
+                <select id="coordPositionSelect" style="font-size: 15px; height: 28px;">
+                    <option value="top">上</option>
+                    <option value="middle" selected>中央</option>
+                    <option value="bottom">下</option>
+                </select>
+            </label>
+
             <label>座標の色 <input type="color" id="coordColor" value="#000000"></label>
             <label>文字サイズ <input type="number" id="coordFontSize" value="20" min="1"> px</label>
             <label>
-                座標の透明度
-                <input type="range" id="textOpacity" value="1.0" min="0.0" max="1.0" step="0.01">
-                <span id="opacityValue">1.0</span>
+                透明度
+                <input type="range" id="coordOpacity" value="1.0" min="0.0" max="1.0" step="0.01">
+                <span id="coordOpacityValue">100%</span>
             </label>
         </div>
 
@@ -180,14 +185,16 @@
             // 入力値を取得
             const ori = document.getElementById('orientation').value === "vertical";
             const color = document.getElementById('gridColor').value;
-            const lineWidth = parseInt(document.getElementById('lineWidth').value);
+            const lineWidth = 1 - Math.sqrt( 1 - parseInt(document.getElementById('lineWidth').value));
             const lineOpacity = parseFloat(document.getElementById('lineOpacity').value);
             const cellSize = parseInt(document.getElementById('cellSize').value);
             let cols = parseInt(document.getElementById('cols').value);
             let rows = parseInt(document.getElementById('rows').value);
             const showCoordinates = document.getElementById('showCoordinates').checked;
+            const coordPosition = document.getElementById('coordPositionSelect').value;
             const coordColor = document.getElementById('coordColor').value;
             const coordFontSize = parseInt(document.getElementById('coordFontSize').value);
+            const coordOpacity = parseFloat(document.getElementById('coordOpacity').value);
             const fitGridCheck = document.getElementById('fitGridCheck').checked;
             const shiftCheck = document.getElementById('shiftCheck').checked;
             const canvas = document.getElementById('gridCanvas');
@@ -207,13 +214,9 @@
             ctx.lineWidth = lineWidth;
 
             // 六角形を描画
-            for (let c = 0; c < cols; c++) {
-                for (let r = 0; r < rows; r++) {
-                    if (shiftCheck){
-                    if (r%2 == c%2) continue;
-                    }else{
-                    if (r%2 !== c%2) continue;
-                    }
+            for (let c = -1; c < cols+1; c++) {
+                for (let r = -1; r < rows+1; r++) {
+                    if (shiftCheck === ((r+2) % 2 == (c+2) % 2)) continue;
                     const cx = (c + offsetLeft) * cellSizeX;
                     const cy = r/2 * cellSize;
                     // 六角形の頂点座標 (左上からの相対座標)
@@ -238,18 +241,23 @@
                     ctx.stroke(); // 線を描画
 
                     // 座標を表示
-                    if (showCoordinates) {
+                    if (showCoordinates && 0<=c && 0<=r && c<cols && r<rows) {
                         ctx.fillStyle = coordColor;
+                        ctx.globalAlpha = coordOpacity;
                         ctx.font = `${coordFontSize}px 'Arial'`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         // 座標テキストは "(行, 列)" 形式で表示
                         const coordinateText = `${c}-${r}`;
-                        if(ori){
-                        ctx.fillText(coordinateText, cy + cellSize/2, cx + cellSizeX*1/3);
-                        }else{
-                        ctx.fillText(coordinateText, cx + cellSizeX*1/3, cy + cellSize/2);
+                        let px = cx + cellSizeX*1/3;
+                        let py = cy + cellSize/2;
+                        if(ori) [px, py] = [py, px];
+                        if(coordPosition == "top"){
+                            py = py - cellSize/2 +coordFontSize/2 + cellSize/25;
+                        }else if (coordPosition == "bottom"){
+                            py = py + cellSize/2 - coordFontSize/2 - cellSize/50;
                         }
+                        ctx.fillText(coordinateText, px, py);
                     }
                 }
             }
@@ -274,7 +282,7 @@
             document.getElementById('gridColor').addEventListener('input', generateGrid);
             document.getElementById('lineWidth').addEventListener('input', generateGrid);
             document.getElementById('lineOpacity').addEventListener('input', function() {
-                document.getElementById('opacityValue').textContent = `${Math.round(document.getElementById('opacityValue').value*100)}%`;
+                document.getElementById('lineOpacityValue').textContent = `${Math.round(document.getElementById('lineOpacity').value*100)}%`;
                 generateGrid();
             });
             document.getElementById('cellSize').addEventListener('input', generateGrid);
@@ -283,10 +291,11 @@
             document.getElementById('fitGridCheck').addEventListener('input', generateGrid);
             document.getElementById('shiftCheck').addEventListener('input', generateGrid);
             document.getElementById('showCoordinates').addEventListener('input', generateGrid);
+            document.getElementById('coordPositionSelect').addEventListener('change', generateGrid);
             document.getElementById('coordColor').addEventListener('input', generateGrid);
             document.getElementById('coordFontSize').addEventListener('input', generateGrid);
-            document.getElementById('lineOpacity').addEventListener('input', function() {
-                document.getElementById('opacityValue').textContent = `${Math.round(document.getElementById('opacityValue').value*100)}%`;
+            document.getElementById('coordOpacity').addEventListener('input', function() {
+                document.getElementById('coordOpacityValue').textContent = `${Math.round(document.getElementById('coordOpacity').value*100)}%`;
                 generateGrid();
             });
 
