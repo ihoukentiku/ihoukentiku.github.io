@@ -83,7 +83,7 @@
             margin-left: auto;
             margin-right: auto;
             max-width: 100%;
-            height: auto;
+            max-height: 600px;
         }
 
         button {
@@ -119,7 +119,8 @@
         }
     </style>
 </head>
-<body><div style="position: relative;">
+<body>
+    <div style="position: relative;">
         <h1 style="margin: 0;">ヘックス作成ツール</h1>
         <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
             <button style="padding: 6px 12px;">ホームページへ</button>
@@ -144,8 +145,8 @@
         </div>
         <div>
             <label>サイズ <input type="number" id="cellSize" value="90" min="1"> px</label>
-            <label>横の六角形数 <input type="number" id="cols" value="10" min="1"></label>
-            <label>縦の六角形数 <input type="number" id="rows" value="10" min="1"></label>
+            <label>横の六角形数 <input type="number" id="cols" value="15" min="1"></label>
+            <label>縦の六角形数 <input type="number" id="rows" value="15" min="1"></label>
             <label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked></label>
             <label>1列目をずらす<input type="checkbox" id="shiftCheck"></label>
         </div>
@@ -153,13 +154,13 @@
         <div id="coordinateSettings">
             <label>
                 座標を表示
-                <input type="checkbox" id="showCoordinates">
+                <input type="checkbox" id="showCoordinates" checked>
             </label>
             <label>位置
                 <select id="coordPositionSelect" style="font-size: 15px; height: 28px;">
                     <option value="top">上</option>
-                    <option value="middle" selected>中央</option>
-                    <option value="bottom">下</option>
+                    <option value="middle">中央</option>
+                    <option value="bottom" selected>下</option>
                 </select>
             </label>
 
@@ -302,7 +303,6 @@
             // ページロード時に一度グリッドを生成
             generateGrid();
         });
-
 
     </script>
 </body>
