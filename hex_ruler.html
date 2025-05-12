@@ -250,8 +250,8 @@
                 const canvas = document.getElementById('rulerCanvas');
                 const link = document.createElement('a');
                 const fitGridCheck = document.getElementById('fitGridCheck').checked;
-                const c = canvas.width/90;
-                const r = canvas.height/90;
+                const c = canvas.width/90*2;
+                const r = canvas.height/90*2;
                 link.download = fitGridCheck ? `hex_ruler_${c}x${r}.png` : `hex_ruler.png` ;
                 link.href = canvas.toDataURL();
                 link.click();
