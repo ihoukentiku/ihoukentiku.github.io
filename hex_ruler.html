@@ -2,17 +2,18 @@
 <html lang="ja">
 <head>
     <!-- Google tag (gtag.js) -->
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
     <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    
     gtag('config', 'G-T4SJ8S23EC');
-    </script> -->
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ヘックス定規作成ツール｜違法建築のTRPG便利ツール</title>
+    <meta name="description" content="TRPGやボードゲームで使えるヘックスマップ用の距離計測定規を、範囲や向き、透明度をカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。
+    （ファイル名にスクリーンパネル/前景でのサイズを記載します）">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -34,62 +35,54 @@
 
         .section {
             background: white;
-            padding: 15px;
+            padding: 16px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
-
-        div {
-            display: block;
-            margin-bottom: 5px;
+        .section > div {
+            display: flex;
+            flex-wrap: wrap;
+            row-gap: 16px;
+            column-gap: 16px ;
         }
-
-        .section > div > div {
+        .section > div > div{
             display: flex;
             flex-direction: column;
-            row-gap: 20px;
-        }
+            row-gap: 16px;
+        }   
 
         label{
             font-weight: bold;
-            margin-right: 10px;
         }
 
-        input[type="text"], input[type="number"], select {
+        input {
+            vertical-align: middle;
             box-sizing: border-box;
+        }
+        input[type="text"], input[type="number"], select {
             border-radius: 4px;
             font-size: 18px;
             padding: 0px 5px 0px 5px;
             height: 30px;
         }
-
         input[type="number"] {
             border: 1px solid #888;
-            border-radius: 4px;
-            box-sizing: border-box;
             width: 50px;
-            height: 30px;
-            font-size: 18px;
-            padding: 0px 5px 0px 5px;
-            vertical-align: middle;
         }
         input[type="color"] {
             height: 30px;
             border: 1px solid #aaa;
             border-radius: 4px;
-            vertical-align: middle;
         }
         input[type="range"] {
-            vertical-align: middle;
             width: 150px;
         }
         input[type="checkbox"] {
-            vertical-align: middle;
             width: 20px;
             height: 20px;
-            margin-right: 5px;
         }
+
 
         canvas {
             margin-top: 20px;
@@ -109,8 +102,6 @@
             cursor: pointer;
             transition: background-color .2s;
             font-weight: bold;
-            margin-right: 10px;
-            margin-top: 10px;
         }
 
         button:hover {
@@ -123,7 +114,7 @@
             text-align: right;
         }
         select {
-            width: 120px;
+            width: 90px;
         }
 
     </style>
@@ -137,7 +128,7 @@
     </div>
 
     <div class="section">
-        <div style="display: flex; flex-wrap: wrap;">
+        <div>
             <div>
                 <label>ヘックスの向き
                     <select id="orientation">
@@ -169,7 +160,7 @@
                 </label>
             </div>
         </div>
-        <div style="margin:0;">
+        <div style="margin-top: 16px;">
             <button onclick="downloadRuler()">ダウンロード</button>
         </div>
     </div>

@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-T4SJ8S23EC');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ヘクサ作成ツール｜違法建築のTRPG便利ツール</title>
+    <title>ヘクス作成ツール｜違法建築のTRPG便利ツール</title>
+    <meta name="description" content="TRPGやボードゲームなどで使えるヘクス画像を、サイズや座標などをカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。
+    （ファイル名にスクリーンパネル/前景でのサイズを記載します）">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -11,7 +20,7 @@
             background: #f7f8fa;
             margin: auto;
             padding: 20px;
-            width: 900px;
+            max-width: 850px;
             color: #333;
         }
 
@@ -25,55 +34,56 @@
 
         .section {
             background: white;
-            padding: 15px;
+            padding: 16px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
-
-        div {
-            display: block;
-            margin-bottom: 15px;
+        .section > div {
+            display: flex;
+            flex-wrap: wrap;
+            row-gap: 16px;
+            column-gap: 16px ;
         }
+        .section > div > div{
+            display: flex;
+            flex-direction: column;
+            row-gap: 16px;
+        }   
 
-        label {
+        label{
             font-weight: bold;
-            margin-right: 10px;
         }
 
-        input[type="text"], input[type="number"], select {
+        input {
+            vertical-align: middle;
             box-sizing: border-box;
+        }
+        input[type="text"], input[type="number"], select {
             border-radius: 4px;
             font-size: 18px;
             padding: 0px 5px 0px 5px;
             height: 30px;
         }
-
         input[type="number"] {
             border: 1px solid #888;
-            border-radius: 4px;
-            box-sizing: border-box;
             width: 50px;
-            height: 30px;
-            font-size: 18px;
-            padding: 0px 5px 0px 5px;
-            vertical-align: middle;
         }
         input[type="color"] {
             height: 30px;
             border: 1px solid #aaa;
             border-radius: 4px;
-            vertical-align: middle;
         }
         input[type="range"] {
-            vertical-align: middle;
             width: 150px;
         }
         input[type="checkbox"] {
-            vertical-align: middle;
             width: 20px;
             height: 20px;
-            margin-right: 5px;
+        }
+
+        select {
+            width: 100px;
         }
 
         canvas {
@@ -95,8 +105,6 @@
             cursor: pointer;
             transition: background-color .2s;
             font-weight: bold;
-            margin-right: 10px;
-            margin-top: 10px;
         }
 
         button:hover {
@@ -110,45 +118,51 @@
         }
 
         #coordinateSettings {
-            margin-top: 15px;
+            margin-top: 16px;
+            margin-bottom: 16px;
             padding-top: 10px;
             border-top: 1px dashed #888;
-        }
-        #coordinateSettings label {
-            margin-right: 10px;
         }
     </style>
 </head>
 <body>
     <div style="position: relative;">
-        <h1 style="margin: 0;">ヘックス作成ツール</h1>
-        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
+        <h1 style="margin: 0;">ヘクス作成ツール</h1>
+        <a href="index.html" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
             <button style="padding: 6px 12px;">ホームページへ</button>
         </a>
     </div>
 
     <div class="section">
         <div>
-            <label>ヘックスの向き
+            <div>
+            <label>ヘクスの向き
                 <select id="orientation">
                     <option value="horizontal" selected>横向き</option>
                     <option value="vertical">縦向き</option>
                 </select>
             </label>
-            <label>ヘックスの色 <input type="color" id="gridColor" value="#000000"></label>
+            <label>ヘクスの色 <input type="color" id="hexColor" value="#000000"></label>
+            </div>
+            <div>
+            <label>横のヘクス数 <input type="number" id="cols" value="15" min="1"></label>
+            <label>縦のヘクス数 <input type="number" id="rows" value="15" min="1"></label>
+            </div>
+            <div>
+            <label>サイズ <input type="number" id="cellSize" value="90" min="1"> px</label>
             <label>線の太さ <input type="number" id="lineWidth" value="2" min="1"> px</label>
+            </div>
+            <div>
+            <label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked></label>
+            <label>1列目をずらす<input type="checkbox" id="shiftCheck"></label>
+            </div>
+            <div>
             <label>
                 透明度
                 <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01">
                 <span id="lineOpacityValue">100%</span>
             </label>
-        </div>
-        <div>
-            <label>サイズ <input type="number" id="cellSize" value="90" min="1"> px</label>
-            <label>横の六角形数 <input type="number" id="cols" value="15" min="1"></label>
-            <label>縦の六角形数 <input type="number" id="rows" value="15" min="1"></label>
-            <label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked></label>
-            <label>1列目をずらす<input type="checkbox" id="shiftCheck"></label>
+            </div>
         </div>
 
         <div id="coordinateSettings">
@@ -157,7 +171,7 @@
                 <input type="checkbox" id="showCoordinates" checked>
             </label>
             <label>位置
-                <select id="coordPositionSelect" style="font-size: 15px; height: 28px;">
+                <select id="coordPositionSelect" style="width: 70px;">
                     <option value="top">上</option>
                     <option value="middle">中央</option>
                     <option value="bottom" selected>下</option>
@@ -173,19 +187,17 @@
             </label>
         </div>
 
-        <div style="margin:0">
-            <button onclick="downloadGrid()">ダウンロード</button>
+        <div>
+            <button onclick="downloadHex()">ダウンロード</button>
         </div>
     </div>
 
-    <canvas id="gridCanvas"></canvas>
+    <canvas id="hexCanvas"></canvas>
 
     <script>
-        // グリッドを生成する関数
-        function generateGrid() {
-            // 入力値を取得
+        function generateHex() {
             const ori = document.getElementById('orientation').value === "vertical";
-            const color = document.getElementById('gridColor').value;
+            const color = document.getElementById('hexColor').value;
             const lineWidth = parseInt(document.getElementById('lineWidth').value);
             const lineOpacity = 1 - Math.sqrt( 1 - parseFloat(document.getElementById('lineOpacity').value));
             const cellSize = parseInt(document.getElementById('cellSize').value);
@@ -198,7 +210,7 @@
             const coordOpacity = parseFloat(document.getElementById('coordOpacity').value);
             const fitGridCheck = document.getElementById('fitGridCheck').checked;
             const shiftCheck = document.getElementById('shiftCheck').checked;
-            const canvas = document.getElementById('gridCanvas');
+            const canvas = document.getElementById('hexCanvas');
             const ctx = canvas.getContext('2d');
 
             const cellSizeX = fitGridCheck ? cellSize : cellSize/2*Math.sqrt(3);
@@ -214,13 +226,11 @@
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
 
-            // 六角形を描画
             for (let c = -1; c < cols+1; c++) {
                 for (let r = -1; r < rows+1; r++) {
                     if (shiftCheck === ((r+2) % 2 == (c+2) % 2)) continue;
                     const cx = (c + offsetLeft) * cellSizeX;
                     const cy = r/2 * cellSize;
-                    // 六角形の頂点座標 (左上からの相対座標)
                     const vertices = [
                         { x: cx,                 y: cy              }, // 左上
                         { x: cx - cellSizeX*1/3, y: cy + cellSize/2 }, // 左端
@@ -231,24 +241,21 @@
                     ];
                     if(ori) vertices.forEach(v => [v.x, v.y] = [v.y, v.x]);
 
-                    // パスを描画
                     ctx.globalAlpha = lineOpacity;
                     ctx.beginPath();
                     ctx.moveTo(vertices[0].x, vertices[0].y);
                     for (let i = 1; i < vertices.length; i++) {
                         ctx.lineTo(vertices[i].x, vertices[i].y);
                     }
-                    ctx.closePath(); // パスを閉じる
-                    ctx.stroke(); // 線を描画
+                    ctx.closePath();
+                    ctx.stroke();
 
-                    // 座標を表示
                     if (showCoordinates && 0<=c && 0<=r && c<cols && r<rows) {
                         ctx.fillStyle = coordColor;
                         ctx.globalAlpha = coordOpacity;
                         ctx.font = `${coordFontSize}px 'Arial'`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        // 座標テキストは "(行, 列)" 形式で表示
                         const coordinateText = `${c}-${r}`;
                         let px = cx + cellSizeX*1/3;
                         let py = cy + cellSize/2;
@@ -264,9 +271,8 @@
             }
         }
 
-        // グリッドを画像としてダウンロードする関数
-        function downloadGrid() {
-            const canvas = document.getElementById('gridCanvas');
+        function downloadHex() {
+            const canvas = document.getElementById('hexCanvas');
             const cellSize = parseInt(document.getElementById('cellSize').value); // 六角形の高さの基準サイズ
             const fitGridCheck = document.getElementById('fitGridCheck').checked;
             const link = document.createElement('a');
@@ -279,29 +285,28 @@
 
         //イベントリスナー
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('orientation').addEventListener('change', generateGrid);
-            document.getElementById('gridColor').addEventListener('input', generateGrid);
-            document.getElementById('lineWidth').addEventListener('input', generateGrid);
+            document.getElementById('orientation').addEventListener('change', generateHex);
+            document.getElementById('hexColor').addEventListener('input', generateHex);
+            document.getElementById('lineWidth').addEventListener('input', generateHex);
             document.getElementById('lineOpacity').addEventListener('input', function() {
                 document.getElementById('lineOpacityValue').textContent = `${Math.round(document.getElementById('lineOpacity').value*100)}%`;
-                generateGrid();
+                generateHex();
             });
-            document.getElementById('cellSize').addEventListener('input', generateGrid);
-            document.getElementById('cols').addEventListener('input', generateGrid);
-            document.getElementById('rows').addEventListener('input', generateGrid);
-            document.getElementById('fitGridCheck').addEventListener('input', generateGrid);
-            document.getElementById('shiftCheck').addEventListener('input', generateGrid);
-            document.getElementById('showCoordinates').addEventListener('input', generateGrid);
-            document.getElementById('coordPositionSelect').addEventListener('change', generateGrid);
-            document.getElementById('coordColor').addEventListener('input', generateGrid);
-            document.getElementById('coordFontSize').addEventListener('input', generateGrid);
+            document.getElementById('cellSize').addEventListener('input', generateHex);
+            document.getElementById('cols').addEventListener('input', generateHex);
+            document.getElementById('rows').addEventListener('input', generateHex);
+            document.getElementById('fitGridCheck').addEventListener('input', generateHex);
+            document.getElementById('shiftCheck').addEventListener('input', generateHex);
+            document.getElementById('showCoordinates').addEventListener('input', generateHex);
+            document.getElementById('coordPositionSelect').addEventListener('change', generateHex);
+            document.getElementById('coordColor').addEventListener('input', generateHex);
+            document.getElementById('coordFontSize').addEventListener('input', generateHex);
             document.getElementById('coordOpacity').addEventListener('input', function() {
                 document.getElementById('coordOpacityValue').textContent = `${Math.round(document.getElementById('coordOpacity').value*100)}%`;
-                generateGrid();
+                generateHex();
             });
 
-            // ページロード時に一度グリッドを生成
-            generateGrid();
+            generateHex();
         });
 
     </script>

@@ -1,147 +1,199 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            
-            gtag('config', 'G-T4SJ8S23EC');
-        </script>
-        <meta charset="UTF-8">
-        <title>違法建築のTRPG用便利ツール</title>
-        <style>
-            body {
-                margin: 0;
-                font-family: 'Helvetica Neue', sans-serif;
-                background: #f4f4f9;
-            }
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-T4SJ8S23EC');
+    </script>
+    <meta charset="UTF-8">
+    <title>違法建築のTRPG用便利ツール</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', sans-serif;
+            background: #f4f4f9;
+        }
 
-            header {
-                background: linear-gradient(to right, #4a90e2, #357ABD);
-                color: white;
-                padding: 1.5rem;
-                text-align: center;
-                font-size: 2rem;
-                font-weight: bold;
-            }
+        header {
+            background: linear-gradient(to right, #4a90e2, #357ABD);
+            color: white;
+            padding: 24px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+        }
 
-            .container {
-                max-width: 900px;
-                margin: 2rem auto;
-                padding: 0 1rem;
-            }
+        .container {
+            max-width: 90%;
+            margin: auto;
+            padding: 0 16px;
+        }
 
-            .top-bar {
-                margin-bottom: 2rem;
-            }
+        .top-bar {
+            margin-bottom: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-            .top-bar .description {
-                font-size: 1.1rem;
-                color: #333;
-            }
+        .top-bar .description {
+            font-size: 18px;
+            color: #333;
+        }
 
-            .top-bar .bug-report {
-                font-size: 0.9rem;
-                color: #666;
-            }
+        .top-bar .bug-report {
+            font-size: 15px;
+            color: #666;
+        }
 
-            .top-bar .bug-report a {
-                color: #4A90E2;
-                text-decoration: none;
-            }
+        .top-bar .bug-report a {
+            color: #4A90E2;
+            text-decoration: none;
+        }
 
-            .top-bar .bug-report a:hover {
-                text-decoration: underline;
-            }
+        .top-bar .bug-report a:hover {
+            text-decoration: underline;
+        }
 
+        .tool-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        .tool-card {
+            flex: 1 1 calc(50% - 1rem);
+            box-sizing: border-box;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 24px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        @media (max-width: 800px) {
             .tool-card {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                margin: 1.5rem 0;
-                padding: 1.5rem;
-                cursor: pointer;
-                transition: transform 0.2s ease, box-shadow 0.3s ease;
+                flex: 1 1 100%;
             }
+        }
 
-            .tool-card:hover {
-                transform: scale(1.02);
-                box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            }
+        .tool-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
 
-            .description h3 {
-                margin-top: 0;
-                font-size: 1.4rem;
-            }
+        .tool-card .description h3 {
+            margin-top: 0;
+            font-size: 20px;
+        }
 
-            .description p {
-                color: #555;
-                font-size: 0.95rem;
-                line-height: 1.5;
-            }
-        </style>
-    </head>
-    <body>
-        <header>違法建築のTRPG用便利ツール</header>
+        .tool-card .description p {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <header>違法建築のTRPG用便利ツール</header>
 
-        <div class="container">
-            <div class="top-bar">
-                <p class="description">TRPGのための便利なツールをまとめています。</p>
-                <div class="bug-report">
-                    バグ報告・リクエスト等は <a href="https://x.com/ihoukentiku" target="_blank">XのDM</a> まで
-                </div>
-            </div>
-
-            <div class="tool-card" onclick="location.href='coc7_npc_token.html'">
-                <div class="description">
-                    <h3>新クトゥルフ神話TRPG NPCコマ作成ツール</h3>
-                    <p>即席でCoC7版のココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
-                </div>
-            </div>
-
-            <div class="tool-card" onclick="location.href='coc6_npc_token.html'">
-                <div class="description">
-                    <h3>クトゥルフ神話TRPG NPCコマ作成ツール</h3>
-                    <p>即席でCoC6版のココフォリア用のNPC駒を作成出来ます。ダイスコマンドを入力すれば能力値をランダムに決定可能。チャットパレットの設定も出来ます。また、データの保存も可能で、神話生物のデータを保存すれば一発で呼び出し可能！</p>
-                </div>
-            </div>
-
-            <div class="tool-card" onclick="location.href='damage_sum.html'">
-                <div class="description">
-                    <h3>連続ダメージ自動計算ツール</h3>
-                    <p>BCDiceなどのダメージログから装甲適用後の合計ダメージを計算し、HP減少コマンドを生成します。使い方はシンプル！装甲値を入力してダメージログを貼り付け、計算実行を押すだけ！</p>
-                </div>
-            </div>
-
-            <div class="tool-card" onclick="location.href='grid_maker.html'">
-                <div class="description">
-                    <h3>グリッド作成ツール</h3>
-                    <p></p>
-                </div>
-            </div>
-
-            <div class="tool-card" onclick="location.href='grid_ruler.html'">
-                <div class="description">
-                    <h3>グリッド定規作成ツール</h3>
-                    <p></p>
-                </div>
-            </div>
-
-            <div class="tool-card" onclick="location.href='mask_maker.html'">
-                <div class="description">
-                    <h3>マスク作成ツール</h3>
-                    <p></p>
-                </div>
+    <div class="container">
+        <div class="top-bar">
+            <p class="description">TRPG用の便利なツールをまとめています。</p>
+            <div class="bug-report">
+                質問・バグ報告・リクエスト等は <a href="https://x.com/ihoukentiku" target="_blank">XのDM</a> まで
             </div>
         </div>
 
-        <footer style="text-align: center; padding: 20px; font-size: 12px; color: #999;">
-            当サイトでは利便性向上と利用状況の把握のために Google アナリティクスを使用しています。
-            <a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" style="color:#4A90E2;">詳細はこちら</a>
-        </footer>
-    </body>
-    </html>
+        <div class="tool-list">
+            </div>
+    </div>
 
+    <footer style="text-align: center; padding: 20px; font-size: 12px; color: #999;">
+        当サイトでは利便性向上と利用状況の把握のために Google アナリティクスを使用しています。
+        <a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" style="color:#4A90E2;">詳細はこちら</a>
+    </footer>
+
+    <script>
+        // ツールリストの情報を配列で定義
+        const tools = [
+            { file: 'coc7_npc_token.html', title: '新クトゥルフ神話TRPG NPCコマ作成ツール' },
+            { file: 'coc6_npc_token.html', title: 'クトゥルフ神話TRPG NPCコマ作成ツール' },
+            { file: 'hex_maker.html', title: 'ヘクス作成ツール' }, 
+            { file: 'hex_ruler.html', title: 'ヘクス定規作成ツール' },
+            { file: 'damage_sum.html', title: 'TRPGダメージ自動計算ツール' },
+            { file: 'grid_maker.html', title: 'グリッド作成ツール' },
+            { file: 'grid_ruler.html', title: 'グリッド定規作成ツール' },
+            { file: 'mask_maker.html', title: 'マスク作成ツール' },
+        ];
+
+        async function fetchMetaData(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error(`Error fetching ${url}: ${response.statusText}`);
+                    return { description: '説明を取得できませんでした。', title: 'タイトルを取得できませんでした。' };
+                }
+                const htmlText = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+
+                // meta descriptionを取得
+                const descriptionTag = doc.querySelector('meta[name="description"]');
+                const description = descriptionTag ? descriptionTag.content : '説明が設定されていません。';
+
+                // titleを取得
+                const titleTag = doc.querySelector('title');
+                const title = titleTag ? titleTag.innerText : 'タイトルが設定されていません。';
+
+                return { description: description, title: title };
+
+            } catch (error) {
+                console.error(`Workspace error for ${url}:`, error);
+                return { description: '説明の取得中にエラーが発生しました。', title: 'エラー' };
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const toolListDiv = document.querySelector('.tool-list');
+
+            const fetchPromises = tools.map(tool => fetchMetaData(tool.file));
+
+            const metaDataResults = await Promise.all(fetchPromises);
+
+            tools.forEach((tool, index) => {
+                const metaData = metaDataResults[index];
+
+                const toolCardDiv = document.createElement('div');
+                toolCardDiv.classList.add('tool-card');
+                toolCardDiv.onclick = () => {
+                    location.href = tool.file;
+                };
+
+                const descriptionDiv = document.createElement('div');
+                descriptionDiv.classList.add('description');
+
+                const titleElement = document.createElement('h3');
+                titleElement.innerText = tool.title;
+
+                const descriptionElement = document.createElement('p');
+                descriptionElement.innerText = metaData.description;
+
+                descriptionDiv.appendChild(titleElement);
+                descriptionDiv.appendChild(descriptionElement);
+                toolCardDiv.appendChild(descriptionDiv);
+
+                toolListDiv.appendChild(toolCardDiv);
+            });
+        });
+
+    </script>
+</body>
+</html>
