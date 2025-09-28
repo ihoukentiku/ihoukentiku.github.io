@@ -1,196 +1,346 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>違法建築のTRPG用便利ツール</title>
-    <meta name="description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。">
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Helvetica Neue', sans-serif;
-            background: #f4f4f9;
-        }
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        header {
-            background: linear-gradient(to right, #4a90e2, #357ABD);
-            color: white;
-            padding: 24px;
-            text-align: center;
-            font-size: 32px;
-            font-weight: bold;
-        }
+		<title>違法建築のTRPGラボ</title>
+		<meta name="description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
+		<link rel="icon" href="kanzi_icon.svg" type="image/svg+xml" />
 
-        .container {
-            max-width: 90%;
-            margin: auto;
-            padding: 0 16px;
-        }
+		<meta property="og:url" content="https://ihoukentiku.github.io/" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="違法建築のTRPGラボ" />
+		<meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
+		<meta property="og:site_name" content="違法建築のTRPGラボ" />
+		<meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-        .top-bar {
-            margin-bottom: 32px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-        }
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content="@ihoukentiku" />
+		<meta name="twitter:creator" content="@ihoukentiku" />
+		<meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-        .top-bar .description {
-            font-size: 18px;
-            color: #333;
-        }
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+		<link rel="stylesheet" href="common.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-        .top-bar .bug-report {
-            font-size: 15px;
-            color: #666;
-        }
+		<style>
+			:root {
+				--info-box-bg: #e0f2f7;
+				--info-box-border: #03a9f4;
+				--info-link-color: #0288d1;
+			}
+			body.dark-mode {
+				--info-box-bg: #2a3643;
+				--info-box-border: #00bcd4;
+				--info-link-color: #81d4fa;
+			}
 
-        .top-bar .bug-report a {
-            color: #4A90E2;
-            text-decoration: none;
-        }
+			.container {
+				max-width: 90%;
+				margin: auto;
+			}
 
-        .top-bar .bug-report a:hover {
-            text-decoration: underline;
-        }
+			.top-bar {
+				margin: 16px 0;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				justify-content: space-between;
+				font-size: 18px;
+				color: var(--color-on-secondary);
+				font-size: clamp(8px, 3.6vw, 18px);
+				transition: color 0.2s ease;
+			}
 
-        .tool-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            justify-content: space-between;
-        }
+			.info-section {
+				width: 100%;
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				gap: 16px;
+				margin-bottom: 16px;
+			}
 
-        .tool-card {
-            flex: 1 1 calc(50% - 1rem);
-            box-sizing: border-box;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            padding: 24px;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.3s ease;
-        }
+			.info-box {
+				background-color: var(--info-box-bg);
+				border-left: 5px solid var(--info-box-border);
+				padding: 16px;
+				border-radius: 8px;
+				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+				flex: 1 1 calc(50% - 10px);
+				min-width: 0;
+				box-sizing: border-box;
+				font-size: clamp(8px, 3.2vw, 16px);
+				color: var(--color-on-secondary);
+				transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+			}
 
-        @media (max-width: 800px) {
-            .tool-card {
-                flex: 1 1 100%;
-            }
-        }
+			@media (max-width: 840px) {
+				.info-box {
+					flex: 1 1 100%;
+				}
+			}
 
-        .tool-card:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-        }
+			.info-box a {
+				color: var(--info-link-color);
+				text-decoration: none;
+				font-weight: bold;
+				transition: color 0.2s ease;
+			}
+			.info-box h3 {
+				margin-top: 0;
+			}
+			.info-box a:hover {
+				text-decoration: underline;
+			}
 
-        .tool-card .description h3 {
-            margin-top: 0;
-            font-size: 20px;
-        }
+			.latest-update-text {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
 
-        .tool-card .description p {
-            color: #555;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-    </style>
-</head>
-<body>
-    <header>違法建築のTRPG用便利ツール</header>
+			.tool-list {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 16px;
+				justify-content: space-between;
+			}
+			.tool-card {
+				flex: 1 1 calc(50% - 1rem);
+				box-sizing: border-box;
+				background: var(--color-secondary);
+				border-radius: 12px;
+				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+				font-size: clamp(8px, 3.2vw, 16px);
+				color: var(--color-on-secondary);
+				transition: color 0.2s ease;
+				padding: 24px;
+				cursor: pointer;
+				transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+			}
 
-    <div class="container">
-        <div class="top-bar">
-            <p class="description">TRPG用の便利なツールをまとめています。</p>
-            <div class="bug-report">
-                質問・バグ報告・リクエスト等は <a href="https://x.com/ihoukentiku" target="_blank">XのDM</a> まで
-            </div>
-        </div>
+			@media (max-width: 840px) {
+				.tool-card {
+					flex: 1 1 100%;
+				}
+			}
 
-        <div class="tool-list">
-            </div>
-    </div>
+			.tool-card .description h3 {
+				margin-top: 0;
+			}
+			.tool-card p {
+				opacity: 70%;
+				margin-bottom: 0;
+			}
+			.tool-card:hover {
+				transform: scale(1.02);
+				box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<a href="https://ihoukentiku.github.io/" class="no-underline-link" aria-label="ホームページ" title="ホームページへ">
+				<div class="header-left">
+					<div class="header-icon">
+						<img src="ihoukentiku_full.svg" alt="サイトアイコン" />
+					</div>
+					<div class="header-title">違法建築のTRPGラボ</div>
+				</div>
+			</a>
+			<div class="header-right">
+				<button id="help-button" class="header-button" aria-label="使い方ガイド" title="使い方ガイド">
+					<i class="material-icons">help</i>
+				</button>
+				<a href="https://x.com/ihoukentiku" target="_blank" class="header-button" aria-label="X (旧Twitter) アカウント" title="X (旧Twitter) アカウントへ">
+					<i class="fab fa-twitter" id="x-icon"></i>
+				</a>
+				<button id="theme-toggle" class="header-button" aria-label="テーマ切り替え" title="テーマを切り替える">
+					<i class="material-icons">dark_mode</i>
+				</button>
+			</div>
+		</header>
 
-    <footer style="text-align: center; padding: 20px; font-size: 12px; color: #999;">
-        <!-- 当サイトでは利便性向上と利用状況の把握のために Google アナリティクスを使用しています。
-        <a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" style="color:#4A90E2;">詳細はこちら</a> -->
-        <p>
-            &copy; 2025 違法建築. 本ツールは<a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE">MITライセンス</a>の下で提供されています。
-        </p>
-    </footer>
+		<div class="container">
+			<div class="top-bar">
+				<p>TRPG用の便利なツールをまとめています。セッションの円滑化や利便度向上にお役立てください。</p>
+			</div>
 
-    <script>
-        // ツールリストの情報を配列で定義
-        const tools = [
-            { file: 'coc7_npc_token.html', title: '新クトゥルフ神話TRPG NPCコマ作成ツール' },
-            { file: 'coc6_npc_token.html', title: 'クトゥルフ神話TRPG NPCコマ作成ツール' },
-            { file: 'hex_maker.html', title: 'ヘクス作成ツール' }, 
-            { file: 'hex_ruler.html', title: 'ヘクス定規作成ツール' },
-            { file: 'damage_sum.html', title: 'BCDiceダメージ自動計算ツール' },
-            { file: 'grid_maker.html', title: 'グリッド作成ツール' },
-            { file: 'grid_ruler.html', title: 'グリッド定規作成ツール' },
-            { file: 'mask_maker.html', title: 'マスク作成ツール' },
-        ];
+			<div class="info-section">
+				<div class="info-box update-announcement">
+					<h3>更新情報</h3>
+					<div id="latest-update"></div>
+					<p style="margin-top: 16px; margin-bottom: 0">
+						<a href="#" id="show-changelog">詳細を表示</a>
+					</p>
+				</div>
+				<div class="info-box request-form">
+					<h3>ご意見・ご要望</h3>
+					<p>ツールの改善案、新しいツールのリクエスト、バグ報告など、お気軽にお寄せください。</p>
+					<p style="margin-bottom: 0; margin-top: 20px"><a href="https://docs.google.com/forms/d/e/1FAIpQLSd3-QGTqNyGFU0zRC-DdUH-a2viivXUNGN0ogcxmgx-265Dhw/viewform?usp=header" target="_blank">改善要望フォームはこちら</a></p>
+				</div>
+			</div>
 
-        async function fetchMetaData(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    console.error(`Error fetching ${url}: ${response.statusText}`);
-                    return { description: '説明を取得できませんでした。', title: 'タイトルを取得できませんでした。' };
-                }
-                const htmlText = await response.text();
+			<div class="tool-list"></div>
+		</div>
 
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
+		<div id="help-modal" class="modal">
+			<div class="modal-content">
+				<button class="close-button" aria-label="閉じる">&times;</button>
+				<h2>使い方ガイド</h2>
+				<p>このサイトはTRPGセッションで使える小さな便利ツールを集めたページです。</p>
+				<h3 id="nav">ナビゲーション</h3>
+				<ul>
+					<li><strong>左上のロゴ/タイトル</strong>：トップページへ戻ります。</li>
+					<li><strong>ツールカード</strong>：カードをクリックすると該当ツールのページに移動します。</li>
+					<li><strong>更新情報</strong>：トップの「更新情報」で最新の更新を確認できます。詳細は「詳細を表示」を押してください。</li>
+				</ul>
+			</div>
+		</div>
 
-                // meta descriptionを取得
-                const descriptionTag = doc.querySelector('meta[name="description"]');
-                const description = descriptionTag ? descriptionTag.content : '説明が設定されていません。';
+		<div id="changelog-modal" class="modal">
+			<div class="modal-content">
+				<button class="close-button" aria-label="閉じる">&times;</button>
+				<h2>更新履歴</h2>
+				<div id="changelog-content"></div>
+			</div>
+		</div>
 
-                // titleを取得
-                const titleTag = doc.querySelector('title');
-                const title = titleTag ? titleTag.innerText : 'タイトルが設定されていません。';
+		<footer>
+			<p>&copy; <span id="current-year"></span> ihoukentiku. 本ツールは<a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE">MITライセンス</a>の下で提供されています。</p>
+		</footer>
 
-                return { description: description, title: title };
+		<script src="common.js"></script>
 
-            } catch (error) {
-                console.error(`Workspace error for ${url}:`, error);
-                return { description: '説明の取得中にエラーが発生しました。', title: 'エラー' };
-            }
-        }
+		<script>
+			const tools = [
+				{ file: "coc7_dice.html", title: "CoC7 ダイスツール" },
+				{ file: "coc7_npc_token.html", title: "新クトゥルフ神話TRPG NPCコマ作成ツール" },
+				{ file: "coc6_npc_token.html", title: "クトゥルフ神話TRPG NPCコマ作成ツール" },
+				{ file: "hex_maker.html", title: "ヘクス作成ツール" },
+				{ file: "hex_ruler.html", title: "ヘクス定規作成ツール" },
+				{ file: "damage_sum.html", title: "BCDiceダメージ自動計算ツール" },
+				{ file: "grid_maker.html", title: "グリッド作成ツール" },
+				{ file: "grid_ruler.html", title: "グリッド定規作成ツール" },
+				{ file: "mask_maker.html", title: "マスク作成ツール" },
+			];
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const toolListDiv = document.querySelector('.tool-list');
+			const changelog = [
+				{
+					date: "2025.09.28",
+					version: "v1.0.0",
+					updates: ["トップページを大幅リニューアルしました。", "CoC7ダイスツールを追加しました。"],
+				},
+			];
 
-            const fetchPromises = tools.map(tool => fetchMetaData(tool.file));
+			async function fetchMetaData(url) {
+				try {
+					const response = await fetch(url);
+					if (!response.ok) {
+						console.error(`Error fetching ${url}: ${response.statusText}`);
+						return { description: "説明を取得できませんでした。", title: "タイトルを取得できませんでした。" };
+					}
+					const htmlText = await response.text();
 
-            const metaDataResults = await Promise.all(fetchPromises);
+					const parser = new DOMParser();
+					const doc = parser.parseFromString(htmlText, "text/html");
 
-            tools.forEach((tool, index) => {
-                const metaData = metaDataResults[index];
+					const descriptionTag = doc.querySelector('meta[name="description"]');
+					const description = descriptionTag ? descriptionTag.content : "説明が設定されていません。";
 
-                const toolCardDiv = document.createElement('div');
-                toolCardDiv.classList.add('tool-card');
-                toolCardDiv.onclick = () => {
-                    location.href = tool.file;
-                };
+					const titleTag = doc.querySelector("title");
+					let title = titleTag ? titleTag.innerText : "タイトルが設定されていません。";
+					title = title.replace(/｜違法建築のTRPGラボ/g, "").trim();
 
-                const descriptionDiv = document.createElement('div');
-                descriptionDiv.classList.add('description');
+					return { description: description, title: title };
+				} catch (error) {
+					console.error(`Workspace error for ${url}:`, error);
+					return { description: "説明の取得中にエラーが発生しました。", title: "エラー" };
+				}
+			}
 
-                const titleElement = document.createElement('h3');
-                titleElement.innerText = tool.title;
+			document.addEventListener("DOMContentLoaded", async () => {
+				const toolListDiv = document.querySelector(".tool-list");
 
-                const descriptionElement = document.createElement('p');
-                descriptionElement.innerText = metaData.description;
+				const fetchPromises = tools.map((tool) => fetchMetaData(tool.file));
+				const metaDataResults = await Promise.all(fetchPromises);
 
-                descriptionDiv.appendChild(titleElement);
-                descriptionDiv.appendChild(descriptionElement);
-                toolCardDiv.appendChild(descriptionDiv);
+				tools.forEach((tool, index) => {
+					const metaData = metaDataResults[index];
 
-                toolListDiv.appendChild(toolCardDiv);
-            });
-        });
+					const toolCardDiv = document.createElement("div");
+					toolCardDiv.classList.add("tool-card");
+					toolCardDiv.onclick = () => {
+						location.href = tool.file;
+					};
 
-    </script>
-</body>
+					const descriptionDiv = document.createElement("div");
+					descriptionDiv.classList.add("description");
+
+					const titleElement = document.createElement("h3");
+					titleElement.innerText = metaData.title;
+					const descriptionElement = document.createElement("p");
+					descriptionElement.innerText = metaData.description;
+
+					descriptionDiv.appendChild(titleElement);
+					descriptionDiv.appendChild(descriptionElement);
+					toolCardDiv.appendChild(descriptionDiv);
+
+					toolListDiv.appendChild(toolCardDiv);
+				});
+
+				const latestUpdateDiv = document.getElementById("latest-update");
+				if (changelog.length > 0) {
+					const latest = changelog[0];
+					const updateText = latest.updates.join("");
+
+					latestUpdateDiv.innerHTML = `
+			                     <p style="margin: 0;">${latest.date} ${latest.version}</p>
+			                     <p class="latest-update-text" style="margin: 4px 0 0;">${updateText}</p>
+			                 `;
+				}
+
+				const changelogButton = document.getElementById("show-changelog");
+				const changelogModal = document.getElementById("changelog-modal");
+				const changelogCloseButton = changelogModal.querySelector(".close-button");
+				const changelogContentDiv = document.getElementById("changelog-content");
+
+				changelog.forEach((entry) => {
+					const updateSection = document.createElement("div");
+					updateSection.innerHTML = `
+			                     <hr style="border: 0; height: 1px; background: var(--color-outline); margin: 16px 0;">
+			                     <h3>${entry.date} <span>${entry.version}</span></h3>
+			                     <ul>
+			                         ${entry.updates.map((update) => `<li>${update}</li>`).join("")}
+			                     </ul>
+			                 `;
+					changelogContentDiv.appendChild(updateSection);
+				});
+
+				changelogButton.addEventListener("click", (event) => {
+					event.preventDefault();
+					changelogModal.style.display = "block";
+					document.body.style.overflow = "hidden";
+				});
+
+				changelogCloseButton.addEventListener("click", () => {
+					changelogModal.style.display = "none";
+					document.body.style.overflow = "";
+				});
+
+				window.addEventListener("click", (event) => {
+					if (event.target === changelogModal) {
+						changelogModal.style.display = "none";
+						document.body.style.overflow = "";
+					}
+				});
+			});
+		</script>
+	</body>
 </html>

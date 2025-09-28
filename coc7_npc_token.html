@@ -1,587 +1,766 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoC7 NPCコマ作成ツール｜違法建築のTRPG便利ツール</title>
-    <meta name="description" content="新クトゥルフ神話TRPG(CoC7版)のココフォリア用NPC駒を簡単に作成。名前、能力値、技能、メモなどを入力するだけで駒データを生成できます。能力値ダイス入力時は、ロールでランダム決定も可能。作成した設定は保存することで、いつでも再利用できます。">
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: #f7f8fa;
-            margin: auto;
-            padding: 20px;
-            max-width: 800px;
-            color: #333;
-        }
-        
-        h1 {
-            font-size: 28px;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 5px;
-            margin-bottom: 20px;
-            margin-top: 10px;
-        }
-        
-        h3 {
-            margin-bottom: 5px;
-            margin-top: 0px;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CoC7 NPCコマ作成ツール｜違法建築のTRPG便利ツール</title>
+        <meta name="description" content="新クトゥルフ神話TRPG(CoC7版)のココフォリア用NPC駒を簡単に作成。名前、能力値、技能、メモなどを入力するだけで駒データを生成できます。能力値ダイス入力時は、ロールでランダム決定も可能。作成した設定は保存することで、いつでも再利用できます。" />
+        <link rel="icon" href="kanzi_icon.svg" type="image/svg+xml" />
 
-        div {
-            margin:10px;
-        }
-        
-        .section {
-            background: white;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 2px;
-            border: 1px solid #888;
-            text-align: center;
-        }
-        
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        
-        td input {
-            width: 100%;
-            border: none;
-        }
+        <meta property="og:url" content="https://ihoukentiku.github.io/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="違法建築のTRPG用便利ツール" />
+        <meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
+        <meta property="og:site_name" content="違法建築のTRPG用便利ツール" />
 
-        input, select, textarea {
-            border: 1px solid #888;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
 
-        textarea {
-            padding: 10px
-        }
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-        input[type="text"], input[type="number"], select {
-            box-sizing: border-box;
-            font-size: 18px;
-            padding: 0px 5px 0px 5px;
-            height: 30px;
-        }
+        <style>
+            :root {
+                --bg-color: #f4f4f9;
+                --text-color: #333;
+                --header-bg: #468cdc;
+                --section-bg: white;
+            }
+            body.dark-mode {
+                --bg-color: #162330;
+                --text-color: #ecf0f1;
+                --header-bg: #2c3e50;
+                --section-bg: #2a3a4a;
+            }
 
-        input[type="number"]::-webkit-outer-spin-button, 
-        input[type="number"]::-webkit-inner-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-            -moz-appearance:textfield; 
-        } 
+            body {
+                margin: 0;
+                font-family: "Noto Sans JP", sans-serif;
+                background: var(--bg-color);
+                color: var(--text-color);
+                transition: background 0.2s ease, color 0.2s ease;
+                padding-top: 72px;
+            }
 
-        
-        button {
-            background-color: #448AD4;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color .2s;
-            margin-right: 5px;
-            font-weight: bold;
-        }
-        
-        button:hover {
-            background-color: #3D7BCD;
-        }
-        
-        .del-btn {
-            cursor: pointer;
-            padding: 1px;
-            border: none;
-            background: none;
-            margin-right: 0px;
-            vertical-align: middle;
-            height:30px;
-            width:30px;
-        }
+            header {
+                background: var(--header-bg);
+                color: white;
+                padding: 16px 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                position: fixed;
+                top: 0;
+                width: 100%;
+                z-index: 1000;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                box-sizing: border-box;
+            }
 
-        .del-btn:hover {
-            background-color: #ccc;
-        }
-        
-        #message {
-            margin-left: 10px;
-            font-weight: bold;
-        }
-    
-    </style>
-</head>
-<body>
-    <div style="position: relative;">
-        <h1 style="margin: 0;">CoC7 NPCコマ作成ツール</h1>
-        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
-            <button>ホームページへ</button>
-        </a>
-    </div>
+            .header-left {
+                display: flex;
+                height: 40px;
+                align-items: center;
+            }
 
-    <div class="section">
-        <div>
-            <button onclick="saveData()">保存</button>
-            <select id="loadKey" style="margin-right:5px">
-                <option value="">-- 保存したデータを選択 --</option>
-            </select>
-            <button onclick="loadData()">読み込み</button>
-            <button onclick="deleteData()">削除</button>
-            <span id="saveMessage"></span>
+            .header-icon img {
+                height: 40px;
+                margin-right: 8px;
+            }
+
+            .header-title {
+                font-size: 28px;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+
+            .header-right {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .x-link {
+                font-size: 24px;
+                color: white;
+                text-decoration: none;
+                transition: transform 0.2s ease;
+            }
+
+            .x-link:hover {
+                transform: scale(1.1);
+            }
+
+            .theme-toggle-button {
+                background: none;
+                border: none;
+                color: white;
+                cursor: pointer;
+                font-size: 28px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.2s ease;
+            }
+
+            .theme-toggle-button:hover {
+                transform: scale(1.1);
+            }
+
+            @media (max-width: 840px) {
+                body {
+                    padding-top: 130px;
+                }
+                header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    padding: 16px;
+                }
+
+                .header-left {
+                    margin-bottom: 15px;
+                }
+
+                .header-title {
+                    font-size: 24px;
+                }
+
+                .header-right {
+                    width: 100%;
+                    justify-content: space-between;
+                    gap: 10px;
+                }
+
+                .search-box {
+                    flex-grow: 1;
+                    margin-right: 10px;
+                }
+
+                .search-box input {
+                    width: auto;
+                    flex-grow: 1;
+                }
+
+                .x-link {
+                    margin-right: 0;
+                }
+            }
+
+            .container {
+                max-width: 800px;
+                margin: auto;
+                padding: 0 16px;
+                display: flex;
+                flex-direction: column;
+                row-gap: 10px;
+            }
+
+            .section {
+                background: var(--section-bg);
+                padding: 16px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                display: flex;
+                flex-direction: column;
+                row-gap: 10px;
+                transition: color 0.2s ease;
+            }
+
+            .settings {
+                display: flex;
+                column-gap: 8px;
+                flex-wrap: wrap;
+                row-gap: 8px;
+                align-items: center;
+            }
+
+            h3 {
+                margin-bottom: 5px;
+                margin-top: 0px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th,
+            td {
+                padding: 2px;
+                border: 1px solid #888;
+                text-align: center;
+            }
+
+            tr:hover {
+                background-color: #f1f1f1;
+            }
+
+            td input {
+                width: 100%;
+                border: none;
+            }
+
+            label > input {
+                margin-left: 4px;
+            }
+
+            input,
+            select,
+            textarea {
+                border: 1px solid #888;
+                border-radius: 5px;
+                font-size: 16px;
+            }
+
+            textarea {
+                padding: 10px;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            select {
+                padding: 0px 5px 0px 5px;
+                height: 30px;
+            }
+
+            button {
+                background-color: #468cdc;
+                color: white;
+                font-weight: bold;
+                box-sizing: border-box;
+                height: 30px;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+            }
+
+            button:hover {
+                background-color: #2266b4;
+            }
+
+            .del-btn {
+                cursor: pointer;
+                padding: 1px;
+                border: none;
+                background: none;
+                vertical-align: middle;
+                height: 30px;
+                width: 30px;
+            }
+
+            .del-btn:hover {
+                background-color: #ccc;
+            }
+
+            #message {
+                margin-left: 10px;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="header-left">
+                <div class="header-icon">
+                    <img src="ihoukentiku_full.svg" alt="サイトアイコン" />
+                </div>
+                <div class="header-title">CoC7 NPCコマ作成ツール</div>
+            </div>
+            <div class="header-right">
+                <a href="https://x.com/ihoukentiku" target="_blank" class="x-link" aria-label="X (旧Twitter) アカウント">
+                    <i class="fab fa-twitter" id="x-icon"></i>
+                </a>
+                <button id="theme-toggle" class="theme-toggle-button" aria-label="テーマ切り替え">
+                    <i class="material-icons">dark_mode</i>
+                </button>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="section">
+                <div class="settings">
+                    <button onclick="saveData()">保存</button>
+                    <select id="loadKey">
+                        <option value="">-- 保存したデータを選択 --</option>
+                    </select>
+                    <button onclick="loadData()">読み込み</button>
+                    <button onclick="deleteData()">削除</button>
+                    <span id="saveMessage"></span>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="settings">
+                    <label>名前 <input type="text" id="nameInput" /></label>
+                </div>
+                <div class="settings">
+                    <table id="abilityTable">
+                        <tr>
+                            <th style="width: 70px">能力値</th>
+                            <th>STR</th>
+                            <th>CON</th>
+                            <th>POW</th>
+                            <th>DEX</th>
+                            <th>APP</th>
+                            <th>SIZ</th>
+                            <th>INT</th>
+                            <th>EDU</th>
+                        </tr>
+                        <tr id="diceRow">
+                            <td>ダイス</td>
+                            <td><input type="text" id="dice-STR" /></td>
+                            <td><input type="text" id="dice-CON" /></td>
+                            <td><input type="text" id="dice-POW" /></td>
+                            <td><input type="text" id="dice-DEX" /></td>
+                            <td><input type="text" id="dice-APP" /></td>
+                            <td><input type="text" id="dice-SIZ" /></td>
+                            <td><input type="text" id="dice-INT" /></td>
+                            <td><input type="text" id="dice-EDU" /></td>
+                        </tr>
+                        <tr id="valueRow">
+                            <td>能力値</td>
+                            <td><input type="number" id="val-STR" class="val" /></td>
+                            <td><input type="number" id="val-CON" class="val" /></td>
+                            <td><input type="number" id="val-POW" class="val" /></td>
+                            <td><input type="number" id="val-DEX" class="val" /></td>
+                            <td><input type="number" id="val-APP" class="val" /></td>
+                            <td><input type="number" id="val-SIZ" class="val" /></td>
+                            <td><input type="number" id="val-INT" class="val" /></td>
+                            <td><input type="number" id="val-EDU" class="val" /></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="settings">
+                    <label>正気度<input type="checkbox" id="sanToggle" value="no" style="width: 20px; height: 20px; vertical-align: middle" /></label>
+                    <label>HP<input type="number" id="hp" style="width: 50px" /></label>
+                    <label>MP<input type="number" id="mp" style="width: 50px" /></label>
+                    <label id="sanLabel" style="display: none">SAN <input type="number" id="san" style="width: 50px" /></label>
+                    <label>DB<input type="text" id="db" style="width: 70px" /></label>
+                    <label>ビルド<input type="number" id="build" style="width: 50px" /></label>
+                    <label>MOV<input type="number" id="mov" style="width: 50px" /></label>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="settings">
+                    <button id="rollBtn">ロール</button>
+                    <button id="copyBtn">コピー</button>
+                    <button id="rollCopyBtn">ロール＆コピー</button>
+                    <span id="message"></span>
+                </div>
+                <div class="settings">
+                    <button id="cpCopyBtn">チャパレコピー</button>
+                    <button id="rollCpCopyBtn">ロール＆チャパレコピー</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="command-table">
+                    <h3>技能</h3>
+                    <table id="skillsTable" style="max-width: 340px">
+                        <tr>
+                            <th>技能名</th>
+                            <th style="width: 60px">技能値</th>
+                            <th style="width: 30px"></th>
+                        </tr>
+                    </table>
+                    <button id="addSkillBtn">＋</button>
+                </div>
+                <div class="command-table">
+                    <h3>その他コマンド(ダメージ等)</h3>
+                    <table id="damageTable" style="max-width: 530px">
+                        <tr>
+                            <th>名称</th>
+                            <th>コマンド</th>
+                            <th style="width: 30px"></th>
+                        </tr>
+                    </table>
+                    <button id="addDamageBtn">＋</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>メモ</h3>
+                <textarea style="width: 100%; height: 120px" id="memoInput" placeholder="ここに任意のメモを入力"></textarea>
+            </div>
         </div>
-    </div>
 
-    <div class="section">
-        <div>
-            <label>名前 <input type="text" id="nameInput"></label>
-        </div>
-        <div>
-            <table id="abilityTable" >
-                <tr>
-                    <th style="width:70px">能力値</th><th>STR</th><th>CON</th><th>POW</th><th>DEX</th><th>APP</th><th>SIZ</th><th>INT</th><th>EDU</th>
-                </tr>
-                <tr id="diceRow">
-                    <td>ダイス</td>
-                    <td><input type="text" id="dice-STR"></td>
-                    <td><input type="text" id="dice-CON"></td>
-                    <td><input type="text" id="dice-POW"></td>
-                    <td><input type="text" id="dice-DEX"></td>
-                    <td><input type="text" id="dice-APP"></td>
-                    <td><input type="text" id="dice-SIZ"></td>
-                    <td><input type="text" id="dice-INT"></td>
-                    <td><input type="text" id="dice-EDU"></td>
-                </tr>
-                <tr id="valueRow">
-                    <td>能力値</td>
-                    <td><input type="number" id="val-STR" class="val"></td>
-                    <td><input type="number" id="val-CON" class="val"></td>
-                    <td><input type="number" id="val-POW" class="val"></td>
-                    <td><input type="number" id="val-DEX" class="val"></td>
-                    <td><input type="number" id="val-APP" class="val"></td>
-                    <td><input type="number" id="val-SIZ" class="val"></td>
-                    <td><input type="number" id="val-INT" class="val"></td>
-                    <td><input type="number" id="val-EDU" class="val"></td>
-                </tr>
-            </table>
-        </div>
-        <div>
-            <label style="margin-right:5px">正気度<input type="checkbox" id="sanToggle" value="no" style="width:20px; height:20px; vertical-align: middle;"></label>
-            <label>HP <input type="number" id="hp" style="width:50px; margin-right:10px"></label>
-            <label>MP <input type="number" id="mp" style="width:50px; margin-right:10px"></label>
-            <label id="sanLabel" style="display:none">SAN <input type="number" id="san" style="width:50px; margin-right:10px"></label>
-            <label>DB <input type="text" id="db" style="width:70px; margin-right:10px"></label>
-            <label>ビルド <input type="number" id="build" style="width:50px; margin-right:10px"></label>
-            <label>MOV <input type="number" id="mov" style="width:50px"></label>
-        </div>
-    </div>
+        <script>
+            const MIN_ROWS = 1;
+            const messageEl = document.getElementById("message");
+            const saveMessageEl = document.getElementById("saveMessage");
+            const sanToggleEL = document.getElementById("sanToggle");
+            const loadKeySelect = document.getElementById("loadKey");
 
-    <div class="section">
-        <div>
-            <button id="rollBtn">ロール</button>
-            <button id="copyBtn">コピー</button>
-            <button id="rollCopyBtn">ロール＆コピー</button>
-            <span id="message"></span>
-        </div>
-        <div>
-            <button id="cpCopyBtn">チャパレコピー</button>
-            <button id="rollCpCopyBtn">ロール＆チャパレコピー</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <div style="margin-top:5px">
-            <h3>技能</h3>
-            <table id="skillsTable" style="max-width:340px">
-                <tr><th>技能名</th><th style="width:60px">技能値</th><th style="width:30px"></th></tr>
-            </table>
-            <button id="addSkillBtn">＋</button>
-        </div>
-        <div>
-            <h3>その他コマンド(ダメージ等)</h3>
-            <table id="damageTable" style="max-width: 530px;">
-                <tr><th>名称</th><th>コマンド</th><th  style="width:30px"></th></tr>
-            </table>
-            <button id="addDamageBtn">＋</button>
-        </div>
-    </div>
-
-    <div class="section">
-        <h3>メモ</h3>
-        <textarea style="width: 100%; height: 120px;" id="memoInput" placeholder="ここに任意のメモを入力"></textarea>
-    </div>
-
-    <script>
-        const MIN_ROWS = 1;
-        const messageEl = document.getElementById('message');
-        const saveMessageEl = document.getElementById('saveMessage');
-        const sanToggleEL = document.getElementById('sanToggle');
-        const loadKeySelect = document.getElementById('loadKey');
-
-        function showMessage(msg) {
-            messageEl.textContent = msg;
-            setTimeout(() => messageEl.textContent = '', 2000);
-        }
-
-        function showSaveMessage(msg) {
-            saveMessageEl.textContent = msg;
-            setTimeout(() => saveMessageEl.textContent = '', 2000);
-        }
-
-        function updateDataList() {
-            loadKeySelect.innerHTML = '<option value="">-- 保存したデータを選択 --</option>';
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('coc7_savedData_')) {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.textContent = key.substring('coc7_savedData_'.length);
-                    loadKeySelect.appendChild(option);
-                }
-            }
-        }
-
-        function saveData() {
-            const saveName = document.getElementById('nameInput').value.trim();
-            if (!saveName) {
-                showSaveMessage('名前を入力して下さい');
-                return;
+            function showMessage(msg) {
+                messageEl.textContent = msg;
+                setTimeout(() => (messageEl.textContent = ""), 2000);
             }
 
-            const dataToSave = {};
-
-        　　dataToSave.nameInput = saveName;
-
-            const abilities = {};
-            ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(l => {
-                const diceInput = document.getElementById('dice-'+l);
-                const valInput = document.getElementById('val-'+l);
-                abilities[l] = {
-                    dice: diceInput ? diceInput.value : '',
-                    value: valInput ? valInput.value : ''
-                };
-            });
-            dataToSave.abilities = abilities;
-
-            const skills = [];
-            const skillsTable = document.getElementById('skillsTable');
-            for (let i = 1; i < skillsTable.rows.length; i++) {
-                const row = skillsTable.rows[i];
-                const skillNameInput = row.cells[0].querySelector('input[type="text"]');
-                const skillValueInput = row.cells[1].querySelector('input[type="number"]');
-                if (skillNameInput && skillValueInput && skillNameInput.value.trim() !== "" && skillValueInput.value.trim() !== "") {
-                    skills.push({
-                        name: skillNameInput.value.trim(),
-                        value: skillValueInput.value
-                    });
-                }
-            }
-            dataToSave.skills = skills;
-
-            const commands = [];
-            const damageTable = document.getElementById('damageTable');
-            for (let i = 1; i < damageTable.rows.length; i++) {
-                const row = damageTable.rows[i];
-                const commandNameInput = row.cells[0].querySelector('input[type="text"]');
-                const commandValueInput = row.cells[1].querySelector('input[type="text"]');
-                if (commandNameInput && commandValueInput && commandNameInput.value.trim() !== "" && commandValueInput.value.trim() !== "") {
-                    commands.push({
-                        name: commandNameInput.value.trim(),
-                        command: commandValueInput.value.trim()
-                    });
-                }
-            }
-            dataToSave.commands = commands;
-
-            dataToSave.mov = document.getElementById('mov').value;
-
-            dataToSave.memoInput = document.getElementById('memoInput').value;
-
-            const key = `coc7_savedData_${saveName}`;
-            localStorage.setItem(key, JSON.stringify(dataToSave));
-            showSaveMessage('保存しました');
-            saveNameInput.value = '';
-            updateDataList();
-        }
-
-        function loadData() {
-            const selectedKey = loadKeySelect.value;
-            if (!selectedKey) {
-                showSaveMessage('読み込むデータを選択してください');
-                return;
+            function showSaveMessage(msg) {
+                saveMessageEl.textContent = msg;
+                setTimeout(() => (saveMessageEl.textContent = ""), 2000);
             }
 
-            const savedDataJSON = localStorage.getItem(selectedKey);
-            if (savedDataJSON) {
-                const savedData = JSON.parse(savedDataJSON);
-
-                document.getElementById('nameInput').value = savedData.nameInput || '';
-
-                if (savedData.abilities) {
-                    ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(l => {
-                        const diceInput = document.getElementById('dice-'+l);
-                        const valInput = document.getElementById('val-'+l);
-                        if (diceInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty('dice')) {
-                             diceInput.value = savedData.abilities[l].dice;
-                        } else if(diceInput) {
-                             diceInput.value = '';
-                        }
-                         if (valInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty('value')) {
-                             valInput.value = savedData.abilities[l].value;
-                        } else if (valInput){
-                             valInput.value = '';
-                        }
-                    });
-                }
-
-                const skillsTable = document.getElementById('skillsTable');
-                while (skillsTable.rows.length > 1) {
-                    skillsTable.deleteRow(1);
-                }
-
-                if (savedData.skills && savedData.skills.length > 0) {
-                    savedData.skills.forEach(skill => {
-                        addRow('skillsTable');
-                        const newRow = skillsTable.rows[skillsTable.rows.length - 1];
-                        newRow.cells[0].querySelector('input[type="text"]').value = skill.name;
-                        newRow.cells[1].querySelector('input[type="number"]').value = skill.value;
-                    });
-                }
-
-                while (skillsTable.rows.length <= MIN_ROWS) {
-                     addRow('skillsTable');
-                }
-
-                const damageTable = document.getElementById('damageTable');
-                while (damageTable.rows.length > 1) {
-                    damageTable.deleteRow(1);
-                }
-
-                if (savedData.commands && savedData.commands.length > 0) {
-                    savedData.commands.forEach(command => {
-                        addRow('damageTable');
-                        const newRow = damageTable.rows[damageTable.rows.length - 1];
-                        newRow.cells[0].querySelector('input[type="text"]').value = command.name;
-                        newRow.cells[1].querySelector('input[type="text"]').value = command.command;
-                    });
-                }
-
-                while (damageTable.rows.length <= MIN_ROWS) {
-                     addRow('damageTable');
-                }
-
-                const movInput = document.getElementById('mov');
-                if (savedData.hasOwnProperty('mov')) {
-                    movInput.value = savedData.mov;
-                } else {
-                    movInput.value = '';
-                }
-
-                const memoInput = document.getElementById('memoInput');
-                if (savedData.hasOwnProperty('memoInput')) {
-                    memoInput.value = savedData.memoInput;
-                } else {
-                    memoInput.value = '';
-                }
-
-                updateStats();
-                showSaveMessage('読み込みました');
-            } else {
-                showSaveMessage('データが見つかりませんでした');
-            }
-        }
-
-        function deleteData() {
-            const selectedKey = loadKeySelect.value;
-            if (!selectedKey) {
-                showSaveMessage('削除するデータを選択してください');
-                return;
-            }
-
-            if (confirm(`「${selectedKey.substring('coc7_savedData_'.length)}」のデータを削除してもよろしいですか？`)) {
-                localStorage.removeItem(selectedKey);
-                showSaveMessage('データを削除しました');
-                updateDataList();
-            }
-        }
-        
-        function rollDice(expr) {
-            expr = expr.replace(/\s+/g, '');
-            if (!expr.includes('D')) {
-                const result = eval(expr);
-                if (!Number.isFinite(result)) throw new Error('Invalid constant expression');
-                return result;
-            }
-            const m = expr.match(/(\d+)d(\d+)(\+\d+)?/i);
-            if (!m) return 0;
-            let n = +m[1], sides = +m[2], bonus = m[3] ? +m[3].slice(1) : 0;
-            let sum = 0;
-            for (let i=0; i<n; i++) sum += Math.floor(Math.random()*sides)+1;
-            return sum + bonus;
-        }
-
-        function getDBBuild(total) {
-            const tiers = [ {r:64,db:'-2',b:-2}, {r:84,db:'-1',b:-1}, {r:124,db:'0',b:0}, {r:164,db:'+1D4',b:1}, {r:204,db:'+1D6',b:2}, {r:284,db:'+2D6',b:3}, {r:364,db:'+3D6',b:4}, {r:444,db:'+4D6',b:5}, {r:524,db:'+5D6',b:6} ];
-            for (let t of tiers) if (total <= t.r) return {db:t.db, build:t.b};
-            let extra = Math.floor((total-525)/80)+1;
-            let base = tiers[tiers.length-1];
-            return { db:`+${5+extra}D6`, build: base.b+extra };
-        }
-
-        function updateStats() {
-            const getVal = id => +document.getElementById(id).value || 0;
-            const con = getVal('val-CON'), siz = getVal('val-SIZ'), pow = getVal('val-POW');
-            document.getElementById('hp').value = Math.floor((con+siz)/10);
-            document.getElementById('mp').value = Math.floor(pow/5);
-            document.getElementById('san').value = pow;
-            const total = getVal('val-STR') + siz;
-            const {db, build} = getDBBuild(total);
-            document.getElementById('db').value = db;
-            document.getElementById('build').value = build;
-        }
-
-        function rollAbilities() {
-            ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(label => {
-                const d = document.getElementById('dice-'+label).value.trim();
-                if(d) document.getElementById('val-'+label).value = rollDice(d)*5;
-            });
-            updateStats();
-        }
-
-        function addRow(tableId) {
-            const tbl = document.getElementById(tableId);
-            const row = tbl.insertRow(-1);
-            if(tableId == "skillsTable"){
-                row.innerHTML = '<td><input type="text"></td><td><input type="number"></td><td><button class="del-btn">❌️</button></td>';
-            }else{
-                row.innerHTML = '<td><input type="text"></td><td><input type="text"></td><td><button class="del-btn">❌️</button></td>';
-            }
-        }
-
-        function setupTables() {
-            for (let i=0; i<MIN_ROWS; i++) addRow('skillsTable');
-            for (let i=0; i<MIN_ROWS; i++) addRow('damageTable');
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setupTables();
-            sanToggleEL.addEventListener('change', function() {
-                document.getElementById('sanLabel').style.display = this.checked ? 'inline' : 'none';
-            });
-            document.getElementById('rollBtn').addEventListener('click', rollAbilities);
-            document.getElementById('copyBtn').addEventListener('click', () => {
-                navigator.clipboard.writeText(generateJSON());
-                showMessage('コピーしました');
-            });
-            document.getElementById('rollCopyBtn').addEventListener('click', () => {
-                rollAbilities();
-                navigator.clipboard.writeText(generateJSON());
-                showMessage('コピーしました');
-            });
-            document.getElementById('cpCopyBtn').addEventListener('click', () => {
-                navigator.clipboard.writeText(generateChaPale().cmds);
-                showMessage('コピーしました');
-            });
-            document.getElementById('rollCpCopyBtn').addEventListener('click', () => {
-                rollAbilities();
-                navigator.clipboard.writeText(generateChaPale().cmds);
-                showMessage('コピーしました');
-            });
-            document.getElementById('addSkillBtn').addEventListener('click', () => addRow('skillsTable'));
-            document.getElementById('addDamageBtn').addEventListener('click', () => addRow('damageTable'));
-            document.body.addEventListener('click', e => {
-                if (e.target.classList.contains('del-btn')) {
-                    const tbl = e.target.closest('table');
-                    if (tbl.rows.length > MIN_ROWS + 1) {
-                        e.target.closest('tr').remove();
+            function updateDataList() {
+                loadKeySelect.innerHTML = '<option value="">-- 保存したデータを選択 --</option>';
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith("coc7_savedData_")) {
+                        const option = document.createElement("option");
+                        option.value = key;
+                        option.textContent = key.substring("coc7_savedData_".length);
+                        loadKeySelect.appendChild(option);
                     }
                 }
-            });
-            document.querySelectorAll('.val').forEach(inp => inp.addEventListener('change', updateStats));
-        });
+            }
 
-        function generateChaPale() {
-            const params = [];
-            const cmds = [];
-
-            if(sanToggleEL.checked) cmds.push('CC<={SAN} 正気度ロール');
-
-            ['STR','CON','POW','DEX','APP','SIZ','INT','EDU'].forEach(l => {
-                const v = document.getElementById('val-'+l).value;
-                if (v)  {
-                    params.push({label:l, value:v});
-                    cmds.push(`CC<={${l}} ${l}`);
+            function saveData() {
+                const saveName = document.getElementById("nameInput").value.trim();
+                if (!saveName) {
+                    showSaveMessage("名前を入力して下さい");
+                    return;
                 }
-            });
 
-            params.push({label:'DB', value: document.getElementById('db').value});
-            params.push({label:'ビルド', value: document.getElementById('build').value});
-            const m = document.getElementById('mov').value;
-            if(m) params.push({label:'MOV', value: m});
+                const dataToSave = {};
 
-            document.querySelectorAll('#skillsTable tr').forEach((tr,i) => {
-                if (i === 0) return;
-                const n = tr.cells[0].querySelector('input').value;
-                const v = tr.cells[1].querySelector('input').value;
-                if (n && v) cmds.push(`CC<=${v} ${n}`);
-            });
+                dataToSave.nameInput = saveName;
 
-            document.querySelectorAll('#damageTable tr').forEach((tr,i) => {
-                if (i === 0) return;
-                const n = tr.cells[0].querySelector('input').value;
-                let v = tr.cells[1].querySelector('input').value;
-                if (n && v) {
-                    v = v.replace(/DB/g, '{DB}');
-                    cmds.push(`${v} ${n}`);
+                const abilities = {};
+                ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
+                    const diceInput = document.getElementById("dice-" + l);
+                    const valInput = document.getElementById("val-" + l);
+                    abilities[l] = {
+                        dice: diceInput ? diceInput.value : "",
+                        value: valInput ? valInput.value : "",
+                    };
+                });
+                dataToSave.abilities = abilities;
+
+                const skills = [];
+                const skillsTable = document.getElementById("skillsTable");
+                for (let i = 1; i < skillsTable.rows.length; i++) {
+                    const row = skillsTable.rows[i];
+                    const skillNameInput = row.cells[0].querySelector('input[type="text"]');
+                    const skillValueInput = row.cells[1].querySelector('input[type="number"]');
+                    if (skillNameInput && skillValueInput && skillNameInput.value.trim() !== "" && skillValueInput.value.trim() !== "") {
+                        skills.push({
+                            name: skillNameInput.value.trim(),
+                            value: skillValueInput.value,
+                        });
+                    }
                 }
+                dataToSave.skills = skills;
+
+                const commands = [];
+                const damageTable = document.getElementById("damageTable");
+                for (let i = 1; i < damageTable.rows.length; i++) {
+                    const row = damageTable.rows[i];
+                    const commandNameInput = row.cells[0].querySelector('input[type="text"]');
+                    const commandValueInput = row.cells[1].querySelector('input[type="text"]');
+                    if (commandNameInput && commandValueInput && commandNameInput.value.trim() !== "" && commandValueInput.value.trim() !== "") {
+                        commands.push({
+                            name: commandNameInput.value.trim(),
+                            command: commandValueInput.value.trim(),
+                        });
+                    }
+                }
+                dataToSave.commands = commands;
+
+                dataToSave.mov = document.getElementById("mov").value;
+
+                dataToSave.memoInput = document.getElementById("memoInput").value;
+
+                const key = `coc7_savedData_${saveName}`;
+                localStorage.setItem(key, JSON.stringify(dataToSave));
+                showSaveMessage("保存しました");
+                saveNameInput.value = "";
+                updateDataList();
+            }
+
+            function loadData() {
+                const selectedKey = loadKeySelect.value;
+                if (!selectedKey) {
+                    showSaveMessage("読み込むデータを選択してください");
+                    return;
+                }
+
+                const savedDataJSON = localStorage.getItem(selectedKey);
+                if (savedDataJSON) {
+                    const savedData = JSON.parse(savedDataJSON);
+
+                    document.getElementById("nameInput").value = savedData.nameInput || "";
+
+                    if (savedData.abilities) {
+                        ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
+                            const diceInput = document.getElementById("dice-" + l);
+                            const valInput = document.getElementById("val-" + l);
+                            if (diceInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty("dice")) {
+                                diceInput.value = savedData.abilities[l].dice;
+                            } else if (diceInput) {
+                                diceInput.value = "";
+                            }
+                            if (valInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty("value")) {
+                                valInput.value = savedData.abilities[l].value;
+                            } else if (valInput) {
+                                valInput.value = "";
+                            }
+                        });
+                    }
+
+                    const skillsTable = document.getElementById("skillsTable");
+                    while (skillsTable.rows.length > 1) {
+                        skillsTable.deleteRow(1);
+                    }
+
+                    if (savedData.skills && savedData.skills.length > 0) {
+                        savedData.skills.forEach((skill) => {
+                            addRow("skillsTable");
+                            const newRow = skillsTable.rows[skillsTable.rows.length - 1];
+                            newRow.cells[0].querySelector('input[type="text"]').value = skill.name;
+                            newRow.cells[1].querySelector('input[type="number"]').value = skill.value;
+                        });
+                    }
+
+                    while (skillsTable.rows.length <= MIN_ROWS) {
+                        addRow("skillsTable");
+                    }
+
+                    const damageTable = document.getElementById("damageTable");
+                    while (damageTable.rows.length > 1) {
+                        damageTable.deleteRow(1);
+                    }
+
+                    if (savedData.commands && savedData.commands.length > 0) {
+                        savedData.commands.forEach((command) => {
+                            addRow("damageTable");
+                            const newRow = damageTable.rows[damageTable.rows.length - 1];
+                            newRow.cells[0].querySelector('input[type="text"]').value = command.name;
+                            newRow.cells[1].querySelector('input[type="text"]').value = command.command;
+                        });
+                    }
+
+                    while (damageTable.rows.length <= MIN_ROWS) {
+                        addRow("damageTable");
+                    }
+
+                    const movInput = document.getElementById("mov");
+                    if (savedData.hasOwnProperty("mov")) {
+                        movInput.value = savedData.mov;
+                    } else {
+                        movInput.value = "";
+                    }
+
+                    const memoInput = document.getElementById("memoInput");
+                    if (savedData.hasOwnProperty("memoInput")) {
+                        memoInput.value = savedData.memoInput;
+                    } else {
+                        memoInput.value = "";
+                    }
+
+                    updateStats();
+                    showSaveMessage("読み込みました");
+                } else {
+                    showSaveMessage("データが見つかりませんでした");
+                }
+            }
+
+            function deleteData() {
+                const selectedKey = loadKeySelect.value;
+                if (!selectedKey) {
+                    showSaveMessage("削除するデータを選択してください");
+                    return;
+                }
+
+                if (confirm(`「${selectedKey.substring("coc7_savedData_".length)}」のデータを削除してもよろしいですか？`)) {
+                    localStorage.removeItem(selectedKey);
+                    showSaveMessage("データを削除しました");
+                    updateDataList();
+                }
+            }
+
+            function rollDice(expr) {
+                expr = expr.replace(/\s+/g, "");
+                if (!expr.includes("D")) {
+                    const result = eval(expr);
+                    if (!Number.isFinite(result)) throw new Error("Invalid constant expression");
+                    return result;
+                }
+                const m = expr.match(/(\d+)d(\d+)(\+\d+)?/i);
+                if (!m) return 0;
+                let n = +m[1],
+                    sides = +m[2],
+                    bonus = m[3] ? +m[3].slice(1) : 0;
+                let sum = 0;
+                for (let i = 0; i < n; i++) sum += Math.floor(Math.random() * sides) + 1;
+                return sum + bonus;
+            }
+
+            function getDBBuild(total) {
+                const tiers = [
+                    { r: 64, db: "-2", b: -2 },
+                    { r: 84, db: "-1", b: -1 },
+                    { r: 124, db: "0", b: 0 },
+                    { r: 164, db: "+1D4", b: 1 },
+                    { r: 204, db: "+1D6", b: 2 },
+                    { r: 284, db: "+2D6", b: 3 },
+                    { r: 364, db: "+3D6", b: 4 },
+                    { r: 444, db: "+4D6", b: 5 },
+                    { r: 524, db: "+5D6", b: 6 },
+                ];
+                for (let t of tiers) if (total <= t.r) return { db: t.db, build: t.b };
+                let extra = Math.floor((total - 525) / 80) + 1;
+                let base = tiers[tiers.length - 1];
+                return { db: `+${5 + extra}D6`, build: base.b + extra };
+            }
+
+            function updateStats() {
+                const getVal = (id) => +document.getElementById(id).value || 0;
+                const con = getVal("val-CON"),
+                    siz = getVal("val-SIZ"),
+                    pow = getVal("val-POW");
+                document.getElementById("hp").value = Math.floor((con + siz) / 10);
+                document.getElementById("mp").value = Math.floor(pow / 5);
+                document.getElementById("san").value = pow;
+                const total = getVal("val-STR") + siz;
+                const { db, build } = getDBBuild(total);
+                document.getElementById("db").value = db;
+                document.getElementById("build").value = build;
+            }
+
+            function rollAbilities() {
+                ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((label) => {
+                    const d = document.getElementById("dice-" + label).value.trim();
+                    if (d) document.getElementById("val-" + label).value = rollDice(d) * 5;
+                });
+                updateStats();
+            }
+
+            function addRow(tableId) {
+                const tbl = document.getElementById(tableId);
+                const row = tbl.insertRow(-1);
+                if (tableId == "skillsTable") {
+                    row.innerHTML = '<td><input type="text"></td><td><input type="number"></td><td><button class="del-btn">❌️</button></td>';
+                } else {
+                    row.innerHTML = '<td><input type="text"></td><td><input type="text"></td><td><button class="del-btn">❌️</button></td>';
+                }
+            }
+
+            function setupTables() {
+                for (let i = 0; i < MIN_ROWS; i++) addRow("skillsTable");
+                for (let i = 0; i < MIN_ROWS; i++) addRow("damageTable");
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                setupTables();
+                sanToggleEL.addEventListener("change", function () {
+                    document.getElementById("sanLabel").style.display = this.checked ? "inline" : "none";
+                });
+                document.getElementById("rollBtn").addEventListener("click", rollAbilities);
+                document.getElementById("copyBtn").addEventListener("click", () => {
+                    navigator.clipboard.writeText(generateJSON());
+                    showMessage("コピーしました");
+                });
+                document.getElementById("rollCopyBtn").addEventListener("click", () => {
+                    rollAbilities();
+                    navigator.clipboard.writeText(generateJSON());
+                    showMessage("コピーしました");
+                });
+                document.getElementById("cpCopyBtn").addEventListener("click", () => {
+                    navigator.clipboard.writeText(generateChaPale().cmds);
+                    showMessage("コピーしました");
+                });
+                document.getElementById("rollCpCopyBtn").addEventListener("click", () => {
+                    rollAbilities();
+                    navigator.clipboard.writeText(generateChaPale().cmds);
+                    showMessage("コピーしました");
+                });
+                document.getElementById("addSkillBtn").addEventListener("click", () => addRow("skillsTable"));
+                document.getElementById("addDamageBtn").addEventListener("click", () => addRow("damageTable"));
+                document.body.addEventListener("click", (e) => {
+                    if (e.target.classList.contains("del-btn")) {
+                        const tbl = e.target.closest("table");
+                        if (tbl.rows.length > MIN_ROWS + 1) {
+                            e.target.closest("tr").remove();
+                        }
+                    }
+                });
+                document.querySelectorAll(".val").forEach((inp) => inp.addEventListener("change", updateStats));
             });
 
-            params.forEach(p => cmds.push(`//${p.label}=${p.value}`));
+            function generateChaPale() {
+                const params = [];
+                const cmds = [];
 
-            return {params: params, cmds: cmds.join('\n')};
-        }
+                if (sanToggleEL.checked) cmds.push("CC<={SAN} 正気度ロール");
 
-        function generateJSON() {
-            const name = document.getElementById('nameInput').value;
-            const hp = +document.getElementById('hp').value || 0;
-            const mp = +document.getElementById('mp').value || 0;
-            const san = +document.getElementById('san').value || 0;
-            const memo = document.getElementById('memoInput').value;
-            const chaPale = generateChaPale();
-            const params = chaPale.params;
-            const status = [
-                {label:'HP', value:hp, max:hp},
-                {label:'MP', value:mp, max:mp},
-                ...(sanToggleEL?.checked ? [{ label: 'SAN', value: san, max: san }] : []),
-            ];
+                ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
+                    const v = document.getElementById("val-" + l).value;
+                    if (v) {
+                        params.push({ label: l, value: v });
+                        cmds.push(`CC<={${l}} ${l}`);
+                    }
+                });
 
-            const obj = {
-                kind: 'character',
-                data: {
-                    name,
-                    initiative: +document.getElementById('val-DEX').value || 0,
-                    externalUrl: '',
-                    status,
-                    params,
-                    commands: chaPale.cmds,
-                    memo
-                }
-            };
-            return JSON.stringify(obj);
-        }
+                params.push({ label: "DB", value: document.getElementById("db").value });
+                params.push({ label: "ビルド", value: document.getElementById("build").value });
+                const m = document.getElementById("mov").value;
+                if (m) params.push({ label: "MOV", value: m });
 
-        updateDataList();
-    </script>
-</body>
+                document.querySelectorAll("#skillsTable tr").forEach((tr, i) => {
+                    if (i === 0) return;
+                    const n = tr.cells[0].querySelector("input").value;
+                    const v = tr.cells[1].querySelector("input").value;
+                    if (n && v) cmds.push(`CC<=${v} ${n}`);
+                });
+
+                document.querySelectorAll("#damageTable tr").forEach((tr, i) => {
+                    if (i === 0) return;
+                    const n = tr.cells[0].querySelector("input").value;
+                    let v = tr.cells[1].querySelector("input").value;
+                    if (n && v) {
+                        v = v.replace(/DB/g, "{DB}");
+                        cmds.push(`${v} ${n}`);
+                    }
+                });
+
+                params.forEach((p) => cmds.push(`//${p.label}=${p.value}`));
+
+                return { params: params, cmds: cmds.join("\n") };
+            }
+
+            function generateJSON() {
+                const name = document.getElementById("nameInput").value;
+                const hp = +document.getElementById("hp").value || 0;
+                const mp = +document.getElementById("mp").value || 0;
+                const san = +document.getElementById("san").value || 0;
+                const memo = document.getElementById("memoInput").value;
+                const chaPale = generateChaPale();
+                const params = chaPale.params;
+                const status = [{ label: "HP", value: hp, max: hp }, { label: "MP", value: mp, max: mp }, ...(sanToggleEL?.checked ? [{ label: "SAN", value: san, max: san }] : [])];
+
+                const obj = {
+                    kind: "character",
+                    data: {
+                        name,
+                        initiative: +document.getElementById("val-DEX").value || 0,
+                        externalUrl: "",
+                        status,
+                        params,
+                        commands: chaPale.cmds,
+                        memo,
+                    },
+                };
+                return JSON.stringify(obj);
+            }
+
+            updateDataList();
+        </script>
+    </body>
 </html>

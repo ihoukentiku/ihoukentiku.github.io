@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="ja">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>グリッド作成ツール</title>
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
         <style>
             body {
-                font-family: 'Noto Sans JP', sans-serif;
+                font-family: "Noto Sans JP", sans-serif;
                 background: #f7f8fa;
                 margin: auto;
                 padding: 20px;
-                max-width: 800px;
+                max-width: 850px;
                 color: #333;
             }
 
@@ -25,105 +26,97 @@
 
             .section {
                 background: white;
-                padding: 15px;
+                padding: 16px;
                 border-radius: 5px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
                 margin-bottom: 20px;
             }
-
-            div {
-                display: block;
-                margin-bottom: 15px;
+            .section > div {
+                display: flex;
+                flex-wrap: wrap;
+                row-gap: 16px;
+                column-gap: 16px;
+            }
+            .section > div > div {
+                display: flex;
+                flex-direction: column;
+                row-gap: 16px;
             }
 
-            label{
+            label {
                 font-weight: bold;
-                margin-right: 10px;
             }
 
-
-            input[type="text"], input[type="number"], select {
+            input {
+                vertical-align: middle;
                 box-sizing: border-box;
+            }
+            input[type="text"],
+            input[type="number"],
+            select {
+                border-radius: 4px;
                 font-size: 18px;
                 padding: 0px 5px 0px 5px;
                 height: 30px;
             }
-
-            input[type="number"]::-webkit-outer-spin-button, 
-            input[type="number"]::-webkit-inner-spin-button { 
-                -webkit-appearance: none; 
-                margin: 0; 
-                -moz-appearance:textfield; 
-            } 
-
             input[type="number"] {
                 border: 1px solid #888;
-                border-radius: 4px;
-                box-sizing: border-box;
-                width: 60px;
-                height: 30px;
-                font-size: 18px;
-                padding: 0px 5px 0px 5px;
-                vertical-align: middle;
+                width: 50px;
             }
             input[type="color"] {
-                height: 35px;
+                height: 30px;
                 border: 1px solid #aaa;
                 border-radius: 4px;
-                vertical-align: middle;
             }
             input[type="range"] {
-                vertical-align: middle;
                 width: 150px;
             }
             input[type="checkbox"] {
-                vertical-align: middle;
                 width: 20px;
                 height: 20px;
-                margin-right: 5px;
+            }
+
+            select {
+                width: 100px;
             }
 
             canvas {
+                border: 1px solid #333;
                 margin-top: 20px;
                 display: block;
                 margin-left: auto;
                 margin-right: auto;
                 max-width: 100%;
-                height: auto;
+                max-height: 600px;
             }
 
             button {
-                background-color: #448AD4;
+                background-color: #448ad4;
                 color: white;
                 padding: 6px 12px;
                 border: none;
                 border-radius: 4px;
                 cursor: pointer;
-                transition: background-color .2s;
+                transition: background-color 0.2s;
                 font-weight: bold;
-                margin-right: 10px;
-                margin-top: 10px;
             }
 
             button:hover {
-                background-color: #3D7BCD;
+                background-color: #3d7bcd;
             }
 
-            #opacityValue {
-                margin-left: 5px;
-                font-weight: normal;
+            #lineOpacityValue,
+            #coordOpacityValue {
                 display: inline-block;
-                min-width: 2em;
+                width: 45px;
                 text-align: right;
             }
 
             #coordinateSettings {
-                margin-top: 15px;
+                margin-top: 16px;
+                margin-bottom: 16px;
                 padding-top: 10px;
-                border-top: 1px dashed #888; 
-            }
-             #coordinateSettings label {
-                margin-right: 20px; 
+                border-top: 1px dashed #888;
             }
         </style>
     </head>
@@ -132,29 +125,30 @@
 
         <div class="section">
             <div>
-            <label>グリッドの色 <input type="color" id="gridColor" value="#000000"></label>
-            <label>グリッドの太さ(px) <input type="number" id="lineWidth" value="4" min="1"></label>
-            <label>
-                グリッドの透明度
-                <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" oninput="updateOpacityValue(this.value)">
-                <span id="opacityValue">1.0</span> </label>
+                <label>グリッドの色 <input type="color" id="gridColor" value="#000000" /></label>
+                <label>グリッドの太さ(px) <input type="number" id="lineWidth" value="4" min="1" /></label>
+                <label>
+                    グリッドの透明度
+                    <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" oninput="updateOpacityValue(this.value)" />
+                    <span id="opacityValue">1.0</span>
+                </label>
             </div>
             <div>
-            <label>1マスのサイズ(px) <input type="number" id="cellSize" value="100" min="1"></label>
-            <label>横のマス数 <input type="number" id="cols" value="10" min="1"></label>
-            <label>縦のマス数 <input type="number" id="rows" value="10" min="1"></label>
+                <label>1マスのサイズ(px) <input type="number" id="cellSize" value="100" min="1" /></label>
+                <label>横のマス数 <input type="number" id="cols" value="10" min="1" /></label>
+                <label>縦のマス数 <input type="number" id="rows" value="10" min="1" /></label>
             </div>
 
             <div id="coordinateSettings">
                 <label>
                     座標を表示
-                <input type="checkbox" id="showCoordinates">
+                    <input type="checkbox" id="showCoordinates" />
                 </label>
-                <label>座標の色 <input type="color" id="coordColor" value="#000000"></label>
-                <label>座標の文字サイズ(px) <input type="number" id="coordFontSize" value="25" min="1"></label>
+                <label>座標の色 <input type="color" id="coordColor" value="#000000" /></label>
+                <label>座標の文字サイズ(px) <input type="number" id="coordFontSize" value="25" min="1" /></label>
             </div>
-            
-            <div style="margin:0">
+
+            <div style="margin: 0">
                 <button onclick="generateGrid()">生成</button>
                 <button onclick="downloadGrid()">ダウンロード</button>
             </div>
@@ -164,7 +158,7 @@
 
         <script>
             function updateOpacityValue(value) {
-                document.getElementById('opacityValue').textContent = value;
+                document.getElementById("opacityValue").textContent = value;
             }
 
             function hexToRgba(hex, alpha) {
@@ -175,18 +169,18 @@
             }
 
             function generateGrid() {
-                const color = document.getElementById('gridColor').value;
-                const lineWidth = parseInt(document.getElementById('lineWidth').value);
-                const lineOpacity = parseFloat(document.getElementById('lineOpacity').value);
-                const cellSize = parseInt(document.getElementById('cellSize').value);
-                const cols = parseInt(document.getElementById('cols').value);
-                const rows = parseInt(document.getElementById('rows').value);
-                const showCoordinates = document.getElementById('showCoordinates').checked;
-                const coordColor = document.getElementById('coordColor').value;
-                const coordFontSize = parseInt(document.getElementById('coordFontSize').value);
+                const color = document.getElementById("gridColor").value;
+                const lineWidth = parseInt(document.getElementById("lineWidth").value);
+                const lineOpacity = parseFloat(document.getElementById("lineOpacity").value);
+                const cellSize = parseInt(document.getElementById("cellSize").value);
+                const cols = parseInt(document.getElementById("cols").value);
+                const rows = parseInt(document.getElementById("rows").value);
+                const showCoordinates = document.getElementById("showCoordinates").checked;
+                const coordColor = document.getElementById("coordColor").value;
+                const coordFontSize = parseInt(document.getElementById("coordFontSize").value);
 
-                const canvas = document.getElementById('gridCanvas');
-                const ctx = canvas.getContext('2d');
+                const canvas = document.getElementById("gridCanvas");
+                const ctx = canvas.getContext("2d");
 
                 canvas.width = cols * cellSize;
                 canvas.height = rows * cellSize;
@@ -211,32 +205,32 @@
                 }
 
                 if (showCoordinates) {
-                ctx.fillStyle = coordColor;
-                ctx.font = `${coordFontSize}px 'Arial'`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+                    ctx.fillStyle = coordColor;
+                    ctx.font = `${coordFontSize}px 'Arial'`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
 
-                for (let c = 0; c < cols; c++) {
-                    for (let r = 0; r < rows; r++) {
-                        const centerX = c * cellSize + cellSize / 2;
-                        const centerY = r * cellSize + cellSize / 2;
+                    for (let c = 0; c < cols; c++) {
+                        for (let r = 0; r < rows; r++) {
+                            const centerX = c * cellSize + cellSize / 2;
+                            const centerY = r * cellSize + cellSize / 2;
 
-                        const displayY = r;
-                        const displayX = c;
+                            const displayY = r;
+                            const displayX = c;
 
-                        const coordinateText = `${displayX}-${displayY}`;
+                            const coordinateText = `${displayX}-${displayY}`;
 
-                        ctx.fillText(coordinateText, centerX, centerY);
+                            ctx.fillText(coordinateText, centerX, centerY);
+                        }
                     }
                 }
             }
-            }
 
             function downloadGrid() {
-                const canvas = document.getElementById('gridCanvas');
-                const link = document.createElement('a');
-                link.download = 'grid.png';
-                link.href = canvas.toDataURL('image/png');
+                const canvas = document.getElementById("gridCanvas");
+                const link = document.createElement("a");
+                link.download = "grid.png";
+                link.href = canvas.toDataURL("image/png");
                 link.click();
             }
         </script>
