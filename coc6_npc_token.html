@@ -1,668 +1,668 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>CoC6 NPCコマ作成ツール | 違法建築のTRPG便利ツール</title>
-        <meta name="description" content="クトゥルフ神話TRPG(CoC6版)のココフォリア用NPC駒を簡単に作成。名前、能力値、技能、メモなどを入力するだけで駒データを生成できます。能力値ダイス入力時は、ロールでランダム決定も可能。作成した設定は保存することで、いつでも再利用できます。" />
-        <link rel="icon" href="kanzi_icon.svg" type="image/svg+xml" />
-
-        <meta property="og:url" content="https://ihoukentiku.github.io/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="違法建築のTRPG用便利ツール" />
-        <meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
-        <meta property="og:site_name" content="違法建築のTRPG用便利ツール" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@ihoukentiku" />
-        <meta name="twitter:creator" content="@ihoukentiku" />
-
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-
-        <style>
-            body {
-                font-family: "Noto Sans JP", sans-serif;
-                background: #f7f8fa;
-                margin: auto;
-                padding: 20px;
-                max-width: 800px;
-                color: #333;
-            }
-
-            h1 {
-                font-size: 28px;
-                border-bottom: 2px solid #ccc;
-                padding-bottom: 5px;
-                margin-bottom: 20px;
-                margin-top: 10px;
-            }
-
-            h3 {
-                margin-bottom: 5px;
-                margin-top: 0px;
-            }
-
-            div {
-                margin: 10px;
-            }
-
-            .section {
-                background: white;
-                padding: 5px;
-                border-radius: 5px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-            th,
-            td {
-                padding: 2px;
-                border: 1px solid #888;
-                text-align: center;
-            }
-
-            tr:hover {
-                background-color: #f1f1f1;
-            }
-
-            td input {
-                width: 100%;
-                border: none;
-            }
-
-            input,
-            select,
-            textarea {
-                border: 1px solid #888;
-                border-radius: 5px;
-                font-size: 16px;
-                box-sizing: border-box;
-            }
-
-            textarea {
-                padding: 10px;
-            }
-
-            input[type="text"],
-            input[type="number"],
-            select {
-                box-sizing: border-box;
-                font-size: 18px;
-                padding: 0px 5px 0px 5px;
-                height: 30px;
-            }
-
-            input[type="radio"] {
-                height: 17px;
-                width: 17px;
-                vertical-align: middle;
-                margin-bottom: 6px;
-            }
-
-            input[type="number"]::-webkit-outer-spin-button,
-            input[type="number"]::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-                -moz-appearance: textfield;
-            }
-
-            button {
-                background-color: #448ad4;
-                color: white;
-                padding: 6px 12px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-                margin-right: 5px;
-                font-weight: bold;
-            }
-
-            button:hover {
-                background-color: #3d7bcd;
-            }
-
-            .del-btn {
-                cursor: pointer;
-                padding: 1px;
-                border: none;
-                background: none;
-                margin-right: 0px;
-                vertical-align: middle;
-                height: 30px;
-                width: 30px;
-            }
-
-            .del-btn:hover {
-                background-color: #ccc;
-            }
-
-            #message {
-                margin-left: 10px;
-                font-weight: bold;
-            }
-        </style>
-    </head>
-    <body>
-        <div style="position: relative">
-            <h1 style="margin: 0">CoC6 NPCコマ作成ツール</h1>
-            <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0">
-                <button>ホームページへ</button>
-            </a>
-        </div>
-
-        <div class="section">
-            <div>
-                <button onclick="saveData()">保存</button>
-                <select id="loadKey" style="margin-right: 5px">
-                    <option value="">-- 保存したデータを選択 --</option>
-                </select>
-                <button onclick="loadData()">読み込み</button>
-                <button onclick="deleteData()">削除</button>
-                <span id="saveMessage"></span>
-            </div>
-        </div>
-
-        <div class="section">
-            <div>
-                <label>名前 <input type="text" id="nameInput" /></label>
-            </div>
-            <div>
-                <table id="abilityTable">
-                    <tr>
-                        <th style="width: 70px">能力値</th>
-                        <th>STR</th>
-                        <th>CON</th>
-                        <th>POW</th>
-                        <th>DEX</th>
-                        <th>APP</th>
-                        <th>SIZ</th>
-                        <th>INT</th>
-                        <th>EDU</th>
-                    </tr>
-                    <tr id="diceRow">
-                        <td>ダイス</td>
-                        <td><input type="text" id="dice-STR" /></td>
-                        <td><input type="text" id="dice-CON" /></td>
-                        <td><input type="text" id="dice-POW" /></td>
-                        <td><input type="text" id="dice-DEX" /></td>
-                        <td><input type="text" id="dice-APP" /></td>
-                        <td><input type="text" id="dice-SIZ" /></td>
-                        <td><input type="text" id="dice-INT" /></td>
-                        <td><input type="text" id="dice-EDU" /></td>
-                    </tr>
-                    <tr id="valueRow">
-                        <td>能力値</td>
-                        <td><input type="number" id="val-STR" class="val" /></td>
-                        <td><input type="number" id="val-CON" class="val" /></td>
-                        <td><input type="number" id="val-POW" class="val" /></td>
-                        <td><input type="number" id="val-DEX" class="val" /></td>
-                        <td><input type="number" id="val-APP" class="val" /></td>
-                        <td><input type="number" id="val-SIZ" class="val" /></td>
-                        <td><input type="number" id="val-INT" class="val" /></td>
-                        <td><input type="number" id="val-EDU" class="val" /></td>
-                    </tr>
-                </table>
-            </div>
-            <div>
-                <label style="margin-right: 5px">正気度<input type="checkbox" id="sanToggle" value="no" style="width: 20px; height: 20px; vertical-align: middle" /></label>
-                <label>HP <input type="number" id="hp" style="width: 50px; margin-right: 10px" /></label>
-                <label>MP <input type="number" id="mp" style="width: 50px; margin-right: 10px" /></label>
-                <label id="sanLabel" style="display: none">SAN <input type="number" id="san" style="width: 50px; margin-right: 10px" /></label>
-                <label>DB <input type="text" id="db" style="width: 70px; margin-right: 10px" /></label>
-                <label>移動率 <input type="number" id="mov" style="width: 50px" /></label>
-            </div>
-        </div>
-
-        <div class="section">
-            <div>
-                <button id="rollBtn">ロール</button>
-                <button id="copyBtn">コピー</button>
-                <button id="rollCopyBtn">ロール＆コピー</button>
-                <span id="message"></span>
-            </div>
-            <div>
-                <button id="cpCopyBtn">チャパレコピー</button>
-                <button id="rollCpCopyBtn">ロール＆チャパレコピー</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <div style="margin-top: 5px">
-                <div style="display: flex; align-items: center; margin: 0">
-                    <h3>技能</h3>
-                    <div style="margin: 0px 0px 0px 10px">
-                        <label>コマンド形式 </label>
-                        <input type="radio" id="ccRadio" name="commandType" value="CC" />
-                        <label for="ccRadio">CC</label>
-                        <input type="radio" id="ccbRadio" name="commandType" value="CCB" checked />
-                        <label for="ccbRadio">CCB</label>
-                    </div>
-                </div>
-                <table id="skillsTable" style="max-width: 340px">
-                    <tr>
-                        <th>技能名</th>
-                        <th style="width: 60px">技能値</th>
-                        <th style="width: 30px"></th>
-                    </tr>
-                </table>
-                <button id="addSkillBtn">＋</button>
-            </div>
-            <div>
-                <h3>その他コマンド(ダメージ等)</h3>
-                <table id="damageTable" style="max-width: 530px">
-                    <tr>
-                        <th>名称</th>
-                        <th>コマンド</th>
-                        <th style="width: 30px"></th>
-                    </tr>
-                </table>
-                <button id="addDamageBtn">＋</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3>メモ</h3>
-            <textarea style="width: 100%; height: 120px" id="memoInput" placeholder="ここに任意のメモを入力"></textarea>
-        </div>
-
-        <script>
-            const MIN_ROWS = 1;
-            const messageEl = document.getElementById("message");
-            const saveMessageEl = document.getElementById("saveMessage");
-            const sanToggleEL = document.getElementById("sanToggle");
-            const loadKeySelect = document.getElementById("loadKey");
-
-            function showMessage(msg) {
-                messageEl.textContent = msg;
-                setTimeout(() => (messageEl.textContent = ""), 2000);
-            }
-
-            function showSaveMessage(msg) {
-                saveMessageEl.textContent = msg;
-                setTimeout(() => (saveMessageEl.textContent = ""), 2000);
-            }
-
-            function updateDataList() {
-                loadKeySelect.innerHTML = '<option value="">-- 保存したデータを選択 --</option>';
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith("savedData_")) {
-                        const option = document.createElement("option");
-                        option.value = key;
-                        option.textContent = key.substring("savedData_".length);
-                        loadKeySelect.appendChild(option);
-                    }
-                }
-            }
-
-            function saveData() {
-                const saveName = document.getElementById("nameInput").value.trim();
-                if (!saveName) {
-                    showSaveMessage("名前を入力して下さい");
-                    return;
-                }
-
-                const dataToSave = {};
-
-                dataToSave.nameInput = saveName;
-
-                const abilities = {};
-                ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
-                    const diceInput = document.getElementById("dice-" + l);
-                    const valInput = document.getElementById("val-" + l);
-                    abilities[l] = {
-                        dice: diceInput ? diceInput.value : "",
-                        value: valInput ? valInput.value : "",
-                    };
-                });
-                dataToSave.abilities = abilities;
-
-                const skills = [];
-                const skillsTable = document.getElementById("skillsTable");
-                for (let i = 1; i < skillsTable.rows.length; i++) {
-                    const row = skillsTable.rows[i];
-                    const skillNameInput = row.cells[0].querySelector('input[type="text"]');
-                    const skillValueInput = row.cells[1].querySelector('input[type="number"]');
-                    if (skillNameInput && skillValueInput && skillNameInput.value.trim() !== "" && skillValueInput.value.trim() !== "") {
-                        skills.push({
-                            name: skillNameInput.value.trim(),
-                            value: skillValueInput.value,
-                        });
-                    }
-                }
-                dataToSave.skills = skills;
-
-                const commands = [];
-                const damageTable = document.getElementById("damageTable");
-                for (let i = 1; i < damageTable.rows.length; i++) {
-                    const row = damageTable.rows[i];
-                    const commandNameInput = row.cells[0].querySelector('input[type="text"]');
-                    const commandValueInput = row.cells[1].querySelector('input[type="text"]');
-                    if (commandNameInput && commandValueInput && commandNameInput.value.trim() !== "" && commandValueInput.value.trim() !== "") {
-                        commands.push({
-                            name: commandNameInput.value.trim(),
-                            command: commandValueInput.value.trim(),
-                        });
-                    }
-                }
-                dataToSave.commands = commands;
-
-                dataToSave.mov = document.getElementById("mov").value;
-
-                dataToSave.memoInput = document.getElementById("memoInput").value;
-
-                dataToSave.commandType = document.querySelector('input[name="commandType"]:checked').value;
-
-                const key = `savedData_${saveName}`;
-                localStorage.setItem(key, JSON.stringify(dataToSave));
-                showSaveMessage("保存しました");
-                document.getElementById("nameInput").value = "";
-                updateDataList();
-            }
-
-            function loadData() {
-                const selectedKey = loadKeySelect.value;
-                if (!selectedKey) {
-                    showSaveMessage("読み込むデータを選択してください");
-                    return;
-                }
-
-                const savedDataJSON = localStorage.getItem(selectedKey);
-                if (savedDataJSON) {
-                    const savedData = JSON.parse(savedDataJSON);
-
-                    document.getElementById("nameInput").value = savedData.nameInput || "";
-
-                    if (savedData.abilities) {
-                        ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
-                            const diceInput = document.getElementById("dice-" + l);
-                            const valInput = document.getElementById("val-" + l);
-                            if (diceInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty("dice")) {
-                                diceInput.value = savedData.abilities[l].dice;
-                            } else if (diceInput) {
-                                diceInput.value = "";
-                            }
-                            if (valInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty("value")) {
-                                valInput.value = savedData.abilities[l].value;
-                            } else if (valInput) {
-                                valInput.value = "";
-                            }
-                        });
-                    }
-
-                    const skillsTable = document.getElementById("skillsTable");
-                    while (skillsTable.rows.length > 1) {
-                        skillsTable.deleteRow(1);
-                    }
-
-                    if (savedData.skills && savedData.skills.length > 0) {
-                        savedData.skills.forEach((skill) => {
-                            addRow("skillsTable");
-                            const newRow = skillsTable.rows[skillsTable.rows.length - 1];
-                            newRow.cells[0].querySelector('input[type="text"]').value = skill.name;
-                            newRow.cells[1].querySelector('input[type="number"]').value = skill.value;
-                        });
-                    }
-
-                    while (skillsTable.rows.length <= MIN_ROWS) {
-                        addRow("skillsTable");
-                    }
-
-                    const damageTable = document.getElementById("damageTable");
-                    while (damageTable.rows.length > 1) {
-                        damageTable.deleteRow(1);
-                    }
-
-                    if (savedData.commands && savedData.commands.length > 0) {
-                        savedData.commands.forEach((command) => {
-                            addRow("damageTable");
-                            const newRow = damageTable.rows[damageTable.rows.length - 1];
-                            newRow.cells[0].querySelector('input[type="text"]').value = command.name;
-                            newRow.cells[1].querySelector('input[type="text"]').value = command.command;
-                        });
-                    }
-
-                    while (damageTable.rows.length <= MIN_ROWS) {
-                        addRow("damageTable");
-                    }
-
-                    const movInput = document.getElementById("mov");
-                    if (savedData.hasOwnProperty("mov")) {
-                        movInput.value = savedData.mov;
-                    } else {
-                        movInput.value = "";
-                    }
-
-                    const memoInput = document.getElementById("memoInput");
-                    if (savedData.hasOwnProperty("memoInput")) {
-                        memoInput.value = savedData.memoInput;
-                    } else {
-                        memoInput.value = "";
-                    }
-
-                    if (savedData.hasOwnProperty("commandType")) {
-                        document.querySelector(`input[name="commandType"][value="${savedData.commandType}"]`).checked = true;
-                    } else {
-                        document.getElementById("ccbRadio").checked = true;
-                    }
-
-                    updateStats();
-                    showSaveMessage("読み込みました");
-                } else {
-                    showSaveMessage("データが見つかりませんでした");
-                }
-            }
-
-            function deleteData() {
-                const selectedKey = loadKeySelect.value;
-                if (!selectedKey) {
-                    showSaveMessage("削除するデータを選択してください");
-                    return;
-                }
-
-                if (confirm(`「${selectedKey.substring("savedData_".length)}」のデータを削除してもよろしいですか？`)) {
-                    localStorage.removeItem(selectedKey);
-                    showSaveMessage("データを削除しました");
-                    updateDataList();
-                }
-            }
-
-            function rollDice(expr) {
-                expr = expr.replace(/\s+/g, "");
-                if (!/[Dd]/.test(expr)) {
-                    try {
-                        const result = eval(expr);
-                        if (!Number.isFinite(result)) throw new Error("Invalid constant expression");
-                        return result;
-                    } catch (e) {
-                        console.error("Error evaluating constant expression:", expr, e);
-                        return 0;
-                    }
-                }
-                const m = expr.match(/(\d+)d(\d+)(\+\d+)?/i);
-                if (!m) return 0;
-                let n = +m[1],
-                    sides = +m[2],
-                    bonus = m[3] ? +m[3].slice(1) : 0;
-                let sum = 0;
-                for (let i = 0; i < n; i++) sum += Math.floor(Math.random() * sides) + 1;
-                return sum + bonus;
-            }
-
-            function getDamageBonus(total) {
-                if (total >= 2 && total <= 12) return "-1D6";
-                if (total >= 13 && total <= 16) return "-1D4";
-                if (total >= 17 && total <= 24) return "0";
-                if (total >= 25 && total <= 32) return "+1D4";
-                if (total >= 33 && total <= 40) return "+1D6";
-                if (total >= 41 && total <= 56) return "+2D6";
-                if (total >= 57 && total <= 72) return "+3D6";
-                if (total >= 73 && total <= 88) return "+4D6";
-                if (total >= 89 && total <= 104) return "+5D6";
-                if (total >= 105 && total <= 120) return "+6D6";
-                if (total >= 121 && total <= 136) return "+7D6";
-                if (total >= 137 && total <= 152) return "+8D6";
-                if (total >= 153 && total <= 168) return "+9D6";
-                if (total >= 169 && total <= 184) return "+10D6";
-                if (total > 184) {
-                    const base = 10;
-                    const extra = Math.floor((total - 185) / 16) + 1;
-                    return `+${base + extra}D6`;
-                }
-
-                return "";
-            }
-
-            function updateStats() {
-                const getVal = (id) => +document.getElementById(id).value || 0;
-                const con = getVal("val-CON"),
-                    siz = getVal("val-SIZ"),
-                    pow = getVal("val-POW");
-                document.getElementById("hp").value = Math.ceil((con + siz) / 2);
-                document.getElementById("mp").value = pow;
-                document.getElementById("san").value = pow * 5;
-
-                const total = getVal("val-STR") + siz;
-                const db = getDamageBonus(total);
-                document.getElementById("db").value = db;
-            }
-
-            function rollAbilities() {
-                ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((label) => {
-                    const d = document.getElementById("dice-" + label).value.trim();
-                    if (d) document.getElementById("val-" + label).value = rollDice(d);
-                });
-                updateStats();
-            }
-
-            function addRow(tableId) {
-                const tbl = document.getElementById(tableId);
-                const row = tbl.insertRow(-1);
-                if (tableId == "skillsTable") {
-                    row.innerHTML = '<td><input type="text"></td><td><input type="number"></td><td><button class="del-btn">❌️</button></td>';
-                } else {
-                    row.innerHTML = '<td><input type="text"></td><td><input type="text"></td><td><button class="del-btn">❌️</button></td>';
-                }
-            }
-
-            function setupTables() {
-                for (let i = 0; i < MIN_ROWS; i++) addRow("skillsTable");
-                for (let i = 0; i < MIN_ROWS; i++) addRow("damageTable");
-            }
-
-            document.addEventListener("DOMContentLoaded", () => {
-                setupTables();
-                sanToggleEL.addEventListener("change", function () {
-                    document.getElementById("sanLabel").style.display = this.checked ? "inline" : "none";
-                });
-                document.getElementById("rollBtn").addEventListener("click", rollAbilities);
-                document.getElementById("copyBtn").addEventListener("click", () => {
-                    navigator.clipboard.writeText(generateJSON());
-                    showMessage("コピーしました");
-                });
-                document.getElementById("rollCopyBtn").addEventListener("click", () => {
-                    rollAbilities();
-                    navigator.clipboard.writeText(generateJSON());
-                    showMessage("コピーしました");
-                });
-                document.getElementById("cpCopyBtn").addEventListener("click", () => {
-                    navigator.clipboard.writeText(generateChaPale().cmds);
-                    showMessage("コピーしました");
-                });
-                document.getElementById("rollCpCopyBtn").addEventListener("click", () => {
-                    rollAbilities();
-                    navigator.clipboard.writeText(generateChaPale().cmds);
-                    showMessage("コピーしました");
-                });
-                document.getElementById("addSkillBtn").addEventListener("click", () => addRow("skillsTable"));
-                document.getElementById("addDamageBtn").addEventListener("click", () => addRow("damageTable"));
-                document.body.addEventListener("click", (e) => {
-                    if (e.target.classList.contains("del-btn")) {
-                        const tbl = e.target.closest("table");
-                        if (tbl.rows.length > MIN_ROWS + 1) {
-                            e.target.closest("tr").remove();
-                        }
-                    }
-                });
-                document.querySelectorAll(".val").forEach((inp) => inp.addEventListener("change", updateStats));
-                updateDataList();
-            });
-
-            function generateChaPale() {
-                const params = [];
-                const cmds = [];
-                const commandType = document.querySelector('input[name="commandType"]:checked').value;
-
-                if (sanToggleEL.checked) cmds.push(`${commandType}<={SAN} 正気度ロール`);
-
-                ["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
-                    const v = document.getElementById("val-" + l).value;
-                    if (v) {
-                        params.push({ label: l, value: v });
-                        cmds.push(`${commandType}<={${l}} ${l}`);
-                    }
-                });
-
-                params.push({ label: "DB", value: document.getElementById("db").value });
-                const m = document.getElementById("mov").value;
-                if (m) params.push({ label: "移動率", value: m });
-
-                document.querySelectorAll("#skillsTable tr").forEach((tr, i) => {
-                    if (i === 0) return;
-                    const n = tr.cells[0].querySelector("input").value;
-                    const v = tr.cells[1].querySelector("input").value;
-                    if (n && v) cmds.push(`${commandType}<=${v} ${n}`);
-                });
-
-                document.querySelectorAll("#damageTable tr").forEach((tr, i) => {
-                    if (i === 0) return;
-                    const n = tr.cells[0].querySelector("input").value;
-                    let v = tr.cells[1].querySelector("input").value;
-                    if (n && v) {
-                        v = v.replace(/DB/g, "{DB}");
-                        cmds.push(`${v} ${n}`);
-                    }
-                });
-
-                params.forEach((p) => cmds.push(`//${p.label}=${p.value}`));
-
-                return { params: params, cmds: cmds.join("\n") };
-            }
-
-            function generateJSON() {
-                const name = document.getElementById("nameInput").value;
-                const hp = +document.getElementById("hp").value || 0;
-                const mp = +document.getElementById("mp").value || 0;
-                const san = +document.getElementById("san").value || 0;
-                const memo = document.getElementById("memoInput").value;
-                const chaPale = generateChaPale();
-                const params = chaPale.params;
-                const status = [{ label: "HP", value: hp, max: hp }, { label: "MP", value: mp, max: mp }, ...(sanToggleEL?.checked ? [{ label: "SAN", value: san, max: san }] : [])];
-
-                const obj = {
-                    kind: "character",
-                    data: {
-                        name,
-                        initiative: +document.getElementById("val-DEX").value || 0,
-                        externalUrl: "",
-                        status,
-                        params,
-                        commands: chaPale.cmds,
-                        memo,
-                    },
-                };
-                return JSON.stringify(obj);
-            }
-        </script>
-    </body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>CoC6 NPCコマ作成ツール | 違法建築のTRPGラボ</title>
+		<meta name="description" content="クトゥルフ神話TRPG(CoC6版)のココフォリア用NPC駒を簡単に作成。名前、能力値、技能、メモなどを入力するだけで駒データを生成できます。能力値ダイス入力時は、ロールでランダム決定も可能。作成した設定は保存することで、いつでも再利用できます。" />
+		<link rel="icon" href="kanzi_icon.svg" type="image/svg+xml" />
+
+		<meta property="og:url" content="https://ihoukentiku.github.io/" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="違法建築のTRPG用便利ツール" />
+		<meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
+		<meta property="og:site_name" content="違法建築のTRPG用便利ツール" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:site" content="@ihoukentiku" />
+		<meta name="twitter:creator" content="@ihoukentiku" />
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+		<style>
+			body {
+				font-family: "Noto Sans JP", sans-serif;
+				background: #f7f8fa;
+				margin: auto;
+				padding: 20px;
+				max-width: 800px;
+				color: #333;
+			}
+
+			h1 {
+				font-size: 28px;
+				border-bottom: 2px solid #ccc;
+				padding-bottom: 5px;
+				margin-bottom: 20px;
+				margin-top: 10px;
+			}
+
+			h3 {
+				margin-bottom: 5px;
+				margin-top: 0px;
+			}
+
+			div {
+				margin: 10px;
+			}
+
+			.section {
+				background: white;
+				padding: 5px;
+				border-radius: 5px;
+				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+
+			th,
+			td {
+				padding: 2px;
+				border: 1px solid #888;
+				text-align: center;
+			}
+
+			tr:hover {
+				background-color: #f1f1f1;
+			}
+
+			td input {
+				width: 100%;
+				border: none;
+			}
+
+			input,
+			select,
+			textarea {
+				border: 1px solid #888;
+				border-radius: 5px;
+				font-size: 16px;
+				box-sizing: border-box;
+			}
+
+			textarea {
+				padding: 10px;
+			}
+
+			input[type="text"],
+			input[type="number"],
+			select {
+				box-sizing: border-box;
+				font-size: 18px;
+				padding: 0px 5px 0px 5px;
+				height: 30px;
+			}
+
+			input[type="radio"] {
+				height: 17px;
+				width: 17px;
+				vertical-align: middle;
+				margin-bottom: 6px;
+			}
+
+			input[type="number"]::-webkit-outer-spin-button,
+			input[type="number"]::-webkit-inner-spin-button {
+				-webkit-appearance: none;
+				margin: 0;
+				-moz-appearance: textfield;
+			}
+
+			button {
+				background-color: #448ad4;
+				color: white;
+				padding: 6px 12px;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				transition: background-color 0.2s;
+				margin-right: 5px;
+				font-weight: bold;
+			}
+
+			button:hover {
+				background-color: #3d7bcd;
+			}
+
+			.del-btn {
+				cursor: pointer;
+				padding: 1px;
+				border: none;
+				background: none;
+				margin-right: 0px;
+				vertical-align: middle;
+				height: 30px;
+				width: 30px;
+			}
+
+			.del-btn:hover {
+				background-color: #ccc;
+			}
+
+			#message {
+				margin-left: 10px;
+				font-weight: bold;
+			}
+		</style>
+	</head>
+	<body>
+		<div style="position: relative">
+			<h1 style="margin: 0">CoC6 NPCコマ作成ツール</h1>
+			<a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0">
+				<button>ホームページへ</button>
+			</a>
+		</div>
+
+		<div class="section">
+			<div>
+				<button onclick="saveData()">保存</button>
+				<select id="loadKey" style="margin-right: 5px">
+					<option value="">-- 保存したデータを選択 --</option>
+				</select>
+				<button onclick="loadData()">読み込み</button>
+				<button onclick="deleteData()">削除</button>
+				<span id="saveMessage"></span>
+			</div>
+		</div>
+
+		<div class="section">
+			<div>
+				<label>名前 <input type="text" id="nameInput" /></label>
+			</div>
+			<div>
+				<table id="abilityTable">
+					<tr>
+						<th style="width: 70px">能力値</th>
+						<th>STR</th>
+						<th>CON</th>
+						<th>POW</th>
+						<th>DEX</th>
+						<th>APP</th>
+						<th>SIZ</th>
+						<th>INT</th>
+						<th>EDU</th>
+					</tr>
+					<tr id="diceRow">
+						<td>ダイス</td>
+						<td><input type="text" id="dice-STR" /></td>
+						<td><input type="text" id="dice-CON" /></td>
+						<td><input type="text" id="dice-POW" /></td>
+						<td><input type="text" id="dice-DEX" /></td>
+						<td><input type="text" id="dice-APP" /></td>
+						<td><input type="text" id="dice-SIZ" /></td>
+						<td><input type="text" id="dice-INT" /></td>
+						<td><input type="text" id="dice-EDU" /></td>
+					</tr>
+					<tr id="valueRow">
+						<td>能力値</td>
+						<td><input type="number" id="val-STR" class="val" /></td>
+						<td><input type="number" id="val-CON" class="val" /></td>
+						<td><input type="number" id="val-POW" class="val" /></td>
+						<td><input type="number" id="val-DEX" class="val" /></td>
+						<td><input type="number" id="val-APP" class="val" /></td>
+						<td><input type="number" id="val-SIZ" class="val" /></td>
+						<td><input type="number" id="val-INT" class="val" /></td>
+						<td><input type="number" id="val-EDU" class="val" /></td>
+					</tr>
+				</table>
+			</div>
+			<div>
+				<label style="margin-right: 5px">正気度<input type="checkbox" id="sanToggle" value="no" style="width: 20px; height: 20px; vertical-align: middle" /></label>
+				<label>HP <input type="number" id="hp" style="width: 50px; margin-right: 10px" /></label>
+				<label>MP <input type="number" id="mp" style="width: 50px; margin-right: 10px" /></label>
+				<label id="sanLabel" style="display: none">SAN <input type="number" id="san" style="width: 50px; margin-right: 10px" /></label>
+				<label>DB <input type="text" id="db" style="width: 70px; margin-right: 10px" /></label>
+				<label>移動率 <input type="number" id="mov" style="width: 50px" /></label>
+			</div>
+		</div>
+
+		<div class="section">
+			<div>
+				<button id="rollBtn">ロール</button>
+				<button id="copyBtn">コピー</button>
+				<button id="rollCopyBtn">ロール＆コピー</button>
+				<span id="message"></span>
+			</div>
+			<div>
+				<button id="cpCopyBtn">チャパレコピー</button>
+				<button id="rollCpCopyBtn">ロール＆チャパレコピー</button>
+			</div>
+		</div>
+
+		<div class="section">
+			<div style="margin-top: 5px">
+				<div style="display: flex; align-items: center; margin: 0">
+					<h3>技能</h3>
+					<div style="margin: 0px 0px 0px 10px">
+						<label>コマンド形式 </label>
+						<input type="radio" id="ccRadio" name="commandType" value="CC" />
+						<label for="ccRadio">CC</label>
+						<input type="radio" id="ccbRadio" name="commandType" value="CCB" checked />
+						<label for="ccbRadio">CCB</label>
+					</div>
+				</div>
+				<table id="skillsTable" style="max-width: 340px">
+					<tr>
+						<th>技能名</th>
+						<th style="width: 60px">技能値</th>
+						<th style="width: 30px"></th>
+					</tr>
+				</table>
+				<button id="addSkillBtn">＋</button>
+			</div>
+			<div>
+				<h3>その他コマンド(ダメージ等)</h3>
+				<table id="damageTable" style="max-width: 530px">
+					<tr>
+						<th>名称</th>
+						<th>コマンド</th>
+						<th style="width: 30px"></th>
+					</tr>
+				</table>
+				<button id="addDamageBtn">＋</button>
+			</div>
+		</div>
+
+		<div class="section">
+			<h3>メモ</h3>
+			<textarea style="width: 100%; height: 120px" id="memoInput" placeholder="ここに任意のメモを入力"></textarea>
+		</div>
+
+		<script>
+			const MIN_ROWS = 1;
+			const messageEl = document.getElementById("message");
+			const saveMessageEl = document.getElementById("saveMessage");
+			const sanToggleEL = document.getElementById("sanToggle");
+			const loadKeySelect = document.getElementById("loadKey");
+
+			function showMessage(msg) {
+				messageEl.textContent = msg;
+				setTimeout(() => (messageEl.textContent = ""), 2000);
+			}
+
+			function showSaveMessage(msg) {
+				saveMessageEl.textContent = msg;
+				setTimeout(() => (saveMessageEl.textContent = ""), 2000);
+			}
+
+			function updateDataList() {
+				loadKeySelect.innerHTML = '<option value="">-- 保存したデータを選択 --</option>';
+				for (let i = 0; i < localStorage.length; i++) {
+					const key = localStorage.key(i);
+					if (key.startsWith("savedData_")) {
+						const option = document.createElement("option");
+						option.value = key;
+						option.textContent = key.substring("savedData_".length);
+						loadKeySelect.appendChild(option);
+					}
+				}
+			}
+
+			function saveData() {
+				const saveName = document.getElementById("nameInput").value.trim();
+				if (!saveName) {
+					showSaveMessage("名前を入力して下さい");
+					return;
+				}
+
+				const dataToSave = {};
+
+				dataToSave.nameInput = saveName;
+
+				const abilities = {};
+				["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
+					const diceInput = document.getElementById("dice-" + l);
+					const valInput = document.getElementById("val-" + l);
+					abilities[l] = {
+						dice: diceInput ? diceInput.value : "",
+						value: valInput ? valInput.value : "",
+					};
+				});
+				dataToSave.abilities = abilities;
+
+				const skills = [];
+				const skillsTable = document.getElementById("skillsTable");
+				for (let i = 1; i < skillsTable.rows.length; i++) {
+					const row = skillsTable.rows[i];
+					const skillNameInput = row.cells[0].querySelector('input[type="text"]');
+					const skillValueInput = row.cells[1].querySelector('input[type="number"]');
+					if (skillNameInput && skillValueInput && skillNameInput.value.trim() !== "" && skillValueInput.value.trim() !== "") {
+						skills.push({
+							name: skillNameInput.value.trim(),
+							value: skillValueInput.value,
+						});
+					}
+				}
+				dataToSave.skills = skills;
+
+				const commands = [];
+				const damageTable = document.getElementById("damageTable");
+				for (let i = 1; i < damageTable.rows.length; i++) {
+					const row = damageTable.rows[i];
+					const commandNameInput = row.cells[0].querySelector('input[type="text"]');
+					const commandValueInput = row.cells[1].querySelector('input[type="text"]');
+					if (commandNameInput && commandValueInput && commandNameInput.value.trim() !== "" && commandValueInput.value.trim() !== "") {
+						commands.push({
+							name: commandNameInput.value.trim(),
+							command: commandValueInput.value.trim(),
+						});
+					}
+				}
+				dataToSave.commands = commands;
+
+				dataToSave.mov = document.getElementById("mov").value;
+
+				dataToSave.memoInput = document.getElementById("memoInput").value;
+
+				dataToSave.commandType = document.querySelector('input[name="commandType"]:checked').value;
+
+				const key = `savedData_${saveName}`;
+				localStorage.setItem(key, JSON.stringify(dataToSave));
+				showSaveMessage("保存しました");
+				document.getElementById("nameInput").value = "";
+				updateDataList();
+			}
+
+			function loadData() {
+				const selectedKey = loadKeySelect.value;
+				if (!selectedKey) {
+					showSaveMessage("読み込むデータを選択してください");
+					return;
+				}
+
+				const savedDataJSON = localStorage.getItem(selectedKey);
+				if (savedDataJSON) {
+					const savedData = JSON.parse(savedDataJSON);
+
+					document.getElementById("nameInput").value = savedData.nameInput || "";
+
+					if (savedData.abilities) {
+						["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
+							const diceInput = document.getElementById("dice-" + l);
+							const valInput = document.getElementById("val-" + l);
+							if (diceInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty("dice")) {
+								diceInput.value = savedData.abilities[l].dice;
+							} else if (diceInput) {
+								diceInput.value = "";
+							}
+							if (valInput && savedData.abilities[l] && savedData.abilities[l].hasOwnProperty("value")) {
+								valInput.value = savedData.abilities[l].value;
+							} else if (valInput) {
+								valInput.value = "";
+							}
+						});
+					}
+
+					const skillsTable = document.getElementById("skillsTable");
+					while (skillsTable.rows.length > 1) {
+						skillsTable.deleteRow(1);
+					}
+
+					if (savedData.skills && savedData.skills.length > 0) {
+						savedData.skills.forEach((skill) => {
+							addRow("skillsTable");
+							const newRow = skillsTable.rows[skillsTable.rows.length - 1];
+							newRow.cells[0].querySelector('input[type="text"]').value = skill.name;
+							newRow.cells[1].querySelector('input[type="number"]').value = skill.value;
+						});
+					}
+
+					while (skillsTable.rows.length <= MIN_ROWS) {
+						addRow("skillsTable");
+					}
+
+					const damageTable = document.getElementById("damageTable");
+					while (damageTable.rows.length > 1) {
+						damageTable.deleteRow(1);
+					}
+
+					if (savedData.commands && savedData.commands.length > 0) {
+						savedData.commands.forEach((command) => {
+							addRow("damageTable");
+							const newRow = damageTable.rows[damageTable.rows.length - 1];
+							newRow.cells[0].querySelector('input[type="text"]').value = command.name;
+							newRow.cells[1].querySelector('input[type="text"]').value = command.command;
+						});
+					}
+
+					while (damageTable.rows.length <= MIN_ROWS) {
+						addRow("damageTable");
+					}
+
+					const movInput = document.getElementById("mov");
+					if (savedData.hasOwnProperty("mov")) {
+						movInput.value = savedData.mov;
+					} else {
+						movInput.value = "";
+					}
+
+					const memoInput = document.getElementById("memoInput");
+					if (savedData.hasOwnProperty("memoInput")) {
+						memoInput.value = savedData.memoInput;
+					} else {
+						memoInput.value = "";
+					}
+
+					if (savedData.hasOwnProperty("commandType")) {
+						document.querySelector(`input[name="commandType"][value="${savedData.commandType}"]`).checked = true;
+					} else {
+						document.getElementById("ccbRadio").checked = true;
+					}
+
+					updateStats();
+					showSaveMessage("読み込みました");
+				} else {
+					showSaveMessage("データが見つかりませんでした");
+				}
+			}
+
+			function deleteData() {
+				const selectedKey = loadKeySelect.value;
+				if (!selectedKey) {
+					showSaveMessage("削除するデータを選択してください");
+					return;
+				}
+
+				if (confirm(`「${selectedKey.substring("savedData_".length)}」のデータを削除してもよろしいですか？`)) {
+					localStorage.removeItem(selectedKey);
+					showSaveMessage("データを削除しました");
+					updateDataList();
+				}
+			}
+
+			function rollDice(expr) {
+				expr = expr.replace(/\s+/g, "");
+				if (!/[Dd]/.test(expr)) {
+					try {
+						const result = eval(expr);
+						if (!Number.isFinite(result)) throw new Error("Invalid constant expression");
+						return result;
+					} catch (e) {
+						console.error("Error evaluating constant expression:", expr, e);
+						return 0;
+					}
+				}
+				const m = expr.match(/(\d+)d(\d+)(\+\d+)?/i);
+				if (!m) return 0;
+				let n = +m[1],
+					sides = +m[2],
+					bonus = m[3] ? +m[3].slice(1) : 0;
+				let sum = 0;
+				for (let i = 0; i < n; i++) sum += Math.floor(Math.random() * sides) + 1;
+				return sum + bonus;
+			}
+
+			function getDamageBonus(total) {
+				if (total >= 2 && total <= 12) return "-1D6";
+				if (total >= 13 && total <= 16) return "-1D4";
+				if (total >= 17 && total <= 24) return "0";
+				if (total >= 25 && total <= 32) return "+1D4";
+				if (total >= 33 && total <= 40) return "+1D6";
+				if (total >= 41 && total <= 56) return "+2D6";
+				if (total >= 57 && total <= 72) return "+3D6";
+				if (total >= 73 && total <= 88) return "+4D6";
+				if (total >= 89 && total <= 104) return "+5D6";
+				if (total >= 105 && total <= 120) return "+6D6";
+				if (total >= 121 && total <= 136) return "+7D6";
+				if (total >= 137 && total <= 152) return "+8D6";
+				if (total >= 153 && total <= 168) return "+9D6";
+				if (total >= 169 && total <= 184) return "+10D6";
+				if (total > 184) {
+					const base = 10;
+					const extra = Math.floor((total - 185) / 16) + 1;
+					return `+${base + extra}D6`;
+				}
+
+				return "";
+			}
+
+			function updateStats() {
+				const getVal = (id) => +document.getElementById(id).value || 0;
+				const con = getVal("val-CON"),
+					siz = getVal("val-SIZ"),
+					pow = getVal("val-POW");
+				document.getElementById("hp").value = Math.ceil((con + siz) / 2);
+				document.getElementById("mp").value = pow;
+				document.getElementById("san").value = pow * 5;
+
+				const total = getVal("val-STR") + siz;
+				const db = getDamageBonus(total);
+				document.getElementById("db").value = db;
+			}
+
+			function rollAbilities() {
+				["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((label) => {
+					const d = document.getElementById("dice-" + label).value.trim();
+					if (d) document.getElementById("val-" + label).value = rollDice(d);
+				});
+				updateStats();
+			}
+
+			function addRow(tableId) {
+				const tbl = document.getElementById(tableId);
+				const row = tbl.insertRow(-1);
+				if (tableId == "skillsTable") {
+					row.innerHTML = '<td><input type="text"></td><td><input type="number"></td><td><button class="del-btn">❌️</button></td>';
+				} else {
+					row.innerHTML = '<td><input type="text"></td><td><input type="text"></td><td><button class="del-btn">❌️</button></td>';
+				}
+			}
+
+			function setupTables() {
+				for (let i = 0; i < MIN_ROWS; i++) addRow("skillsTable");
+				for (let i = 0; i < MIN_ROWS; i++) addRow("damageTable");
+			}
+
+			document.addEventListener("DOMContentLoaded", () => {
+				setupTables();
+				sanToggleEL.addEventListener("change", function () {
+					document.getElementById("sanLabel").style.display = this.checked ? "inline" : "none";
+				});
+				document.getElementById("rollBtn").addEventListener("click", rollAbilities);
+				document.getElementById("copyBtn").addEventListener("click", () => {
+					navigator.clipboard.writeText(generateJSON());
+					showMessage("コピーしました");
+				});
+				document.getElementById("rollCopyBtn").addEventListener("click", () => {
+					rollAbilities();
+					navigator.clipboard.writeText(generateJSON());
+					showMessage("コピーしました");
+				});
+				document.getElementById("cpCopyBtn").addEventListener("click", () => {
+					navigator.clipboard.writeText(generateChaPale().cmds);
+					showMessage("コピーしました");
+				});
+				document.getElementById("rollCpCopyBtn").addEventListener("click", () => {
+					rollAbilities();
+					navigator.clipboard.writeText(generateChaPale().cmds);
+					showMessage("コピーしました");
+				});
+				document.getElementById("addSkillBtn").addEventListener("click", () => addRow("skillsTable"));
+				document.getElementById("addDamageBtn").addEventListener("click", () => addRow("damageTable"));
+				document.body.addEventListener("click", (e) => {
+					if (e.target.classList.contains("del-btn")) {
+						const tbl = e.target.closest("table");
+						if (tbl.rows.length > MIN_ROWS + 1) {
+							e.target.closest("tr").remove();
+						}
+					}
+				});
+				document.querySelectorAll(".val").forEach((inp) => inp.addEventListener("change", updateStats));
+				updateDataList();
+			});
+
+			function generateChaPale() {
+				const params = [];
+				const cmds = [];
+				const commandType = document.querySelector('input[name="commandType"]:checked').value;
+
+				if (sanToggleEL.checked) cmds.push(`${commandType}<={SAN} 正気度ロール`);
+
+				["STR", "CON", "POW", "DEX", "APP", "SIZ", "INT", "EDU"].forEach((l) => {
+					const v = document.getElementById("val-" + l).value;
+					if (v) {
+						params.push({ label: l, value: v });
+						cmds.push(`${commandType}<={${l}} ${l}`);
+					}
+				});
+
+				params.push({ label: "DB", value: document.getElementById("db").value });
+				const m = document.getElementById("mov").value;
+				if (m) params.push({ label: "移動率", value: m });
+
+				document.querySelectorAll("#skillsTable tr").forEach((tr, i) => {
+					if (i === 0) return;
+					const n = tr.cells[0].querySelector("input").value;
+					const v = tr.cells[1].querySelector("input").value;
+					if (n && v) cmds.push(`${commandType}<=${v} ${n}`);
+				});
+
+				document.querySelectorAll("#damageTable tr").forEach((tr, i) => {
+					if (i === 0) return;
+					const n = tr.cells[0].querySelector("input").value;
+					let v = tr.cells[1].querySelector("input").value;
+					if (n && v) {
+						v = v.replace(/DB/g, "{DB}");
+						cmds.push(`${v} ${n}`);
+					}
+				});
+
+				params.forEach((p) => cmds.push(`//${p.label}=${p.value}`));
+
+				return { params: params, cmds: cmds.join("\n") };
+			}
+
+			function generateJSON() {
+				const name = document.getElementById("nameInput").value;
+				const hp = +document.getElementById("hp").value || 0;
+				const mp = +document.getElementById("mp").value || 0;
+				const san = +document.getElementById("san").value || 0;
+				const memo = document.getElementById("memoInput").value;
+				const chaPale = generateChaPale();
+				const params = chaPale.params;
+				const status = [{ label: "HP", value: hp, max: hp }, { label: "MP", value: mp, max: mp }, ...(sanToggleEL?.checked ? [{ label: "SAN", value: san, max: san }] : [])];
+
+				const obj = {
+					kind: "character",
+					data: {
+						name,
+						initiative: +document.getElementById("val-DEX").value || 0,
+						externalUrl: "",
+						status,
+						params,
+						commands: chaPale.cmds,
+						memo,
+					},
+				};
+				return JSON.stringify(obj);
+			}
+		</script>
+	</body>
 </html>

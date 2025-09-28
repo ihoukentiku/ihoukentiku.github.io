@@ -124,10 +124,16 @@
 				cursor: pointer;
 				transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 			}
+			.tool-card:last-child:nth-child(odd) {
+				max-width: calc(50% - 0.5rem);
+			}
 
 			@media (max-width: 840px) {
 				.tool-card {
 					flex: 1 1 100%;
+				}
+				.tool-card:last-child:nth-child(odd) {
+					max-width: 100%;
 				}
 			}
 
@@ -232,6 +238,11 @@
 			];
 
 			const changelog = [
+				{
+					date: "2025.09.28",
+					version: "v1.0.１",
+					updates: ["UI上の軽微な不具合を修正しました。"],
+				},
 				{
 					date: "2025.09.28",
 					version: "v1.0.0",

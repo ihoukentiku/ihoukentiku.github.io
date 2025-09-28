@@ -1,271 +1,276 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ヘクス定規作成ツール｜違法建築のTRPG便利ツール</title>
-    <meta name="description" content="TRPGやボードゲームで使えるヘクス(ヘックス)マップ用の距離計測定規を、範囲や向き、透明度をカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。
-    （ファイル名にスクリーンパネル/前景でのサイズを記載します）">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: #f7f8fa;
-            margin: auto;
-            padding: 20px;
-            max-width: 800px;
-            color: #333;
-        }
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>ヘクス定規作成ツール｜違法建築のTRPGラボ</title>
+		<meta
+			name="description"
+			content="TRPGやボードゲームで使えるヘクス(ヘックス)マップ用の距離計測定規を、範囲や向き、透明度をカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。
+    （ファイル名にスクリーンパネル/前景でのサイズを記載します）"
+		/>
+		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
+		<style>
+			body {
+				font-family: "Noto Sans JP", sans-serif;
+				background: #f7f8fa;
+				margin: auto;
+				padding: 20px;
+				max-width: 800px;
+				color: #333;
+			}
 
-        h1 {
-            font-size: 28px;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 5px;
-            margin-bottom: 20px;
-            margin-top: 10px;
-        }
+			h1 {
+				font-size: 28px;
+				border-bottom: 2px solid #ccc;
+				padding-bottom: 5px;
+				margin-bottom: 20px;
+				margin-top: 10px;
+			}
 
-        .section {
-            background: white;
-            padding: 16px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        .section > div {
-            display: flex;
-            flex-wrap: wrap;
-            row-gap: 16px;
-            column-gap: 16px ;
-        }
-        .section > div > div{
-            display: flex;
-            flex-direction: column;
-            row-gap: 16px;
-        }   
+			.section {
+				background: white;
+				padding: 16px;
+				border-radius: 5px;
+				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+				margin-bottom: 20px;
+			}
+			.section > div {
+				display: flex;
+				flex-wrap: wrap;
+				row-gap: 16px;
+				column-gap: 16px;
+			}
+			.section > div > div {
+				display: flex;
+				flex-direction: column;
+				row-gap: 16px;
+			}
 
-        label{
-            font-weight: bold;
-        }
+			label {
+				font-weight: bold;
+			}
 
-        input {
-            vertical-align: middle;
-            box-sizing: border-box;
-        }
-        input[type="text"], input[type="number"], select {
-            border-radius: 4px;
-            font-size: 18px;
-            padding: 0px 5px 0px 5px;
-            height: 30px;
-        }
-        input[type="number"] {
-            border: 1px solid #888;
-            width: 50px;
-        }
-        input[type="color"] {
-            height: 30px;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-        }
-        input[type="range"] {
-            width: 150px;
-        }
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-        }
+			input {
+				vertical-align: middle;
+				box-sizing: border-box;
+			}
+			input[type="text"],
+			input[type="number"],
+			select {
+				border-radius: 4px;
+				font-size: 18px;
+				padding: 0px 5px 0px 5px;
+				height: 30px;
+			}
+			input[type="number"] {
+				border: 1px solid #888;
+				width: 50px;
+			}
+			input[type="color"] {
+				height: 30px;
+				border: 1px solid #aaa;
+				border-radius: 4px;
+			}
+			input[type="range"] {
+				width: 150px;
+			}
+			input[type="checkbox"] {
+				width: 20px;
+				height: 20px;
+			}
 
+			canvas {
+				margin-top: 20px;
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+				max-width: 100%;
+				height: auto;
+			}
 
-        canvas {
-            margin-top: 20px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 100%;
-            height: auto;
-        }
+			button {
+				background-color: #448ad4;
+				color: white;
+				padding: 6px 12px;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				transition: background-color 0.2s;
+				font-weight: bold;
+			}
 
-        button {
-            background-color: #448AD4;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color .2s;
-            font-weight: bold;
-        }
+			button:hover {
+				background-color: #3d7bcd;
+			}
 
-        button:hover {
-            background-color: #3D7BCD;
-        }
+			#opacityValue,
+			#textOpacityValue {
+				display: inline-block;
+				width: 45px;
+				text-align: right;
+			}
+			select {
+				width: 90px;
+			}
+		</style>
+	</head>
+	<body>
+		<div style="position: relative">
+			<h1 style="margin: 0">ヘクス定規作成ツール</h1>
+			<a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0">
+				<button style="padding: 6px 12px">ホームページへ</button>
+			</a>
+		</div>
 
-        #opacityValue, #textOpacityValue {
-            display: inline-block;
-            width: 45px;
-            text-align: right;
-        }
-        select {
-            width: 90px;
-        }
+		<div class="section">
+			<div>
+				<div>
+					<label
+						>ヘクスの向き
+						<select id="orientation">
+							<option value="horizontal" selected>横向き</option>
+							<option value="vertical">縦向き</option>
+						</select>
+					</label>
+					<label for="distanceMethod"
+						>距離計測方法
+						<select id="distanceMethod" style="margin-left: 16px">
+							<option value="manhattan">マス数</option>
+							<option value="euclidean">直線距離</option>
+						</select>
+					</label>
+				</div>
+				<div>
+					<label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked /></label>
 
-    </style>
-</head>
-<body>
-    <div style="position: relative;">
-        <h1 style="margin: 0;">ヘクス定規作成ツール</h1>
-        <a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0;">
-            <button style="padding: 6px 12px;">ホームページへ</button>
-        </a>
-    </div>
+					<label for="distance">範囲 <input type="number" id="distance" min="1" value="5" /></label>
+				</div>
+				<div>
+					<label for="opacity"
+						>マスの透明度
+						<input type="range" id="opacity" min="0" max="1" step="0.01" value="1" />
+						<span id="opacityValue">100%</span>
+					</label>
+					<label for="textOpacity"
+						>数字の透明度
+						<input type="range" id="textOpacity" min="0" max="1" step="0.01" value="1" />
+						<span id="textOpacityValue">100%</span>
+					</label>
+				</div>
+			</div>
+			<div style="margin-top: 16px">
+				<button onclick="downloadRuler()">ダウンロード</button>
+			</div>
+		</div>
 
-    <div class="section">
-        <div>
-            <div>
-                <label>ヘクスの向き
-                    <select id="orientation">
-                        <option value="horizontal" selected>横向き</option>
-                        <option value="vertical">縦向き</option>
-                    </select>
-                </label>
-                <label for="distanceMethod">距離計測方法
-                    <select id="distanceMethod" style="margin-left:16px;">
-                        <option value="manhattan">マス数</option>
-                        <option value="euclidean">直線距離</option>
-                    </select>
-                </label>
-            </div>
-            <div>
-                <label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked></label>
-                
-                <label for="distance">範囲 <input type="number" id="distance" min="1" value="5"></label>
-                
-            </div>
-            <div>
-                <label for="opacity">マスの透明度
-                    <input type="range" id="opacity" min="0" max="1" step="0.01" value="1">
-                    <span id="opacityValue">100%</span>
-                </label>
-                <label for="textOpacity">数字の透明度
-                    <input type="range" id="textOpacity" min="0" max="1" step="0.01" value="1">
-                    <span id="textOpacityValue">100%</span>
-                </label>
-            </div>
-        </div>
-        <div style="margin-top: 16px;">
-            <button onclick="downloadRuler()">ダウンロード</button>
-        </div>
-    </div>
+		<canvas id="rulerCanvas"></canvas>
 
-    <canvas id="rulerCanvas"></canvas>
+		<script>
+			const canvas = document.getElementById("rulerCanvas");
+			const ctx = canvas.getContext("2d");
 
-    <script>
-        const canvas = document.getElementById('rulerCanvas');
-        const ctx = canvas.getContext('2d');
+			function calculateDistance(x, y, method) {
+				switch (method) {
+					case "euclidean":
+						return Math.round(Math.sqrt((x * x * 3) / 4 + (y * y) / 4) + 0.14);
+					case "manhattan":
+						return (Math.abs(x) + Math.max(Math.abs(x), Math.abs(y))) / 2;
+				}
+			}
 
-        function calculateDistance(x, y, method) {
-            switch (method) {
-                case "euclidean":
-                    return Math.round(Math.sqrt(x * x *3/4 + y * y/4)+0.14);
-                case "manhattan":
-                    return (Math.abs(x) + Math.max(Math.abs(x),Math.abs(y)))/2;
-            }
-        }
+			function generateRuler() {
+				const ori = document.getElementById("orientation").value === "vertical";
+				const distance = parseInt(document.getElementById("distance").value);
+				const opacity = parseFloat(document.getElementById("opacity").value);
+				const textOpacity = parseFloat(document.getElementById("textOpacity").value);
+				const method = document.getElementById("distanceMethod").value;
+				const fitGridCheck = document.getElementById("fitGridCheck").checked;
+				const cellSize = 90;
+				let distanceX = (distanceY = distance);
 
-        function generateRuler() {
-            const ori = document.getElementById('orientation').value === "vertical";
-            const distance = parseInt(document.getElementById('distance').value);
-            const opacity = parseFloat(document.getElementById('opacity').value);
-            const textOpacity = parseFloat(document.getElementById('textOpacity').value);
-            const method = document.getElementById('distanceMethod').value;
-            const fitGridCheck = document.getElementById('fitGridCheck').checked;
-            const cellSize = 90;
-            let distanceX = distanceY = distance;
+				const cellSizeX = fitGridCheck ? cellSize : (cellSize / 2) * Math.sqrt(3);
+				if (method === "euclidean") distanceX = Math.round((distance * 2) / Math.sqrt(3));
 
-            const cellSizeX = fitGridCheck ? cellSize : cellSize/2*Math.sqrt(3);
-            if (method === "euclidean") distanceX = Math.round(distance*2/Math.sqrt(3));
+				canvas.width = fitGridCheck ? (distanceX * 2 + 3) * cellSizeX : (distanceX * 2 + 1 + 1 / 3) * cellSizeX;
+				canvas.height = (distanceY * 2 + 1) * cellSize;
 
-            canvas.width = fitGridCheck ? (distanceX * 2 + 3)*cellSizeX : (distanceX * 2 + 1 + 1/3)*cellSizeX;
-            canvas.height = (distanceY * 2 + 1) * cellSize;
+				if (ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
 
-            if(ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            function getGradientColor(d, maxD, opacity) {
-                if (d === 0) return `rgba(255, 255, 255, ${opacity})`;
-                if (maxD === 1) return `rgba(255, 102, 102, ${opacity})`
-                const hue = ((d - 1) / (maxD - 1)) * 270;
-                return `hsla(${hue}, 100%, 70%, ${opacity})`;
-            }
+				function getGradientColor(d, maxD, opacity) {
+					if (d === 0) return `rgba(255, 255, 255, ${opacity})`;
+					if (maxD === 1) return `rgba(255, 102, 102, ${opacity})`;
+					const hue = ((d - 1) / (maxD - 1)) * 270;
+					return `hsla(${hue}, 100%, 70%, ${opacity})`;
+				}
 
-            for (let r = -distanceY; r <= distanceY; r++) {
-                for (let c = -distanceX; c <= distanceX; c++) {
-                    const d = calculateDistance(c, r*2 + (c % 2), method);
-                    if (d > distance) continue;
-                    let cx = fitGridCheck ? (c + distanceX + 1/6 + 1) * cellSizeX : (c + distanceX + 1/3) * cellSizeX;;
-                    let cy = (r + distanceY + (c % 2)/2) * cellSize;
-                    const vertices = [
-                        { x: cx,                 y: cy              }, // 左上
-                        { x: cx - cellSizeX*1/3, y: cy + cellSize/2 }, // 左端
-                        { x: cx,                 y: cy + cellSize   }, // 左下
-                        { x: cx + cellSizeX*2/3, y: cy + cellSize   }, // 右下
-                        { x: cx + cellSizeX,     y: cy + cellSize/2 }, // 右端
-                        { x: cx + cellSizeX*2/3, y: cy              }  // 右上
-                    ];
-                    if(ori) vertices.forEach(v => [v.x, v.y] = [v.y, v.x]);
+				for (let r = -distanceY; r <= distanceY; r++) {
+					for (let c = -distanceX; c <= distanceX; c++) {
+						const d = calculateDistance(c, r * 2 + (c % 2), method);
+						if (d > distance) continue;
+						let cx = fitGridCheck ? (c + distanceX + 1 / 6 + 1) * cellSizeX : (c + distanceX + 1 / 3) * cellSizeX;
+						let cy = (r + distanceY + (c % 2) / 2) * cellSize;
+						const vertices = [
+							{ x: cx, y: cy }, // 左上
+							{ x: cx - (cellSizeX * 1) / 3, y: cy + cellSize / 2 }, // 左端
+							{ x: cx, y: cy + cellSize }, // 左下
+							{ x: cx + (cellSizeX * 2) / 3, y: cy + cellSize }, // 右下
+							{ x: cx + cellSizeX, y: cy + cellSize / 2 }, // 右端
+							{ x: cx + (cellSizeX * 2) / 3, y: cy }, // 右上
+						];
+						if (ori) vertices.forEach((v) => ([v.x, v.y] = [v.y, v.x]));
 
-                    // パスを描画
-                    ctx.fillStyle = getGradientColor(d, distance, opacity);
-                    ctx.beginPath();
-                    ctx.moveTo(vertices[0].x, vertices[0].y);
-                    for (let i = 1; i < vertices.length; i++) {
-                        ctx.lineTo(vertices[i].x, vertices[i].y);
-                    }
-                    ctx.closePath(); // パスを閉じる
-                    ctx.fill();
-                    ctx.fillStyle = `rgba(0, 0, 0, ${textOpacity})`;
-                    ctx.font = 'bold 40px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    let px = cx + cellSizeX*1/3;
-                    let py = cy + cellSize/2;
-                    if(ori) [px, py] = [py, px];
-                    ctx.fillText(d, px, py);
-                }
-            }
+						// パスを描画
+						ctx.fillStyle = getGradientColor(d, distance, opacity);
+						ctx.beginPath();
+						ctx.moveTo(vertices[0].x, vertices[0].y);
+						for (let i = 1; i < vertices.length; i++) {
+							ctx.lineTo(vertices[i].x, vertices[i].y);
+						}
+						ctx.closePath(); // パスを閉じる
+						ctx.fill();
+						ctx.fillStyle = `rgba(0, 0, 0, ${textOpacity})`;
+						ctx.font = "bold 40px Arial";
+						ctx.textAlign = "center";
+						ctx.textBaseline = "middle";
+						let px = cx + (cellSizeX * 1) / 3;
+						let py = cy + cellSize / 2;
+						if (ori) [px, py] = [py, px];
+						ctx.fillText(d, px, py);
+					}
+				}
+			}
 
-        }
+			function downloadRuler() {
+				const canvas = document.getElementById("rulerCanvas");
+				const link = document.createElement("a");
+				const fitGridCheck = document.getElementById("fitGridCheck").checked;
+				const c = (canvas.width / 90) * 2;
+				const r = (canvas.height / 90) * 2;
+				link.download = fitGridCheck ? `hex_ruler_${c}x${r}.png` : `hex_ruler.png`;
+				link.href = canvas.toDataURL();
+				link.click();
+			}
 
-        function downloadRuler() {
-            const canvas = document.getElementById('rulerCanvas');
-            const link = document.createElement('a');
-            const fitGridCheck = document.getElementById('fitGridCheck').checked;
-            const c = canvas.width/90*2;
-            const r = canvas.height/90*2;
-            link.download = fitGridCheck ? `hex_ruler_${c}x${r}.png` : `hex_ruler.png` ;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
+			//イベントリスナー
+			document.addEventListener("DOMContentLoaded", function () {
+				document.getElementById("orientation").addEventListener("change", generateRuler);
+				document.getElementById("distanceMethod").addEventListener("change", generateRuler);
+				document.getElementById("distance").addEventListener("input", generateRuler);
+				document.getElementById("fitGridCheck").addEventListener("input", generateRuler);
+				document.getElementById("opacity").addEventListener("input", function () {
+					document.getElementById("opacityValue").textContent = `${Math.round(document.getElementById("opacity").value * 100)}%`;
+					generateRuler();
+				});
+				document.getElementById("textOpacity").addEventListener("input", function () {
+					document.getElementById("textOpacityValue").textContent = `${Math.round(document.getElementById("textOpacity").value * 100)}%`;
+					generateRuler();
+				});
+			});
 
-        //イベントリスナー
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('orientation').addEventListener('change', generateRuler);
-            document.getElementById('distanceMethod').addEventListener('change', generateRuler);
-            document.getElementById('distance').addEventListener('input', generateRuler);
-            document.getElementById('fitGridCheck').addEventListener('input', generateRuler);
-            document.getElementById('opacity').addEventListener('input', function() {
-                document.getElementById('opacityValue').textContent = `${Math.round(document.getElementById('opacity').value*100)}%`;
-                generateRuler();
-            });
-            document.getElementById('textOpacity').addEventListener('input', function() {
-                document.getElementById('textOpacityValue').textContent = `${Math.round(document.getElementById('textOpacity').value*100)}%`;
-                generateRuler();
-            });
-        });
-
-        generateRuler();
-
-    </script>
-</body>
+			generateRuler();
+		</script>
+	</body>
 </html>
