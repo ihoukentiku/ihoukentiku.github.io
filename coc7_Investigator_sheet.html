@@ -106,6 +106,18 @@
 				display: flex;
 				flex-direction: column;
 				flex: 1;
+				position: relative;
+			}
+			.investigator-container::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.investigator-container > div:first-child {
 				text-align: center;
@@ -143,6 +155,18 @@
 				display: flex;
 				flex-direction: column;
 				border: 1px solid #000;
+				position: relative;
+			}
+			.abilitie-container::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.abilitie-container > div:first-child {
 				background-color: #ccc;
@@ -270,6 +294,17 @@
 				border: 1px solid black;
 				width: 120px;
 			}
+			#canvas-container::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
+			}
 			#img-select-btn {
 				position: absolute;
 				top: 50%;
@@ -304,12 +339,23 @@
 
 			.hp-box {
 				flex: 1;
-
 				border: 1px solid #000;
 				display: grid;
 				grid-template-columns: 22px;
 				grid-template-rows: 23px;
 				flex-direction: row;
+				position: relative;
+			}
+			.hp-box::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.hp-box > div:first-child {
 				grid-column: 1;
@@ -440,6 +486,18 @@
 				grid-template-columns: 1fr 22px;
 				grid-template-rows: 23px;
 				flex-direction: row;
+				position: relative;
+			}
+			.san-box::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.san-box > div:last-child {
 				grid-column: 2;
@@ -514,6 +572,18 @@
 				border: 1px solid #000;
 				display: flex;
 				flex-direction: column;
+				position: relative;
+			}
+			.custom-box::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.custom-box > div:first-child {
 				font-weight: bold;
@@ -547,6 +617,18 @@
 				grid-template-columns: 22px;
 				grid-template-rows: 25px;
 				flex-direction: row;
+				position: relative;
+			}
+			.luk-box::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.luk-box > div:first-child {
 				grid-column: 1;
@@ -590,6 +672,18 @@
 				grid-template-columns: 1fr 22px;
 				grid-template-rows: 23px;
 				flex-direction: row;
+				position: relative;
+			}
+			.mp-box::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.mp-box > div:first-child {
 				grid-column: 2;
@@ -805,6 +899,18 @@
 				height: 214px;
 				border: 1px solid #000;
 				overflow: hidden;
+				position: relative;
+			}
+			.weapon-container::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.weapon-container > div:first-child {
 				font-weight: bold;
@@ -878,6 +984,18 @@
 				flex-direction: column;
 				justify-content: space-between;
 				padding-bottom: 16px;
+				position: relative;
+			}
+			.combat-container::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
 			}
 			.combat-container > div:first-child {
 				font-weight: bold;
@@ -927,7 +1045,8 @@
 				border: 1px solid #000;
 				display: grid;
 				grid-template-columns: repeat(2, 362px);
-				grid-template-rows: 30px;
+				grid-template-rows: 28px;
+				padding-bottom: 1px;
 			}
 			.backstory-container > div:first-child {
 				grid-column: 1/3;
@@ -954,7 +1073,7 @@
 				content: "";
 				position: absolute;
 				height: 4px;
-				bottom: 0;
+				bottom: 1px;
 				right: 2px;
 				left: 2px;
 				background-color: #fff;
@@ -1005,7 +1124,8 @@
 				border: 1px solid #000;
 				display: grid;
 				grid-template-columns: repeat(2, 1fr);
-				grid-template-rows: 30px;
+				grid-template-rows: 28px;
+				padding-bottom: 1px;
 				position: relative;
 			}
 			.item-container > div:first-child {
@@ -1037,10 +1157,21 @@
 				content: "";
 				position: absolute;
 				height: 4px;
-				bottom: 0;
+				bottom: 1px;
 				right: 2px;
 				left: 2px;
 				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+			.item-container::after {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
 				pointer-events: none;
 				z-index: 10;
 			}
@@ -1051,6 +1182,7 @@
 				display: flex;
 				flex-direction: column;
 				position: relative;
+				padding-bottom: 1px;
 			}
 			.asset-container > div:first-child {
 				font-weight: bold;
@@ -1059,7 +1191,7 @@
 				align-items: center;
 				justify-content: center;
 				text-align: center;
-				height: 30px;
+				height: 28px;
 			}
 			.label-asset {
 				display: flex;
@@ -1092,10 +1224,21 @@
 				content: "";
 				position: absolute;
 				height: 4px;
-				bottom: 0;
+				bottom: 1px;
 				right: 2px;
 				left: 2px;
 				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+			.asset-container::after {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
 				pointer-events: none;
 				z-index: 10;
 			}
@@ -1109,7 +1252,7 @@
 				min-height: 0;
 			}
 			.memo-container > div:first-child {
-				height: 29px;
+				height: 28px;
 				font-weight: bold;
 				background-color: #ccc;
 				display: flex;
@@ -1143,10 +1286,21 @@
 				content: "";
 				position: absolute;
 				height: 4px;
-				bottom: 0;
+				bottom: 1px;
 				right: 2px;
 				left: 2px;
 				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+			.memo::after {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
 				pointer-events: none;
 				z-index: 10;
 			}
