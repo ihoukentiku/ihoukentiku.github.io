@@ -69,32 +69,32 @@
 					margin: 0;
 					padding: 0;
 					gap: 0;
-					display: block;
+					display: block !important;
 				}
 				main {
 					margin: 0;
 					gap: 0;
-					display: block;
+					display: block !important;
 				}
 				.a4-sheet {
 					margin: 0;
-					box-shadow: none;
+					box-shadow: none !important;
 				}
 				@page {
 					size: A4;
 					margin: 0;
 				}
 				#img-select-btn {
-					display: none;
+					display: none !important;
 				}
 				#img-remove-btn {
-					display: none;
+					display: none !important;
 				}
 				footer {
-					display: none;
+					display: none !important;
 				}
 				header {
-					display: none;
+					display: none !important;
 				}
 			}
 			.main-data {
@@ -2727,6 +2727,32 @@
 			selectBtn.style.display = "block";
 		});
 
+		function beforePrint() {
+			canvas.discardActiveObject(); // 選択解除
+			canvas.renderAll(); // 再描画
+			canvas.forEachObject((obj) => obj.set("hasControls", false)); // ハンドル非表示
+			canvas.renderAll();
+		}
+
+		// 印刷後に呼ぶ関数
+		function afterPrint() {
+			canvas.forEachObject((obj) => obj.set("hasControls", true)); // ハンドルを戻す
+			canvas.renderAll();
+		}
+
+		// 印刷イベントにフック
+		if (window.matchMedia) {
+			const mediaQueryList = window.matchMedia("print");
+
+			mediaQueryList.addEventListener("change", (mql) => {
+				if (mql.matches) {
+					beforePrint(); // 印刷開始
+				} else {
+					afterPrint(); // 印刷終了
+				}
+			});
+		}
+
 		//自動改行
 		function attachAutoNext(el, options = {}) {
 			const container = options.containerSelector || ".sentence";
@@ -2746,10 +2772,23 @@
 
 			// バックスペース時の削除処理
 			el.addEventListener("keydown", (e) => {
+				const cursorPos = getCursorPos(el);
+				const sentence = el.closest(container);
+				const spans = container === ".sentence" ? Array.from(sentence.querySelectorAll("span[contenteditable]")) : Array.from(sentence.querySelectorAll(":scope > span[contenteditable]"));
+				const index = spans.indexOf(el);
+				// カーソル先頭でのバックスペース
+				if (e.key === "Backspace" && cursorPos === 0 && index > 0 && container === ".sentence") {
+					e.preventDefault();
+					const prevSpan = spans[index - 1];
+					const textToMove = el.textContent;
+					const prevTextLength = prevSpan.textContent.length;
+					prevSpan.textContent += textToMove;
+					setCursorPos(prevSpan, prevTextLength);
+					el.remove();
+					handleOverflow(prevSpan);
+					return;
+				}
 				if (e.key === "Backspace" && el.textContent === "") {
-					const sentence = el.closest(container);
-					const spans = container === ".sentence" ? Array.from(sentence.querySelectorAll("span[contenteditable]")) : Array.from(sentence.querySelectorAll(":scope > span[contenteditable]"));
-					const index = spans.indexOf(el);
 					if (index >= 1) {
 						e.preventDefault();
 						const prevSpan = spans[index - 1];
