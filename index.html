@@ -282,7 +282,7 @@
 
 					const titleTag = doc.querySelector("title");
 					let title = titleTag ? titleTag.innerText : "タイトルが設定されていません。";
-					title = title.replace(/ | 違法建築のTRPGラボ/g, "").trim();
+					title = title.replace(/\s*\|\s*違法建築のTRPGラボ\s*$/, "").trim();
 
 					return { description: description, title: title };
 				} catch (error) {
