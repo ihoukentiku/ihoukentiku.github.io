@@ -1,0 +1,2956 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>新クトゥルフ神話TRPG カスタム探索者シート | 違法建築のTRPGラボ</title>
+		<meta name="description" content="クトゥルフ神話TRPG第7版（CoC7）用の探索者シートです。ステータスや技能、バックグラウンド等のデータをブラウザで簡単に編集できます。そのまま印刷したり、プレロールドキャラを作って印刷することも出来ます。非公式・二次創作です。" />
+		<link rel="icon" href="kanzi_icon.svg" type="image/svg+xml" />
+
+		<meta property="og:url" content="https://ihoukentiku.github.io/coc7_dice.html" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="新クトゥルフ神話TRPG カスタム探索者シート | 違法建築のTRPGラボ" />
+		<meta property="og:description" content="クトゥルフ神話TRPG第7版（CoC7）用の探索者シートです。ステータスや技能、バックグラウンド等のデータをブラウザで簡単に編集できます。そのまま印刷したり、プレロールドキャラを作って印刷することも出来ます。非公式・二次創作です。" />
+		<meta property="og:site_name" content="違法建築のTRPGラボ" />
+		<meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+		<meta name="twitter:site" content="@ihoukentiku" />
+		<meta name="twitter:creator" content="@ihoukentiku" />
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+		<link rel="stylesheet" href="common.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+		<style>
+			main {
+				color: #000;
+				width: fit-content;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-family: sans-serif;
+				gap: 20px;
+				margin: auto;
+			}
+			.a4-sheet {
+				box-sizing: border-box;
+				width: 210mm;
+				height: 297mm;
+				background: #fff;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+				padding: 9mm;
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+			}
+			[contenteditable="true"]:focus {
+				outline: none;
+				background: inherit;
+			}
+
+			@media print {
+				body {
+					margin: 0;
+					padding: 0;
+					gap: 0;
+					display: block;
+				}
+				main {
+					margin: 0;
+					gap: 0;
+					display: block;
+				}
+				.a4-sheet {
+					margin: 0;
+					box-shadow: none;
+				}
+				@page {
+					size: A4;
+					margin: 0;
+				}
+				#img-select-btn {
+					display: none;
+				}
+				#img-remove-btn {
+					display: none;
+				}
+				footer {
+					display: none;
+				}
+				header {
+					display: none;
+				}
+			}
+			.main-data {
+				display: flex;
+				gap: 4px;
+			}
+			.investigator-container {
+				border: 1px solid #000;
+				display: flex;
+				flex-direction: column;
+				flex: 1;
+			}
+			.investigator-container > div:first-child {
+				text-align: center;
+				background-color: #000;
+				color: #fff;
+				padding-top: 2px;
+				padding-bottom: 4px;
+				vertical-align: middle;
+			}
+			.investigator-info {
+				padding: 4px;
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+			}
+			.investigator-info div {
+				display: flex;
+				flex: 1;
+				align-items: end;
+				gap: 4px;
+			}
+			.investigator-info span {
+				border-bottom: 1px solid #000;
+				flex: 1;
+				font-size: 14px;
+				padding: 0 2px 2px 2px;
+			}
+			.investigator-info label {
+				font-size: 12px;
+				font-weight: bold;
+			}
+
+			.abilitie-container {
+				width: fit-content;
+				display: flex;
+				flex-direction: column;
+				border: 1px solid #000;
+			}
+			.abilitie-container > div:first-child {
+				background-color: #ccc;
+				text-align: center;
+				font-size: 16px;
+				font-weight: bold;
+				padding-top: 2px;
+				padding-bottom: 4px;
+			}
+			.abilitie-grid {
+				display: grid;
+				grid-template-columns: 105px 105px 105px;
+				grid-template-rows: 40px 40px 40px;
+				gap: 4px;
+				width: fit-content;
+				padding: 2px;
+			}
+			.abilitie,
+			.abilitie-mov {
+				display: flex;
+				align-items: center;
+			}
+			.abilitie label,
+			.abilitie-mov label {
+				font-size: 18px;
+				flex: 1;
+				text-align: center;
+				font-weight: bold;
+			}
+			.alias-abilitie {
+				display: flex;
+				flex-direction: column;
+				flex: 1;
+			}
+			.alias-abilitie label:last-child {
+				font-size: 12px;
+			}
+			.roll-container {
+				position: relative;
+				width: 57px;
+				height: 37px;
+				box-sizing: border-box;
+				overflow: hidden;
+			}
+			.abilitie-box {
+				position: absolute;
+				box-sizing: border-box;
+				border: 1px solid #000;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				user-select: none;
+				/* font-weight: bold; */
+			}
+			.roll-container .abilitie-regular {
+				left: 0;
+				top: 0;
+				width: 32px;
+				height: 37px;
+			}
+			.roll-container .abilitie-hard {
+				right: 0;
+				top: 0;
+				width: 26px;
+				height: 19px;
+			}
+			.roll-container .abilitie-extreme {
+				right: 0;
+				bottom: 0;
+				width: 26px;
+				height: 19px;
+			}
+			.mov-container {
+				position: relative;
+				width: 57px;
+				height: 37px;
+			}
+			.mov {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 35px;
+				height: 37px;
+				border: 1px solid #000;
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				font-size: 20px;
+			}
+			.mov-puls {
+				position: absolute;
+				top: 0;
+				right: 0;
+				border: 1px solid #000;
+				width: 19px;
+				height: 19px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				color: #ccc;
+				font-size: 12px;
+			}
+			.mov-minus {
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				border: 1px solid #000;
+				width: 19px;
+				height: 19px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				color: #ccc;
+				font-size: 12px;
+			}
+
+			#canvas-container {
+				position: relative;
+				width: 100px;
+				border: 1px solid black;
+				width: 120px;
+			}
+			#img-select-btn {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				z-index: 10;
+				cursor: pointer;
+				width: 80px;
+			}
+			#img-remove-btn {
+				position: absolute;
+				top: 0;
+				right: 0;
+				z-index: 10;
+				cursor: pointer;
+				display: none;
+				background: #fff;
+				border: 1px solid #000;
+				padding: 2px 5px;
+				font-weight: bold;
+			}
+
+			.sub-data {
+				display: flex;
+				gap: 4px;
+			}
+			.status-container {
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+			}
+
+			.hp-box {
+				flex: 1;
+
+				border: 1px solid #000;
+				display: grid;
+				grid-template-columns: 22px;
+				grid-template-rows: 23px;
+				flex-direction: row;
+			}
+			.hp-box > div:first-child {
+				grid-column: 1;
+				grid-row: 1 / 3;
+				writing-mode: vertical-lr;
+				font-size: 14px;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.hp-header {
+				grid-column: 2;
+				grid-row: 1;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				font-size: 10px;
+				padding-left: 4px;
+				border-bottom: 1px solid #000;
+				vertical-align: middle;
+			}
+			.hp-value {
+				grid-column: 2;
+				grid-row: 2;
+				display: grid;
+				grid-template-columns: repeat(8, 1fr);
+				grid-template-rows: repeat(6, 1fr);
+				column-gap: 5px;
+				row-gap: 3px;
+				padding: 3px;
+				font-size: 12px;
+				/* overflow: hidden; */
+			}
+			.jyusho-box {
+				height: 18px;
+				width: 18px;
+				border: 1px solid #000;
+			}
+			.max-hp {
+				border: 1px solid #000;
+				position: relative;
+				width: 35px;
+				height: 18px;
+				font-size: 14px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.hp-value div:first-child {
+				position: relative;
+			}
+			.hinshi {
+				width: 34px;
+				height: 16px;
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				border: 1px solid #000;
+				font-size: 10px;
+				text-align: center;
+				font-weight: bold;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			.hinshi::after {
+				content: "";
+				position: absolute;
+				top: -9px;
+				left: 28px;
+				width: 1px;
+				height: 10px;
+				background: #000;
+			}
+			.hinshi::before {
+				content: "";
+				position: absolute;
+				top: 7px;
+				right: -8px;
+				width: 8px;
+				height: 1px;
+				background: #000;
+			}
+			.ishiki-humei {
+				width: 34px;
+				height: 16px;
+				position: absolute;
+				top: 15px;
+				border: 1px solid #000;
+				font-size: 7px;
+				text-align: center;
+				font-weight: bold;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			.ishiki-humei::after {
+				content: "";
+				width: 5px;
+				height: 15px;
+				position: absolute;
+				top: -7px;
+				right: -5px;
+				border: solid #000;
+				border-width: 0 1px 1px 0;
+			}
+			.ishiki-humei span {
+				display: inline-block;
+				transform: scaleY(1.4);
+				transform-origin: center;
+			}
+			.zero-border {
+				height: 15px;
+				width: 17px;
+				position: absolute;
+				top: 0px;
+				left: 40px;
+				border: 1px solid #000;
+			}
+
+			.san-box {
+				border: 1px solid #000;
+				display: grid;
+				grid-template-columns: 1fr 22px;
+				grid-template-rows: 23px;
+				flex-direction: row;
+			}
+			.san-box > div:last-child {
+				grid-column: 2;
+				grid-row: 1 / 3;
+				writing-mode: vertical-lr;
+				font-size: 14px;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.san-header {
+				grid-column: 1;
+				grid-row: 1;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				font-size: 10px;
+				padding: 0 8px;
+				border-bottom: 1px solid #000;
+				vertical-align: middle;
+			}
+			.san-value {
+				grid-column: 1;
+				grid-row: 2;
+				display: grid;
+				grid-template-columns: repeat(17, 1fr);
+				grid-template-rows: repeat(6, 1fr);
+				column-gap: 5px;
+				row-gap: 3px;
+				padding: 3px;
+				font-size: 12px;
+				overflow: hidden;
+			}
+			.kyouki-box {
+				height: 18px;
+				width: 18px;
+				border: 1px solid #000;
+			}
+			.start-san {
+				border: 1px solid #000;
+				position: relative;
+				width: 35px;
+				height: 18px;
+				font-size: 14px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.max-san {
+				border: 1px solid #000;
+				position: relative;
+				width: 35px;
+				height: 18px;
+				font-size: 14px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+
+			.hp-san {
+				display: flex;
+				gap: 4px;
+			}
+
+			.custom-box {
+				flex: 1;
+				border: 1px solid #000;
+				display: flex;
+				flex-direction: column;
+			}
+			.custom-box > div:first-child {
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				padding: 4px;
+				font-size: 14px;
+			}
+			.custom-box > div:last-child {
+				padding: 4px 4px 0 4px;
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				flex: 1;
+			}
+			.custom-box span {
+				border-bottom: 1px solid #000;
+				font-size: 15px;
+				padding: 0 2px 3px 2px;
+			}
+			.custom-box span:last-child {
+				border: none;
+			}
+
+			.luk-box {
+				border: 1px solid #000;
+				display: grid;
+				grid-template-columns: 22px;
+				grid-template-rows: 25px;
+				flex-direction: row;
+			}
+			.luk-box > div:first-child {
+				grid-column: 1;
+				grid-row: 1 / 3;
+				writing-mode: vertical-lr;
+				font-size: 14px;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.luk-header {
+				grid-column: 2;
+				grid-row: 1;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				font-size: 10px;
+				padding: 0 8px;
+				border-bottom: 1px solid #000;
+				vertical-align: middle;
+			}
+			.luk-value {
+				grid-column: 2;
+				grid-row: 1 / 3;
+				display: grid;
+				grid-template-columns: repeat(21, 1fr);
+				grid-template-rows: repeat(5, 1fr);
+				column-gap: 5px;
+				row-gap: 3px;
+				padding: 3px;
+				font-size: 12px;
+				overflow: hidden;
+			}
+
+			.mp-box {
+				border: 1px solid #000;
+				display: grid;
+				grid-template-columns: 1fr 22px;
+				grid-template-rows: 23px;
+				flex-direction: row;
+			}
+			.mp-box > div:first-child {
+				grid-column: 2;
+				grid-row: 1 / 3;
+				writing-mode: vertical-lr;
+				font-size: 10px;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				overflow: hidden;
+			}
+			.mp-box > div:first-child span {
+				display: inline-block;
+				transform: scaleY(0.9);
+				transform-origin: center;
+			}
+
+			.mp-header {
+				grid-column: 1;
+				grid-row: 1;
+				display: flex;
+				justify-content: center;
+				flex-direction: row;
+				align-items: center;
+				font-size: 10px;
+				padding-left: 8px;
+				border-bottom: 1px solid #000;
+			}
+			.mp-value {
+				grid-column: 1;
+				grid-row: 2;
+				display: grid;
+				grid-template-columns: repeat(6, 1fr);
+				grid-template-rows: repeat(4, 1fr);
+				column-gap: 5px;
+				row-gap: 3px;
+				padding: 3px;
+				font-size: 12px;
+				overflow: hidden;
+			}
+			.max-mp {
+				border: 1px solid #000;
+				width: 35px;
+				height: 18px;
+				font-size: 14px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+
+			.luk-mp {
+				display: flex;
+				gap: 4px;
+			}
+
+			.skill-section {
+				width: 100%;
+				height: 440px;
+				border: 1px solid #000;
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				padding-bottom: 2px;
+				position: relative;
+				background-color: #fff;
+			}
+			.skill-section::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
+			}
+			.skill-section > div:first-child {
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				padding: 4px;
+			}
+			.skill-grid {
+				flex: 1;
+				width: 100%;
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				grid-template-rows: repeat(auto-fill, 27px);
+				grid-auto-flow: column;
+				background: repeating-linear-gradient(to bottom, #ddd 0 27px, #fff 27px 54px);
+				background-position: 0 27px;
+				background-size: 100% 355px;
+				background-repeat: no-repeat;
+				overflow: hidden;
+			}
+			.skill-grid > :nth-child(n + 61) {
+				display: none;
+			}
+			.skill {
+				display: flex;
+				align-items: center;
+				height: 27px;
+				padding: 0 4px;
+			}
+			.skill > label {
+				font-size: 10px;
+				flex: 1;
+				font-weight: bold;
+				padding-left: 5px;
+			}
+			.skill-container {
+				position: relative;
+				width: 43px;
+				height: 25px;
+				overflow: hidden;
+				z-index: 11;
+			}
+			.skill-box {
+				position: absolute;
+				box-sizing: border-box;
+				border: 1px solid #000;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				user-select: none;
+			}
+			.skill-container .skill-regular {
+				left: 0;
+				top: 0;
+				width: 27px;
+				height: 25px;
+			}
+			.skill-container .skill-hard {
+				right: 0;
+				top: 0;
+				width: 17px;
+				height: 13px;
+			}
+			.skill-container .skill-extreme {
+				right: 0;
+				bottom: 0;
+				width: 17px;
+				height: 13px;
+			}
+			.skill-check {
+				height: 11px;
+				width: 11px;
+				border: 1px solid #000;
+			}
+			.special-skill {
+				display: flex;
+				align-items: center;
+				height: 27px;
+				padding: 0 4px;
+			}
+			.special-skill div:nth-child(2) {
+				padding-left: 5px;
+				padding-right: 3px;
+				height: 100%;
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+			.special-skill label:first-child {
+				font-size: 9px;
+				font-weight: bold;
+				padding-top: 1px;
+			}
+			.special-skill label:last-child {
+				font-size: 10px;
+				font-weight: bold;
+				border-bottom: 1px solid #000;
+				padding-bottom: 2px;
+			}
+			.add-special-skill,
+			.free-skill {
+				display: flex;
+				align-items: center;
+				height: 27px;
+				padding: 0 4px;
+			}
+			.add-special-skill label,
+			.free-skill label {
+				flex: 1;
+				height: 100%;
+				font-size: 10px;
+				border-bottom: 1px solid #000;
+				display: flex;
+				align-items: center;
+				font-weight: bold;
+				margin-left: 5px;
+				margin-right: 3px;
+			}
+
+			.weapon-combat {
+				width: 100%;
+				flex: 1;
+				display: flex;
+				gap: 4px;
+			}
+			.weapon-container {
+				width: 595px;
+				height: 214px;
+				border: 1px solid #000;
+				overflow: hidden;
+			}
+			.weapon-container > div:first-child {
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				padding: 4px;
+			}
+			.weapon-container > *:nth-child(n + 2) {
+				margin-bottom: 5px;
+			}
+			.weapon {
+				display: flex;
+				gap: 4px;
+				padding: 0 4px;
+			}
+			.weapon span {
+				border-bottom: 1px solid #000;
+				padding-bottom: 2px;
+				font-size: 14px;
+			}
+			.weapon label {
+				font-size: 10px;
+				text-align: center;
+				padding-top: 2px;
+				font-weight: bold;
+			}
+			.weapon-name {
+				flex: 36;
+			}
+			.weapon-regular,
+			.weapon-hard,
+			.weapon-extreme {
+				flex: 7;
+				text-align: center;
+			}
+
+			.weapon-damage {
+				flex: 20;
+				text-align: center;
+			}
+
+			.weapon-range {
+				flex: 9;
+				text-align: center;
+			}
+
+			.weapon-times {
+				flex: 8;
+				text-align: center;
+			}
+
+			.weapon-bullets {
+				flex: 8;
+				text-align: center;
+			}
+
+			.weapon-break {
+				flex: 6;
+				text-align: center;
+			}
+
+			.combat-container {
+				flex: 1;
+				border: 1px solid #000;
+				overflow: hidden;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				padding-bottom: 16px;
+			}
+			.combat-container > div:first-child {
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				padding: 4px;
+			}
+			.combat-container > div {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				padding: 0 8px;
+			}
+			.combat-container > div > label {
+				flex: 1;
+				font-size: 10px;
+				font-weight: bold;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.db,
+			.build {
+				width: 57px;
+				height: 37px;
+				border: 1px solid #000;
+				border-radius: 10px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.bd {
+				font-size: 18px;
+			}
+			.build {
+				font-size: 22px;
+			}
+
+			.backstory-container {
+				position: relative;
+				border: 1px solid #000;
+				display: grid;
+				grid-template-columns: repeat(2, 362px);
+				grid-template-rows: 30px;
+			}
+			.backstory-container > div:first-child {
+				grid-column: 1/3;
+				grid-row: 1;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.backstory-container::before {
+				content: "";
+				position: absolute;
+				top: -1px;
+				right: -1px;
+				left: -1px;
+				bottom: -1px;
+				border: 1px solid #000;
+				pointer-events: none;
+				z-index: 10;
+			}
+			.backstory-container::after {
+				content: "";
+				position: absolute;
+				height: 4px;
+				bottom: 0;
+				right: 2px;
+				left: 2px;
+				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+			.backstory {
+				width: 100%;
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+				padding: 7px 8px 0 8px;
+			}
+			.backstory > div:first-child {
+				display: flex;
+				gap: 4px;
+				align-items: end;
+			}
+			.backstory-left,
+			.backstory-right {
+				display: flex;
+				flex-direction: column;
+			}
+			.backstory > div:first-child > span {
+				flex: 1;
+			}
+			.backstory span {
+				display: block;
+				font-size: 14px;
+				border-bottom: 1px solid #000;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: clip;
+				padding: 2px;
+			}
+			.backstory label {
+				font-size: 12px;
+				font-weight: bold;
+			}
+
+			.item-asset {
+				width: 100%;
+				display: flex;
+				gap: 4px;
+			}
+			.item-container {
+				flex: 2;
+				border: 1px solid #000;
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				grid-template-rows: 30px;
+				position: relative;
+			}
+			.item-container > div:first-child {
+				grid-column: 1/3;
+				grid-row: 1;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			#item-left,
+			#item-right {
+				display: flex;
+				flex-direction: column;
+				padding: 4px 8px 0 8px;
+				gap: 2px;
+			}
+			.item-container span {
+				font-size: 14px;
+				border-bottom: 1px solid #000;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: clip;
+				padding: 2px;
+			}
+			.item-container::before {
+				content: "";
+				position: absolute;
+				height: 4px;
+				bottom: 0;
+				right: 2px;
+				left: 2px;
+				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+
+			.asset-container {
+				flex: 1;
+				border: 1px solid #000;
+				display: flex;
+				flex-direction: column;
+				position: relative;
+			}
+			.asset-container > div:first-child {
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				height: 30px;
+			}
+			.label-asset {
+				display: flex;
+				gap: 4px;
+				align-items: end;
+			}
+			.label-asset > span {
+				flex: 1;
+			}
+			.asset-container span {
+				display: block;
+				font-size: 14px;
+				border-bottom: 1px solid #000;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: clip;
+				padding: 2px;
+			}
+			.asset-container label {
+				font-size: 12px;
+				font-weight: bold;
+			}
+			#assets {
+				padding: 4px 8px 0 8px;
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+			}
+			.asset-container::before {
+				content: "";
+				position: absolute;
+				height: 4px;
+				bottom: 0;
+				right: 2px;
+				left: 2px;
+				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+
+			.memo-container {
+				border: 1px solid #000;
+				flex: 1;
+				width: 100%;
+				display: flex;
+				flex-direction: column;
+				min-height: 0;
+			}
+			.memo-container > div:first-child {
+				height: 29px;
+				font-weight: bold;
+				background-color: #ccc;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+			}
+			.memo {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				flex-wrap: wrap;
+				column-gap: 16px;
+				row-gap: 2px;
+				padding: 4px 8px 0 8px;
+				overflow: hidden;
+				min-height: 0;
+				position: relative;
+			}
+			.memo > span {
+				display: block;
+				width: 346px;
+				font-size: 14px;
+				border-bottom: 1px solid #000;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: clip;
+				padding: 2px;
+			}
+			.memo::before {
+				content: "";
+				position: absolute;
+				height: 4px;
+				bottom: 0;
+				right: 2px;
+				left: 2px;
+				background-color: #fff;
+				pointer-events: none;
+				z-index: 10;
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<a href="https://ihoukentiku.github.io/" class="no-underline-link" aria-label="ホームページ" title="ホームページへ">
+				<div class="header-left">
+					<div class="header-icon">
+						<img src="ihoukentiku_full.svg" alt="サイトアイコン" />
+					</div>
+					<div class="header-title">違法建築のTRPGラボ</div>
+				</div>
+			</a>
+			<div class="header-right">
+				<button id="help-button" class="header-button" aria-label="使い方ガイド" title="使い方ガイド">
+					<i class="material-icons">help</i>
+				</button>
+				<a href="https://x.com/ihoukentiku" target="_blank" class="header-button" aria-label="X (旧Twitter) アカウント" title="X (旧Twitter) アカウントへ">
+					<i class="fab fa-twitter" id="x-icon"></i>
+				</a>
+				<button id="theme-toggle" class="header-button" aria-label="テーマ切り替え" title="テーマを切り替える">
+					<i class="material-icons">dark_mode</i>
+				</button>
+			</div>
+		</header>
+		<main>
+			<div class="a4-sheet">
+				<div class="main-data">
+					<div class="investigator-container">
+						<div>探索者シート</div>
+						<div class="investigator-info">
+							<div>
+								<label contenteditable="true">名前</label>
+								<span contenteditable="true"></span>
+							</div>
+							<div>
+								<label contenteditable="true">プレイヤー</label>
+								<span contenteditable="true"></span>
+							</div>
+							<div>
+								<label contenteditable="true">職業</label>
+								<span contenteditable="true"></span>
+							</div>
+							<div>
+								<div>
+									<label contenteditable="true">年齢</label>
+									<span contenteditable="true"></span>
+								</div>
+								<div>
+									<label contenteditable="true">性別</label>
+									<span contenteditable="true"></span>
+								</div>
+							</div>
+							<div>
+								<label contenteditable="true">住所</label>
+								<span contenteditable="true"></span>
+							</div>
+							<div>
+								<label contenteditable="true">出身</label>
+								<span contenteditable="true"></span>
+							</div>
+						</div>
+					</div>
+					<div class="abilitie-container">
+						<div>能力値</div>
+						<div class="abilitie-grid">
+							<div class="abilitie">
+								<label>STR</label>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<label>DEX</label>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<div class="alias-abilitie">
+									<label>INT</label>
+									<label>アイデア</label>
+								</div>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<label>CON</label>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<label>APP</label>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<label>POW</label>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<label>SIZ</label>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie">
+								<div class="alias-abilitie">
+									<label>EDU</label>
+									<label>知識</label>
+								</div>
+								<div class="roll-container">
+									<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+									<div class="abilitie-box abilitie-hard"></div>
+									<div class="abilitie-box abilitie-extreme"></div>
+								</div>
+							</div>
+							<div class="abilitie-mov">
+								<label>MOV</label>
+								<div class="mov-container">
+									<div class="mov" contenteditable="true"></div>
+									<div class="mov-puls">+1</div>
+									<div class="mov-minus">-1</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div id="canvas-container">
+						<canvas id="c" width="118" height="158"></canvas>
+						<button id="img-select-btn">画像選択</button>
+						<button id="img-remove-btn">×</button>
+					</div>
+					<input type="file" id="file-input" accept="image/*" style="display: none" />
+				</div>
+				<div class="sub-data">
+					<div class="custom-box">
+						<div contenteditable="true">カスタム</div>
+						<div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+					</div>
+					<div class="status-container">
+						<div class="hp-san">
+							<div class="hp-box">
+								<div>耐久力</div>
+								<div class="hp-header">
+									<label style="margin-right: 4px">重傷</label>
+									<div class="jyusho-box" style="margin-right: 10px"></div>
+									<label style="margin-right: 4px">最大値</label>
+									<span class="max-hp" contenteditable="true"></span>
+								</div>
+								<div class="hp-value">
+									<div style="grid-column: 1/3; grid-row: 1/3">
+										<div class="hinshi">瀕死</div>
+										<div class="ishiki-humei"><span>意識不明</span></div>
+										<div class="zero-border"></div>
+									</div>
+									<span>00</span>
+									<span>01</span>
+									<span>02</span>
+									<span>03</span>
+									<span>04</span>
+									<span>05</span>
+									<span>06</span>
+									<span>07</span>
+									<span>08</span>
+									<span>09</span>
+									<span>10</span>
+									<span>11</span>
+									<span>12</span>
+									<span>13</span>
+									<span>14</span>
+									<span>15</span>
+									<span>16</span>
+									<span>17</span>
+									<span>18</span>
+									<span>19</span>
+									<span>20</span>
+									<span>21</span>
+									<span>22</span>
+									<span>23</span>
+									<span>24</span>
+									<span>25</span>
+									<span>26</span>
+									<span>27</span>
+									<span>28</span>
+									<span>29</span>
+									<span>30</span>
+									<span>31</span>
+									<span>32</span>
+									<span>33</span>
+									<span>34</span>
+									<span>35</span>
+									<span>36</span>
+									<span>37</span>
+									<span>38</span>
+									<span>39</span>
+									<span>40</span>
+									<span>41</span>
+									<span>42</span>
+									<span>43</span>
+								</div>
+							</div>
+							<div class="san-box">
+								<div class="san-header">
+									<label style="margin-right: 4px">一時的狂気</label>
+									<div class="kyouki-box" style="margin-right: 10px"></div>
+									<label style="margin-right: 4px">不定の狂気</label>
+									<div class="kyouki-box" style="margin-right: 10px"></div>
+									<label style="margin-right: 4px">開始時</label>
+									<span class="start-san" contenteditable="true" style="margin-right: 10px"></span>
+									<label style="margin-right: 4px">最大値</label>
+									<span class="max-san" contenteditable="true"></span>
+								</div>
+								<div class="san-value">
+									<span style="grid-column: 1/4; text-align: center">発狂</span>
+									<span>01</span>
+									<span>02</span>
+									<span>03</span>
+									<span>04</span>
+									<span>05</span>
+									<span>06</span>
+									<span>07</span>
+									<span>08</span>
+									<span>09</span>
+									<span>10</span>
+									<span>11</span>
+									<span>12</span>
+									<span>13</span>
+									<span>14</span>
+									<span>15</span>
+									<span>16</span>
+									<span>17</span>
+									<span>18</span>
+									<span>19</span>
+									<span>20</span>
+									<span>21</span>
+									<span>22</span>
+									<span>23</span>
+									<span>24</span>
+									<span>25</span>
+									<span>26</span>
+									<span>27</span>
+									<span>28</span>
+									<span>29</span>
+									<span>30</span>
+									<span>31</span>
+									<span>32</span>
+									<span>33</span>
+									<span>34</span>
+									<span>35</span>
+									<span>36</span>
+									<span>37</span>
+									<span>38</span>
+									<span>39</span>
+									<span>40</span>
+									<span>41</span>
+									<span>42</span>
+									<span>43</span>
+									<span>44</span>
+									<span>45</span>
+									<span>46</span>
+									<span>47</span>
+									<span>48</span>
+									<span>49</span>
+									<span>50</span>
+									<span>51</span>
+									<span>52</span>
+									<span>53</span>
+									<span>54</span>
+									<span>55</span>
+									<span>56</span>
+									<span>57</span>
+									<span>58</span>
+									<span>59</span>
+									<span>60</span>
+									<span>61</span>
+									<span>62</span>
+									<span>63</span>
+									<span>64</span>
+									<span>65</span>
+									<span>66</span>
+									<span>67</span>
+									<span>68</span>
+									<span>69</span>
+									<span>70</span>
+									<span>71</span>
+									<span>72</span>
+									<span>73</span>
+									<span>74</span>
+									<span>75</span>
+									<span>76</span>
+									<span>77</span>
+									<span>78</span>
+									<span>79</span>
+									<span>80</span>
+									<span>81</span>
+									<span>82</span>
+									<span>83</span>
+									<span>84</span>
+									<span>85</span>
+									<span>86</span>
+									<span>87</span>
+									<span>88</span>
+									<span>89</span>
+									<span>90</span>
+									<span>91</span>
+									<span>92</span>
+									<span>93</span>
+									<span>94</span>
+									<span>95</span>
+									<span>96</span>
+									<span>97</span>
+									<span>98</span>
+									<span>99</span>
+								</div>
+								<div>正気度</div>
+							</div>
+						</div>
+						<div class="luk-mp">
+							<div class="luk-box">
+								<div>幸運</div>
+								<!-- <div class="luk-header"></div> -->
+								<div class="luk-value">
+									<span style="grid-column: 1/7; text-align: center">運の尽き</span>
+									<span>01</span>
+									<span>02</span>
+									<span>03</span>
+									<span>04</span>
+									<span>05</span>
+									<span>06</span>
+									<span>07</span>
+									<span>08</span>
+									<span>09</span>
+									<span>10</span>
+									<span>11</span>
+									<span>12</span>
+									<span>13</span>
+									<span>14</span>
+									<span>15</span>
+									<span>16</span>
+									<span>17</span>
+									<span>18</span>
+									<span>19</span>
+									<span>20</span>
+									<span>21</span>
+									<span>22</span>
+									<span>23</span>
+									<span>24</span>
+									<span>25</span>
+									<span>26</span>
+									<span>27</span>
+									<span>28</span>
+									<span>29</span>
+									<span>30</span>
+									<span>31</span>
+									<span>32</span>
+									<span>33</span>
+									<span>34</span>
+									<span>35</span>
+									<span>36</span>
+									<span>37</span>
+									<span>38</span>
+									<span>39</span>
+									<span>40</span>
+									<span>41</span>
+									<span>42</span>
+									<span>43</span>
+									<span>44</span>
+									<span>45</span>
+									<span>46</span>
+									<span>47</span>
+									<span>48</span>
+									<span>49</span>
+									<span>50</span>
+									<span>51</span>
+									<span>52</span>
+									<span>53</span>
+									<span>54</span>
+									<span>55</span>
+									<span>56</span>
+									<span>57</span>
+									<span>58</span>
+									<span>59</span>
+									<span>60</span>
+									<span>61</span>
+									<span>62</span>
+									<span>63</span>
+									<span>64</span>
+									<span>65</span>
+									<span>66</span>
+									<span>67</span>
+									<span>68</span>
+									<span>69</span>
+									<span>70</span>
+									<span>71</span>
+									<span>72</span>
+									<span>73</span>
+									<span>74</span>
+									<span>75</span>
+									<span>76</span>
+									<span>77</span>
+									<span>78</span>
+									<span>79</span>
+									<span>80</span>
+									<span>81</span>
+									<span>82</span>
+									<span>83</span>
+									<span>84</span>
+									<span>85</span>
+									<span>86</span>
+									<span>87</span>
+									<span>88</span>
+									<span>89</span>
+									<span>90</span>
+									<span>91</span>
+									<span>92</span>
+									<span>93</span>
+									<span>94</span>
+									<span>95</span>
+									<span>96</span>
+									<span>97</span>
+									<span>98</span>
+									<span>99</span>
+								</div>
+							</div>
+							<div class="mp-box">
+								<div><span>マジック・ポイント</span></div>
+								<div class="mp-header">
+									<label style="margin-right: 4px">最大値</label>
+									<span class="max-mp" contenteditable="true"></span>
+								</div>
+								<div class="mp-value">
+									<span>00</span>
+									<span>01</span>
+									<span>02</span>
+									<span>03</span>
+									<span>04</span>
+									<span>05</span>
+									<span>06</span>
+									<span>07</span>
+									<span>08</span>
+									<span>09</span>
+									<span>10</span>
+									<span>11</span>
+									<span>12</span>
+									<span>13</span>
+									<span>14</span>
+									<span>15</span>
+									<span>16</span>
+									<span>17</span>
+									<span>18</span>
+									<span>19</span>
+									<span>20</span>
+									<span>21</span>
+									<span>22</span>
+									<span>23</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="skill-section">
+					<div>技能</div>
+					<div class="skill-grid">
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">威圧 (15%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">言いくるめ (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">医学 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">運転(自動車) (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">応急手当 (30%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">オカルト (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">隠密 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">回避 (DEX×½)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="special-skill">
+							<div class="skill-check"></div>
+							<div>
+								<label contenteditable="true">科学 (1%)</label>
+								<label contenteditable="true" class="skill-name"></label>
+							</div>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="add-special-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="add-special-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">鍵開け (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">鑑定 (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">機械修理 (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">聞き耳 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">近接戦闘(格闘) (25%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="add-special-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">クトゥルフ神話 (0%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="special-skill">
+							<div class="skill-check"></div>
+							<div>
+								<label contenteditable="true">芸術／製作 (5%)</label>
+								<label contenteditable="true" class="skill-name"></label>
+							</div>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="add-special-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="add-special-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">経理 (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">考古学 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">コンピューター (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="special-skill">
+							<div class="skill-check"></div>
+							<div>
+								<label contenteditable="true">サバイバル (10%)</label>
+								<label contenteditable="true" class="skill-name"></label>
+							</div>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">自然 (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">射撃(拳銃) (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">射撃<br />(ﾗｲﾌﾙ/ｼｮｯﾄｶﾞﾝ) (25%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true" class="skill-name"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">重機械操作 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check" style="color: transparent"></div>
+							<label contenteditable="true">信用 (0%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">心理学 (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">人類学 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">水泳 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">精神分析 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">説得 (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">操縦 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">跳躍 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">追跡 (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">手さばき (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">電気修理 (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">電子工学 (1%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">投擲 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">登攀 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">図書館 (20%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">ナビゲート (10%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">変装 (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">法律 (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="special-skill">
+							<div class="skill-check"></div>
+							<div>
+								<label contenteditable="true">ほかの言語 (1%)</label>
+								<label contenteditable="true" class="skill-name"></label>
+							</div>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="special-skill">
+							<div class="skill-check"></div>
+							<div>
+								<label contenteditable="true">母国語 (EDU%)</label>
+								<label contenteditable="true"></label>
+							</div>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">魅惑 (15%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">目星 (25%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true">歴史 (5%)</label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+						<div class="free-skill">
+							<div class="skill-check"></div>
+							<label contenteditable="true"></label>
+							<div class="skill-container">
+								<div class="skill-box skill-regular" contenteditable="true"></div>
+								<div class="skill-box skill-hard"></div>
+								<div class="skill-box skill-extreme"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="weapon-combat">
+					<div class="weapon-container">
+						<div>武器</div>
+						<div class="weapon">
+							<label class="weapon-name" style="text-align: start">武器</label>
+							<label class="weapon-regular">ﾚｷﾞｭﾗｰ</label>
+							<label class="weapon-hard">ハード</label>
+							<label class="weapon-extreme">ｲｸｽﾄﾘｰﾑ</label>
+							<label class="weapon-damage">ダメージ</label>
+							<label class="weapon-range">射程</label>
+							<label class="weapon-times">攻撃回数</label>
+							<label class="weapon-bullets">装弾数</label>
+							<label class="weapon-break">故障</label>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true">素手</span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true">1D3 + DB</span>
+							<span class="weapon-range" contenteditable="true">─</span>
+							<span class="weapon-times" contenteditable="true">1</span>
+							<span class="weapon-bullets" contenteditable="true">─</span>
+							<span class="weapon-break" contenteditable="true">─</span>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true"></span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true"></span>
+							<span class="weapon-range" contenteditable="true"></span>
+							<span class="weapon-times" contenteditable="true"></span>
+							<span class="weapon-bullets" contenteditable="true"></span>
+							<span class="weapon-break" contenteditable="true"></span>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true"></span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true"></span>
+							<span class="weapon-range" contenteditable="true"></span>
+							<span class="weapon-times" contenteditable="true"></span>
+							<span class="weapon-bullets" contenteditable="true"></span>
+							<span class="weapon-break" contenteditable="true"></span>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true"></span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true"></span>
+							<span class="weapon-range" contenteditable="true"></span>
+							<span class="weapon-times" contenteditable="true"></span>
+							<span class="weapon-bullets" contenteditable="true"></span>
+							<span class="weapon-break" contenteditable="true"></span>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true"></span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true"></span>
+							<span class="weapon-range" contenteditable="true"></span>
+							<span class="weapon-times" contenteditable="true"></span>
+							<span class="weapon-bullets" contenteditable="true"></span>
+							<span class="weapon-break" contenteditable="true"></span>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true"></span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true"></span>
+							<span class="weapon-range" contenteditable="true"></span>
+							<span class="weapon-times" contenteditable="true"></span>
+							<span class="weapon-bullets" contenteditable="true"></span>
+							<span class="weapon-break" contenteditable="true"></span>
+						</div>
+						<div class="weapon weapon-data">
+							<span class="weapon-name" contenteditable="true"></span>
+							<span class="weapon-regular" contenteditable="true"></span>
+							<span class="weapon-hard" contenteditable="true"></span>
+							<span class="weapon-extreme" contenteditable="true"></span>
+							<span class="weapon-damage" contenteditable="true"></span>
+							<span class="weapon-range" contenteditable="true"></span>
+							<span class="weapon-times" contenteditable="true"></span>
+							<span class="weapon-bullets" contenteditable="true"></span>
+							<span class="weapon-break" contenteditable="true"></span>
+						</div>
+					</div>
+					<div class="combat-container">
+						<div>戦闘</div>
+						<div>
+							<label>ダメージ・<br />ボーナス</label>
+							<div class="db" contenteditable="true"></div>
+						</div>
+						<div>
+							<label>ビルド</label>
+							<div class="build" contenteditable="true"></div>
+						</div>
+						<div>
+							<label>回避</label>
+							<div class="roll-container">
+								<div class="abilitie-box abilitie-regular" contenteditable="true"></div>
+								<div class="abilitie-box abilitie-hard"></div>
+								<div class="abilitie-box abilitie-extreme"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="a4-sheet">
+				<div class="backstory-container">
+					<div>バックストーリー</div>
+					<div class="backstory-left">
+						<div class="backstory sentence">
+							<div>
+								<label>容姿の描写</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+
+						<div class="backstory sentence">
+							<div>
+								<label>イデオロギー/信念</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+
+						<div class="backstory sentence">
+							<div>
+								<label>重要な人々</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+
+						<div class="backstory sentence">
+							<div>
+								<label>意味のある場所</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+						<div class="backstory sentence">
+							<div>
+								<label>秘蔵の品</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+					</div>
+					<div class="backstory-right">
+						<div class="backstory sentence">
+							<div>
+								<label>特徴</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+						<div class="backstory sentence">
+							<div>
+								<label>負傷、傷跡</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+						<div class="backstory sentence">
+							<div>
+								<label>恐怖症、マニア</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+
+						<div class="backstory sentence">
+							<div>
+								<label>魔導書、呪文、アーティファクト</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+						<div class="backstory sentence">
+							<div>
+								<label>遭遇した超自然の存在</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+					</div>
+				</div>
+				<div class="item-asset">
+					<div class="item-container">
+						<div>装備と所持品</div>
+						<div class="items" id="item-left">
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+						<div class="items" id="item-right">
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+					</div>
+					<div class="asset-container">
+						<div>装備と所持品</div>
+						<div id="assets" class="items">
+							<div class="label-asset">
+								<label>支出レベル</label>
+								<span contenteditable="true"></span>
+							</div>
+							<div class="label-asset">
+								<label>現金</label>
+								<span contenteditable="true"></span>
+							</div>
+							<div class="label-asset">
+								<label>資産</label>
+								<span contenteditable="true"></span>
+							</div>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+							<span contenteditable="true"></span>
+						</div>
+					</div>
+				</div>
+				<div class="memo-container">
+					<div>メモ</div>
+					<div class="memo sentence">
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+						<span contenteditable="true"></span>
+					</div>
+				</div>
+			</div>
+		</main>
+		<footer style="font-size: 0.8em; color: var(--color-on-surface); padding: 1em; text-align: center">
+			本作は、「株式会社アークライト」及び「株式会社KADOKAWA」が権利を有する『クトゥルフ神話TRPG』シリーズの二次創作物です。<br />
+			Call of Cthulhu is copyright ©1981, 2015, 2019 by Chaosium Inc.; all rights reserved. Arranged by Arclight Inc.<br />
+			Call of Cthulhu is a registered trademark of Chaosium Inc.<br />
+			PUBLISHED BY KADOKAWA CORPORATION 「クトゥルフ神話TRPG」「新クトゥルフ神話TRPG」
+		</footer>
+
+		<div id="help-modal" class="modal">
+			<div class="modal-content">
+				<button class="close-button" aria-label="閉じる">&times;</button>
+				<h2>使い方ガイド</h2>
+			</div>
+		</div>
+	</body>
+	<script src="common.js"></script>
+	<script>
+		function sanitizeAndParse(text) {
+			const t = String(text).trim();
+			const matched = t.match(/^[-+]?\d+/);
+			if (!matched) return 0;
+			const n = parseInt(matched[0], 10);
+			if (Number.isNaN(n)) return 0;
+			return Math.max(0, n);
+		}
+
+		function adjustFont(span, sizes) {
+			const len = (span.textContent || "").length;
+			if (len <= 2) span.style.fontSize = sizes[0];
+			else if (len === 3) span.style.fontSize = sizes[1];
+			else span.style.fontSize = sizes[2];
+		}
+
+		function setupValueBox(box, classNames, fontSizes) {
+			const leftSpan = box.querySelector(classNames.left);
+			const halfSpan = box.querySelector(classNames.half);
+			const fifthSpan = box.querySelector(classNames.fifth);
+
+			function update() {
+				const val = sanitizeAndParse(leftSpan.textContent || leftSpan.innerText);
+				if (val) {
+					halfSpan.textContent = Math.floor(val / 2);
+					fifthSpan.textContent = Math.floor(val / 5);
+				} else {
+					halfSpan.textContent = "";
+					fifthSpan.textContent = "";
+				}
+
+				adjustFont(leftSpan, fontSizes.left);
+				adjustFont(halfSpan, fontSizes.right);
+				adjustFont(fifthSpan, fontSizes.right);
+			}
+
+			leftSpan.addEventListener("input", update);
+			leftSpan.addEventListener("paste", (e) => {
+				e.preventDefault();
+				const text = (e.clipboardData || window.clipboardData).getData("text").replace(/[^0-9+-].*/g, "");
+				document.execCommand("insertText", false, text);
+				setTimeout(update, 0);
+			});
+
+			update();
+		}
+
+		// abilitie 用
+		document.querySelectorAll(".roll-container").forEach((box) =>
+			setupValueBox(
+				box,
+				{
+					left: ".abilitie-regular",
+					half: ".abilitie-hard",
+					fifth: ".abilitie-extreme",
+				},
+				{
+					left: ["20px", "16px", "12px"],
+					right: ["14px", "12px", "8px"],
+				}
+			)
+		);
+
+		// skill 用
+		document.querySelectorAll(".skill-container").forEach((box) =>
+			setupValueBox(
+				box,
+				{
+					left: ".skill-regular",
+					half: ".skill-hard",
+					fifth: ".skill-extreme",
+				},
+				{
+					left: ["16px", "14px", "11px"],
+					right: ["10px", "8px", "7px"],
+				}
+			)
+		);
+
+		document.querySelectorAll(".weapon-data").forEach((box) =>
+			setupValueBox(
+				box,
+				{
+					left: ".weapon-regular",
+					half: ".weapon-hard",
+					fifth: ".weapon-extreme",
+				},
+				{
+					left: ["14px", "14px", "14px"],
+					right: ["14px", "14px", "14px"],
+				}
+			)
+		);
+
+		const canvas = new fabric.Canvas("c", {
+			selection: true,
+		});
+
+		const selectBtn = document.getElementById("img-select-btn");
+		const removeBtn = document.getElementById("img-remove-btn");
+		const fileInput = document.getElementById("file-input");
+		let imgObject = null;
+
+		// 画像選択ボタンを押した時
+		selectBtn.addEventListener("click", () => {
+			fileInput.click();
+		});
+
+		// ファイル選択時
+		fileInput.addEventListener("change", (e) => {
+			const file = e.target.files[0];
+			if (!file) return;
+
+			const reader = new FileReader();
+			reader.onload = function (f) {
+				const data = f.target.result;
+				fabric.Image.fromURL(data, function (img) {
+					// キャンバスサイズ内に収まるように調整
+					const scaleX = 118 / img.width;
+					const scaleY = 158 / img.height;
+					const scale = Math.max(scaleX, scaleY, 0.001);
+					img.set({
+						left: 59, // キャンバス中央
+						top: 79,
+						originX: "center",
+						originY: "center",
+						scaleX: scale,
+						scaleY: scale,
+					});
+					canvas.clear(); // 以前の画像を削除
+					canvas.add(img);
+					canvas.setActiveObject(img);
+					imgObject = img;
+
+					// ボタン表示切替
+					selectBtn.style.display = "none";
+					removeBtn.style.display = "block";
+				});
+			};
+			reader.readAsDataURL(file);
+		});
+
+		// ×ボタンで画像削除
+		removeBtn.addEventListener("click", () => {
+			if (imgObject) {
+				canvas.remove(imgObject);
+				imgObject = null;
+			}
+			removeBtn.style.display = "none";
+			selectBtn.style.display = "block";
+		});
+
+		//自動改行
+		function attachAutoNext(el, options = {}) {
+			const container = options.containerSelector || ".sentence";
+			let composing = false;
+
+			el.addEventListener("compositionstart", () => {
+				composing = true;
+			});
+			el.addEventListener("compositionend", () => {
+				composing = false;
+				if (container === ".sentence") handleOverflow(el);
+			});
+
+			el.addEventListener("input", () => {
+				if (!composing && container === ".sentence") handleOverflow(el);
+			});
+
+			// バックスペース時の削除処理
+			el.addEventListener("keydown", (e) => {
+				if (e.key === "Backspace" && el.textContent === "") {
+					const sentence = el.closest(container);
+					const spans = container === ".sentence" ? Array.from(sentence.querySelectorAll("span[contenteditable]")) : Array.from(sentence.querySelectorAll(":scope > span[contenteditable]"));
+					const index = spans.indexOf(el);
+					if (index >= 1) {
+						e.preventDefault();
+						const prevSpan = spans[index - 1];
+						setCursorPos(prevSpan, prevSpan.textContent.length);
+						el.remove();
+					}
+					distributeSpans();
+				}
+
+				if (e.key === "Enter" && !composing) {
+					e.preventDefault();
+
+					const isSentence = container === ".sentence";
+					const isItems = container === ".items";
+
+					if (isSentence) {
+						const sentence = el.closest(".sentence");
+						const spans = Array.from(sentence.querySelectorAll("span[contenteditable]"));
+						const index = spans.indexOf(el);
+
+						const cursorPos = getCursorPos(el);
+						const text = el.textContent;
+						const before = text.slice(0, cursorPos);
+						const after = text.slice(cursorPos);
+
+						el.textContent = before;
+
+						let nextSpan = spans[index + 1];
+						if (!nextSpan) {
+							nextSpan = document.createElement("span");
+							nextSpan.setAttribute("contenteditable", "true");
+							sentence.appendChild(nextSpan);
+							attachAutoNext(nextSpan);
+						}
+
+						nextSpan.textContent = after + nextSpan.textContent;
+						setCursorPos(nextSpan, 0);
+						handleOverflow(nextSpan);
+					} else if (isItems) {
+						const parent = el.parentElement;
+						if (!parent) return;
+
+						const newSpan = document.createElement("span");
+						newSpan.setAttribute("contenteditable", "true");
+						attachAutoNext(newSpan, { containerSelector: ".items" });
+
+						if (el.nextElementSibling) {
+							parent.insertBefore(newSpan, el.nextElementSibling);
+						} else {
+							parent.appendChild(newSpan);
+						}
+						distributeSpans();
+
+						placeCaretAtStart(newSpan);
+					}
+				}
+			});
+		}
+
+		function getCursorPos(el) {
+			const sel = window.getSelection();
+			if (!sel.rangeCount) return 0;
+			const range = sel.getRangeAt(0);
+			const preRange = range.cloneRange();
+			preRange.selectNodeContents(el);
+			preRange.setEnd(range.endContainer, range.endOffset);
+			return preRange.toString().length;
+		}
+
+		function setCursorPos(el, pos) {
+			const range = document.createRange();
+			const sel = window.getSelection();
+			range.selectNodeContents(el);
+			range.collapse(true);
+
+			let node = el.firstChild;
+			let remaining = pos;
+			while (node) {
+				if (node.nodeType === Node.TEXT_NODE) {
+					if (node.length >= remaining) {
+						range.setStart(node, remaining);
+						range.collapse(true);
+						break;
+					} else {
+						remaining -= node.length;
+					}
+				}
+				node = node.nextSibling;
+			}
+
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}
+
+		function handleOverflow(el) {
+			const sentence = el.closest(".sentence");
+			const spans = Array.from(sentence.querySelectorAll("span[contenteditable]"));
+			let i = spans.indexOf(el);
+			let cursorPos = getCursorPos(el);
+
+			while (el.scrollWidth > el.clientWidth) {
+				let text = el.textContent;
+				let cutIndex = text.length;
+				while (cutIndex > 0 && el.scrollWidth > el.clientWidth) {
+					cutIndex--;
+					el.textContent = text.slice(0, cutIndex);
+				}
+
+				const overflowText = text.slice(cutIndex);
+				let nextSpan = spans[i + 1];
+
+				if (!nextSpan) {
+					nextSpan = document.createElement("span");
+					nextSpan.setAttribute("contenteditable", "true");
+					sentence.appendChild(nextSpan);
+					attachAutoNext(nextSpan);
+					spans.push(nextSpan);
+				}
+
+				if (cursorPos > cutIndex) {
+					nextSpan.textContent = overflowText + nextSpan.textContent;
+					cursorPos -= cutIndex;
+					el = nextSpan;
+					i = spans.indexOf(el);
+				} else {
+					nextSpan.textContent = overflowText + nextSpan.textContent;
+					break;
+				}
+			}
+
+			setCursorPos(el, cursorPos);
+		}
+
+		function placeCaretAtStart(el) {
+			el.focus();
+			const range = document.createRange();
+			const sel = window.getSelection();
+			range.selectNodeContents(el);
+			range.collapse(true);
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}
+
+		function distributeSpans() {
+			const L = document.getElementById("item-left");
+			const R = document.getElementById("item-right");
+			const spans = Array.from(L.querySelectorAll("span")).concat(Array.from(R.querySelectorAll("span")));
+
+			L.innerHTML = "";
+			R.innerHTML = "";
+
+			const mid = Math.ceil(spans.length / 2);
+
+			spans.forEach((span, i) => {
+				if (i < mid) {
+					L.appendChild(span);
+				} else {
+					R.appendChild(span);
+				}
+			});
+		}
+
+		document.querySelectorAll(".sentence span[contenteditable]").forEach((span) => attachAutoNext(span, { containerSelector: ".sentence" }));
+		document.querySelectorAll(".items > span[contenteditable]").forEach((span) => attachAutoNext(span, { containerSelector: ".items" }));
+
+		const skillsContainer = document.getElementById("skill-grid");
+
+		function createAddSkill() {
+			const div = document.createElement("div");
+			div.className = "add-special-skill";
+			div.innerHTML = `
+        <div class="skill-check"></div>
+        <label contenteditable="true" class="skill-name"></label>
+        <div class="skill-container">
+            <div class="skill-box skill-regular" contenteditable="true"></div>
+			<div class="skill-box skill-hard"></div>
+            <div class="skill-box skill-extreme"></div>
+        </div>`;
+			attachEvents(div.querySelector(".skill-name"));
+			return div;
+		}
+
+		function attachEvents(el) {
+			let composing = false;
+			el.addEventListener("compositionstart", () => (composing = true));
+			el.addEventListener("compositionend", () => (composing = false));
+
+			el.addEventListener("keydown", (e) => {
+				if (e.key === "Enter" && !composing) {
+					e.preventDefault();
+					const parent = el.closest(".free-skill, .special-skill, .add-special-skill");
+					const newSkill = createAddSkill();
+					parent.insertAdjacentElement("afterend", newSkill);
+					newSkill.querySelector(".skill-name").focus();
+				}
+
+				if (e.key === "Backspace" && el.textContent.trim() === "") {
+					const parent = el.closest(".add-special-skill");
+					if (parent) {
+						e.preventDefault();
+						const prev = parent.previousElementSibling;
+						parent.remove();
+						if (prev) {
+							const prevInput = prev.querySelector(".skill-name");
+							if (prevInput) prevInput.focus();
+						}
+					}
+				}
+			});
+		}
+
+		// 初期の .skill-name にイベントを付与
+		document.querySelectorAll(".skill-name").forEach(attachEvents);
+	</script>
+</html>

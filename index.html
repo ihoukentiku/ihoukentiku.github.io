@@ -219,7 +219,7 @@
 		</div>
 
 		<footer>
-			<p>&copy; <span id="current-year"></span> ihoukentiku. 本ツールは<a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE">MITライセンス</a>の下で提供されています。</p>
+			<p>&copy;2025 ihoukentiku. 本ツールは<a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE">MITライセンス</a>の下で提供されています。</p>
 		</footer>
 
 		<script src="common.js"></script>
@@ -227,6 +227,7 @@
 		<script>
 			const tools = [
 				{ file: "coc7_dice.html", title: "CoC7 ダイスツール" },
+				{ file: "coc7_Investigator_sheet.html", title: "CoC7 探索者シート" },
 				{ file: "coc7_npc_token.html", title: "新クトゥルフ神話TRPG NPCコマ作成ツール" },
 				{ file: "coc6_npc_token.html", title: "クトゥルフ神話TRPG NPCコマ作成ツール" },
 				{ file: "hex_maker.html", title: "ヘクス作成ツール" },
@@ -239,8 +240,13 @@
 
 			const changelog = [
 				{
+					date: "2025.10.4",
+					version: "v1.2.0",
+					updates: ["新クトゥルフ神話TRPG カスタム探索者シートを追加しました。", "一部ツールの名前を変更しました。"],
+				},
+				{
 					date: "2025.09.28",
-					version: "v1.0.１",
+					version: "v1.0.1",
 					updates: ["UI上の軽微な不具合を修正しました。"],
 				},
 				{
@@ -267,7 +273,7 @@
 
 					const titleTag = doc.querySelector("title");
 					let title = titleTag ? titleTag.innerText : "タイトルが設定されていません。";
-					title = title.replace(/｜違法建築のTRPGラボ/g, "").trim();
+					title = title.replace(/ | 違法建築のTRPGラボ/g, "").trim();
 
 					return { description: description, title: title };
 				} catch (error) {

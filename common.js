@@ -1,5 +1,3 @@
-document.getElementById("current-year").textContent = new Date().getFullYear();
-
 document.addEventListener("DOMContentLoaded", async () => {
 	const themeToggleBtn = document.getElementById("theme-toggle");
 	const body = document.body;
