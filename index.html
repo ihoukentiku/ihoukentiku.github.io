@@ -4,6 +4,15 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebSite",
+				"name": "違法建築のTRPGラボ",
+				"url": "https://ihoukentiku.github.io/"
+			}
+		</script>
+
 		<title>違法建築のTRPGラボ</title>
 		<meta name="description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
 		<link rel="icon" href="kanzi_icon.svg" type="image/svg+xml" />
@@ -273,7 +282,7 @@
 
 					const titleTag = doc.querySelector("title");
 					let title = titleTag ? titleTag.innerText : "タイトルが設定されていません。";
-					title = title.replace(/|違法建築のTRPGラボ/g, "").trim();
+					title = title.replace(/ | 違法建築のTRPGラボ/g, "").trim();
 
 					return { description: description, title: title };
 				} catch (error) {

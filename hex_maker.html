@@ -1,311 +1,321 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>ヘクス作成ツール | 違法建築のTRPGラボ</title>
-        <meta name="description" content="TRPGやボードゲームなどで使えるヘクス(ヘックス)画像を、サイズや座標などをカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。" />
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
-        <style>
-            body {
-                font-family: "Noto Sans JP", sans-serif;
-                background: #f7f8fa;
-                margin: auto;
-                padding: 20px;
-                max-width: 850px;
-                color: #333;
-            }
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-            h1 {
-                font-size: 28px;
-                border-bottom: 2px solid #ccc;
-                padding-bottom: 5px;
-                margin-bottom: 20px;
-                margin-top: 10px;
-            }
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebSite",
+				"name": "違法建築のTRPGラボ",
+				"url": "https://ihoukentiku.github.io/"
+			}
+		</script>
 
-            .section {
-                background: white;
-                padding: 16px;
-                border-radius: 5px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-                margin-bottom: 20px;
-            }
-            .section > div {
-                display: flex;
-                flex-wrap: wrap;
-                row-gap: 16px;
-                column-gap: 16px;
-            }
-            .section > div > div {
-                display: flex;
-                flex-direction: column;
-                row-gap: 16px;
-            }
+		<title>ヘクス作成ツール | 違法建築のTRPGラボ</title>
+		<meta name="description" content="TRPGやボードゲームなどで使えるヘクス(ヘックス)画像を、サイズや座標などをカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。" />
+		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
+		<style>
+			body {
+				font-family: "Noto Sans JP", sans-serif;
+				background: #f7f8fa;
+				margin: auto;
+				padding: 20px;
+				max-width: 850px;
+				color: #333;
+			}
 
-            label {
-                font-weight: bold;
-            }
+			h1 {
+				font-size: 28px;
+				border-bottom: 2px solid #ccc;
+				padding-bottom: 5px;
+				margin-bottom: 20px;
+				margin-top: 10px;
+			}
 
-            input {
-                vertical-align: middle;
-                box-sizing: border-box;
-            }
-            input[type="text"],
-            input[type="number"],
-            select {
-                border-radius: 4px;
-                font-size: 18px;
-                padding: 0px 5px 0px 5px;
-                height: 30px;
-            }
-            input[type="number"] {
-                border: 1px solid #888;
-                width: 50px;
-            }
-            input[type="color"] {
-                height: 30px;
-                border: 1px solid #aaa;
-                border-radius: 4px;
-            }
-            input[type="range"] {
-                width: 150px;
-            }
-            input[type="checkbox"] {
-                width: 20px;
-                height: 20px;
-            }
+			.section {
+				background: white;
+				padding: 16px;
+				border-radius: 5px;
+				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+				margin-bottom: 20px;
+			}
+			.section > div {
+				display: flex;
+				flex-wrap: wrap;
+				row-gap: 16px;
+				column-gap: 16px;
+			}
+			.section > div > div {
+				display: flex;
+				flex-direction: column;
+				row-gap: 16px;
+			}
 
-            select {
-                width: 100px;
-            }
+			label {
+				font-weight: bold;
+			}
 
-            canvas {
-                border: 1px solid #333;
-                margin-top: 20px;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
-                max-width: 100%;
-                max-height: 600px;
-            }
+			input {
+				vertical-align: middle;
+				box-sizing: border-box;
+			}
+			input[type="text"],
+			input[type="number"],
+			select {
+				border-radius: 4px;
+				font-size: 18px;
+				padding: 0px 5px 0px 5px;
+				height: 30px;
+			}
+			input[type="number"] {
+				border: 1px solid #888;
+				width: 50px;
+			}
+			input[type="color"] {
+				height: 30px;
+				border: 1px solid #aaa;
+				border-radius: 4px;
+			}
+			input[type="range"] {
+				width: 150px;
+			}
+			input[type="checkbox"] {
+				width: 20px;
+				height: 20px;
+			}
 
-            button {
-                background-color: #448ad4;
-                color: white;
-                padding: 6px 12px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-                font-weight: bold;
-            }
+			select {
+				width: 100px;
+			}
 
-            button:hover {
-                background-color: #3d7bcd;
-            }
+			canvas {
+				border: 1px solid #333;
+				margin-top: 20px;
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+				max-width: 100%;
+				max-height: 600px;
+			}
 
-            #lineOpacityValue,
-            #coordOpacityValue {
-                display: inline-block;
-                width: 45px;
-                text-align: right;
-            }
+			button {
+				background-color: #448ad4;
+				color: white;
+				padding: 6px 12px;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				transition: background-color 0.2s;
+				font-weight: bold;
+			}
 
-            #coordinateSettings {
-                margin-top: 16px;
-                margin-bottom: 16px;
-                padding-top: 10px;
-                border-top: 1px dashed #888;
-            }
-        </style>
-    </head>
-    <body>
-        <div style="position: relative">
-            <h1 style="margin: 0">ヘクス作成ツール</h1>
-            <a href="index.html" target="_blank" style="position: absolute; bottom: 10px; right: 0">
-                <button style="padding: 6px 12px">ホームページへ</button>
-            </a>
-        </div>
+			button:hover {
+				background-color: #3d7bcd;
+			}
 
-        <div class="section">
-            <div>
-                <div>
-                    <label
-                        >ヘクスの向き
-                        <select id="orientation">
-                            <option value="horizontal" selected>横向き</option>
-                            <option value="vertical">縦向き</option>
-                        </select>
-                    </label>
-                    <label>ヘクスの色 <input type="color" id="hexColor" value="#000000" /></label>
-                </div>
-                <div>
-                    <label>横のヘクス数 <input type="number" id="cols" value="15" min="1" /></label>
-                    <label>縦のヘクス数 <input type="number" id="rows" value="15" min="1" /></label>
-                </div>
-                <div>
-                    <label>サイズ <input type="number" id="cellSize" value="90" min="1" /> px</label>
-                    <label>線の太さ <input type="number" id="lineWidth" value="2" min="1" /> px</label>
-                </div>
-                <div>
-                    <label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked /></label>
-                    <label>1列目をずらす<input type="checkbox" id="shiftCheck" /></label>
-                </div>
-                <div>
-                    <label>
-                        透明度
-                        <input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" />
-                        <span id="lineOpacityValue">100%</span>
-                    </label>
-                </div>
-            </div>
+			#lineOpacityValue,
+			#coordOpacityValue {
+				display: inline-block;
+				width: 45px;
+				text-align: right;
+			}
 
-            <div id="coordinateSettings">
-                <label>
-                    座標を表示
-                    <input type="checkbox" id="showCoordinates" checked />
-                </label>
-                <label
-                    >位置
-                    <select id="coordPositionSelect" style="width: 70px">
-                        <option value="top">上</option>
-                        <option value="middle">中央</option>
-                        <option value="bottom" selected>下</option>
-                    </select>
-                </label>
+			#coordinateSettings {
+				margin-top: 16px;
+				margin-bottom: 16px;
+				padding-top: 10px;
+				border-top: 1px dashed #888;
+			}
+		</style>
+	</head>
+	<body>
+		<div style="position: relative">
+			<h1 style="margin: 0">ヘクス作成ツール</h1>
+			<a href="index.html" target="_blank" style="position: absolute; bottom: 10px; right: 0">
+				<button style="padding: 6px 12px">ホームページへ</button>
+			</a>
+		</div>
 
-                <label>座標の色 <input type="color" id="coordColor" value="#000000" /></label>
-                <label>文字サイズ <input type="number" id="coordFontSize" value="20" min="1" /> px</label>
-                <label>
-                    透明度
-                    <input type="range" id="coordOpacity" value="1.0" min="0.0" max="1.0" step="0.01" />
-                    <span id="coordOpacityValue">100%</span>
-                </label>
-            </div>
+		<div class="section">
+			<div>
+				<div>
+					<label
+						>ヘクスの向き
+						<select id="orientation">
+							<option value="horizontal" selected>横向き</option>
+							<option value="vertical">縦向き</option>
+						</select>
+					</label>
+					<label>ヘクスの色 <input type="color" id="hexColor" value="#000000" /></label>
+				</div>
+				<div>
+					<label>横のヘクス数 <input type="number" id="cols" value="15" min="1" /></label>
+					<label>縦のヘクス数 <input type="number" id="rows" value="15" min="1" /></label>
+				</div>
+				<div>
+					<label>サイズ <input type="number" id="cellSize" value="90" min="1" /> px</label>
+					<label>線の太さ <input type="number" id="lineWidth" value="2" min="1" /> px</label>
+				</div>
+				<div>
+					<label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked /></label>
+					<label>1列目をずらす<input type="checkbox" id="shiftCheck" /></label>
+				</div>
+				<div>
+					<label>
+						透明度
+						<input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" />
+						<span id="lineOpacityValue">100%</span>
+					</label>
+				</div>
+			</div>
 
-            <div>
-                <button onclick="downloadHex()">ダウンロード</button>
-            </div>
-        </div>
+			<div id="coordinateSettings">
+				<label>
+					座標を表示
+					<input type="checkbox" id="showCoordinates" checked />
+				</label>
+				<label
+					>位置
+					<select id="coordPositionSelect" style="width: 70px">
+						<option value="top">上</option>
+						<option value="middle">中央</option>
+						<option value="bottom" selected>下</option>
+					</select>
+				</label>
 
-        <canvas id="hexCanvas"></canvas>
+				<label>座標の色 <input type="color" id="coordColor" value="#000000" /></label>
+				<label>文字サイズ <input type="number" id="coordFontSize" value="20" min="1" /> px</label>
+				<label>
+					透明度
+					<input type="range" id="coordOpacity" value="1.0" min="0.0" max="1.0" step="0.01" />
+					<span id="coordOpacityValue">100%</span>
+				</label>
+			</div>
 
-        <script>
-            function generateHex() {
-                const ori = document.getElementById("orientation").value === "vertical";
-                const color = document.getElementById("hexColor").value;
-                const lineWidth = parseInt(document.getElementById("lineWidth").value);
-                const lineOpacity = 1 - Math.sqrt(1 - parseFloat(document.getElementById("lineOpacity").value));
-                const cellSize = parseInt(document.getElementById("cellSize").value);
-                let cols = parseInt(document.getElementById("cols").value);
-                let rows = parseInt(document.getElementById("rows").value);
-                const showCoordinates = document.getElementById("showCoordinates").checked;
-                const coordPosition = document.getElementById("coordPositionSelect").value;
-                const coordColor = document.getElementById("coordColor").value;
-                const coordFontSize = parseInt(document.getElementById("coordFontSize").value);
-                const coordOpacity = parseFloat(document.getElementById("coordOpacity").value);
-                const fitGridCheck = document.getElementById("fitGridCheck").checked;
-                const shiftCheck = document.getElementById("shiftCheck").checked;
-                const canvas = document.getElementById("hexCanvas");
-                const ctx = canvas.getContext("2d");
+			<div>
+				<button onclick="downloadHex()">ダウンロード</button>
+			</div>
+		</div>
 
-                const cellSizeX = fitGridCheck ? cellSize : (cellSize / 2) * Math.sqrt(3);
-                const offsetLeft = fitGridCheck ? 1 / 6 : 1 / 3;
+		<canvas id="hexCanvas"></canvas>
 
-                if (ori) [cols, rows] = [rows, cols];
-                canvas.width = fitGridCheck ? cellSizeX * cols : cellSizeX * (cols + 1 / 3);
-                canvas.height = (cellSize * (rows + 1)) / 2;
-                if (ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
+		<script>
+			function generateHex() {
+				const ori = document.getElementById("orientation").value === "vertical";
+				const color = document.getElementById("hexColor").value;
+				const lineWidth = parseInt(document.getElementById("lineWidth").value);
+				const lineOpacity = 1 - Math.sqrt(1 - parseFloat(document.getElementById("lineOpacity").value));
+				const cellSize = parseInt(document.getElementById("cellSize").value);
+				let cols = parseInt(document.getElementById("cols").value);
+				let rows = parseInt(document.getElementById("rows").value);
+				const showCoordinates = document.getElementById("showCoordinates").checked;
+				const coordPosition = document.getElementById("coordPositionSelect").value;
+				const coordColor = document.getElementById("coordColor").value;
+				const coordFontSize = parseInt(document.getElementById("coordFontSize").value);
+				const coordOpacity = parseFloat(document.getElementById("coordOpacity").value);
+				const fitGridCheck = document.getElementById("fitGridCheck").checked;
+				const shiftCheck = document.getElementById("shiftCheck").checked;
+				const canvas = document.getElementById("hexCanvas");
+				const ctx = canvas.getContext("2d");
 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+				const cellSizeX = fitGridCheck ? cellSize : (cellSize / 2) * Math.sqrt(3);
+				const offsetLeft = fitGridCheck ? 1 / 6 : 1 / 3;
 
-                ctx.strokeStyle = color;
-                ctx.lineWidth = lineWidth;
+				if (ori) [cols, rows] = [rows, cols];
+				canvas.width = fitGridCheck ? cellSizeX * cols : cellSizeX * (cols + 1 / 3);
+				canvas.height = (cellSize * (rows + 1)) / 2;
+				if (ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
 
-                for (let c = -1; c < cols + 1; c++) {
-                    for (let r = -1; r < rows + 1; r++) {
-                        if (shiftCheck === ((r + 2) % 2 == (c + 2) % 2)) continue;
-                        const cx = (c + offsetLeft) * cellSizeX;
-                        const cy = (r / 2) * cellSize;
-                        const vertices = [
-                            { x: cx, y: cy }, // 左上
-                            { x: cx - (cellSizeX * 1) / 3, y: cy + cellSize / 2 }, // 左端
-                            { x: cx, y: cy + cellSize }, // 左下
-                            { x: cx + (cellSizeX * 2) / 3, y: cy + cellSize }, // 右下
-                            { x: cx + cellSizeX, y: cy + cellSize / 2 }, // 右端
-                            { x: cx + (cellSizeX * 2) / 3, y: cy }, // 右上
-                        ];
-                        if (ori) vertices.forEach((v) => ([v.x, v.y] = [v.y, v.x]));
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                        ctx.globalAlpha = lineOpacity;
-                        ctx.beginPath();
-                        ctx.moveTo(vertices[0].x, vertices[0].y);
-                        for (let i = 1; i < vertices.length; i++) {
-                            ctx.lineTo(vertices[i].x, vertices[i].y);
-                        }
-                        ctx.closePath();
-                        ctx.stroke();
+				ctx.strokeStyle = color;
+				ctx.lineWidth = lineWidth;
 
-                        if (showCoordinates && 0 <= c && 0 <= r && c < cols && r < rows) {
-                            ctx.fillStyle = coordColor;
-                            ctx.globalAlpha = coordOpacity;
-                            ctx.font = `${coordFontSize}px 'Arial'`;
-                            ctx.textAlign = "center";
-                            ctx.textBaseline = "middle";
-                            const coordinateText = `${c}-${r}`;
-                            let px = cx + (cellSizeX * 1) / 3;
-                            let py = cy + cellSize / 2;
-                            if (ori) [px, py] = [py, px];
-                            if (coordPosition == "top") {
-                                py = py - cellSize / 2 + coordFontSize / 2 + cellSize / 25;
-                            } else if (coordPosition == "bottom") {
-                                py = py + cellSize / 2 - coordFontSize / 2 - cellSize / 50;
-                            }
-                            ctx.fillText(coordinateText, px, py);
-                        }
-                    }
-                }
-            }
+				for (let c = -1; c < cols + 1; c++) {
+					for (let r = -1; r < rows + 1; r++) {
+						if (shiftCheck === ((r + 2) % 2 == (c + 2) % 2)) continue;
+						const cx = (c + offsetLeft) * cellSizeX;
+						const cy = (r / 2) * cellSize;
+						const vertices = [
+							{ x: cx, y: cy }, // 左上
+							{ x: cx - (cellSizeX * 1) / 3, y: cy + cellSize / 2 }, // 左端
+							{ x: cx, y: cy + cellSize }, // 左下
+							{ x: cx + (cellSizeX * 2) / 3, y: cy + cellSize }, // 右下
+							{ x: cx + cellSizeX, y: cy + cellSize / 2 }, // 右端
+							{ x: cx + (cellSizeX * 2) / 3, y: cy }, // 右上
+						];
+						if (ori) vertices.forEach((v) => ([v.x, v.y] = [v.y, v.x]));
 
-            function downloadHex() {
-                const canvas = document.getElementById("hexCanvas");
-                const cellSize = parseInt(document.getElementById("cellSize").value); // 六角形の高さの基準サイズ
-                const fitGridCheck = document.getElementById("fitGridCheck").checked;
-                const link = document.createElement("a");
-                const c = (canvas.width / cellSize) * 2;
-                const r = (canvas.height / cellSize) * 2;
-                link.download = fitGridCheck ? `hex_${c}x${r}.png` : `hex.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-            }
+						ctx.globalAlpha = lineOpacity;
+						ctx.beginPath();
+						ctx.moveTo(vertices[0].x, vertices[0].y);
+						for (let i = 1; i < vertices.length; i++) {
+							ctx.lineTo(vertices[i].x, vertices[i].y);
+						}
+						ctx.closePath();
+						ctx.stroke();
 
-            //イベントリスナー
-            document.addEventListener("DOMContentLoaded", function () {
-                document.getElementById("orientation").addEventListener("change", generateHex);
-                document.getElementById("hexColor").addEventListener("input", generateHex);
-                document.getElementById("lineWidth").addEventListener("input", generateHex);
-                document.getElementById("lineOpacity").addEventListener("input", function () {
-                    document.getElementById("lineOpacityValue").textContent = `${Math.round(document.getElementById("lineOpacity").value * 100)}%`;
-                    generateHex();
-                });
-                document.getElementById("cellSize").addEventListener("input", generateHex);
-                document.getElementById("cols").addEventListener("input", generateHex);
-                document.getElementById("rows").addEventListener("input", generateHex);
-                document.getElementById("fitGridCheck").addEventListener("input", generateHex);
-                document.getElementById("shiftCheck").addEventListener("input", generateHex);
-                document.getElementById("showCoordinates").addEventListener("input", generateHex);
-                document.getElementById("coordPositionSelect").addEventListener("change", generateHex);
-                document.getElementById("coordColor").addEventListener("input", generateHex);
-                document.getElementById("coordFontSize").addEventListener("input", generateHex);
-                document.getElementById("coordOpacity").addEventListener("input", function () {
-                    document.getElementById("coordOpacityValue").textContent = `${Math.round(document.getElementById("coordOpacity").value * 100)}%`;
-                    generateHex();
-                });
+						if (showCoordinates && 0 <= c && 0 <= r && c < cols && r < rows) {
+							ctx.fillStyle = coordColor;
+							ctx.globalAlpha = coordOpacity;
+							ctx.font = `${coordFontSize}px 'Arial'`;
+							ctx.textAlign = "center";
+							ctx.textBaseline = "middle";
+							const coordinateText = `${c}-${r}`;
+							let px = cx + (cellSizeX * 1) / 3;
+							let py = cy + cellSize / 2;
+							if (ori) [px, py] = [py, px];
+							if (coordPosition == "top") {
+								py = py - cellSize / 2 + coordFontSize / 2 + cellSize / 25;
+							} else if (coordPosition == "bottom") {
+								py = py + cellSize / 2 - coordFontSize / 2 - cellSize / 50;
+							}
+							ctx.fillText(coordinateText, px, py);
+						}
+					}
+				}
+			}
 
-                generateHex();
-            });
-        </script>
-    </body>
+			function downloadHex() {
+				const canvas = document.getElementById("hexCanvas");
+				const cellSize = parseInt(document.getElementById("cellSize").value); // 六角形の高さの基準サイズ
+				const fitGridCheck = document.getElementById("fitGridCheck").checked;
+				const link = document.createElement("a");
+				const c = (canvas.width / cellSize) * 2;
+				const r = (canvas.height / cellSize) * 2;
+				link.download = fitGridCheck ? `hex_${c}x${r}.png` : `hex.png`;
+				link.href = canvas.toDataURL("image/png");
+				link.click();
+			}
+
+			//イベントリスナー
+			document.addEventListener("DOMContentLoaded", function () {
+				document.getElementById("orientation").addEventListener("change", generateHex);
+				document.getElementById("hexColor").addEventListener("input", generateHex);
+				document.getElementById("lineWidth").addEventListener("input", generateHex);
+				document.getElementById("lineOpacity").addEventListener("input", function () {
+					document.getElementById("lineOpacityValue").textContent = `${Math.round(document.getElementById("lineOpacity").value * 100)}%`;
+					generateHex();
+				});
+				document.getElementById("cellSize").addEventListener("input", generateHex);
+				document.getElementById("cols").addEventListener("input", generateHex);
+				document.getElementById("rows").addEventListener("input", generateHex);
+				document.getElementById("fitGridCheck").addEventListener("input", generateHex);
+				document.getElementById("shiftCheck").addEventListener("input", generateHex);
+				document.getElementById("showCoordinates").addEventListener("input", generateHex);
+				document.getElementById("coordPositionSelect").addEventListener("change", generateHex);
+				document.getElementById("coordColor").addEventListener("input", generateHex);
+				document.getElementById("coordFontSize").addEventListener("input", generateHex);
+				document.getElementById("coordOpacity").addEventListener("input", function () {
+					document.getElementById("coordOpacityValue").textContent = `${Math.round(document.getElementById("coordOpacity").value * 100)}%`;
+					generateHex();
+				});
+
+				generateHex();
+			});
+		</script>
+	</body>
 </html>
