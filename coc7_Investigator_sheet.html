@@ -156,6 +156,7 @@
 				flex-direction: column;
 				border: 1px solid #666;
 				position: relative;
+				z-index: 5;
 			}
 			.abilitie-container::before {
 				content: "";
@@ -290,9 +291,9 @@
 
 			#canvas-container {
 				position: relative;
-				width: 100px;
 				border: 1px solid black;
-				width: 120px;
+				width: 122px;
+				height: 162px;
 			}
 			#canvas-container::before {
 				content: "";
@@ -1451,7 +1452,7 @@
 						</div>
 					</div>
 					<div id="canvas-container">
-						<canvas id="c" width="118" height="158"></canvas>
+						<canvas id="c"></canvas>
 						<button id="img-select-btn">画像選択</button>
 						<button id="img-remove-btn">×</button>
 					</div>
@@ -2796,8 +2797,8 @@
 					fifth: ".abilitie-extreme",
 				},
 				{
-					left: ["20px", "16px", "12px"],
-					right: ["14px", "12px", "8px"],
+					left: ["22px", "17px", "13px"],
+					right: ["14px", "12px", "10px"],
 				}
 			)
 		);
@@ -2812,7 +2813,7 @@
 					fifth: ".skill-extreme",
 				},
 				{
-					left: ["16px", "14px", "11px"],
+					left: ["18px", "14px", "11px"],
 					right: ["10px", "8px", "7px"],
 				}
 			)
@@ -2833,9 +2834,43 @@
 			)
 		);
 
+		const displayWidth = 120;
+		const displayHeight = 160;
+		const multiplier = 4;
+
 		const canvas = new fabric.Canvas("c", {
+			width: (displayWidth + 60) * multiplier,
+			height: (displayHeight + 60) * multiplier,
 			selection: true,
 		});
+
+		canvas.setZoom(multiplier);
+
+		canvas.upperCanvasEl.style.width = displayWidth + 60 + "px";
+		canvas.upperCanvasEl.style.height = displayHeight + 60 + "px";
+
+		canvas.upperCanvasEl.style.position = "absolute";
+		canvas.upperCanvasEl.style.left = "-30px";
+		canvas.upperCanvasEl.style.top = "-30px";
+
+		const clipRect = new fabric.Rect({
+			left: 30, // キャンバス内でWの位置
+			top: 30,
+			width: 120,
+			height: 160,
+			absolutePositioned: true,
+		});
+
+		const canvasElement = document.getElementById("c");
+		canvasElement.style.position = "absolute";
+		canvasElement.style.left = "-30px";
+		canvasElement.style.top = "-30px";
+		canvasElement.style.width = "180px";
+		canvasElement.style.height = "220px";
+
+		const canvasContainer = canvasElement.parentElement;
+		canvasContainer.style.width = "120px";
+		canvasContainer.style.height = "160px";
 
 		const selectBtn = document.getElementById("img-select-btn");
 		const removeBtn = document.getElementById("img-remove-btn");
@@ -2857,16 +2892,23 @@
 				const data = f.target.result;
 				fabric.Image.fromURL(data, function (img) {
 					// キャンバスサイズ内に収まるように調整
-					const scaleX = 118 / img.width;
-					const scaleY = 158 / img.height;
-					const scale = Math.max(scaleX, scaleY, 0.001);
+					const scaleX = 120 / img.width;
+					const scaleY = 160 / img.height;
+					const scale = Math.min(scaleX, scaleY, 1);
 					img.set({
-						left: 59, // キャンバス中央
-						top: 79,
+						left: 90, // キャンバス中央
+						top: 110,
 						originX: "center",
 						originY: "center",
 						scaleX: scale,
 						scaleY: scale,
+						clipPath: clipRect,
+						cornerStyle: "rect",
+						cornerSize: 30,
+						cornerColor: "#2196F3",
+						borderColor: "#2196F3",
+						borderScaleFactor: 4,
+						transparentCorners: false,
 					});
 					canvas.clear(); // 以前の画像を削除
 					canvas.add(img);
@@ -3124,13 +3166,13 @@
 			const div = document.createElement("div");
 			div.className = "add-special-skill";
 			div.innerHTML = `
-        <div class="skill-check"></div>
-        <label contenteditable="true" class="skill-name"></label>
-        <div class="skill-container">
-            <div class="skill-box skill-regular" contenteditable="true"></div>
+		      <div class="skill-check"></div>
+		      <label contenteditable="true" class="skill-name"></label>
+		      <div class="skill-container">
+		          <div class="skill-box skill-regular" contenteditable="true"></div>
 			<div class="skill-box skill-hard"></div>
-            <div class="skill-box skill-extreme"></div>
-        </div>`;
+		          <div class="skill-box skill-extreme"></div>
+		      </div>`;
 			attachEvents(div.querySelector(".skill-name"));
 			return div;
 		}
