@@ -96,6 +96,12 @@
 				header {
 					display: none !important;
 				}
+				#canvas-container,
+				.canvas-container,
+				.upper-canvas,
+				.lower-canvas {
+					z-index: 0 !important;
+				}
 			}
 			.main-data {
 				display: flex;
@@ -294,6 +300,7 @@
 				border: 1px solid black;
 				width: 122px;
 				height: 162px;
+				z-index: 6;
 			}
 			#canvas-container::before {
 				content: "";
@@ -2839,34 +2846,34 @@
 		const multiplier = 4;
 
 		const canvas = new fabric.Canvas("c", {
-			width: (displayWidth + 60) * multiplier,
-			height: (displayHeight + 60) * multiplier,
+			width: (displayWidth + 100) * multiplier,
+			height: (displayHeight + 100) * multiplier,
 			selection: true,
 		});
 
 		canvas.setZoom(multiplier);
 
-		canvas.upperCanvasEl.style.width = displayWidth + 60 + "px";
-		canvas.upperCanvasEl.style.height = displayHeight + 60 + "px";
+		canvas.upperCanvasEl.style.width = displayWidth + 100 + "px";
+		canvas.upperCanvasEl.style.height = displayHeight + 100 + "px";
 
 		canvas.upperCanvasEl.style.position = "absolute";
-		canvas.upperCanvasEl.style.left = "-30px";
+		canvas.upperCanvasEl.style.left = "-70px";
 		canvas.upperCanvasEl.style.top = "-30px";
 
 		const clipRect = new fabric.Rect({
-			left: 30, // キャンバス内でWの位置
-			top: 30,
-			width: 120,
-			height: 160,
+			left: 69, // キャンバス内でWの位置
+			top: 29,
+			width: 121,
+			height: 161,
 			absolutePositioned: true,
 		});
 
 		const canvasElement = document.getElementById("c");
 		canvasElement.style.position = "absolute";
-		canvasElement.style.left = "-30px";
+		canvasElement.style.left = "-70px";
 		canvasElement.style.top = "-30px";
-		canvasElement.style.width = "180px";
-		canvasElement.style.height = "220px";
+		canvasElement.style.width = "220px";
+		canvasElement.style.height = "260px";
 
 		const canvasContainer = canvasElement.parentElement;
 		canvasContainer.style.width = "120px";
@@ -2896,7 +2903,7 @@
 					const scaleY = 160 / img.height;
 					const scale = Math.min(scaleX, scaleY, 1);
 					img.set({
-						left: 90, // キャンバス中央
+						left: 130, // キャンバス中央
 						top: 110,
 						originX: "center",
 						originY: "center",
@@ -2918,6 +2925,8 @@
 					// ボタン表示切替
 					selectBtn.style.display = "none";
 					removeBtn.style.display = "block";
+
+					fileInput.value = "";
 				});
 			};
 			reader.readAsDataURL(file);
