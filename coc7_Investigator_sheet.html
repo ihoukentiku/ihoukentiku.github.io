@@ -77,7 +77,21 @@
 				transition: background-color 0.2s ease;
 				gap: 4px;
 			}
-			#loadBtn:hover {
+			#modal-cancel {
+				padding: 8px;
+				border-radius: 8px;
+				border: 1px solid #000;
+				background-color: transparent;
+				color: #000;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				transition: background-color 0.2s ease;
+				gap: 4px;
+			}
+			#loadBtn:hover,
+			#modal-cancel:hover {
 				background-color: rgba(0, 0, 0, 0.1);
 			}
 			#clearBtn,
@@ -99,7 +113,8 @@
 				background-color: #d32f2f;
 			}
 			#saveBtn,
-			#printBtn {
+			#printBtn,
+			#modal-ok {
 				padding: 8px;
 				border: none;
 				border-radius: 8px;
@@ -114,7 +129,8 @@
 				gap: 4px;
 			}
 			#saveBtn:hover,
-			#printBtn:hover {
+			#printBtn:hover,
+			#modal-ok:hover {
 				background-color: #1e88e5;
 			}
 			main {
@@ -379,7 +395,7 @@
 			#img-container {
 				position: relative;
 				border: 1px solid black;
-				width: 122px;
+				width: 132px;
 				height: 162px;
 			}
 			#img-container::before {
@@ -2844,8 +2860,8 @@
 		<div id="image-modal" class="modal">
 			<div id="img-modal-content">
 				<canvas id="modal-canvas" style="border: 1px solid #ccc; position: relative"> </canvas>
-				<div id="clip-frame" style="position: absolute; left: 178px; top: 98px; width: 484px; height: 644px; border: 3px dashed black; pointer-events: none; box-sizing: border-box"></div>
-				<div style="margin-top: 20px">
+				<div id="clip-frame" style="position: absolute; left: 158px; top: 98px; width: 524px; height: 644px; border: 3px dashed black; pointer-events: none; box-sizing: border-box"></div>
+				<div style="margin-top: 20px; display: flex; gap: 8px; justify-content: center">
 					<button id="modal-ok">決定</button>
 					<button id="modal-cancel">キャンセル</button>
 				</div>
@@ -3403,12 +3419,12 @@
 
 					// 画像を読み込み
 					fabric.Image.fromURL(imgData, (img) => {
-						const scaleX = 480 / img.width;
+						const scaleX = 520 / img.width;
 						const scaleY = 640 / img.height;
 						const scale = Math.min(scaleX, scaleY, 1);
 
 						img.set({
-							left: 160 + 480 / 2,
+							left: 140 + 520 / 2,
 							top: 80 + 640 / 2,
 							originX: "center",
 							originY: "center",
@@ -3423,15 +3439,14 @@
 						modalCanvas.setActiveObject(img);
 						imgObject = img;
 					});
-					console.log(modalCanvas._objects);
 
 					// 決定ボタン
 					document.getElementById("modal-ok").onclick = () => {
 						if (!imgObject) return;
 
-						const left = 160;
+						const left = 140;
 						const top = 80;
-						const width = 480;
+						const width = 520;
 						const height = 640;
 
 						// 枠内を切り抜き
@@ -3444,7 +3459,8 @@
 						});
 
 						// img-wrapper 内に新しい <img> を作成して貼り付け
-						if (currentImg) imgWrapper.removeChild(currentImg);
+						const images = imgWrapper.querySelectorAll("img");
+						images.forEach((img) => imgWrapper.removeChild(img));
 						const newImg = document.createElement("img");
 						newImg.src = dataURL;
 						newImg.width = width / scaleFactor;
