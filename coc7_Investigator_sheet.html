@@ -28,7 +28,95 @@
 		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+
 		<style>
+			#img-modal-content {
+				position: relative;
+				width: fit-content;
+				height: fit-content;
+				margin: 50px auto;
+				background-color: #ffffff;
+				border-radius: 8px;
+				padding: 20px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+				overflow: hidden;
+			}
+			.card-section {
+				padding: 8px 0;
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				width: fit-content;
+				margin: auto;
+			}
+			.card {
+				background-color: var(--color-secondary);
+				color: var(--color-on-secondary);
+				padding: 12px;
+				font-size: 16px;
+				border-radius: 8px;
+				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+				display: flex;
+				width: fit-content;
+				gap: 8px;
+			}
+			#loadBtn,
+			#saveList {
+				padding: 8px;
+				border-radius: 8px;
+				border: 1px solid var(--color-outline);
+				background-color: var(--color-secondary);
+				color: var(--color-on-surface);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				transition: background-color 0.2s ease;
+				gap: 4px;
+			}
+			#loadBtn:hover {
+				background-color: rgba(0, 0, 0, 0.1);
+			}
+			#clearBtn,
+			#deleteBtn {
+				padding: 8px;
+				border-radius: 8px;
+				border: none;
+				background-color: var(--color-error);
+				color: #fff;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				transition: background-color 0.2s ease;
+				gap: 4px;
+			}
+			#clearBtn:hover,
+			#deleteBtn:hover {
+				background-color: #d32f2f;
+			}
+			#saveBtn,
+			#printBtn {
+				padding: 8px;
+				border: none;
+				border-radius: 8px;
+				background-color: var(--color-primary);
+				color: var(--color-on-primary);
+				font-weight: bold;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: background-color 0.2s ease;
+				gap: 4px;
+			}
+			#saveBtn:hover,
+			#printBtn:hover {
+				background-color: #1e88e5;
+			}
 			main {
 				color: #000;
 				width: fit-content;
@@ -61,6 +149,13 @@
 					padding: 0;
 					gap: 0;
 					display: block !important;
+					background-color: #fff;
+				}
+				.card {
+					display: none;
+				}
+				.card-section {
+					display: none;
 				}
 				main {
 					margin: 0;
@@ -87,13 +182,8 @@
 				header {
 					display: none !important;
 				}
-				#canvas-container,
-				.canvas-container,
-				.upper-canvas,
-				.lower-canvas {
-					z-index: 0 !important;
-				}
 			}
+
 			.main-data {
 				display: flex;
 				gap: 4px;
@@ -286,14 +376,13 @@
 				font-size: 12px;
 			}
 
-			#canvas-container {
+			#img-container {
 				position: relative;
 				border: 1px solid black;
 				width: 122px;
 				height: 162px;
-				z-index: 6;
 			}
-			#canvas-container::before {
+			#img-container::before {
 				content: "";
 				position: absolute;
 				top: -1px;
@@ -1252,7 +1341,7 @@
 				position: relative;
 			}
 			.memo-container > div:first-child {
-				height: 28px;
+				height: 29px;
 				font-weight: bold;
 				background-color: #ccc;
 				display: flex;
@@ -1328,7 +1417,24 @@
 				</button>
 			</div>
 		</header>
-		<main>
+
+		<div class="card-section">
+			<div class="card">
+				<button id="saveBtn"><span class="material-icons">save</span>保存</button>
+				<select id="saveList">
+					<option value="">（保存一覧）</option>
+				</select>
+
+				<button id="loadBtn"><span class="material-icons">folder_open</span>読み込み</button>
+				<button id="deleteBtn"><span class="material-icons">delete</span> 削除</button>
+			</div>
+			<div class="card">
+				<button id="printBtn"><span class="material-icons">print</span> 印刷</button>
+				<button id="clearBtn"><span class="material-icons">refresh</span>クリア</button>
+			</div>
+		</div>
+
+		<main id="main">
 			<div class="a4-sheet">
 				<div class="main-data">
 					<div class="investigator-container">
@@ -1449,8 +1555,7 @@
 							</div>
 						</div>
 					</div>
-					<div id="canvas-container">
-						<canvas id="c"></canvas>
+					<div id="img-container">
 						<button id="img-select-btn">画像選択</button>
 						<button id="img-remove-btn">×</button>
 					</div>
@@ -2735,6 +2840,17 @@
 				<h2>使い方ガイド</h2>
 			</div>
 		</div>
+
+		<div id="image-modal" class="modal">
+			<div id="img-modal-content">
+				<canvas id="modal-canvas" style="border: 1px solid #ccc; position: relative"> </canvas>
+				<div id="clip-frame" style="position: absolute; left: 178px; top: 98px; width: 484px; height: 644px; border: 3px dashed black; pointer-events: none; box-sizing: border-box"></div>
+				<div style="margin-top: 20px">
+					<button id="modal-ok">決定</button>
+					<button id="modal-cancel">キャンセル</button>
+				</div>
+			</div>
+		</div>
 	</body>
 	<script src="common.js"></script>
 	<script>
@@ -2831,134 +2947,9 @@
 				}
 			)
 		);
-
-		const displayWidth = 120;
-		const displayHeight = 160;
-		const multiplier = 4;
-
-		const canvas = new fabric.Canvas("c", {
-			width: (displayWidth + 100) * multiplier,
-			height: (displayHeight + 100) * multiplier,
-			selection: true,
-		});
-
-		canvas.setZoom(multiplier);
-
-		canvas.upperCanvasEl.style.width = displayWidth + 100 + "px";
-		canvas.upperCanvasEl.style.height = displayHeight + 100 + "px";
-
-		canvas.upperCanvasEl.style.position = "absolute";
-		canvas.upperCanvasEl.style.left = "-70px";
-		canvas.upperCanvasEl.style.top = "-30px";
-
-		const clipRect = new fabric.Rect({
-			left: 69, // キャンバス内でWの位置
-			top: 29,
-			width: 121,
-			height: 161,
-			absolutePositioned: true,
-		});
-
-		const canvasElement = document.getElementById("c");
-		canvasElement.style.position = "absolute";
-		canvasElement.style.left = "-70px";
-		canvasElement.style.top = "-30px";
-		canvasElement.style.width = "220px";
-		canvasElement.style.height = "260px";
-
-		const canvasContainer = canvasElement.parentElement;
-		canvasContainer.style.width = "120px";
-		canvasContainer.style.height = "160px";
-
-		const selectBtn = document.getElementById("img-select-btn");
-		const removeBtn = document.getElementById("img-remove-btn");
-		const fileInput = document.getElementById("file-input");
-		let imgObject = null;
-
-		// 画像選択ボタンを押した時
-		selectBtn.addEventListener("click", () => {
-			fileInput.click();
-		});
-
-		// ファイル選択時
-		fileInput.addEventListener("change", (e) => {
-			const file = e.target.files[0];
-			if (!file) return;
-
-			const reader = new FileReader();
-			reader.onload = function (f) {
-				const data = f.target.result;
-				fabric.Image.fromURL(data, function (img) {
-					// キャンバスサイズ内に収まるように調整
-					const scaleX = 120 / img.width;
-					const scaleY = 160 / img.height;
-					const scale = Math.min(scaleX, scaleY, 1);
-					img.set({
-						left: 130, // キャンバス中央
-						top: 110,
-						originX: "center",
-						originY: "center",
-						scaleX: scale,
-						scaleY: scale,
-						clipPath: clipRect,
-						cornerStyle: "rect",
-						cornerSize: 30,
-						cornerColor: "#2196F3",
-						borderColor: "#2196F3",
-						borderScaleFactor: 4,
-						transparentCorners: false,
-					});
-					canvas.clear(); // 以前の画像を削除
-					canvas.add(img);
-					canvas.setActiveObject(img);
-					imgObject = img;
-
-					// ボタン表示切替
-					selectBtn.style.display = "none";
-					removeBtn.style.display = "block";
-
-					fileInput.value = "";
-				});
-			};
-			reader.readAsDataURL(file);
-		});
-
-		// ×ボタンで画像削除
-		removeBtn.addEventListener("click", () => {
-			if (imgObject) {
-				canvas.remove(imgObject);
-				imgObject = null;
-			}
-			removeBtn.style.display = "none";
-			selectBtn.style.display = "block";
-		});
-
-		function beforePrint() {
-			canvas.discardActiveObject(); // 選択解除
-			canvas.renderAll(); // 再描画
-			canvas.forEachObject((obj) => obj.set("hasControls", false)); // ハンドル非表示
-			canvas.renderAll();
-		}
-
-		// 印刷後に呼ぶ関数
-		function afterPrint() {
-			canvas.forEachObject((obj) => obj.set("hasControls", true)); // ハンドルを戻す
-			canvas.renderAll();
-		}
-
-		// 印刷イベントにフック
-		if (window.matchMedia) {
-			const mediaQueryList = window.matchMedia("print");
-
-			mediaQueryList.addEventListener("change", (mql) => {
-				if (mql.matches) {
-					beforePrint(); // 印刷開始
-				} else {
-					afterPrint(); // 印刷終了
-				}
-			});
-		}
-
+	</script>
+	<script></script>
+	<script>
 		//自動改行
 		function attachAutoNext(el, options = {}) {
 			const container = options.containerSelector || ".sentence";
@@ -3159,20 +3150,21 @@
 
 		document.querySelectorAll(".sentence span[contenteditable]").forEach((span) => attachAutoNext(span, { containerSelector: ".sentence" }));
 		document.querySelectorAll(".items > span[contenteditable]").forEach((span) => attachAutoNext(span, { containerSelector: ".items" }));
-
+	</script>
+	<script>
 		const skillsContainer = document.getElementById("skill-grid");
 
 		function createAddSkill() {
 			const div = document.createElement("div");
 			div.className = "add-special-skill";
 			div.innerHTML = `
-		      <div class="skill-check"></div>
-		      <label contenteditable="true" class="skill-name"></label>
-		      <div class="skill-container">
-		          <div class="skill-box skill-regular" contenteditable="true"></div>
-			<div class="skill-box skill-hard"></div>
-		          <div class="skill-box skill-extreme"></div>
-		      </div>`;
+				<div class="skill-check"></div>
+				<label contenteditable="true" class="skill-name"></label>
+				<div class="skill-container">
+					<div class="skill-box skill-regular" contenteditable="true"></div>
+				<div class="skill-box skill-hard"></div>
+					<div class="skill-box skill-extreme"></div>
+				</div>`;
 			attachEvents(div.querySelector(".skill-name"));
 			return div;
 		}
@@ -3208,5 +3200,288 @@
 
 		// 初期の .skill-name にイベントを付与
 		document.querySelectorAll(".skill-name").forEach(attachEvents);
+	</script>
+	<script>
+		const saveBtn = document.getElementById("saveBtn");
+		const loadBtn = document.getElementById("loadBtn");
+		const clearBtn = document.getElementById("clearBtn");
+		const main = document.getElementById("main");
+		const saveList = document.getElementById("saveList");
+		const deleteBtn = document.getElementById("deleteBtn");
+		const printBtn = document.getElementById("printBtn");
+
+		const STORAGE_KEY = "coc7_charasheet";
+		const AUTOSAVE_KEY = "coc7_autosave";
+
+		// localStorageからデータを取得
+		function getAllSheets() {
+			return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+		}
+
+		// セレクト更新
+		function updateSelectList() {
+			const sheets = getAllSheets();
+			saveList.innerHTML = '<option value="">（保存一覧）</option>';
+			for (const name of Object.keys(sheets)) {
+				const opt = document.createElement("option");
+				opt.value = name;
+				opt.textContent = name;
+				saveList.appendChild(opt);
+			}
+		}
+
+		// 保存ボタン
+		saveBtn.addEventListener("click", () => {
+			const name = prompt("保存名を入力してください。\n\n" + "※保存した探索者シートはお使いのブラウザのローカルストレージに保存されます。\n" + "別のブラウザや端末では表示されません。");
+			if (!name) return;
+
+			const sheets = getAllSheets();
+
+			// 同名確認
+			if (sheets[name]) {
+				const overwrite = confirm(`「${name}」はすでに存在します。上書きしてもよいですか？`);
+				if (!overwrite) return;
+			}
+
+			sheets[name] = main.innerHTML;
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(sheets));
+			updateSelectList();
+			saveList.value = name;
+		});
+
+		// 読み込みボタン
+		loadBtn.addEventListener("click", () => {
+			const selected = saveList.value;
+			if (!selected) {
+				alert("読み込む探索者シートを選択してください。");
+				return;
+			}
+			if (!confirm(`「${selected}」を現在の内容に上書きして読み込みますか？`)) return;
+			const sheets = getAllSheets();
+			main.innerHTML = sheets[selected] || "";
+			localStorage.setItem(AUTOSAVE_KEY, main.innerHTML); // オートセーブ更新
+			restoreAllEventListeners();
+		});
+
+		deleteBtn.addEventListener("click", () => {
+			const selected = saveList.value;
+			if (!selected) {
+				alert("削除する探索者シートを選択してください。");
+				return;
+			}
+			if (!confirm(`「${selected}」を削除してもよいですか？`)) return;
+			const sheets = getAllSheets();
+			delete sheets[selected];
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(sheets));
+			updateSelectList();
+			saveList.value = "";
+		});
+
+		// オートセーブ機能（入力検知）
+		let autosaveTimer;
+		main.addEventListener("input", () => {
+			clearTimeout(autosaveTimer);
+			autosaveTimer = setTimeout(() => {
+				localStorage.setItem(AUTOSAVE_KEY, main.innerHTML);
+				console.log("オートセーブ完了");
+			}, 1000);
+		});
+
+		// ページ読み込み時：オートセーブ復元
+		window.addEventListener("DOMContentLoaded", () => {
+			updateSelectList();
+			const autosaveData = localStorage.getItem(AUTOSAVE_KEY);
+			if (autosaveData) {
+				main.innerHTML = autosaveData;
+				restoreAllEventListeners();
+				console.log("オートセーブを復元しました");
+			}
+		});
+
+		clearBtn.addEventListener("click", () => {
+			if (!confirm("探索者シートを初期状態に戻しますか？")) return;
+			localStorage.removeItem(AUTOSAVE_KEY);
+			location.reload(); // ← ページ全体をリロード
+		});
+
+		printBtn.addEventListener("click", () => {
+			window.print();
+		});
+
+		function restoreAllEventListeners() {
+			// abilitie
+			document.querySelectorAll(".roll-container").forEach((box) =>
+				setupValueBox(
+					box,
+					{
+						left: ".abilitie-regular",
+						half: ".abilitie-hard",
+						fifth: ".abilitie-extreme",
+					},
+					{
+						left: ["22px", "17px", "13px"],
+						right: ["14px", "12px", "10px"],
+					}
+				)
+			);
+
+			// skill
+			document.querySelectorAll(".skill-container").forEach((box) =>
+				setupValueBox(
+					box,
+					{
+						left: ".skill-regular",
+						half: ".skill-hard",
+						fifth: ".skill-extreme",
+					},
+					{
+						left: ["18px", "14px", "11px"],
+						right: ["10px", "8px", "7px"],
+					}
+				)
+			);
+
+			// weapon
+			document.querySelectorAll(".weapon-data").forEach((box) =>
+				setupValueBox(
+					box,
+					{
+						left: ".weapon-regular",
+						half: ".weapon-hard",
+						fifth: ".weapon-extreme",
+					},
+					{
+						left: ["14px", "14px", "14px"],
+						right: ["14px", "14px", "14px"],
+					}
+				)
+			);
+
+			// contenteditable 自動改行
+			document.querySelectorAll(".sentence span[contenteditable]").forEach((span) => attachAutoNext(span, { containerSelector: ".sentence" }));
+			document.querySelectorAll(".items > span[contenteditable]").forEach((span) => attachAutoNext(span, { containerSelector: ".items" }));
+
+			// skill-name イベント
+			document.querySelectorAll(".skill-name").forEach(attachEvents);
+
+			setupImageEvents();
+		}
+
+		function setupImageEvents() {
+			const selectBtn = document.getElementById("img-select-btn");
+			const fileInput = document.getElementById("file-input");
+			const modal = document.getElementById("image-modal");
+			const modalCanvasEl = document.getElementById("modal-canvas");
+			const imgWrapper = document.getElementById("img-container");
+			const scaleFactor = 4; // HTML側とFabric側の比率
+			const removeBtn = document.getElementById("img-remove-btn");
+
+			let modalCanvas = null;
+			let imgObject = null;
+			let currentImg = null;
+
+			// 画像選択ボタン
+			selectBtn.addEventListener("click", () => fileInput.click());
+
+			// ファイル選択時
+			fileInput.addEventListener("change", (e) => {
+				const file = e.target.files[0];
+				if (!file) return;
+				const reader = new FileReader();
+				reader.onload = function (f) {
+					const imgData = f.target.result;
+
+					// モーダル表示
+					modal.style.display = "block";
+
+					// Fabric.js キャンバス初期化
+					modalCanvas = new fabric.Canvas("modal-canvas", {
+						width: 800,
+						height: 800,
+						selection: true,
+					});
+
+					// 画像を読み込み
+					fabric.Image.fromURL(imgData, (img) => {
+						const scaleX = 480 / img.width;
+						const scaleY = 640 / img.height;
+						const scale = Math.min(scaleX, scaleY, 1);
+
+						img.set({
+							left: 160 + 480 / 2,
+							top: 80 + 640 / 2,
+							originX: "center",
+							originY: "center",
+							scaleX: scale,
+							scaleY: scale,
+							cornerColor: "#2196F3",
+							borderColor: "#2196F3",
+							borderScaleFactor: 2,
+						});
+
+						modalCanvas.add(img);
+						modalCanvas.setActiveObject(img);
+						imgObject = img;
+					});
+					console.log(modalCanvas._objects);
+
+					// 決定ボタン
+					document.getElementById("modal-ok").onclick = () => {
+						if (!imgObject) return;
+
+						const left = 160;
+						const top = 80;
+						const width = 480;
+						const height = 640;
+
+						// 枠内を切り抜き
+						const dataURL = modalCanvas.toDataURL({
+							left,
+							top,
+							width,
+							height,
+							format: "png",
+						});
+
+						// img-wrapper 内に新しい <img> を作成して貼り付け
+						if (currentImg) imgWrapper.removeChild(currentImg);
+						const newImg = document.createElement("img");
+						newImg.src = dataURL;
+						newImg.width = width / scaleFactor;
+						newImg.height = height / scaleFactor;
+						imgWrapper.appendChild(newImg);
+						currentImg = newImg;
+
+						modalCanvas.dispose();
+						modal.style.display = "none";
+						modalCanvas = null;
+						imgObject = null;
+
+						// ボタン切り替え
+						selectBtn.style.display = "none";
+						removeBtn.style.display = "inline-block";
+					};
+
+					// キャンセルボタン
+					document.getElementById("modal-cancel").onclick = () => {
+						if (modalCanvas) modalCanvas.dispose();
+						modal.style.display = "none";
+						modalCanvas = null;
+						imgObject = null;
+					};
+				};
+				reader.readAsDataURL(file);
+				fileInput.value = "";
+			});
+
+			// 削除ボタン
+			removeBtn.addEventListener("click", () => {
+				const images = imgWrapper.querySelectorAll("img");
+				images.forEach((img) => imgWrapper.removeChild(img));
+				selectBtn.style.display = "inline-block";
+				removeBtn.style.display = "none";
+			});
+		}
+		setupImageEvents();
 	</script>
 </html>

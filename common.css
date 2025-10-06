@@ -7,6 +7,7 @@
 	--color-on-surface: #333333;
 	--color-outline: #cccccc;
 	--color-tertiary: #03a9f4;
+	--color-error: #b3261e;
 
 	--header-bg: var(--color-primary);
 	--header-on: var(--color-on-primary);
@@ -21,6 +22,7 @@ body.dark-mode {
 	--color-on-surface: #eeeeee;
 	--color-outline: #777;
 	--color-tertiary: #00bcd4;
+	--color-error: #b3261e;
 
 	--header-bg: #252c33;
 	--header-on: #ffffff;
