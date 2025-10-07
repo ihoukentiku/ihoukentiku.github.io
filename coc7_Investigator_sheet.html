@@ -3248,7 +3248,10 @@
 
 		// 保存ボタン
 		saveBtn.addEventListener("click", () => {
-			const name = prompt("保存名を入力してください。\n\n" + "※保存した探索者シートはお使いのブラウザのローカルストレージに保存されます。\n" + "別のブラウザや端末では表示されません。");
+			const selectedName = saveList.value || "";
+
+			// プロンプトで入力を求める（初期値に selectedName をセット）
+			const name = prompt("保存名を入力してください。\n\n" + "※保存した探索者シートはお使いのブラウザのローカルストレージに保存されます。\n" + "別のブラウザや端末では表示されません。", selectedName);
 			if (!name) return;
 
 			const sheets = getAllSheets();
