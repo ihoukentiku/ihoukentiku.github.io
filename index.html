@@ -1,377 +1,924 @@
-<!DOCTYPE html>
-<html lang="ja" prefix="og: http://ogp.me/ns#">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!doctype html>
+<html lang="ja" data-theme="dark" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="TRPGセッションをもっと便利に。CoC7ダイスツール・キャラクターシート・ヘクスマップ作成など、TRPGに特化したWEBツール群をまとめたサイト。" />
+        <meta name="author" content="違法建築" />
+        <title>違法建築のTRPGラボ</title>
+        <link rel="icon" href="favicon.ico" />
 
-		<script type="application/ld+json">
-			{
-				"@context": "https://schema.org",
-				"@type": "WebSite",
-				"name": "違法建築のTRPGラボ",
-				"url": "https://ihoukentiku.github.io/"
-			}
-		</script>
+        <meta property="og:url" content="https://ihoukentiku.github.io/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="違法建築のTRPGラボ" />
+        <meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-		<title>違法建築のTRPGラボ</title>
-		<meta name="description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
-		<link rel="icon" href="favicon.ico" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-		<meta property="og:url" content="https://ihoukentiku.github.io/" />
-		<meta property="og:type" content="website" />
-		<meta property="og:title" content="違法建築のTRPGラボ" />
-		<meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
-		<meta property="og:site_name" content="違法建築のTRPGラボ" />
-		<meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+        <!-- Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
 
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:site" content="@ihoukentiku" />
-		<meta name="twitter:creator" content="@ihoukentiku" />
-		<meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
 
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-		<link rel="stylesheet" href="common.css" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 
-		<style>
-			:root {
-				--info-box-bg: #e0f2f7;
-				--info-box-border: #03a9f4;
-				--info-link-color: #0288d1;
-			}
-			body.dark-mode {
-				--info-box-bg: #2a3643;
-				--info-box-border: #00bcd4;
-				--info-link-color: #81d4fa;
-			}
+        <!-- Material Icons -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-			.container {
-				max-width: 90%;
-				margin: auto;
-			}
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
 
-			.top-bar {
-				margin: 16px 0;
-				display: flex;
-				flex-wrap: wrap;
-				align-items: center;
-				justify-content: space-between;
-				font-size: 18px;
-				color: var(--color-on-secondary);
-				font-size: clamp(8px, 3.6vw, 18px);
-				transition: color 0.2s ease;
-			}
+        <link rel="stylesheet" href="common.css" />
+        <style>
+            /* ----------------------------------------------------------------
+                ヒーローセクション
+                キャッチコピーとサブテキストを画面中央に配置する
+                ---------------------------------------------------------------- */
+            .hero {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                padding: clamp(1rem, 3vw, 2rem) 1rem;
+            }
 
-			.info-section {
-				width: 100%;
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: space-between;
-				gap: 16px;
-				margin-bottom: 16px;
-			}
+            [data-theme='light'] #hero-canvas {
+                opacity: 0.07;
+            }
 
-			.info-box {
-				background-color: var(--info-box-bg);
-				border-left: 5px solid var(--info-box-border);
-				padding: 16px;
-				border-radius: 8px;
-				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-				flex: 1 1 calc(50% - 10px);
-				min-width: 0;
-				box-sizing: border-box;
-				font-size: clamp(8px, 3.2vw, 16px);
-				color: var(--color-on-secondary);
-				transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-			}
+            .hero-content {
+                position: relative;
+                z-index: 5;
+                text-align: center;
+            }
 
-			@media (max-width: 840px) {
-				.info-box {
-					flex: 1 1 100%;
-				}
-			}
+            /* キャッチコピー全体 */
+            .hero-catchcopy {
+                display: flex;
+                align-items: baseline;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0 0.35em;
+                font-size: clamp(1.55rem, 5vw, 2.8rem);
+                font-weight: 700;
+                color: var(--text-bright);
+                line-height: 1.25;
+                letter-spacing: 0.02em;
+                opacity: 0;
+                animation: fadeInUp 0.7s ease 0.3s forwards;
+            }
 
-			.info-box a {
-				color: var(--info-link-color);
-				text-decoration: none;
-				font-weight: bold;
-				transition: color 0.2s ease;
-			}
-			.info-box h3 {
-				margin-top: 0;
-			}
-			.info-box a:hover {
-				text-decoration: underline;
-			}
+            /* "TRPG" 部分：Orbitron フォント＋ブルー */
+            .hero-catchcopy .catch-trpg {
+                font-family: var(--font-display);
+                color: var(--blue);
+                font-weight: 900;
+                letter-spacing: 0.06em;
+                position: relative;
+                display: inline-block;
+            }
 
-			.latest-update-text {
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-			}
+            /* グリッチアニメーション用の疑似要素 */
+            .hero-catchcopy .catch-trpg::before,
+            .hero-catchcopy .catch-trpg::after {
+                content: attr(data-text);
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                font-family: var(--font-display);
+                font-weight: 900;
+            }
+            /* シアン色の上ズレ */
+            .hero-catchcopy .catch-trpg::before {
+                color: var(--cyan);
+                animation: glitch-top 4s steps(1) infinite;
+            }
+            /* 赤色の下ズレ */
+            .hero-catchcopy .catch-trpg::after {
+                color: #ff2d55;
+                animation: glitch-bot 4s steps(1) 0.3s infinite;
+            }
 
-			.tool-list {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 16px;
-				justify-content: space-between;
-			}
-			.tool-card {
-				flex: 1 1 calc(50% - 1rem);
-				box-sizing: border-box;
-				background: var(--color-secondary);
-				border-radius: 12px;
-				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-				font-size: clamp(8px, 3.2vw, 16px);
-				color: var(--color-on-secondary);
-				transition: color 0.2s ease;
-				padding: 24px;
-				cursor: pointer;
-				transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-			}
-			.tool-card:last-child:nth-child(odd) {
-				max-width: calc(50% - 0.5rem);
-			}
+            @keyframes glitch-top {
+                0%,
+                92%,
+                100% {
+                    opacity: 0;
+                    transform: none;
+                }
+                93% {
+                    opacity: 0.8;
+                    clip-path: inset(10% 0 70% 0);
+                    transform: translateX(-3px);
+                }
+                94% {
+                    clip-path: inset(50% 0 20% 0);
+                    transform: translateX(3px);
+                }
+                95% {
+                    clip-path: inset(30% 0 45% 0);
+                    transform: translateX(-2px);
+                }
+                96% {
+                    opacity: 0;
+                }
+            }
+            @keyframes glitch-bot {
+                0%,
+                90%,
+                100% {
+                    opacity: 0;
+                    transform: none;
+                }
+                91% {
+                    opacity: 0.7;
+                    clip-path: inset(60% 0 10% 0);
+                    transform: translateX(3px);
+                }
+                92% {
+                    clip-path: inset(20% 0 60% 0);
+                    transform: translateX(-3px);
+                }
+                93% {
+                    opacity: 0;
+                }
+            }
 
-			@media (max-width: 840px) {
-				.tool-card {
-					flex: 1 1 100%;
-				}
-				.tool-card:last-child:nth-child(odd) {
-					max-width: 100%;
-				}
-			}
+            /* サブテキスト（英文キャッチ + 点滅カーソル） */
+            .hero-sub {
+                margin-top: 0.9rem;
+                font-family: var(--font-mono);
+                font-size: clamp(0.6rem, 1.4vw, 0.72rem);
+                color: var(--text-dim);
+                letter-spacing: 0.14em;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                opacity: 0;
+                animation: fadeIn 0.6s ease 1s forwards;
+            }
 
-			.tool-card .description h3 {
-				margin-top: 0;
-			}
-			.tool-card p {
-				opacity: 70%;
-				margin-bottom: 0;
-			}
-			.tool-card:hover {
-				transform: scale(1.02);
-				box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-			}
-		</style>
-	</head>
-	<body>
-		<header>
-			<a href="https://ihoukentiku.github.io/" class="no-underline-link" aria-label="ホームページ" title="ホームページへ">
-				<div class="header-left">
-					<div class="header-icon">
-						<img src="ihoukentiku_full.svg" alt="サイトアイコン" />
-					</div>
-					<div class="header-title">違法建築のTRPGラボ</div>
-				</div>
-			</a>
-			<div class="header-right">
-				<button id="help-button" class="header-button" aria-label="使い方ガイド" title="使い方ガイド">
-					<i class="material-icons">help</i>
-				</button>
-				<a href="https://x.com/ihoukentiku" target="_blank" class="header-button" aria-label="X (旧Twitter) アカウント" title="X (旧Twitter) アカウントへ">
-					<i class="fab fa-twitter" id="x-icon"></i>
-				</a>
-				<button id="theme-toggle" class="header-button" aria-label="テーマ切り替え" title="テーマを切り替える">
-					<i class="material-icons">dark_mode</i>
-				</button>
-			</div>
-		</header>
+            /* 点滅カーソル */
+            .cursor-blink {
+                display: inline-block;
+                width: 7px;
+                height: 1em;
+                background: var(--cyan);
+                animation: blink-cursor 0.9s step-end infinite;
+                vertical-align: -1px;
+                margin-left: 2px;
+            }
 
-		<div class="container">
-			<div class="top-bar">
-				<p>TRPG用の便利なツールをまとめています。セッションの円滑化や利便度向上にお役立てください。</p>
-			</div>
+            /* ----------------------------------------------------------------
+                インフォバー（2カラム：更新情報 | フィードバック）
+                ---------------------------------------------------------------- */
+            .info-bar {
+                position: relative;
+                z-index: 10;
+                margin-top: clamp(1rem, 3vw, 2.5rem);
+            }
 
-			<div class="info-section">
-				<div class="info-box update-announcement">
-					<h3>更新情報</h3>
-					<div id="latest-update"></div>
-					<p style="margin-top: 16px; margin-bottom: 0">
-						<a href="#" id="show-changelog">詳細を表示</a>
-					</p>
-				</div>
-				<div class="info-box request-form">
-					<h3>ご意見・ご要望</h3>
-					<p>ツールの改善案、新しいツールのリクエスト、バグ報告など、お気軽にお寄せください。</p>
-					<p style="margin-bottom: 0; margin-top: 20px"><a href="https://docs.google.com/forms/d/e/1FAIpQLSd3-QGTqNyGFU0zRC-DdUH-a2viivXUNGN0ogcxmgx-265Dhw/viewform?usp=header" target="_blank">改善要望フォームはこちら</a></p>
-				</div>
-			</div>
+            .info-bar-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: clamp(0.75rem, 2vw, 1.25rem);
+            }
 
-			<div class="tool-list"></div>
-		</div>
+            /* スマートフォンでは縦積み */
+            @media (max-width: 640px) {
+                .info-bar-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
 
-		<div id="help-modal" class="modal">
-			<div class="modal-content">
-				<button class="close-button" aria-label="閉じる">&times;</button>
-				<h2>使い方ガイド</h2>
-				<p>このサイトはTRPGセッションで使える小さな便利ツールを集めたページです。</p>
-				<h3 id="nav">ナビゲーション</h3>
-				<ul>
-					<li><strong>左上のロゴ/タイトル</strong>：トップページへ戻ります。</li>
-					<li><strong>ツールカード</strong>：カードをクリックすると該当ツールのページに移動します。</li>
-					<li><strong>更新情報</strong>：トップの「更新情報」で最新の更新を確認できます。詳細は「詳細を表示」を押してください。</li>
-				</ul>
-			</div>
-		</div>
+            /* カード共通スタイル */
+            .info-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: 1rem 1.2rem 1.1rem;
+                backdrop-filter: blur(8px);
+                display: flex;
+                flex-direction: column;
+                gap: 0.7rem;
+                min-width: 0;
+                justify-content: space-between;
+            }
 
-		<div id="changelog-modal" class="modal">
-			<div class="modal-content">
-				<button class="close-button" aria-label="閉じる">&times;</button>
-				<h2>更新履歴</h2>
-				<div id="changelog-content"></div>
-			</div>
-		</div>
+            .info-card-header {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+            }
 
-		<footer>
-			<p>&copy;2025 ihoukentiku. 本ツールは<a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE">MITライセンス</a>の下で提供されています。</p>
-		</footer>
+            .info-card-icon {
+                font-size: 1rem !important;
+                color: var(--blue-light);
+            }
 
-		<script src="common.js"></script>
+            .info-card-title {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.16em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+            }
 
-		<script>
-			const tools = [
-				{ file: "coc7_dice.html", title: "CoC7 ダイスツール" },
-				{ file: "coc7_Investigator_sheet.html", title: "CoC7 探索者シート" },
-				{ file: "coc7_npc_token.html", title: "新クトゥルフ神話TRPG NPCコマ作成ツール" },
-				{ file: "coc6_npc_token.html", title: "クトゥルフ神話TRPG NPCコマ作成ツール" },
-				{ file: "hex_maker.html", title: "ヘクス作成ツール" },
-				{ file: "hex_ruler.html", title: "ヘクス定規作成ツール" },
-				{ file: "damage_sum.html", title: "BCDiceダメージ自動計算ツール" },
-				{ file: "grid_maker.html", title: "グリッド作成ツール" },
-				{ file: "grid_ruler.html", title: "グリッド定規作成ツール" },
-				{ file: "mask_maker.html", title: "マスク作成ツール" },
-			];
+            /* 更新情報カード内の最新アイテム */
+            .news-latest .news-item {
+                padding: 0;
+                border-bottom: none;
+            }
 
-			const changelog = [
-				{
-					date: "2025.10.6",
-					version: "v1.3.0",
-					updates: ["カスタム探索者シートに保存機能を追加しました。"],
-				},
-				{
-					date: "2025.10.4",
-					version: "v1.2.0",
-					updates: ["新クトゥルフ神話TRPG カスタム探索者シートを追加しました。", "一部ツールの名前を変更しました。"],
-				},
-				{
-					date: "2025.09.28",
-					version: "v1.0.1",
-					updates: ["UI上の軽微な不具合を修正しました。"],
-				},
-				{
-					date: "2025.09.28",
-					version: "v1.0.0",
-					updates: ["トップページを大幅リニューアルしました。", "CoC7ダイスツールを追加しました。"],
-				},
-			];
+            .news-more-link {
+                margin-top: 0.1rem;
+            }
 
-			async function fetchMetaData(url) {
-				try {
-					const response = await fetch(url);
-					if (!response.ok) {
-						console.error(`Error fetching ${url}: ${response.statusText}`);
-						return { description: "説明を取得できませんでした。", title: "タイトルを取得できませんでした。" };
-					}
-					const htmlText = await response.text();
+            /* ----------------------------------------------------------------
+                更新情報アイテム
+                ---------------------------------------------------------------- */
+            .news-item {
+                border-bottom: 1px solid var(--border);
+                padding: 0.8rem 0;
+            }
+            .news-item-upper {
+                display: flex;
+                align-items: start;
+                gap: 0.6rem;
+                padding-bottom: 0.4rem;
+            }
+            .news-item:last-child {
+                border-bottom: none;
+            }
 
-					const parser = new DOMParser();
-					const doc = parser.parseFromString(htmlText, "text/html");
+            @media (max-width: 480px) {
+                .news-item {
+                    grid-template-columns: 1fr;
+                    gap: 0.2rem;
+                }
+            }
 
-					const descriptionTag = doc.querySelector('meta[name="description"]');
-					const description = descriptionTag ? descriptionTag.content : "説明が設定されていません。";
+            .news-date {
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                white-space: nowrap;
+                padding-top: 0.1rem;
+            }
 
-					const titleTag = doc.querySelector("title");
-					let title = titleTag ? titleTag.innerText : "タイトルが設定されていません。";
-					title = title.replace(/\s*\|\s*違法建築のTRPGラボ\s*$/, "").trim();
+            .news-tag {
+                display: inline-block;
+                font-size: 10px;
+                padding: 1px 7px;
+                border-radius: 2px;
+                font-family: 'Share Tech Mono', monospace;
+                letter-spacing: 0.05em;
+                align-self: start;
+                white-space: nowrap;
+            }
 
-					return { description: description, title: title };
-				} catch (error) {
-					console.error(`Workspace error for ${url}:`, error);
-					return { description: "説明の取得中にエラーが発生しました。", title: "エラー" };
-				}
-			}
+            /* タグ別カラー */
+            .tag-NEW {
+                background: rgba(0, 230, 118, 0.18);
+                color: #00e676;
+                border: 1px solid rgba(0, 230, 118, 0.4);
+            }
+            .tag-FIX {
+                background: rgba(255, 179, 0, 0.18);
+                color: #ffb300;
+                border: 1px solid rgba(255, 179, 0, 0.4);
+            }
+            .tag-UPDATE {
+                background: rgba(33, 150, 243, 0.18);
+                color: #64b5f6;
+                border: 1px solid rgba(33, 150, 243, 0.4);
+            }
+            .tag-INFO {
+                background: rgba(0, 229, 255, 0.12);
+                color: var(--cyan);
+                border: 1px solid rgba(0, 229, 255, 0.3);
+            }
 
-			document.addEventListener("DOMContentLoaded", async () => {
-				const toolListDiv = document.querySelector(".tool-list");
+            /* 更新テキスト
+                最新1件表示カードでは1行に収め、はみ出したら「...」で省略する */
+            .news-text {
+                font-size: 0.875rem;
+                color: var(--text);
+                line-height: 1.5;
+            }
 
-				const fetchPromises = tools.map((tool) => fetchMetaData(tool.file));
-				const metaDataResults = await Promise.all(fetchPromises);
+            /* インフォバーの最新1件のみ省略表示*/
+            .news-latest {
+                min-width: 0;
+                overflow: hidden;
+            }
 
-				tools.forEach((tool, index) => {
-					const metaData = metaDataResults[index];
+            .news-latest .news-item {
+                min-width: 0;
+                overflow: hidden;
+            }
 
-					const toolCardDiv = document.createElement("div");
-					toolCardDiv.classList.add("tool-card");
-					toolCardDiv.onclick = () => {
-						location.href = tool.file;
-					};
+            .news-latest .news-text {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                display: block;
+            }
 
-					const descriptionDiv = document.createElement("div");
-					descriptionDiv.classList.add("description");
+            /* フィードバックカード */
+            .feedback-desc {
+                font-size: 0.875rem;
+                color: var(--text-dim);
+                line-height: 1.65;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
 
-					const titleElement = document.createElement("h3");
-					titleElement.innerText = metaData.title;
-					const descriptionElement = document.createElement("p");
-					descriptionElement.innerText = metaData.description;
+            .btn-feedback {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.55rem 1.1rem;
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                color: var(--text-dim);
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                letter-spacing: 0.06em;
+                transition:
+                    color var(--t),
+                    border-color var(--t),
+                    box-shadow var(--t),
+                    background var(--t);
+                align-self: flex-start;
+            }
+            .btn-feedback:hover {
+                color: var(--blue-light);
+                border-color: var(--border-bright);
+                background: var(--cyan-muted);
+                box-shadow: var(--glow-card);
+            }
+            .btn-feedback .material-icons {
+                font-size: 1rem;
+            }
 
-					descriptionDiv.appendChild(titleElement);
-					descriptionDiv.appendChild(descriptionElement);
-					toolCardDiv.appendChild(descriptionDiv);
+            /* ----------------------------------------------------------------
+                ツールセクション
+                ---------------------------------------------------------------- */
+            .tools-section {
+                position: relative;
+                z-index: 10;
+                margin-top: clamp(1.5rem, 4vw, 4rem);
+            }
 
-					toolListDiv.appendChild(toolCardDiv);
-				});
+            /* セクション見出し行 */
+            .section-head {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: clamp(1.25rem, 3vw, 2rem);
+            }
 
-				const latestUpdateDiv = document.getElementById("latest-update");
-				if (changelog.length > 0) {
-					const latest = changelog[0];
-					const updateText = latest.updates.join("");
+            .section-head-title {
+                font-family: var(--font-mono);
+                font-size: clamp(1rem, 2.5vw, 1.2rem);
+                color: var(--text-bright);
+                letter-spacing: 0.12em;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                white-space: nowrap;
+            }
+            .section-head-title .material-icons {
+                font-size: 1.2em;
+                color: var(--blue-light);
+            }
 
-					latestUpdateDiv.innerHTML = `
-			                     <p style="margin: 0;">${latest.date} ${latest.version}</p>
-			                     <p class="latest-update-text" style="margin: 4px 0 0;">${updateText}</p>
-			                 `;
-				}
+            /* 見出し右の区切り線 */
+            .section-head-line {
+                flex: 1;
+                height: 1px;
+                background: linear-gradient(90deg, var(--border-bright), transparent);
+                opacity: 0.5;
+            }
 
-				const changelogButton = document.getElementById("show-changelog");
-				const changelogModal = document.getElementById("changelog-modal");
-				const changelogCloseButton = changelogModal.querySelector(".close-button");
-				const changelogContentDiv = document.getElementById("changelog-content");
+            .section-head-count {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                color: var(--text-dim);
+                letter-spacing: 0.08em;
+                white-space: nowrap;
+            }
 
-				changelog.forEach((entry) => {
-					const updateSection = document.createElement("div");
-					updateSection.innerHTML = `
-			                     <hr style="border: 0; height: 1px; background: var(--color-outline); margin: 16px 0;">
-			                     <h3>${entry.date} <span>${entry.version}</span></h3>
-			                     <ul>
-			                         ${entry.updates.map((update) => `<li>${update}</li>`).join("")}
-			                     </ul>
-			                 `;
-					changelogContentDiv.appendChild(updateSection);
-				});
+            /* ----------------------------------------------------------------
+                ツールグリッド
+                340px を最小幅として auto-fill で並べる
+                ---------------------------------------------------------------- */
+            .tools-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+                gap: clamp(0.875rem, 2vw, 1.25rem);
+            }
 
-				changelogButton.addEventListener("click", (event) => {
-					event.preventDefault();
-					changelogModal.style.display = "block";
-					document.body.style.overflow = "hidden";
-				});
+            /* ----------------------------------------------------------------
+                ツールカード
+                ホバー時に浮き上がりとグロー効果を付ける
+                ---------------------------------------------------------------- */
+            .tool-card {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: 1.25rem;
+                cursor: pointer;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t),
+                    transform var(--t),
+                    background var(--t);
+                backdrop-filter: blur(6px);
+                overflow: hidden;
+                animation: fadeInUp 0.5s ease both;
+                text-decoration: none;
+                color: inherit;
+            }
 
-				changelogCloseButton.addEventListener("click", () => {
-					changelogModal.style.display = "none";
-					document.body.style.overflow = "";
-				});
+            /* ホバー時のシアングラデーション */
+            .tool-card::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(0, 229, 255, 0.04), transparent 60%);
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity var(--t);
+            }
+            .tool-card:hover {
+                border-color: var(--border-bright);
+                box-shadow: var(--glow-card);
+                transform: translateY(-4px);
+            }
+            .tool-card:hover::before {
+                opacity: 1;
+            }
+            .tool-card:focus-visible {
+                outline: 2px solid var(--cyan);
+                outline-offset: 2px;
+            }
 
-				window.addEventListener("click", (event) => {
-					if (event.target === changelogModal) {
-						changelogModal.style.display = "none";
-						document.body.style.overflow = "";
-					}
-				});
-			});
-		</script>
-	</body>
+            /* カード上部（アイコン + タイトル） */
+            .card-top {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 0.9rem;
+            }
+
+            /* アイコンボックス */
+            .card-icon-wrap {
+                width: 2.6rem;
+                height: 2.6rem;
+                display: grid;
+                place-items: center;
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                background: rgba(33, 150, 243, 0.08);
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t),
+                    background var(--t);
+            }
+            .card-icon-wrap .material-icons {
+                font-size: 1.3rem;
+                color: var(--blue-light);
+                transition: color var(--t);
+            }
+            .tool-card:hover .card-icon-wrap {
+                border-color: var(--border-bright);
+                background: rgba(0, 229, 255, 0.12);
+                box-shadow: var(--glow-blue);
+            }
+
+            /* カードテキスト */
+            .card-body {
+                flex: 1;
+            }
+
+            /* 英語サブタイトル */
+            .card-title-en {
+                font-family: var(--font-mono);
+                font-size: 0.62rem;
+                letter-spacing: 0.15em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                margin-bottom: 0.2rem;
+                transition: color var(--t);
+            }
+            .tool-card:hover .card-title-en {
+                color: var(--border-bright);
+            }
+
+            /* 日本語メインタイトル */
+            .card-title-ja {
+                font-size: clamp(0.95rem, 2vw, 1.05rem);
+                font-weight: 700;
+                color: var(--text-bright);
+                line-height: 1.3;
+            }
+
+            /* 説明文 */
+            .card-desc {
+                font-size: clamp(0.78rem, 1.5vw, 0.84rem);
+                color: var(--text-dim);
+                line-height: 1.65;
+            }
+
+            /* ホバー時に右端から現れる「OPEN →」矢印 */
+            .card-arrow {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                margin-top: 0.5rem;
+                color: var(--border-bright);
+                opacity: 0;
+                transform: translateX(-8px);
+                transition:
+                    opacity var(--t),
+                    transform var(--t),
+                    color var(--t);
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                letter-spacing: 0.1em;
+                gap: 0.35rem;
+            }
+            .card-arrow .material-icons {
+                font-size: 1.1rem;
+            }
+            .tool-card:hover .card-arrow {
+                opacity: 1;
+                transform: translateX(0);
+                color: var(--border-bright);
+            }
+
+            /* カード表示のスタッガーアニメーション */
+            .tool-card:nth-child(1) {
+                animation-delay: 0.05s;
+            }
+            .tool-card:nth-child(2) {
+                animation-delay: 0.1s;
+            }
+            .tool-card:nth-child(3) {
+                animation-delay: 0.15s;
+            }
+            .tool-card:nth-child(4) {
+                animation-delay: 0.2s;
+            }
+            .tool-card:nth-child(5) {
+                animation-delay: 0.25s;
+            }
+            .tool-card:nth-child(6) {
+                animation-delay: 0.3s;
+            }
+            .tool-card:nth-child(7) {
+                animation-delay: 0.35s;
+            }
+            .tool-card:nth-child(8) {
+                animation-delay: 0.4s;
+            }
+
+            /* ----------------------------------------------------------------
+                更新情報モーダル内のリスト
+                ---------------------------------------------------------------- */
+            #all-news-list .news-item {
+                border-bottom: 1px solid var(--border);
+            }
+            #all-news-list .news-item:last-child {
+                border-bottom: none;
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
+
+        <main>
+            <!-- ヒーロー -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1 class="hero-catchcopy"><span class="catch-trpg" data-text="TRPG">TRPG</span>をもっと便利に</h1>
+                    <div class="hero-sub" aria-hidden="true">
+                        <span>TECHNOLOGY MAKES HUMANS MORE FREE</span>
+                        <span class="cursor-blink"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- インフォバー：更新情報 + フィードバック -->
+            <section class="info-bar" aria-label="更新情報とフィードバック">
+                <div class="container">
+                    <div class="info-bar-grid">
+                        <!-- 更新情報カード -->
+                        <div class="info-card" role="region" aria-label="最新の更新情報">
+                            <div class="info-card-header">
+                                <span class="material-icons info-card-icon">rss_feed</span>
+                                <span class="info-card-title">Latest Update</span>
+                            </div>
+                            <div class="news-latest" id="latest-news"></div>
+                            <div class="news-more-link">
+                                <button class="btn-text" id="open-news-modal" aria-label="すべての更新情報を表示">
+                                    <span class="material-icons" style="font-size: 12px">expand_more</span> すべて見る
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- フィードバックカード -->
+                        <div class="info-card" role="region" aria-label="フィードバック">
+                            <div class="info-card-header">
+                                <span class="material-icons info-card-icon">forum</span>
+                                <span class="info-card-title">Feedback</span>
+                            </div>
+                            <p class="feedback-desc">バグ報告・機能改善・新ツールのご要望はこちらから。</p>
+                            <a
+                                href="https://docs.google.com/forms/d/e/1FAIpQLSd3-QGTqNyGFU0zRC-DdUH-a2viivXUNGN0ogcxmgx-265Dhw/viewform"
+                                class="btn-feedback"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="要望フォームを開く"
+                            >
+                                <span class="material-icons">open_in_new</span>
+                                要望フォームへ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ツール一覧 -->
+            <section class="tools-section" aria-label="ツール一覧">
+                <div class="container">
+                    <div class="section-head">
+                        <h2 class="section-head-title">
+                            <span class="material-icons" aria-hidden="true">terminal</span>
+                            TOOLS
+                        </h2>
+                        <div class="section-head-line" aria-hidden="true"></div>
+                        <span class="section-head-count" id="tools-count" aria-live="polite"></span>
+                    </div>
+                    <div class="tools-grid" id="tools-grid" role="list"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer" aria-label="サイトフッター">
+            <div class="container"></div>
+        </footer>
+
+        <!-- モーダル：更新情報一覧 -->
+        <div class="modal-overlay" id="news-modal" role="dialog" aria-modal="true" aria-labelledby="news-modal-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="news-modal-title">更新情報</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body" id="all-news-list" role="log"></div>
+            </div>
+        </div>
+
+        <!-- モーダル：使い方ガイド
+             末尾のリンクブロック（.guide-legal-links）は common.js が動的に追加する -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-modal-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body" id="guide-content">
+                    <div class="guide-body">
+                        <p>
+                            <strong style="font-family: var(--font-display); color: var(--blue)">違法建築のTRPGラボ</strong>
+                            は、TRPGセッションをもっと快適にするためのWEBツール群をまとめたサイトです。<br />
+                            主に新クトゥルフ神話TRPG（CoC7/6）とオンセ用ツールを扱っています。
+                        </p>
+                        <h3>このサイトの使い方</h3>
+                        <ul>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: 0px; color: var(--blue-light); flex-shrink: 0">open_in_new</span>
+                                ツールカードをクリックすると、各ツールが開きます。
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">devices</span>
+                                スマートフォン・タブレット・PCのいずれでも動作します。
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">edit_note</span>
+                                バグ報告や改善要望は「改善要望フォーム」からお寄せください。
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">contrast</span>
+                                右上のアイコンでライト/ダークモードを切り替えられます。
+                            </li>
+                        </ul>
+                        <h3>免責事項</h3>
+                        <p>各ツールは非公式・個人制作です。公式版権物とは無関係であり、二次創作の範囲での利用をお願いします。使用によって生じた損害について作者は責任を負いかねます。</p>
+                        <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="common.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                /* ----------------------------------------------------------------
+                    ツール定義
+                    新しいツールを追加する際はここにオブジェクトを追記するだけでよい
+                    ---------------------------------------------------------------- */
+                const TOOLS = [
+                    {
+                        id: 'coc7-dice',
+                        title: 'CoC7 ダイスツール',
+                        titleEn: 'DICE ROLLER',
+                        icon: 'casino',
+                        desc: '新クトゥルフ神話TRPG専用のWEBダイスツール。技能ロール・カスタムロール・ダイスログに対応。オフラインセッションでも快適に使用できます。',
+                        url: 'https://ihoukentiku.github.io/coc7_dice.html',
+                    },
+                    {
+                        id: 'coc7-sheet',
+                        title: 'CoC7 探索者シート',
+                        titleEn: 'CHARACTER SHEET',
+                        icon: 'person_pin',
+                        desc: '新クトゥルフ神話TRPG用カスタムキャラクターシート。ステータス・技能・バックストーリーをブラウザで入力し、そのまま印刷可能。プレロールドキャラ作成にも便利です',
+                        url: 'https://ihoukentiku.github.io/coc7_Investigator_sheet.html',
+                    },
+                    {
+                        id: 'coc7-npc',
+                        title: 'CoC7 NPCコマ作成',
+                        titleEn: 'NPC TOKEN GEN.',
+                        icon: 'groups',
+                        desc: 'ココフォリア用のCoC7版NPC駒をかんたん生成。名前・能力値・技能・メモを入力するだけで駒データを出力。能力値はダイスロールで自動決定でき、設定の保存・再利用に対応。',
+                        url: 'https://ihoukentiku.github.io/coc7_npc_token.html',
+                    },
+                    {
+                        id: 'coc6-npc',
+                        title: 'CoC6 NPCコマ作成',
+                        titleEn: 'NPC TOKEN GEN.',
+                        icon: 'groups',
+                        desc: 'ココフォリア用のCoC6版NPC駒をかんたん生成。名前・能力値・技能・メモを入力するだけで駒データを出力。能力値はダイスロールで自動決定でき、設定の保存・再利用に対応。',
+                        url: 'https://dummy.example.com/coc6-npc',
+                    },
+                    {
+                        id: 'hex-map',
+                        title: 'ヘクスマップ作成',
+                        titleEn: 'HEX MAP GEN.',
+                        icon: 'hexagon',
+                        desc: 'TRPGやボードゲーム向けのヘクスマップ画像をカスタマイズして生成・ダウンロード。サイズ・座標・配色を自由に設定でき、ココフォリア等のオンセツールにも対応します。',
+                        url: 'https://dummy.example.com/hex-map',
+                    },
+                    {
+                        id: 'hex-ruler',
+                        title: 'ヘクス定規作成',
+                        titleEn: 'HEX RULER GEN.',
+                        icon: 'straighten',
+                        desc: 'ヘクスマップ用の距離計測定規画像を生成・ダウンロード。範囲・透明度をカスタマイズ可能。ココフォリアの前景・スクリーンパネルとして利用でき、ファイル名にサイズ情報を自動付与します。',
+                        url: 'https://dummy.example.com/hex-ruler',
+                    },
+                    {
+                        id: 'bcdice-damage',
+                        title: 'BCDice ダメージ計算',
+                        titleEn: 'DAMAGE CALC.',
+                        icon: 'bolt',
+                        desc: 'BCDiceのダメージロールログから装甲適用後の合計ダメージを自動算出し、ココフォリア用HP減少コマンドを生成。装甲持ちの敵への複数回攻撃時に特に威力を発揮します。',
+                        url: 'https://dummy.example.com/bcdice-damage',
+                    },
+                ];
+
+                /* ----------------------------------------------------------------
+                    更新情報
+                    新しい情報は先頭に追記する（最新順で表示される）
+                    ---------------------------------------------------------------- */
+                const NEWS = [
+                    { date: '2026-03-11', tag: 'UPDATE', text: 'サイトのデザインを刷新しました。' },
+                    { date: '2025-10-06', tag: 'UPDATE', text: 'カスタム探索者シートに保存機能を追加しました。' },
+                    { date: '2025-10-04', tag: 'NEW', text: 'CoC7 カスタム探索者シートを追加しました。' },
+                    { date: '2025-09-28', tag: 'UPDATE', text: 'トップページを大幅リニューアルしました。' },
+                ];
+
+                /* ----------------------------------------------------------------
+                    HTML 生成ヘルパー
+                    ---------------------------------------------------------------- */
+
+                /** 更新情報1件分の HTML 文字列を返す */
+                function newsItemHTML(item) {
+                    return `<div class="news-item">
+                    <div class="news-item-upper">
+                        <span class="news-date">${item.date}</span>
+                        <span class="news-tag tag-${item.tag}">${item.tag}</span>
+                    </div>
+                    <span class="news-text">${item.text}</span>
+                    </div>`;
+                }
+
+                /* ----------------------------------------------------------------
+                    描画処理
+                    ---------------------------------------------------------------- */
+
+                /** 更新情報を描画する（最新1件 + モーダル全件） */
+                function renderNews() {
+                    const latestEl = document.getElementById('latest-news');
+                    const allEl = document.getElementById('all-news-list');
+
+                    /* インフォバーには最新1件だけ表示（CSS で長文は省略する） */
+                    if (latestEl && NEWS.length) {
+                        latestEl.innerHTML = newsItemHTML(NEWS[0]);
+                    }
+
+                    /* モーダルには全件表示 */
+                    if (allEl) {
+                        allEl.innerHTML = NEWS.map(newsItemHTML).join('');
+                    }
+                }
+
+                /** ツールカードを描画する */
+                function renderTools() {
+                    const grid = document.getElementById('tools-grid');
+                    if (!grid) return;
+
+                    /* ツール数を見出し横に表示 */
+                    const countEl = document.getElementById('tools-count');
+                    if (countEl) countEl.textContent = `${TOOLS.length} TOOLS`;
+
+                    grid.innerHTML = TOOLS.map(
+                        (t) => `
+                    <a class="tool-card" href="${t.url}" target="_blank" rel="noopener noreferrer" aria-label="${t.title}">
+                        <div class="card-top">
+                        <div class="card-icon-wrap">
+                            <span class="material-icons">${t.icon}</span>
+                        </div>
+                        <div>
+                            <div class="card-title-en">${t.titleEn}</div>
+                            <h3 class="card-title-ja">${t.title}</h3>
+                        </div>
+                        </div>
+                        <div class="card-body">
+                        <p class="card-desc">${t.desc}</p>
+                        </div>
+                        <div class="card-arrow">
+                        <span>OPEN</span>
+                        <span class="material-icons">arrow_forward</span>
+                        </div>
+                    </a>
+                    `
+                    ).join('');
+                }
+
+                /** 更新情報モーダルの「すべて見る」ボタンをバインドする */
+                function bindNewsModal() {
+                    const btn = document.getElementById('open-news-modal');
+                    if (btn) {
+                        btn.addEventListener('click', () => window.IKLab && window.IKLab.openModal('news-modal'));
+                    }
+                }
+
+                /* ----------------------------------------------------------------
+                    初期化
+                    ---------------------------------------------------------------- */
+                document.addEventListener('DOMContentLoaded', () => {
+                    renderNews();
+                    renderTools();
+                    bindNewsModal();
+                });
+            })();
+        </script>
+    </body>
 </html>

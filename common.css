@@ -1,201 +1,579 @@
-:root {
-	--color-primary: #2196f3;
-	--color-on-primary: #ffffff;
-	--color-secondary: #ffffff;
-	--color-on-secondary: #333333;
-	--color-surface: #f5f5f5;
-	--color-on-surface: #333333;
-	--color-outline: #cccccc;
-	--color-tertiary: #03a9f4;
-	--color-error: #b3261e;
-
-	--header-bg: var(--color-primary);
-	--header-on: var(--color-on-primary);
+/* ----------------------------------------------------------------
+   リセット
+   ブラウザ差異を吸収する最小限のリセット
+---------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
-
-body.dark-mode {
-	--color-primary: #1565c0;
-	--color-on-primary: #ffffff;
-	--color-secondary: #2a2e33;
-	--color-on-secondary: #ffffff;
-	--color-surface: #1a1c1e;
-	--color-on-surface: #eeeeee;
-	--color-outline: #777;
-	--color-tertiary: #00bcd4;
-	--color-error: #b3261e;
-
-	--header-bg: #252c33;
-	--header-on: #ffffff;
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
 }
-
 body {
-	margin: 0;
-	font-family: "Noto Sans JP", sans-serif;
-	background: var(--color-surface);
-	color: var(--color-on-surface);
-	transition: background 0.2s ease, color 0.2s ease;
-	padding-top: 56px;
+    -webkit-font-smoothing: antialiased;
+}
+img,
+video,
+svg {
+    max-width: 100%;
+    display: block;
+}
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font: inherit;
+}
+a {
+    text-decoration: none;
+    color: inherit;
+}
+ul,
+ol {
+    list-style: none;
+}
+input,
+textarea,
+select {
+    font: inherit;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: inherit;
+    line-height: 1.2;
 }
 
-header {
-	background: var(--header-bg);
-	color: var(--header-on);
-	padding: 8px 16px;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	position: fixed;
-	top: 0;
-	width: 100%;
-	z-index: 1000;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	box-sizing: border-box;
-}
-.header-left {
-	display: flex;
-	height: 40px;
-	align-items: center;
-	border-radius: 4px;
-}
-.header-left:hover {
-	background-color: rgba(0, 0, 0, 0.1);
-}
-.header-icon img {
-	height: 40px;
-	margin-right: 8px;
-}
-.header-title {
-	font-size: 28px;
-	font-weight: bold;
-	white-space: nowrap;
-}
-.header-right {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-.no-underline-link {
-	text-decoration: none;
-	color: inherit;
+/* ----------------------------------------------------------------
+   CSS 変数
+   色・フォント・サイズなどの設計トークン（ダークテーマ基準）
+---------------------------------------------------------------- */
+:root {
+    --bg: #04080f;
+    --bg2: #080f1e;
+    --bg3: #0c1830;
+    --bg-glass: rgba(8, 15, 30, 0.85);
+    --bg-card: rgba(10, 19, 38, 0.9);
+
+    --blue: #2196f3;
+    --blue-dark: #1565c0;
+    --blue-mid: #1976d2;
+    --blue-light: #64b5f6;
+    --cyan: #00e5ff;
+    --cyan-dim: #26c6da;
+    --cyan-muted: rgba(0, 229, 255, 0.18);
+
+    --text: #b8d8f0;
+    --text-dim: #4e7090;
+    --text-bright: #e4f3ff;
+    --text-mono: #7ec8e3;
+
+    --border: rgba(33, 150, 243, 0.22);
+    --border-bright: rgba(0, 229, 255, 0.55);
+
+    --red: #ff1744;
+    --orange: #ff9800;
+    --green: #00e676;
+
+    --glow-blue: 0 0 6px rgba(33, 150, 243, 0.9), 0 0 18px rgba(33, 150, 243, 0.4);
+    --glow-cyan: 0 0 6px rgba(0, 229, 255, 0.9), 0 0 18px rgba(0, 229, 255, 0.4);
+    --glow-card: 0 0 0 1px var(--border-bright), 0 0 24px rgba(0, 229, 255, 0.18), 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    --font-main: 'Noto Sans JP', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-display: 'Orbitron', 'Share Tech Mono', sans-serif;
+
+    --container: 1200px;
+    --header-h: clamp(3.75rem, 7vw, 4.5rem);
+    --r: 6px;
+    --t: 0.28s ease;
 }
 
-.header-button {
-	background: none;
-	border: none;
-	font-size: 24px;
-	color: var(--header-on);
-	text-decoration: none;
-	height: 40px;
-	width: 40px;
-	border-radius: 4px;
-	cursor: pointer;
-	padding: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: transform 0.2s ease;
+/* ライトテーマ上書き */
+[data-theme='light'] {
+    --bg: #e6eff8;
+    --bg2: #d4e5f5;
+    --bg3: #bfd6ed;
+    --bg-glass: rgba(210, 230, 248, 0.9);
+    --bg-card: rgba(245, 251, 255, 0.95);
+    --text: #0e2440;
+    --text-dim: #3a6080;
+    --text-bright: #060e1a;
+    --text-mono: #1e5080;
+    --border: rgba(33, 150, 243, 0.28);
+    --border-bright: rgba(21, 101, 192, 0.7);
+    --cyan-muted: rgba(33, 150, 243, 0.12);
+    --glow-card: 0 0 0 1px var(--border-bright), 0 0 18px rgba(33, 150, 243, 0.2), 0 8px 32px rgba(0, 0, 0, 0.1);
 }
-.header-button:hover {
-	transform: scale(1.1);
-	background-color: rgba(0, 0, 0, 0.1);
+
+/* ----------------------------------------------------------------
+   ボディ・レイヤー構成
+---------------------------------------------------------------- */
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-main);
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition:
+        background-color 0.4s ease,
+        color 0.4s ease;
+    position: relative;
+}
+
+/* グリッド背景 */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(rgba(33, 150, 243, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(33, 150, 243, 0.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+    z-index: 0;
+}
+[data-theme='light'] body::after {
+    opacity: 0.2;
+}
+
+.container {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+    position: relative;
+    z-index: 10;
+}
+
+/* ----------------------------------------------------------------
+   ヘッダー
+   スティッキー配置・グラスモーフィズム背景
+---------------------------------------------------------------- */
+#site-header {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    height: var(--header-h);
+    background: var(--bg-glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    transition: background 0.4s;
+}
+
+.header-inner {
+    width: 100%;
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* ロゴ */
+.site-logo {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: opacity var(--t);
+}
+.site-logo:hover {
+    opacity: 0.85;
+}
+
+.logo-en {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    opacity: 0.8;
+}
+
+.logo-text {
+    font-family: var(--font-mono);
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
+    color: var(--text-bright);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+/* ロゴ内の "TRPG" 部分は Orbitron ブルーで */
+.logo-text .logo-trpg {
+    font-family: var(--font-display);
+    color: var(--blue);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+/* ヘッダーナビボタン共通 */
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.hbtn {
+    position: relative;
+    min-width: 2.6rem;
+    height: 2.6rem;
+    padding: 0 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    color: var(--blue);
+    transition:
+        color var(--t),
+        background var(--t),
+        box-shadow var(--t),
+        border-color var(--t);
+}
+.hbtn:hover {
+    color: var(--blue-light);
+    background: var(--cyan-muted);
+    border-color: var(--border-bright);
+    box-shadow: var(--glow-blue);
+}
+.hbtn .material-icons {
+    font-size: 1.4rem;
+}
+.hbtn .fa-twitter,
+.hbtn .fa-x-twitter {
+    font-size: 1.15rem;
+}
+
+/* テーマ切り替え時のアイコン回転アニメーション */
+#theme-icon.spinning {
+    animation: spin360 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes spin360 {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ----------------------------------------------------------------
+   モーダル
+   開閉アニメーション・スクロール制御は JS 側で管理する
+   モーダル内コンテンツは modal-body で独立スクロールする
+---------------------------------------------------------------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(8px);
+    z-index: 900;
+    display: grid;
+    place-items: center;
+    padding: clamp(1rem, 4vw, 2rem);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--t);
+}
+.modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
 }
 
 .modal {
-	display: none;
-	position: fixed;
-	z-index: 2000;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	overflow: auto;
-	background-color: rgba(0, 0, 0, 0.4);
-	backdrop-filter: blur(5px);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--glow-card);
+    width: 100%;
+    max-width: 750px;
+    /* 画面高さを超えないよう制限し、内部でスクロールさせる */
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(18px) scale(0.97);
+    transition: transform var(--t);
+}
+.modal-overlay.open .modal {
+    transform: translateY(0) scale(1);
 }
 
-.modal-content {
-	background-color: var(--color-secondary);
-	margin: auto;
-	margin-top: 72px;
-	color: var(--color-on-secondary);
-	font-size: clamp(8px, 3.2vw, 16px);
-	padding: 20px;
-	border-radius: 8px;
-	width: 90%;
-	max-width: 850px;
-	position: relative;
-	max-height: calc(95vh - 72px);
-	overflow-y: auto;
-	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-	animation: fadeIn 0.3s ease-in-out;
-}
-.modal-content h2 {
-	margin-top: 0;
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    /* ヘッダーは縮まない（スクロール対象外）*/
+    flex-shrink: 0;
 }
 
-.close-button {
-	position: absolute;
-	top: 16px;
-	right: 16px;
-	border: none;
-	background-color: transparent;
-	color: var(--color-on-secondary);
-	font-size: clamp(14px, 5.6vw, 28px);
-	cursor: pointer;
-	line-height: 1;
-	padding: 4px;
-	border-radius: 50%;
-	transition: background-color 0.2s ease;
+.modal-title {
+    font-family: var(--font-mono);
+    color: var(--blue);
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: bold;
 }
-.close-button:hover {
-	background-color: rgba(0, 0, 0, 0.1);
-	transform: scale(1.1);
+.modal-title::before {
+    content: '[ ';
+    opacity: 0.5;
+}
+.modal-title::after {
+    content: ' ]';
+    opacity: 0.5;
 }
 
-footer {
-	text-align: center;
-	padding: 20px;
-	font-size: 12px;
-	color: #999;
-	transition: color 0.2s ease;
+.modal-close {
+    color: var(--text-dim);
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    transition:
+        color var(--t),
+        background var(--t);
 }
-footer a {
-	color: var(--color-tertiary);
-	text-decoration: none;
-	transition: color 0.2s ease;
-}
-footer a:hover {
-	text-decoration: underline;
-}
-
-@media (max-width: 630px) {
-	.header-icon {
-		display: none;
-	}
+.modal-close:hover {
+    color: var(--cyan);
+    background: var(--cyan-muted);
 }
 
-@media (max-width: 435px) {
-	.header-title {
-		font-size: clamp(16px, 6vw, 28px);
-	}
-	.header-button {
-		height: 32px;
-		width: 32px;
-		font-size: 20px;
-	}
-	.header-button .material-icons {
-		font-size: 20px;
-	}
+/* コンテンツが多い場合はここだけスクロールする */
+.modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
 }
 
+/* ----------------------------------------------------------------
+   ボタン
+---------------------------------------------------------------- */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.2rem;
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    border: 1px solid rgba(33, 150, 243, 0.45);
+    border-radius: var(--r);
+    cursor: pointer;
+    transition:
+        background var(--t),
+        box-shadow var(--t);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #42a5f5, var(--blue-mid));
+    box-shadow: var(--glow-blue);
+}
+
+.btn-text {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--blue-light);
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid transparent;
+    transition:
+        color var(--t),
+        border-color var(--t);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    cursor: pointer;
+}
+.btn-text:hover {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+}
+
+/* ----------------------------------------------------------------
+   フッター
+   リンク・著作権表示ともに中央揃え
+   Twitter リンクは含めない
+---------------------------------------------------------------- */
+.site-footer {
+    position: relative;
+    z-index: 10;
+    margin-top: clamp(3rem, 8vw, 5rem);
+    padding: 2rem 0 1.5rem;
+    border-top: 1px solid var(--border);
+    background: rgba(4, 8, 15, 0.5);
+}
+[data-theme='light'] .site-footer {
+    background: rgba(200, 220, 240, 0.5);
+}
+
+.footer-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 中央揃え */
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    align-items: center;
+    justify-content: center; /* 中央揃え */
+}
+
+.footer-links a {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    transition: color var(--t);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.footer-links a:hover {
+    color: var(--cyan);
+}
+
+.footer-copy {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    opacity: 0.7;
+}
+
+/* ----------------------------------------------------------------
+   アニメーション
+---------------------------------------------------------------- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 @keyframes fadeIn {
-	from {
-		opacity: 0;
-		transform: translateY(-20px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes blink-cursor {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+/* ----------------------------------------------------------------
+   スクロールバー
+---------------------------------------------------------------- */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-bright);
+}
+
+/* ----------------------------------------------------------------
+   使い方ガイド モーダル本文
+---------------------------------------------------------------- */
+.guide-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    font-size: 0.9rem;
+    word-break: auto-phrase;
+    line-break: strict;
+}
+.guide-body h3 {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    text-transform: uppercase;
+    border-left: 2px solid var(--blue);
+    padding-left: 0.6rem;
+    margin-top: 0.25rem;
+    font-weight: bold;
+}
+.guide-body ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 0.5rem;
+}
+.guide-body ul li {
+    display: flex;
+    align-items: start;
+    gap: 0.4rem;
+    line-height: 1.5;
+}
+.guide-body ul li span.material-icons {
+    margin-top: 0.2rem;
+}
+
+/* ガイドモーダル末尾の法的リンク
+   フッターがないページでもアクセスできるよう追加される */
+.guide-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    margin-top: 1.5rem;
+    justify-content: center;
+}
+.guide-legal-links a {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: color var(--t);
+}
+.guide-legal-links a:hover {
+    color: var(--cyan);
+}
+
+/* 著作権表示：リンク群と同じ行に並べ、右端に寄せる */
+.guide-legal-copy {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    opacity: 0.7;
+    white-space: nowrap;
+    margin: auto;
 }

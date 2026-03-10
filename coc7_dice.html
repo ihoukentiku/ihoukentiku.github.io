@@ -1,948 +1,1221 @@
-<!DOCTYPE html>
-<html lang="ja" prefix="og: http://ogp.me/ns#">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-		<title>クトゥルフ7版 ダイスツール | 違法建築のTRPGラボ</title>
-		<meta name="description" content="新クトゥルフ神話TRPG（CoC7）用のWEBダイスツールです。直感的にダイスを振れる設計で、技能ロールやカスタムロール、ログ機能にも対応しており、オフラインセッションでも快適にご利用いただけます。" />
-		<link rel="icon" href="favicon.ico" />
-
-		<meta property="og:url" content="https://ihoukentiku.github.io/coc7_dice.html" />
-		<meta property="og:type" content="website" />
-		<meta property="og:title" content="クトゥルフ7版 ダイスツール | 違法建築のTRPGラボ" />
-		<meta property="og:description" content="新クトゥルフ神話TRPG（CoC7）用のWEBダイスツールです。直感的にダイスを振れる設計で、技能ロールやカスタムロール、ログ機能にも対応しており、オフラインセッションでも快適にご利用いただけます。" />
-		<meta property="og:site_name" content="違法建築のTRPGラボ" />
-		<meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
-
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
-		<meta name="twitter:site" content="@ihoukentiku" />
-		<meta name="twitter:creator" content="@ihoukentiku" />
-
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-normalize@3.0.1/modern-normalize.min.css" />
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-		<link rel="stylesheet" href="common.css" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-
-		<audio id="dice-sound" preload="auto">
-			<source src="dice_sound.wav" type="audio/mpeg" />
-			Your browser does not support the audio element.
-		</audio>
-
-		<style>
-			:root {
-				--input-bg: #f3f3f3;
-			}
-			body.dark-mode {
-				--input-bg: #44484e;
-			}
-			body {
-				height: 100svh;
-			}
-			main {
-				display: flex;
-				flex-direction: column;
-				justify-content: space-between;
-				gap: 8px;
-				height: 100%;
-				padding-top: 8px;
-				padding-bottom: 16px;
-				max-width: 820px;
-				width: 95%;
-				margin: auto;
-			}
-
-			h1 {
-				margin: 0;
-				font-size: clamp(18px, 5vw, 32px);
-				color: var(--color-on-surface);
-				/* text-align: center; */
-			}
-
-			.card {
-				background-color: var(--color-secondary);
-				color: var(--color-on-secondary);
-				padding: 12px;
-				border-radius: 8px;
-				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-			}
-
-			.top-inputs {
-				display: flex;
-				align-items: center;
-				gap: 0.2em;
-				flex-wrap: wrap;
-				font-size: clamp(14px, 5.7vw, 40px);
-			}
-
-			.dice-input-group,
-			.skill-input-group {
-				display: flex;
-				align-items: center;
-			}
-
-			.dice-btn {
-				width: 1.6em;
-				height: 2em;
-				border: 1px solid var(--color-outline);
-				background-color: transparent;
-				color: var(--color-on-surface);
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				cursor: pointer;
-				transition: background-color 0.2s ease;
-			}
-			.dice-btn .material-icons {
-				font-size: 1em;
-			}
-			.dice-btn:hover {
-				background-color: rgba(0, 0, 0, 0.1);
-			}
-
-			.bd-input {
-				height: 1.6em;
-				border-color: var(--color-outline);
-				border-style: solid;
-				border-width: 1px 0 1px 0;
-				background-color: var(--input-bg);
-				color: var(--color-on-surface);
-				font-size: 1.25em;
-				text-align: center;
-				align-items: center;
-				width: 2em;
-			}
-
-			.skill-input {
-				height: 1.6em;
-				border-color: var(--color-outline);
-				border-style: solid;
-				border-width: 1px 0 1px 0;
-				background-color: var(--input-bg);
-				color: var(--color-on-surface);
-				font-size: 1.25em;
-				text-align: center;
-				width: 3.2em;
-			}
-			.skill-input::-webkit-outer-spin-button,
-			.skill-input::-webkit-inner-spin-button {
-				-webkit-appearance: none;
-				margin: 0;
-			}
-			.skill-input {
-				-moz-appearance: textfield;
-			}
-
-			.roll-button {
-				height: 2em;
-				width: 2em;
-				border: none;
-				border-radius: 0.3em;
-				background-color: var(--color-primary);
-				color: var(--color-on-primary);
-				font-weight: bold;
-				cursor: pointer;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transition: background-color 0.2s ease;
-			}
-			.roll-button:hover {
-				background-color: #1e88e5;
-			}
-
-			.section-middle {
-				position: relative;
-				flex: 1;
-				min-height: 200px;
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				justify-content: center;
-				gap: 8px;
-				padding: 8px;
-				text-align: center;
-				overflow: visible;
-			}
-
-			.log-button {
-				position: absolute;
-				padding: 2px;
-				bottom: 12px;
-				right: 12px;
-				background: none;
-				border: none;
-				border-radius: 50%;
-				color: var(--color-on-surface);
-				cursor: pointer;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-			}
-			.log-button .material-icons {
-				font-size: clamp(14px, 7.5vw, 40px);
-			}
-			.log-button:hover {
-				transform: scale(1.1);
-				background-color: rgba(0, 0, 0, 0.1);
-			}
-
-			.section-middle .result-container {
-				width: 100%;
-				display: flex;
-				flex-direction: column;
-				justify-content: center;
-				align-items: center;
-				overflow-y: auto;
-				gap: 16px;
-				min-height: 100%;
-			}
-
-			.section-middle .dice-display {
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: center;
-				gap: 16px;
-			}
-
-			.section-middle .dice-symbol {
-				font-size: clamp(14px, 9.5vw, 56px);
-				font-weight: bold;
-			}
-
-			.section-middle .result-text {
-				font-size: clamp(14px, 12vw, 80px);
-				font-weight: bold;
-			}
-
-			.section-middle .success-level {
-				font-size: clamp(14px, 9.5vw, 56px);
-				font-weight: bold;
-			}
-
-			.log-card {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background-color: var(--color-secondary);
-				color: var(--color-on-secondary);
-				border-radius: 8px;
-				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-				padding: 12px;
-				box-sizing: border-box;
-				overflow-y: auto;
-				display: none;
-				flex-direction: column;
-				justify-content: space-between;
-			}
-			.log-line {
-				display: flex;
-				align-items: flex-start;
-				font-size: clamp(8px, 4vw, 20px);
-				margin-bottom: 0.2em;
-			}
-
-			.timestamp {
-				flex-shrink: 0;
-				margin-right: 8px;
-			}
-
-			.log-text {
-				flex: 1;
-				white-space: normal;
-				overflow-wrap: break-word;
-				word-break: break-word;
-			}
-
-			.log-hooter {
-				display: flex;
-				justify-content: space-between;
-			}
-			.log-hooter-btn {
-				background: none;
-				border: none;
-				padding: 2px;
-				color: var(--color-on-secondary);
-				cursor: pointer;
-				border-radius: 50%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transition: background-color 0.2s ease;
-			}
-			.log-hooter-btn:hover {
-				transform: scale(1.1);
-				background-color: rgba(0, 0, 0, 0.2);
-			}
-			.log-hooter-btn .material-icons {
-				font-size: clamp(14px, 7.5vw, 40px);
-			}
-
-			.section-middle .log-card #log-list {
-				flex-grow: 1;
-				overflow-y: auto;
-				list-style: none;
-				padding: 0;
-				text-align: left;
-				margin: 0;
-			}
-
-			.custom-roll {
-				display: flex;
-				gap: 8px;
-				margin-bottom: 0.5em;
-				align-items: stretch;
-				font-size: clamp(6px, 5.5vw, 32px);
-			}
-
-			.custom-roll-input {
-				position: relative;
-				flex: 1;
-			}
-			.custom-roll-input input {
-				width: 100%;
-				height: 1.6em;
-				padding-left: 0.5em;
-				padding-right: 1.5em;
-				border-radius: 0.36em;
-				border: 1px solid var(--color-outline);
-				background-color: var(--input-bg);
-				color: var(--color-on-surface);
-			}
-			.custom-clear-btn {
-				position: absolute;
-				top: 50%;
-				transform: translateY(-50%);
-				right: 0.2em;
-				border: none;
-				background-color: transparent;
-				color: var(--color-on-secondary);
-				cursor: pointer;
-				padding: 0.1em;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				border-radius: 50%;
-				transition: background-color 0.2s ease;
-			}
-			.custom-clear-btn .material-icons {
-				font-size: 1em;
-			}
-			.custom-clear-btn:hover {
-				transform: translateY(-50%);
-				background-color: rgba(0, 0, 0, 0.1);
-			}
-
-			.custom-roll-button {
-				height: 2em;
-				width: 2em;
-				background-color: var(--color-primary);
-				color: var(--color-on-primary);
-				font-size: 0.8em;
-				border: none;
-				border-radius: 0.45em;
-				cursor: pointer;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transition: background-color 0.2s ease;
-			}
-			.custom-roll-button:hover {
-				background-color: #1e88e5;
-			}
-
-			.dice-buttons {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 8px;
-				font-size: clamp(14px, 6vw, 40px);
-			}
-			.dice-buttons button {
-				padding: 8px clamp(6px, 2.6vw, 16px);
-				border: 1px solid var(--color-outline);
-				border-radius: 0.25em;
-				background-color: transparent;
-				color: var(--color-on-secondary);
-				cursor: pointer;
-				transition: background-color 0.2s ease;
-			}
-			.dice-buttons button:hover {
-				background-color: rgba(0, 0, 0, 0.1);
-			}
-
-			@media (min-width: 2000px) {
-				.dice-buttons button {
-					flex: 1 1 calc((100% - (8px * (9 - 1))) / 9);
-				}
-			}
-
-			@media (max-width: 2000px) and (min-width: 787px) {
-				.dice-buttons button:nth-child(-n + 5) {
-					flex: 1 1 calc((100% - (8px * 4)) / 5);
-				}
-				.dice-buttons button:nth-child(n + 6) {
-					flex: 1 1 calc((100% - (8px * 3)) / 4);
-				}
-			}
-
-			@media (max-width: 786px) {
-				.dice-buttons button {
-					flex: 1 1 calc((100% - (8px * 2)) / 3);
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<header>
-			<a href="https://ihoukentiku.github.io/" class="no-underline-link" aria-label="ホームページ" title="ホームページへ">
-				<div class="header-left">
-					<div class="header-icon">
-						<img src="ihoukentiku_full.svg" alt="サイトアイコン" />
-					</div>
-					<div class="header-title">違法建築のTRPGラボ</div>
-				</div>
-			</a>
-			<div class="header-right">
-				<button id="help-button" class="header-button" aria-label="使い方ガイド" title="使い方ガイド">
-					<i class="material-icons">help</i>
-				</button>
-				<a href="https://x.com/ihoukentiku" target="_blank" class="header-button" aria-label="X (旧Twitter) アカウント" title="X (旧Twitter) アカウントへ">
-					<i class="fab fa-twitter" id="x-icon"></i>
-				</a>
-				<button id="theme-toggle" class="header-button" aria-label="テーマ切り替え" title="テーマを切り替える">
-					<i class="material-icons">dark_mode</i>
-				</button>
-			</div>
-		</header>
-
-		<main>
-			<h1>クトゥルフ7版 ダイスツール</h1>
-			<div class="card section-top">
-				<div class="top-inputs">
-					<div class="dice-input-group">
-						<button id="bd-minus-btn" class="dice-btn" style="border-radius: 0.3em 0 0 0.3em">
-							<i class="material-icons">remove</i>
-						</button>
-						<input type="text" id="bd-input" class="bd-input" value="0" readonly />
-						<button id="bd-plus-btn" class="dice-btn" style="border-radius: 0 0.3em 0.3em 0">
-							<i class="material-icons">add</i>
-						</button>
-					</div>
-					<div class="skill-input-group">
-						<button id="skill-minus-btn" class="dice-btn" style="border-radius: 0.3em 0 0 0.3em">
-							<i class="material-icons">remove</i>
-						</button>
-						<input type="number" id="skill-input" class="skill-input" placeholder="技能値" />
-						<button id="skill-plus-btn" class="dice-btn" style="border-radius: 0 0.3em 0.3em 0">
-							<i class="material-icons">add</i>
-						</button>
-					</div>
-					<button id="roll-btn" class="roll-button">
-						<i class="fa-solid fa-dice"></i>
-					</button>
-				</div>
-			</div>
-
-			<div class="section-middle">
-				<button id="log-button" class="log-button" title="ログを開く">
-					<i class="material-icons">history</i>
-				</button>
-				<div id="result-container" class="result-container">
-					<div id="dice-display" class="dice-display"></div>
-					<div id="result-text" class="result-text"></div>
-					<div id="success-level" class="success-level"></div>
-				</div>
-				<div id="log-card" class="log-card">
-					<ul id="log-list"></ul>
-					<div class="log-hooter">
-						<button id="log-clear-btn" class="log-hooter-btn" title="ログ削除">
-							<span class="material-icons">delete</span>
-						</button>
-						<button id="log-close-btn" class="log-hooter-btn" title="閉じる">
-							<span class="material-icons">close</span>
-						</button>
-					</div>
-				</div>
-			</div>
-
-			<div class="card section-bottom">
-				<div class="custom-roll">
-					<div class="custom-roll-input">
-						<input type="text" id="custom-roll-input" placeholder="例: 1D100+1D6+3" />
-						<button id="custom-clear-btn" class="custom-clear-btn" aria-label="クリア">
-							<span class="material-icons">close</span>
-						</button>
-					</div>
-					<button id="custom-roll-btn" class="custom-roll-button">
-						<i class="fa-solid fa-dice"></i>
-					</button>
-				</div>
-				<div class="dice-buttons" id="dice-buttons-container">
-					<button class="add-dice-btn" data-dice-type="1">+1</button>
-					<button class="add-dice-btn" data-dice-type="1D3">+1D3</button>
-					<button class="add-dice-btn" data-dice-type="1D4">+1D4</button>
-					<button class="add-dice-btn" data-dice-type="1D6">+1D6</button>
-					<button class="add-dice-btn" data-dice-type="1D8">+1D8</button>
-					<button class="add-dice-btn" data-dice-type="1D10">+1D10</button>
-					<button class="add-dice-btn" data-dice-type="1D12">+1D12</button>
-					<button class="add-dice-btn" data-dice-type="1D20">+1D20</button>
-					<button class="add-dice-btn" data-dice-type="1D100">+1D100</button>
-				</div>
-			</div>
-		</main>
-
-		<div id="help-modal" class="modal">
-			<div class="modal-content">
-				<button class="close-button" aria-label="閉じる">&times;</button>
-				<h2>使い方ガイド</h2>
-				<section>
-					<h3>技能ロール（画面上部）</h3>
-					<p>画面上部の技能ロール欄では、技能値を用いた判定を行うことができます。</p>
-					<p>左側の入力欄では-2~2の数字で<b>ボーナスダイス</b>と<b>ペナルティダイス</b>の数を設定します。例えばボーナスダイスが1つの場合は<b>1</b>、ペナルティダイスが2つの場合は<b>-2</b>と設定します。ここはプラス・マイナスボタンのみで操作でき、直接数値を入力することはできません。</p>
-					<p>中央の入力欄には<b>技能値</b>を入力します。こちらはプラス・マイナスボタンに加えて直接の入力も可能です。</p>
-					<p>右側の<b>ロールボタン</b>を押すと判定が実行され、結果が表示されます。技能値を入力していない場合でもロール自体は可能ですが、その場合は成功・失敗といった判定は表示されません。</p>
-				</section>
-
-				<section>
-					<h3>カスタムロール（画面下部）</h3>
-					<p>画面下部のカスタムロール欄では、自由に<b>ダイスコマンド</b>を入力してロールすることができます。</p>
-					<p>入力欄に任意のコマンド（例: <code>1D6+2</code> など）を入力し、右側の<b>ロールボタン</b>を押すと結果が表示されます。</p>
-					<p>また、入力欄の下には<b>+1</b>から<b>+1D100</b>までのボタンが並んでおり、これらを押すとその内容が自動的に入力欄へ追加されます。コマンドを一から書かなくても、ボタン操作で素早く入力できる便利な仕組みです。</p>
-				</section>
-
-				<section>
-					<h3>ログ表示（画面中央部右下）</h3>
-					<p>これまでのロール結果は<b>ログ</b>として記録されます。画面右下の<b>ログボタン</b>を押すとログが展開され、過去の結果をまとめて確認することができます。</p>
-					<p>ログを開いている状態では、左下の<b>削除ボタン</b>を押すと記録をすべて消去できます（削除時には確認が表示されるため、誤操作の心配はありません）。</p>
-					<p>また、右下の<b>収納ボタン</b>を押せばログを非表示に戻すことができ、必要なときにだけ展開して使えます。</p>
-				</section>
-			</div>
-		</div>
-
-		<footer style="display: none">
-			<p>&copy;2025 ihoukentiku. 本ツールは<a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE">MITライセンス</a>の下で提供されています。</p>
-		</footer>
-
-		<script src="common.js"></script>
-		<script>
-			document.addEventListener("DOMContentLoaded", () => {
-				const bdMinusBtn = document.getElementById("bd-minus-btn");
-				const bdPlusBtn = document.getElementById("bd-plus-btn");
-				const skillMinusBtn = document.getElementById("skill-minus-btn");
-				const skillPlusBtn = document.getElementById("skill-plus-btn");
-				const bdInput = document.getElementById("bd-input");
-				const skillInput = document.getElementById("skill-input");
-				const rollBtn = document.getElementById("roll-btn");
-				const customRollInput = document.getElementById("custom-roll-input");
-				const customClearBtn = document.getElementById("custom-clear-btn");
-				const customRollBtn = document.getElementById("custom-roll-btn");
-				const addDiceBtns = document.querySelectorAll(".add-dice-btn");
-				const resultContainer = document.getElementById("result-container");
-				const diceDisplay = document.getElementById("dice-display");
-				const resultText = document.getElementById("result-text");
-				const successLevel = document.getElementById("success-level");
-				const logButton = document.getElementById("log-button");
-				const logCard = document.getElementById("log-card");
-				const logList = document.getElementById("log-list");
-				const logClearBtn = document.getElementById("log-clear-btn");
-				const logCloseBtn = document.getElementById("log-close-btn");
-				const diceButtonsContainer = document.getElementById("dice-buttons-container");
-				const diceSound = document.getElementById("dice-sound");
-
-				bdMinusBtn.addEventListener("click", () => {
-					let val = parseInt(bdInput.value);
-					if (val > -2) {
-						bdInput.value = val - 1;
-					}
-				});
-
-				bdPlusBtn.addEventListener("click", () => {
-					let val = parseInt(bdInput.value);
-					if (val < 2) {
-						bdInput.value = val + 1;
-					}
-				});
-
-				skillMinusBtn.addEventListener("click", () => {
-					let val = parseInt(skillInput.value);
-					if (!val) {
-						skillInput.value = 0;
-					} else if (val > 0) {
-						skillInput.value = val - 1;
-					}
-				});
-
-				skillPlusBtn.addEventListener("click", () => {
-					let val = parseInt(skillInput.value);
-					if (!val) {
-						skillInput.value = 1;
-					} else {
-						skillInput.value = val + 1;
-					}
-				});
-
-				function rollDice(sides) {
-					return Math.floor(Math.random() * sides) + 1;
-				}
-
-				function getSuccessLevel(roll, skill) {
-					if (roll === 1) return "クリティカル";
-					if (skill && skill < 50 && roll >= 96) return "ファンブル";
-					if (skill && skill >= 50 && roll === 100) return "ファンブル";
-
-					if (!skill) return "判定なし";
-
-					if (roll <= Math.floor(skill / 5)) return "イクストリーム成功";
-					if (roll <= Math.floor(skill / 2)) return "ハード成功";
-					if (roll <= skill) return "レギュラー成功";
-					return "失敗";
-				}
-
-				function createDiceSymbol(value, isPercent = false) {
-					const span = document.createElement("span");
-					span.classList.add("dice-symbol");
-
-					if (isPercent) {
-						// %ダイス用表示：0 → 00、1〜9 → 10,20,...90
-						span.textContent = value === 0 ? "00" : String(value).padStart(2, "0");
-					} else {
-						// 通常の10面ダイス
-						span.textContent = value;
-					}
-
-					span.style.display = "inline-block";
-					span.style.width = "1.8em";
-					span.style.height = "1.8em";
-					span.style.display = "flex";
-					span.style.alignItems = "center";
-					span.style.justifyContent = "center";
-					span.style.border = "1px solid var(--color-outline)";
-					span.style.borderRadius = "0.2em";
-					span.style.fontWeight = "bold";
-					span.style.backgroundColor = "var(--color-secondary)";
-					span.style.color = "var(--color-on-secondary)";
-
-					return span;
-				}
-
-				function rollDice(sides) {
-					return Math.floor(Math.random() * sides) + 1;
-				}
-
-				function updateResultDisplay(oneDigit, percentDice, finalRoll, skill) {
-					diceDisplay.innerHTML = "";
-					diceSound.currentTime = 0;
-					diceSound.play();
-
-					function animateDiceSymbol(span, finalValue, isPercent = false, duration = 800, interval = 50) {
-						const iterations = Math.floor(duration / interval);
-						let count = 0;
-
-						const anim = setInterval(() => {
-							count++;
-							if (isPercent) {
-								const rand = Math.floor(Math.random() * 10);
-								span.textContent = rand === 0 ? "00" : String(rand) + "0";
-							} else {
-								span.textContent = Math.floor(Math.random() * 10);
-							}
-
-							if (count >= iterations) {
-								clearInterval(anim);
-								if (isPercent) {
-									span.textContent = finalValue === 0 ? "00" : finalValue;
-								} else {
-									span.textContent = finalValue;
-								}
-							}
-						}, interval);
-					}
-
-					// %ダイス
-					percentDice.forEach((d) => {
-						const span = createDiceSymbol(d, true);
-						diceDisplay.appendChild(span);
-						animateDiceSymbol(span, d, true);
-					});
-
-					// 1の位ダイス
-					const oneSpan = createDiceSymbol(oneDigit, false);
-					diceDisplay.appendChild(oneSpan);
-					animateDiceSymbol(oneSpan, oneDigit, false);
-
-					resultText.textContent = "...";
-					successLevel.textContent = skill ? "" : "";
-					setTimeout(() => {
-						resultText.textContent = `${finalRoll}`;
-						if (skill) successLevel.textContent = `${getSuccessLevel(finalRoll, skill)}`;
-					}, 800);
-				}
-
-				rollBtn.addEventListener("click", () => {
-					const bd_pd = parseInt(bdInput.value) || 0;
-					const skill = skillInput.value ? parseInt(skillInput.value) : null;
-
-					const oneDigit = rollDice(10) - 1; // 0〜9
-					const rollTimes = 1 + Math.abs(bd_pd);
-
-					const percentDice = [];
-					for (let i = 0; i < rollTimes; i++) {
-						percentDice.push((rollDice(10) - 1) * 10); // 0,10,…90
-					}
-
-					const candidates = percentDice.map((d) => {
-						let val = d + oneDigit;
-						if (val === 0) val = 100; // 0+0は100
-						return val;
-					});
-
-					let finalRoll;
-					if (bd_pd > 0) finalRoll = Math.min(...candidates);
-					else if (bd_pd < 0) finalRoll = Math.max(...candidates);
-					else finalRoll = candidates[0];
-
-					// 表示更新
-					updateResultDisplay(oneDigit, percentDice, finalRoll, skill);
-
-					/// ログ作成
-					const timeStamp = new Date().toLocaleTimeString();
-
-					const skillText = skill !== null ? `[${skill}]` : `[]`;
-					const bdText = `BD/PD[${bd_pd}]`;
-					const candidatesText = candidates.join(", ");
-					const finalText = finalRoll;
-					const successText = skill ? ` ＞ ${getSuccessLevel(finalRoll, skill)}` : "";
-
-					const logEntry = document.createElement("li");
-					logEntry.classList.add("log-line"); // CSS用クラス
-
-					const timestampSpan = document.createElement("span");
-					timestampSpan.classList.add("timestamp");
-					timestampSpan.textContent = `[${timeStamp}]`;
-
-					const logTextSpan = document.createElement("span");
-					logTextSpan.classList.add("log-text");
-					logTextSpan.textContent = `技能値${skillText} ${bdText} ＞ ${candidatesText} ＞ ${finalText}${successText}`;
-
-					logEntry.appendChild(timestampSpan);
-					logEntry.appendChild(logTextSpan);
-
-					logList.prepend(logEntry);
-				});
-
-				customClearBtn.addEventListener("click", () => {
-					customRollInput.value = "";
-				});
-
-				customRollBtn.addEventListener("click", () => {
-					let command = customRollInput.value;
-					if (!command) return;
-
-					// 正規化
-					command = command
-						.replace(/\s+/g, "")
-						.replace(/[＋]/g, "+")
-						.replace(/[－−]/g, "-")
-						.replace(/[ｄＤ]/g, "D")
-						.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0));
-
-					try {
-						const parts = command.match(/([+-]?[^+-]+)/g);
-						if (!parts) throw new Error("無効なコマンド");
-
-						const diceResults = [];
-						let total = 0;
-
-						// ダイス振り
-						parts.forEach((part) => {
-							const sign = part[0] === "+" || part[0] === "-" ? part[0] : "+";
-							const body = part.replace(/^[+-]/, "");
-							const diceMatch = body.match(/^(\d+)?D(\d+)$/i);
-
-							if (diceMatch) {
-								const num = parseInt(diceMatch[1] || "1");
-								const sides = parseInt(diceMatch[2]);
-								const rolls = [];
-								for (let i = 0; i < num; i++) {
-									const r = rollDice(sides);
-									rolls.push(sign === "-" ? -r : r);
-								}
-								diceResults.push({ type: sign + num + "D" + sides, rolls });
-								total += rolls.reduce((sum, r) => sum + r, 0);
-							} else {
-								const val = parseInt(body);
-								diceResults.push({ type: sign + val, rolls: [] });
-								total += sign === "-" ? -val : val;
-							}
-						});
-
-						// ダイス表示（アニメーション）
-						diceDisplay.innerHTML = "";
-						diceSound.currentTime = 0;
-						diceSound.play();
-						diceResults.forEach((item) => {
-							if (item.rolls.length) {
-								item.rolls.forEach((r) => {
-									const absR = Math.abs(r);
-									const span = createDiceSymbol(absR);
-									diceDisplay.appendChild(span);
-
-									// アニメーション
-									const sidesMatch = item.type.match(/D(\d+)$/i);
-									const sides = sidesMatch ? parseInt(sidesMatch[1]) : 6;
-									const iterations = 16; // 50ms × 16 = 800ms
-									let count = 0;
-									const anim = setInterval(() => {
-										count++;
-										span.textContent = Math.floor(Math.random() * sides) + 1;
-										if (count >= iterations) {
-											clearInterval(anim);
-											span.textContent = absR;
-										}
-									}, 50);
-								});
-							}
-						});
-						resultContainer.scrollTop = resultContainer.scrollHeight;
-
-						// 結果表示
-						resultText.textContent = "...";
-						successLevel.textContent = "";
-						setTimeout(() => {
-							resultText.textContent = total;
-							resultContainer.scrollTop = resultContainer.scrollHeight;
-						}, 800);
-
-						// ログ作成
-						const timeStamp = new Date().toLocaleTimeString();
-						const detailedParts = diceResults.map((item, index) => {
-							if (item.rolls.length) {
-								const diceMatch = item.type.match(/^([+-]?)(\d+)D(\d+)$/i);
-								const sign = diceMatch[1] || "+";
-								const num = parseInt(diceMatch[2]);
-								const sides = diceMatch[3];
-								const displaySign = index === 0 && sign === "+" ? "" : sign;
-								return `${displaySign}${num}D${sides}[${item.rolls.map((r) => Math.abs(r)).join(",")}]`;
-							} else {
-								const valMatch = item.type.match(/^([+-]?)(\d+)$/);
-								const sign = valMatch[1] || "+";
-								const val = valMatch[2];
-								const displaySign = index === 0 && sign === "+" ? "" : sign;
-								return `${displaySign}${val}`;
-							}
-						});
-
-						const logEntry = document.createElement("li");
-						logEntry.classList.add("log-line");
-
-						const timestampSpan = document.createElement("span");
-						timestampSpan.classList.add("timestamp");
-						timestampSpan.textContent = `[${timeStamp}]`;
-
-						const logTextSpan = document.createElement("span");
-						logTextSpan.classList.add("log-text");
-						logTextSpan.textContent = `${command} ＞ ${detailedParts.join("")} ＞ ${total}`;
-
-						logEntry.appendChild(timestampSpan);
-						logEntry.appendChild(logTextSpan);
-
-						logList.prepend(logEntry);
-					} catch (e) {
-						alert("無効なダイスコマンドです。");
-					}
-				});
-
-				addDiceBtns.forEach((btn) => {
-					btn.addEventListener("click", () => {
-						const diceType = btn.dataset.diceType;
-						let currentValue = customRollInput.value.trim();
-
-						// 正規化
-						currentValue = currentValue
-							.replace(/\s+/g, "")
-							.replace(/[＋]/g, "+")
-							.replace(/[－−]/g, "-")
-							.replace(/[ｄＤ]/g, "D")
-							.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0));
-
-						const parts = currentValue ? currentValue.match(/([+-]?[^+-]+)/g) : [];
-						let lastPart = parts.length ? parts[parts.length - 1] : "";
-
-						const diceRegex = /^([+-]?)(\d+)?D(\d+)$/i;
-						const numRegex = /^([+-]?)(\d+)$/;
-
-						// ダイスの場合
-						const matchDice = lastPart.match(diceRegex);
-						const matchBtnDice = diceType.match(/^(\d+)?D(\d+)$/i);
-						if (matchDice && matchBtnDice) {
-							const sign = matchDice[1] || "+";
-							const num = parseInt(matchDice[2] || "1");
-							const sides = matchDice[3];
-							const btnNum = parseInt(matchBtnDice[1] || "1");
-							const btnSides = matchBtnDice[2];
-
-							if (sides === btnSides) {
-								if (sign === "-") {
-									parts[parts.length - 1] += `+${diceType}`;
-								} else {
-									parts[parts.length - 1] = `${sign}${num + btnNum}D${sides}`;
-								}
-								customRollInput.value = parts.join("").replace(/^\+/, "");
-								return;
-							}
-						}
-
-						//整数の場合
-						const matchNum = lastPart.match(numRegex);
-						const matchBtnNum = diceType.match(/^(\d+)$/);
-						if (matchNum && matchBtnNum) {
-							const sign = matchNum[1] || "+";
-							const num = parseInt(matchNum[2]);
-							const btnValue = parseInt(matchBtnNum[1]);
-							if (sign === "-") {
-								parts[parts.length - 1] += `+${diceType}`;
-							} else {
-								parts[parts.length - 1] = `${sign}${num + btnValue}`;
-							}
-							customRollInput.value = parts.join("").replace(/^\+/, "");
-							return;
-						}
-
-						if (currentValue) {
-							const prefix = /^[+-]/.test(diceType) ? "" : "+";
-							parts.push(prefix + diceType);
-							customRollInput.value = parts.join("").replace(/^\+/, "");
-						} else {
-							customRollInput.value = diceType.replace(/^\+/, "");
-						}
-					});
-				});
-
-				// ログ表示
-				logButton.addEventListener("click", () => {
-					logCard.style.display = "flex";
-				});
-
-				// ログ削除
-				logClearBtn.addEventListener("click", () => {
-					if (logList.children.length === 0) return; // 空なら何もしない
-					const confirmed = confirm("本当にすべてのログを削除しますか？");
-					if (confirmed) {
-						logList.innerHTML = "";
-					}
-				});
-
-				// ログ非表示
-				logCloseBtn.addEventListener("click", () => {
-					logCard.style.display = "none";
-				});
-			});
-		</script>
-	</body>
+<!doctype html>
+<html lang="ja" data-theme="dark" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <title>CoC7 ダイスツール | 違法建築のTRPGラボ</title>
+        <meta name="description" content="新クトゥルフ神話TRPG（CoC7）用のWEBダイスツール。技能ロール・カスタムロール・ダイスログに対応。オフラインセッションでも快適に使用できます。" />
+        <link rel="icon" href="favicon.ico" />
+
+        <meta property="og:url" content="https://ihoukentiku.github.io/coc7_dice.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="CoC7 ダイスツール | 違法建築のTRPGラボ" />
+        <meta property="og:description" content="新クトゥルフ神話TRPG（CoC7）用のWEBダイスツール。技能ロール・カスタムロール・ダイスログに対応。オフラインセッションでも快適に使用できます。" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+
+        <!-- Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+        <!-- Material Icons -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+
+        <link rel="stylesheet" href="common.css" />
+
+        <audio id="dice-sound" preload="auto">
+            <source src="dice_sound.wav" type="audio/mpeg" />
+        </audio>
+
+        <style>
+            /* ----------------------------------------------------------------
+                ページ固有 CSS 変数
+            ---------------------------------------------------------------- */
+            :root {
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --btn-hover-bg: rgba(0, 229, 255, 0.08);
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.06);
+                --btn-hover-bg: rgba(33, 150, 243, 0.08);
+            }
+
+            /* ----------------------------------------------------------------
+                レイアウト：ビューポートいっぱいに3段構成
+            ---------------------------------------------------------------- */
+            html,
+            body {
+                height: 100%;
+                overflow: hidden;
+            }
+
+            main.dice-main {
+                display: flex;
+                flex-direction: column;
+                gap: clamp(6px, 1.5vw, 10px);
+                height: calc(100vh - var(--header-h, 56px));
+                padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px) clamp(8px, 2vw, 16px);
+                max-width: 860px;
+                width: 100%;
+                margin: 0 auto;
+                box-sizing: border-box;
+            }
+
+            /* ----------------------------------------------------------------
+                セクション共通：カードスタイル
+            ---------------------------------------------------------------- */
+            .dice-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: clamp(10px, 2vw, 16px);
+                backdrop-filter: blur(6px);
+                transition: border-color var(--t);
+            }
+
+            /* ================================================================
+                アニメーション定義
+            ================================================================ */
+
+            /* ダイスシンボルのポップイン */
+            @keyframes dice-pop-in {
+                from {
+                    opacity: 0;
+                    transform: scale(0.45);
+                }
+                to {
+                    transform: scale(1);
+                }
+            }
+
+            /* 結果数字・成功レベルのバウンス */
+            @keyframes result-bounce {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.55) translateY(8px);
+                }
+                55% {
+                    transform: scale(1.07) translateY(-2px);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+            .result-pop {
+                animation: result-bounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            }
+
+            /* ログ行の登場 */
+            @keyframes log-line-in {
+                from {
+                    opacity: 0;
+                    transform: translateX(-8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            /* ----------------------------------------------------------------
+                上部セクション：技能ロール入力
+            ---------------------------------------------------------------- */
+            .section-top {
+                flex-shrink: 0;
+            }
+
+            .section-label {
+                font-family: var(--font-mono);
+                font-size: 0.62rem;
+                letter-spacing: 0.16em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                margin-bottom: 0.6em;
+            }
+
+            .top-inputs {
+                display: flex;
+                align-items: center;
+                gap: clamp(6px, 2vw, 12px);
+                flex-wrap: wrap;
+                font-size: clamp(16px, 6.1vw, 38px);
+            }
+
+            /* BD/PD・技能値 入力グループ共通 */
+            .dice-input-group,
+            .skill-input-group {
+                display: flex;
+                align-items: stretch;
+            }
+
+            /* ±ボタン */
+            .dice-btn {
+                width: 1.5em;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    border-color var(--t);
+            }
+            .dice-btn .material-icons {
+                font-size: 1em;
+            }
+            .dice-btn:hover {
+                background: var(--btn-hover-bg);
+                color: var(--text-bright);
+                border-color: var(--border-bright);
+            }
+            #bd-minus-btn {
+                border-radius: var(--r) 0 0 var(--r);
+            }
+            #bd-plus-btn {
+                border-radius: 0 var(--r) var(--r) 0;
+            }
+            #skill-minus-btn {
+                border-radius: var(--r) 0 0 var(--r);
+            }
+            #skill-plus-btn {
+                border-radius: 0 var(--r) var(--r) 0;
+            }
+
+            /* BD/PD 表示フィールド */
+            .bd-input {
+                height: 1.9em;
+                width: 2.2em;
+                border: 1px solid var(--border);
+                border-left: none;
+                border-right: none;
+                background: var(--input-bg);
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1.1em;
+                text-align: center;
+            }
+
+            /* 技能値 入力フィールド */
+            .skill-input {
+                height: 1.9em;
+                width: 3em;
+                border: 1px solid var(--border);
+                border-left: none;
+                border-right: none;
+                background: var(--input-bg);
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1.1em;
+                text-align: center;
+            }
+            .skill-input::placeholder {
+                color: var(--text-dim);
+                font-size: 0.7em;
+            }
+            .skill-input::-webkit-outer-spin-button,
+            .skill-input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            .skill-input {
+                -moz-appearance: textfield;
+            }
+
+            /* ロールボタン */
+            .roll-button {
+                height: 2em;
+                width: 2em;
+                border: none;
+                border-radius: var(--r);
+                background: var(--blue);
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1em;
+                transition:
+                    background var(--t),
+                    box-shadow var(--t),
+                    transform var(--t);
+                flex-shrink: 0;
+            }
+            .roll-button:hover {
+                background: var(--blue-light);
+                box-shadow: var(--glow-blue);
+            }
+            .roll-button:active {
+                transform: scale(0.96);
+            }
+
+            /* ----------------------------------------------------------------
+                中央セクション：ロール結果表示
+            ---------------------------------------------------------------- */
+            .section-middle {
+                position: relative;
+                flex: 1;
+                min-height: 0;
+                background: none;
+                backdrop-filter: none;
+                border: none;
+            }
+
+            /* ログボタン（右下）
+               ログカード表示中は JS で display:none に切り替える */
+            .log-button {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                z-index: 4;
+                padding: 4px;
+                background: none;
+                border: none;
+                border-radius: 50%;
+                color: var(--text-dim);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    color var(--t),
+                    background var(--t),
+                    transform var(--t);
+            }
+            .log-button .material-icons {
+                font-size: clamp(16px, 7vw, 38px);
+            }
+            .log-button:hover {
+                color: var(--blue-light);
+                background: var(--btn-hover-bg);
+                transform: scale(1.1);
+            }
+
+            /* 結果コンテナ */
+            .result-container {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                overflow-y: auto;
+                gap: clamp(8px, 2vw, 16px);
+                padding: 8px;
+                box-sizing: border-box;
+            }
+
+            /* ダイス目表示エリア */
+            .dice-display {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: clamp(6px, 1.5vw, 12px);
+            }
+
+            /* 個々のダイスシンボル */
+            .dice-symbol {
+                font-family: var(--font-mono);
+                font-size: clamp(16px, 9vw, 54px);
+                font-weight: 700;
+                width: 1.8em;
+                height: 1.8em;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--border);
+                border-radius: calc(var(--r) * 0.7);
+                background: var(--bg-card);
+                color: var(--text-bright);
+                transition:
+                    border-color var(--t),
+                    opacity 0.35s ease,
+                    color 0.35s ease,
+                    box-shadow 0.35s ease;
+            }
+
+            /* BD/PD ロール：参照されなかった十の位ダイス */
+            .dice-symbol.dimmed {
+                opacity: 0.7;
+                color: var(--text-dim);
+                border-color: var(--border);
+            }
+
+            /* ロール結果（数字大） */
+            .result-text {
+                font-family: var(--font-mono);
+                font-size: clamp(20px, 14vw, 90px);
+                font-weight: 700;
+                color: var(--text-bright);
+                line-height: 1;
+                letter-spacing: -0.02em;
+            }
+
+            /* 成功レベル */
+            .success-level {
+                font-family: var(--font-mono);
+                font-size: clamp(14px, 8vw, 50px);
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                transition: color var(--t);
+            }
+            .success-level.critical {
+                color: #ff9f0a;
+            }
+            .success-level.extreme {
+                color: var(--cyan);
+            }
+            .success-level.hard {
+                color: var(--blue-light);
+            }
+            .success-level.regular {
+                color: #4caf50;
+            }
+            .success-level.failure {
+                color: var(--text-dim);
+            }
+            .success-level.fumble {
+                color: #ff453a;
+            }
+
+            /* ----------------------------------------------------------------
+                ログカード（中央セクション内に絶対配置）
+            ---------------------------------------------------------------- */
+            .log-card {
+                position: absolute;
+                inset: 0;
+                z-index: 10;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: clamp(8px, 2vw, 14px);
+                box-sizing: border-box;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                backdrop-filter: blur(10px);
+                /* 閉じた状態 */
+                visibility: hidden;
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+                pointer-events: none;
+                transition:
+                    opacity 0.22s ease,
+                    transform 0.22s ease,
+                    visibility 0s linear 0.22s;
+            }
+            /* 開いた状態 */
+            .log-card.log-open {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+                pointer-events: auto;
+                transition:
+                    opacity 0.22s ease,
+                    transform 0.22s ease;
+            }
+
+            #log-list {
+                flex: 1;
+                overflow-y: auto;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                text-align: left;
+            }
+
+            .log-line {
+                display: flex;
+                align-items: start;
+                gap: 6px;
+                font-family: var(--font-mono);
+                font-size: clamp(9px, 3.5vw, 16px);
+                padding: 0.3em 0;
+                color: var(--text);
+                animation: log-line-in 0.22s ease both;
+            }
+            .log-line:last-child {
+                border-bottom: none;
+            }
+
+            .timestamp {
+                flex-shrink: 0;
+                color: var(--text-dim);
+                margin-top: 0.3em;
+            }
+
+            .log-text {
+                flex: 1;
+                white-space: normal;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+
+            .log-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-shrink: 0;
+            }
+
+            .log-footer-btn {
+                background: none;
+                border: none;
+                padding: 4px;
+                color: var(--text-dim);
+                cursor: pointer;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    color var(--t),
+                    background var(--t),
+                    transform var(--t);
+            }
+            .log-footer-btn .material-icons {
+                font-size: clamp(16px, 7vw, 36px);
+            }
+            .log-footer-btn:hover {
+                color: var(--text-bright);
+                background: var(--btn-hover-bg);
+                transform: scale(1.1);
+            }
+
+            /* ----------------------------------------------------------------
+                下部セクション：カスタムロール入力
+            ---------------------------------------------------------------- */
+            .section-bottom {
+                flex-shrink: 0;
+            }
+
+            /* 入力行 */
+            .custom-roll {
+                display: flex;
+                gap: clamp(6px, 1.5vw, 10px);
+                align-items: stretch;
+                font-size: clamp(10px, 5vw, 30px);
+                margin-bottom: 0.6em;
+            }
+
+            .custom-roll-input {
+                position: relative;
+                flex: 1;
+            }
+            .custom-roll-input input {
+                width: 100%;
+                height: 1.9em;
+                padding: 0 1.8em 0 0.6em;
+                border-radius: var(--r);
+                border: 1px solid var(--border);
+                background: var(--input-bg);
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1em;
+                box-sizing: border-box;
+                transition: border-color var(--t);
+            }
+            .custom-roll-input input:focus {
+                outline: none;
+                border-color: var(--border-bright);
+            }
+            .custom-roll-input input::placeholder {
+                color: var(--text-dim);
+                font-size: 0.7em;
+            }
+
+            .custom-clear-btn {
+                position: absolute;
+                top: 50%;
+                right: 0.3em;
+                transform: translateY(-50%);
+                border: none;
+                background: transparent;
+                color: var(--text-dim);
+                cursor: pointer;
+                padding: 0.1em;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition:
+                    color var(--t),
+                    background var(--t);
+            }
+            .custom-clear-btn .material-icons {
+                font-size: 1em;
+            }
+            .custom-clear-btn:hover {
+                color: var(--text-bright);
+                background: var(--btn-hover-bg);
+            }
+
+            .custom-roll-button {
+                height: 1.9em;
+                width: 1.9em;
+                background: var(--blue);
+                color: #fff;
+                border: none;
+                border-radius: var(--r);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                transition:
+                    background var(--t),
+                    box-shadow var(--t),
+                    transform var(--t);
+            }
+            .custom-roll-button:hover {
+                background: var(--blue-light);
+                box-shadow: var(--glow-blue);
+                transform: scale(1.05);
+            }
+            .custom-roll-button:active {
+                transform: scale(0.96);
+            }
+
+            /* ダイス追加ボタン群 */
+            .dice-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: clamp(4px, 1vw, 8px);
+                font-size: clamp(10px, 4.5vw, 26px);
+            }
+
+            .add-dice-btn {
+                padding: 0.3em clamp(6px, 2vw, 14px);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                background: transparent;
+                color: var(--text);
+                font-family: var(--font-mono);
+                font-size: 1.5em;
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    border-color var(--t);
+                white-space: nowrap;
+            }
+            .add-dice-btn:hover {
+                background: var(--btn-hover-bg);
+                color: var(--text-bright);
+                border-color: var(--border-bright);
+            }
+
+            @media (max-width: 786px) {
+                .add-dice-btn {
+                    flex: 1 1 calc((100% - 8px * 2) / 3);
+                }
+            }
+            @media (min-width: 787px) {
+                .add-dice-btn:nth-child(-n + 5) {
+                    flex: 1 1 calc((100% - 8px * 4) / 5);
+                }
+                .add-dice-btn:nth-child(n + 6) {
+                    flex: 1 1 calc((100% - 8px * 3) / 4);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
+
+        <main class="dice-main" aria-label="ダイスツール">
+            <!-- 上部：技能ロール -->
+            <div class="dice-card section-top" role="region" aria-label="技能ロール">
+                <div class="top-inputs">
+                    <div class="dice-input-group" aria-label="ボーナス・ペナルティダイス">
+                        <button id="bd-minus-btn" class="dice-btn" aria-label="BD/PD を減らす">
+                            <span class="material-icons">remove</span>
+                        </button>
+                        <input type="text" id="bd-input" class="bd-input" value="0" readonly aria-label="BD/PD 値" />
+                        <button id="bd-plus-btn" class="dice-btn" aria-label="BD/PD を増やす">
+                            <span class="material-icons">add</span>
+                        </button>
+                    </div>
+                    <div class="skill-input-group" aria-label="技能値入力">
+                        <button id="skill-minus-btn" class="dice-btn" aria-label="技能値を減らす">
+                            <span class="material-icons">remove</span>
+                        </button>
+                        <input type="number" id="skill-input" class="skill-input" placeholder="技能値" aria-label="技能値" />
+                        <button id="skill-plus-btn" class="dice-btn" aria-label="技能値を増やす">
+                            <span class="material-icons">add</span>
+                        </button>
+                    </div>
+                    <button id="roll-btn" class="roll-button" aria-label="技能ロールを実行">
+                        <i class="fa-solid fa-dice"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 中央：結果表示 -->
+            <div class="dice-card section-middle" role="region" aria-label="ロール結果">
+                <button id="log-button" class="log-button" title="ログを開く" aria-label="ログを開く">
+                    <span class="material-icons">history</span>
+                </button>
+                <div id="result-container" class="result-container" aria-live="polite">
+                    <div id="dice-display" class="dice-display"></div>
+                    <div id="result-text" class="result-text"></div>
+                    <div id="success-level" class="success-level"></div>
+                </div>
+                <!-- ログカード（オーバーレイ） -->
+                <div id="log-card" class="log-card" role="log" aria-label="ロールログ">
+                    <ul id="log-list"></ul>
+                    <div class="log-footer">
+                        <button id="log-clear-btn" class="log-footer-btn" title="ログをすべて削除" aria-label="ログを削除">
+                            <span class="material-icons">delete_outline</span>
+                        </button>
+                        <button id="log-close-btn" class="log-footer-btn" title="ログを閉じる" aria-label="ログを閉じる">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下部：カスタムロール -->
+            <div class="dice-card section-bottom" role="region" aria-label="カスタムロール">
+                <div class="custom-roll">
+                    <div class="custom-roll-input">
+                        <input type="text" id="custom-roll-input" placeholder="例: 1D6+1D4+2" aria-label="ダイスコマンド入力" />
+                        <button id="custom-clear-btn" class="custom-clear-btn" aria-label="入力をクリア">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <button id="custom-roll-btn" class="custom-roll-button" aria-label="カスタムロールを実行">
+                        <i class="fa-solid fa-dice"></i>
+                    </button>
+                </div>
+                <div class="dice-buttons" id="dice-buttons-container" aria-label="ダイス追加ボタン">
+                    <button class="add-dice-btn" data-dice-type="1">+1</button>
+                    <button class="add-dice-btn" data-dice-type="1D3">+1D3</button>
+                    <button class="add-dice-btn" data-dice-type="1D4">+1D4</button>
+                    <button class="add-dice-btn" data-dice-type="1D6">+1D6</button>
+                    <button class="add-dice-btn" data-dice-type="1D8">+1D8</button>
+                    <button class="add-dice-btn" data-dice-type="1D10">+1D10</button>
+                    <button class="add-dice-btn" data-dice-type="1D12">+1D12</button>
+                    <button class="add-dice-btn" data-dice-type="1D20">+1D20</button>
+                    <button class="add-dice-btn" data-dice-type="1D100">+1D100</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 使い方ガイドモーダル（common.js の buildGuideLinks が末尾リンクを追加） -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-modal-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body" id="guide-content">
+                    <div class="guide-body">
+                        <p>
+                            <strong style="color: var(--blue)">CoC7 ダイスツール</strong>
+                            は、新クトゥルフ神話TRPG（CoC7）のセッションで使えるWEBダイスツールです。 技能ロール・カスタムロール・ダイスログの3つの機能を備えています。
+                        </p>
+
+                        <h3>技能ロール（画面上部）</h3>
+                        <ul>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">tune</span>
+                                <span>左側の <strong>BD/PD</strong> 欄で、ボーナスダイス（正の値）とペナルティダイス（負の値）の数を設定します。±ボタンで −2 〜 +2 の範囲で調整できます。</span>
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">edit</span>
+                                <span>中央の <strong>技能値</strong> 欄に判定したい技能値を入力します。±ボタンのほか、直接数値を入力することもできます。</span>
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">casino</span>
+                                <span
+                                    >右側の
+                                    <strong>ロールボタン</strong>
+                                    を押すと1D100を振り、技能値を入力している場合はクリティカル／イクストリーム成功／ハード成功／レギュラー成功／失敗／ファンブルを自動判定します。技能値が未入力でもロール自体は可能です。</span
+                                >
+                            </li>
+                        </ul>
+
+                        <h3>カスタムロール（画面下部）</h3>
+                        <ul>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">keyboard</span>
+                                <span>入力欄にダイスコマンド（例: <code>2D6+1D4+3</code>）を入力し、ロールボタンを押すと結果が表示されます。全角文字・全角数字にも対応しています。</span>
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">add_circle_outline</span>
+                                <span
+                                    >入力欄の下に並ぶ <strong>ダイス追加ボタン</strong>（+1D6
+                                    など）を押すと、そのダイスがコマンドに自動で追記されます。同じ面数のダイスは合算されるため、素早くコマンドを組み立てられます。</span
+                                >
+                            </li>
+                        </ul>
+
+                        <h3>ログ（画面中央 右下ボタン）</h3>
+                        <ul>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">history</span>
+                                <span>右下の <strong>履歴ボタン</strong> を押すと、これまでのロール結果をまとめて確認できます。ログは新しいものが上に追加されます。</span>
+                            </li>
+                            <li>
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">delete_outline</span>
+                                <span>ログ表示中に左下の <strong>削除ボタン</strong> を押すと、確認ダイアログの後にすべてのログを消去できます。</span>
+                            </li>
+                        </ul>
+
+                        <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="common.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                /* ---- DOM 参照 ---- */
+                const bdMinusBtn = document.getElementById('bd-minus-btn');
+                const bdPlusBtn = document.getElementById('bd-plus-btn');
+                const skillMinusBtn = document.getElementById('skill-minus-btn');
+                const skillPlusBtn = document.getElementById('skill-plus-btn');
+                const bdInput = document.getElementById('bd-input');
+                const skillInput = document.getElementById('skill-input');
+                const rollBtn = document.getElementById('roll-btn');
+
+                const customRollInput = document.getElementById('custom-roll-input');
+                const customClearBtn = document.getElementById('custom-clear-btn');
+                const customRollBtn = document.getElementById('custom-roll-btn');
+                const addDiceBtns = document.querySelectorAll('.add-dice-btn');
+
+                const resultContainer = document.getElementById('result-container');
+                const diceDisplay = document.getElementById('dice-display');
+                const resultText = document.getElementById('result-text');
+                const successLevel = document.getElementById('success-level');
+
+                const logButton = document.getElementById('log-button');
+                const logCard = document.getElementById('log-card');
+                const logList = document.getElementById('log-list');
+                const logClearBtn = document.getElementById('log-clear-btn');
+                const logCloseBtn = document.getElementById('log-close-btn');
+
+                const diceSound = document.getElementById('dice-sound');
+
+                /* ---- BD/PD ボタン ---- */
+                bdMinusBtn.addEventListener('click', () => {
+                    const v = parseInt(bdInput.value);
+                    if (v > -2) bdInput.value = v - 1;
+                });
+                bdPlusBtn.addEventListener('click', () => {
+                    const v = parseInt(bdInput.value);
+                    if (v < 2) bdInput.value = v + 1;
+                });
+
+                /* ---- 技能値ボタン ---- */
+                skillMinusBtn.addEventListener('click', () => {
+                    const v = parseInt(skillInput.value);
+                    if (!v) skillInput.value = 0;
+                    else if (v > 0) skillInput.value = v - 1;
+                });
+                skillPlusBtn.addEventListener('click', () => {
+                    const v = parseInt(skillInput.value);
+                    skillInput.value = v ? v + 1 : 1;
+                });
+
+                /* ---- ユーティリティ ---- */
+                function rollDice(sides) {
+                    return Math.floor(Math.random() * sides) + 1;
+                }
+
+                function getSuccessLevel(roll, skill) {
+                    if (roll === 1) return { text: 'クリティカル', cls: 'critical' };
+                    if (skill < 50 && roll >= 96) return { text: 'ファンブル', cls: 'fumble' };
+                    if (skill >= 50 && roll === 100) return { text: 'ファンブル', cls: 'fumble' };
+                    if (roll <= Math.floor(skill / 5)) return { text: 'イクストリーム成功', cls: 'extreme' };
+                    if (roll <= Math.floor(skill / 2)) return { text: 'ハード成功', cls: 'hard' };
+                    if (roll <= skill) return { text: 'レギュラー成功', cls: 'regular' };
+                    return { text: '失敗', cls: 'failure' };
+                }
+
+                function createDiceSymbol(value, isPercent = false, index = 0) {
+                    const span = document.createElement('span');
+                    span.classList.add('dice-symbol');
+                    span.textContent = isPercent ? (value === 0 ? '00' : String(value).padStart(2, '0')) : value;
+                    span.style.animation = `dice-pop-in 0.28s cubic-bezier(0.34,1.56,0.64,1) ${index * 30}ms both`;
+                    return span;
+                }
+
+                function animateDiceSymbol(span, finalValue, isPercent = false, duration = 800, interval = 50) {
+                    const iterations = Math.floor(duration / interval);
+                    let count = 0;
+                    const anim = setInterval(() => {
+                        count++;
+                        if (isPercent) {
+                            const rand = Math.floor(Math.random() * 10);
+                            span.textContent = rand === 0 ? '00' : String(rand) + '0';
+                        } else {
+                            span.textContent = Math.floor(Math.random() * 10);
+                        }
+                        if (count >= iterations) {
+                            clearInterval(anim);
+                            span.textContent = isPercent ? (finalValue === 0 ? '00' : finalValue) : finalValue;
+                        }
+                    }, interval);
+                }
+
+                function playSoundAndClear() {
+                    diceDisplay.innerHTML = '';
+                    if (diceSound) {
+                        diceSound.currentTime = 0;
+                        diceSound.play().catch(() => {});
+                    }
+                }
+
+                /* ---- ローカルストレージ履歴管理 ---- */
+                const HISTORY_KEY = 'iklab_coc7_dice_v1';
+                const HISTORY_MAX = 200;
+
+                function loadHistory() {
+                    try {
+                        return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+                    } catch {
+                        return [];
+                    }
+                }
+
+                function saveHistory(entries) {
+                    try {
+                        localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, HISTORY_MAX)));
+                    } catch {}
+                }
+
+                function appendLog(text) {
+                    const timeStamp = new Date().toLocaleTimeString();
+                    const li = document.createElement('li');
+                    li.classList.add('log-line');
+
+                    const tsSpan = document.createElement('span');
+                    tsSpan.classList.add('timestamp');
+                    tsSpan.textContent = `[${timeStamp}]`;
+
+                    const txtSpan = document.createElement('span');
+                    txtSpan.classList.add('log-text');
+                    txtSpan.textContent = text;
+
+                    li.appendChild(tsSpan);
+                    li.appendChild(txtSpan);
+                    logList.prepend(li);
+
+                    /* ローカルストレージへ保存 */
+                    const history = loadHistory();
+                    history.unshift({ time: timeStamp, text });
+                    saveHistory(history);
+                }
+
+                /* 起動時に履歴を復元（アニメーションなし） */
+                (function restoreHistory() {
+                    const history = loadHistory();
+                    history.forEach((entry) => {
+                        const li = document.createElement('li');
+                        li.classList.add('log-line');
+                        li.style.animation = 'none'; /* 復元時はアニメーション無効 */
+
+                        const tsSpan = document.createElement('span');
+                        tsSpan.classList.add('timestamp');
+                        tsSpan.textContent = `[${entry.time}]`;
+
+                        const txtSpan = document.createElement('span');
+                        txtSpan.classList.add('log-text');
+                        txtSpan.textContent = entry.text;
+
+                        li.appendChild(tsSpan);
+                        li.appendChild(txtSpan);
+                        logList.appendChild(li); /* 古い順に追加（prepend でなく append）*/
+                    });
+                })();
+
+                /* ---- 技能ロール ---- */
+                rollBtn.addEventListener('click', () => {
+                    const bd_pd = parseInt(bdInput.value) || 0;
+                    const skill = skillInput.value ? parseInt(skillInput.value) : null;
+
+                    const oneDigit = rollDice(10) - 1; // 0〜9
+                    const rollTimes = 1 + Math.abs(bd_pd);
+                    const percentDice = [];
+                    for (let i = 0; i < rollTimes; i++) percentDice.push((rollDice(10) - 1) * 10);
+
+                    const candidates = percentDice.map((d) => {
+                        const v = d + oneDigit;
+                        return v === 0 ? 100 : v;
+                    });
+
+                    // 採用するインデックスを特定する
+                    let finalRoll, chosenIdx;
+                    if (bd_pd > 0) {
+                        finalRoll = Math.min(...candidates);
+                        chosenIdx = candidates.indexOf(finalRoll);
+                    } else if (bd_pd < 0) {
+                        finalRoll = Math.max(...candidates);
+                        chosenIdx = candidates.indexOf(finalRoll);
+                    } else {
+                        finalRoll = candidates[0];
+                        chosenIdx = 0;
+                    }
+
+                    /* 表示更新 */
+                    playSoundAndClear();
+
+                    // %ダイスのspanを配列で保持して後からハイライト適用できるようにする
+                    const percentSpans = [];
+                    percentDice.forEach((d, i) => {
+                        const span = createDiceSymbol(d, true, i);
+                        diceDisplay.appendChild(span);
+                        animateDiceSymbol(span, d, true);
+                        percentSpans.push(span);
+                    });
+                    const oneSpan = createDiceSymbol(oneDigit, false, percentDice.length);
+                    diceDisplay.appendChild(oneSpan);
+                    animateDiceSymbol(oneSpan, oneDigit, false);
+
+                    resultText.textContent = '...';
+                    resultText.classList.remove('result-pop');
+                    successLevel.textContent = '';
+                    successLevel.className = 'success-level';
+
+                    setTimeout(() => {
+                        resultText.textContent = `${finalRoll}`;
+                        void resultText.offsetWidth;
+                        resultText.classList.add('result-pop');
+                        if (skill) {
+                            const { text, cls } = getSuccessLevel(finalRoll, skill);
+                            successLevel.textContent = text;
+                            successLevel.className = `success-level ${cls} result-pop`;
+                        }
+                        // BD/PDがある場合のみ採用・非採用のハイライトを付ける
+                        if (bd_pd !== 0) {
+                            percentSpans.forEach((span, i) => {
+                                if (i !== chosenIdx) {
+                                    span.classList.add('dimmed');
+                                }
+                            });
+                        }
+                    }, 800);
+
+                    /* ログ */
+                    const skillText = skill !== null ? `[${skill}]` : '[]';
+                    const bdText = `BD/PD[${bd_pd}]`;
+                    const candidatesText = candidates.join(', ');
+                    const successText = skill ? ` ＞ ${getSuccessLevel(finalRoll, skill).text}` : '';
+                    appendLog(`技能値${skillText} ${bdText} ＞ ${candidatesText} ＞ ${finalRoll}${successText}`);
+                });
+
+                /* ---- カスタムロール ---- */
+                customClearBtn.addEventListener('click', () => {
+                    customRollInput.value = '';
+                });
+
+                customRollBtn.addEventListener('click', () => {
+                    let command = customRollInput.value;
+                    if (!command) return;
+
+                    command = command
+                        .replace(/\s+/g, '')
+                        .replace(/[＋]/g, '+')
+                        .replace(/[－−]/g, '-')
+                        .replace(/[ｄＤ]/g, 'D')
+                        .replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0));
+
+                    try {
+                        const parts = command.match(/([+-]?[^+-]+)/g);
+                        if (!parts) throw new Error('invalid');
+
+                        const diceResults = [];
+                        let total = 0;
+
+                        parts.forEach((part) => {
+                            const sign = part[0] === '+' || part[0] === '-' ? part[0] : '+';
+                            const body = part.replace(/^[+-]/, '');
+                            const diceMatch = body.match(/^(\d+)?D(\d+)$/i);
+
+                            if (diceMatch) {
+                                const num = parseInt(diceMatch[1] || '1');
+                                const sides = parseInt(diceMatch[2]);
+                                const rolls = [];
+                                for (let i = 0; i < num; i++) {
+                                    const r = rollDice(sides);
+                                    rolls.push(sign === '-' ? -r : r);
+                                }
+                                diceResults.push({ type: sign + num + 'D' + sides, rolls });
+                                total += rolls.reduce((s, r) => s + r, 0);
+                            } else {
+                                const val = parseInt(body);
+                                diceResults.push({ type: sign + val, rolls: [] });
+                                total += sign === '-' ? -val : val;
+                            }
+                        });
+
+                        /* ダイス表示 */
+                        playSoundAndClear();
+                        let diceIdx = 0;
+                        diceResults.forEach((item) => {
+                            if (!item.rolls.length) return;
+                            item.rolls.forEach((r) => {
+                                const absR = Math.abs(r);
+                                const span = createDiceSymbol(absR, false, diceIdx++);
+                                diceDisplay.appendChild(span);
+                                const sidesMatch = item.type.match(/D(\d+)$/i);
+                                const sides = sidesMatch ? parseInt(sidesMatch[1]) : 6;
+                                let count = 0;
+                                const anim = setInterval(() => {
+                                    count++;
+                                    span.textContent = Math.floor(Math.random() * sides) + 1;
+                                    if (count >= 16) {
+                                        clearInterval(anim);
+                                        span.textContent = absR;
+                                    }
+                                }, 50);
+                            });
+                        });
+
+                        resultText.textContent = '...';
+                        resultText.classList.remove('result-pop');
+                        successLevel.textContent = '';
+                        successLevel.className = 'success-level';
+                        setTimeout(() => {
+                            resultText.textContent = total;
+                            void resultText.offsetWidth;
+                            resultText.classList.add('result-pop');
+                            resultContainer.scrollTop = resultContainer.scrollHeight;
+                        }, 800);
+
+                        /* ログ */
+                        const detail = diceResults
+                            .map((item, idx) => {
+                                if (item.rolls.length) {
+                                    const m = item.type.match(/^([+-]?)(\d+)D(\d+)$/i);
+                                    const sign = m[1] || '+';
+                                    const dSig = idx === 0 && sign === '+' ? '' : sign;
+                                    return `${dSig}${m[2]}D${m[3]}[${item.rolls.map((r) => Math.abs(r)).join(',')}]`;
+                                } else {
+                                    const m = item.type.match(/^([+-]?)(\d+)$/);
+                                    const sign = m[1] || '+';
+                                    const dSig = idx === 0 && sign === '+' ? '' : sign;
+                                    return `${dSig}${m[2]}`;
+                                }
+                            })
+                            .join('');
+                        appendLog(`${command} ＞ ${detail} ＞ ${total}`);
+                    } catch (e) {
+                        alert('無効なダイスコマンドです。\n例: 2D6+1D4+3');
+                    }
+                });
+
+                /* Enter キーでカスタムロール実行 */
+                customRollInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') customRollBtn.click();
+                });
+
+                /* ---- ダイス追加ボタン ---- */
+                addDiceBtns.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const diceType = btn.dataset.diceType;
+                        let cur = customRollInput.value
+                            .trim()
+                            .replace(/\s+/g, '')
+                            .replace(/[＋]/g, '+')
+                            .replace(/[－−]/g, '-')
+                            .replace(/[ｄＤ]/g, 'D')
+                            .replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0));
+
+                        const parts = cur ? cur.match(/([+-]?[^+-]+)/g) : [];
+                        let lastPart = parts.length ? parts[parts.length - 1] : '';
+
+                        const diceRegex = /^([+-]?)(\d+)?D(\d+)$/i;
+                        const numRegex = /^([+-]?)(\d+)$/;
+                        const matchDice = lastPart.match(diceRegex);
+                        const matchBtnD = diceType.match(/^(\d+)?D(\d+)$/i);
+
+                        if (matchDice && matchBtnD) {
+                            const sign = matchDice[1] || '+';
+                            const num = parseInt(matchDice[2] || '1');
+                            const sides = matchDice[3];
+                            const btnNum = parseInt(matchBtnD[1] || '1');
+                            if (sides === matchBtnD[2]) {
+                                parts[parts.length - 1] = sign === '-' ? lastPart + '+' + diceType : `${sign}${num + btnNum}D${sides}`;
+                                customRollInput.value = parts.join('').replace(/^\+/, '');
+                                return;
+                            }
+                        }
+
+                        const matchNum = lastPart.match(numRegex);
+                        const matchBtnN = diceType.match(/^(\d+)$/);
+                        if (matchNum && matchBtnN) {
+                            const sign = matchNum[1] || '+';
+                            const num = parseInt(matchNum[2]);
+                            const btnV = parseInt(matchBtnN[1]);
+                            parts[parts.length - 1] = sign === '-' ? lastPart + '+' + diceType : `${sign}${num + btnV}`;
+                            customRollInput.value = parts.join('').replace(/^\+/, '');
+                            return;
+                        }
+
+                        if (cur) {
+                            const prefix = /^[+-]/.test(diceType) ? '' : '+';
+                            customRollInput.value = cur + prefix + diceType;
+                        } else {
+                            customRollInput.value = diceType.replace(/^\+/, '');
+                        }
+                    });
+                });
+
+                /* ---- ログ表示 / 削除 / 閉じる ---- */
+                logButton.addEventListener('click', () => {
+                    logCard.classList.add('log-open');
+                    logButton.style.display = 'none';
+                });
+                logCloseBtn.addEventListener('click', () => {
+                    logCard.classList.remove('log-open');
+                    logButton.style.display = '';
+                });
+                logClearBtn.addEventListener('click', () => {
+                    if (!logList.children.length) return;
+                    if (confirm('すべてのログを削除しますか？')) {
+                        logList.innerHTML = '';
+                        try {
+                            localStorage.removeItem(HISTORY_KEY);
+                        } catch {}
+                    }
+                });
+            });
+        </script>
+    </body>
 </html>

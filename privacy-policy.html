@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>プライバシーポリシー | 違法建築のTRPGラボ</title>
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+        <!-- Material Icons -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+
+        <!-- Styles -->
+        <link rel="stylesheet" href="common.css" />
+
+        <style>
+            /* ページ固有スタイル */
+            .pp-hero {
+                position: relative;
+                z-index: 10;
+                padding: clamp(2.5rem, 7vw, 4rem) 0 clamp(1.5rem, 4vw, 2.5rem);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .pp-eyebrow {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.18em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                margin-bottom: 0.6rem;
+            }
+
+            .pp-hero h1 {
+                font-size: clamp(1.3rem, 3.5vw, 1.9rem);
+                font-weight: 700;
+                color: var(--text-bright);
+                letter-spacing: 0.04em;
+            }
+
+            .pp-hero h1 span {
+                font-family: var(--font-mono);
+                color: var(--cyan);
+                font-size: 0.75em;
+                display: block;
+                margin-bottom: 0.2rem;
+            }
+
+            .pp-updated {
+                margin-top: 0.75rem;
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                color: var(--text-dim);
+            }
+
+            /* Document body */
+            .pp-doc {
+                position: relative;
+                z-index: 10;
+                max-width: 760px;
+                padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
+                margin: 0 auto;
+            }
+
+            .pp-section {
+                margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
+            }
+
+            .pp-section h2 {
+                font-family: var(--font-mono);
+                font-size: clamp(0.8rem, 1.8vw, 0.9rem);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--blue-light);
+                padding-left: 0.75rem;
+                border-left: 2px solid var(--blue);
+                margin-bottom: 0.85rem;
+            }
+
+            .pp-section p {
+                font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+                line-height: 1.85;
+                color: var(--text);
+                margin-bottom: 0.75rem;
+            }
+
+            .pp-section p:last-child {
+                margin-bottom: 0;
+            }
+
+            .pp-section ul {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                padding-left: 1rem;
+            }
+
+            .pp-section ul li {
+                font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+                color: var(--text);
+                line-height: 1.7;
+                position: relative;
+            }
+
+            .pp-section ul li::before {
+                content: '▸';
+                position: absolute;
+                left: -1rem;
+                color: var(--cyan-dim);
+                font-size: 0.8em;
+            }
+
+            .pp-section a {
+                color: var(--blue-light);
+                border-bottom: 1px solid transparent;
+                transition:
+                    color var(--t),
+                    border-color var(--t);
+            }
+
+            .pp-section a:hover {
+                color: var(--cyan);
+                border-bottom-color: var(--cyan);
+            }
+
+            .pp-divider {
+                border: none;
+                border-top: 1px solid var(--border);
+                margin: clamp(1.5rem, 3vw, 2rem) 0;
+            }
+
+            .pp-note {
+                padding: 0.8rem 1rem;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                font-size: 0.82rem;
+                color: var(--text-dim);
+                line-height: 1.65;
+            }
+        </style>
+    </head>
+
+    <body>
+        <header id="site-header"></header>
+
+        <main>
+            <!-- ヒーロー帯 -->
+            <div class="pp-hero">
+                <div class="container">
+                    <p class="pp-eyebrow">Legal Document</p>
+                    <h1>
+                        <span>Privacy Policy</span>
+                        プライバシーポリシー
+                    </h1>
+                    <p class="pp-updated">最終更新日：2025年3月8日</p>
+                </div>
+            </div>
+
+            <!-- 本文 -->
+            <article class="pp-doc" aria-label="プライバシーポリシー本文">
+                <div class="pp-section">
+                    <p>
+                        違法建築（以下「当サイト管理者」）が運営する「違法建築のTRPGラボ」（以下「当サイト」）では、 利用者のプライバシーを尊重し、個人情報の適切な取り扱いに努めます。
+                        本ポリシーは、当サイトにおける情報収集・利用に関する方針を説明するものです。
+                    </p>
+                </div>
+
+                <hr class="pp-divider" />
+
+                <div class="pp-section">
+                    <h2>アクセス解析ツールについて</h2>
+                    <p>
+                        当サイトでは、Googleが提供するアクセス解析サービス「Googleアナリティクス（Google Analytics 4）」
+                        を使用しています。Googleアナリティクスはアクセス状況を把握するためにCookieを使用します。 収集されるデータはGoogleのプライバシーポリシーに従い管理されます。
+                    </p>
+                    <p>Googleアナリティクスにより収集される情報には、以下が含まれます（いずれも匿名情報です）：</p>
+                    <ul>
+                        <li>ページビュー数・セッション数・滞在時間などのアクセス状況</li>
+                        <li>ブラウザの種類・OS・画面解像度などの環境情報</li>
+                        <li>参照元URL（どのサイトから訪問したか）</li>
+                        <li>おおよその地域情報（国・地域レベル）</li>
+                    </ul>
+                    <p>
+                        これらの情報は個人を特定するものではなく、当サイトのコンテンツ改善にのみ使用します。 Cookieの無効化により、データ収集をオプトアウトすることが可能です。 詳しくは
+                        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googleプライバシーポリシー</a>
+                        および
+                        <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Googleアナリティクス オプトアウトアドオン</a>
+                        をご参照ください。
+                    </p>
+                </div>
+
+                <hr class="pp-divider" />
+
+                <div class="pp-section">
+                    <h2>外部リンクについて</h2>
+                    <p>
+                        当サイトには外部サイトへのリンクが含まれます。 リンク先のサイトにおける個人情報の取り扱いについては、各サイトのプライバシーポリシーに従います。
+                        当サイト管理者は、リンク先サイトの内容・サービスについて責任を負いません。
+                    </p>
+                </div>
+
+                <hr class="pp-divider" />
+
+                <div class="pp-section">
+                    <h2>Cookieについて</h2>
+                    <p>
+                        当サイトでは、ライト/ダークモード設定の保存のためにブラウザのローカルストレージを使用しています。 この情報はお使いのデバイスにのみ保存され、サーバーには送信されません。
+                        また、Googleアナリティクスによる上記のCookie利用が行われます。
+                    </p>
+                </div>
+
+                <hr class="pp-divider" />
+
+                <div class="pp-section">
+                    <h2>免責事項</h2>
+                    <p>
+                        当サイトに掲載する各ツールは、個人が趣味の範囲で制作した非公式ツールです。 公式ルールブックや版権元とは一切関係がなく、二次創作物として提供しています。
+                        ツールの使用によって生じたいかなる損害・トラブルについても、 当サイト管理者は責任を負いかねますのでご了承ください。
+                    </p>
+                    <p>
+                        当サイトのソースコードはMITライセンスのもとGitHubにて公開しています。 詳しくは
+                        <a href="https://github.com/dummy/trpg-lab" target="_blank" rel="noopener">GitHubリポジトリ</a>
+                        をご確認ください。
+                    </p>
+                </div>
+
+                <hr class="pp-divider" />
+
+                <div class="pp-section">
+                    <h2>お問い合わせ</h2>
+                    <p>本ポリシーに関するご質問・ご意見は、以下の方法にてお問い合わせください。</p>
+                    <ul>
+                        <li>
+                            <a href="https://docs.google.com/forms/d/dummy" target="_blank" rel="noopener"> 改善要望・お問い合わせフォーム </a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/ihou_kenchiku" target="_blank" rel="noopener"> Twitter（X）: @ihou_kenchiku </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <hr class="pp-divider" />
+
+                <div class="pp-note">本ポリシーは予告なく変更することがあります。 変更後の内容は当ページに掲載した時点から効力を持ちます。</div>
+            </article>
+        </main>
+
+        <footer class="site-footer" aria-label="サイトフッター">
+            <div class="container"></div>
+        </footer>
+
+        <!-- 使い方ガイド Modal -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-modal-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="guide-content"></div>
+            </div>
+        </div>
+
+        <script src="common.js"></script>
+    </body>
+</html>
