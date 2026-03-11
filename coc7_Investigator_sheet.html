@@ -138,7 +138,8 @@
                 font-size: 1rem;
                 cursor: pointer;
                 transition: border-color var(--t);
-                width: 15rem;
+                min-width: 10rem;
+                flex-grow: 1;
             }
             #saveList:hover,
             #saveList:focus {
@@ -189,7 +190,7 @@
                 overflow-y: hidden;
                 /* grid の place-items: center はそのまま使いつつ、
                    コンテンツが幅を超えたときは左端から並べる */
-                place-items: safe center;
+                justify-items: safe center;
             }
             /* キャンバスエリア */
             .img-modal-body {
