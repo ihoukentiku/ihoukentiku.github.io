@@ -51,6 +51,13 @@
 
         <link rel="stylesheet" href="common.css" />
         <style>
+            :root {
+                --page-width: var(--container);
+            }
+            #main {
+                max-width: var(--container);
+                margin: auto;
+            }
             /* ----------------------------------------------------------------
                 ヒーローセクション
                 キャッチコピーとサブテキストを画面中央に配置する
@@ -630,7 +637,7 @@
     <body>
         <header id="site-header"></header>
 
-        <main>
+        <main id="main">
             <!-- ヒーロー -->
             <section class="hero">
                 <div class="hero-content">
@@ -771,7 +778,7 @@
                         titleEn: 'DICE ROLLER',
                         icon: 'casino',
                         desc: '新クトゥルフ神話TRPG専用のWEBダイスツール。技能ロール・カスタムロール・ダイスログに対応。オフラインセッションでも快適に使用できます。',
-                        url: 'https://ihoukentiku.github.io/coc7_dice.html',
+                        url: 'coc7_dice.html',
                     },
                     {
                         id: 'coc7-sheet',
@@ -779,7 +786,7 @@
                         titleEn: 'CHARACTER SHEET',
                         icon: 'person_pin',
                         desc: '新クトゥルフ神話TRPG用カスタムキャラクターシート。ステータス・技能・バックストーリーをブラウザで入力し、そのまま印刷可能。プレロールドキャラ作成にも便利です',
-                        url: 'https://ihoukentiku.github.io/coc7_Investigator_sheet.html',
+                        url: 'coc7_Investigator_sheet.html',
                     },
                     {
                         id: 'coc7-npc',
@@ -787,7 +794,7 @@
                         titleEn: 'NPC TOKEN GEN.',
                         icon: 'groups',
                         desc: 'ココフォリア用のCoC7版NPC駒をかんたん生成。名前・能力値・技能・メモを入力するだけで駒データを出力。能力値はダイスロールで自動決定でき、設定の保存・再利用に対応。',
-                        url: 'https://ihoukentiku.github.io/coc7_npc_token.html',
+                        url: 'coc7_npc_token.html',
                     },
                     {
                         id: 'coc6-npc',
@@ -795,7 +802,7 @@
                         titleEn: 'NPC TOKEN GEN.',
                         icon: 'groups',
                         desc: 'ココフォリア用のCoC6版NPC駒をかんたん生成。名前・能力値・技能・メモを入力するだけで駒データを出力。能力値はダイスロールで自動決定でき、設定の保存・再利用に対応。',
-                        url: 'https://dummy.example.com/coc6-npc',
+                        url: 'coc6_npc_token.html',
                     },
                     {
                         id: 'hex-map',
@@ -803,7 +810,7 @@
                         titleEn: 'HEX MAP GEN.',
                         icon: 'hexagon',
                         desc: 'TRPGやボードゲーム向けのヘクスマップ画像をカスタマイズして生成・ダウンロード。サイズ・座標・配色を自由に設定でき、ココフォリア等のオンセツールにも対応します。',
-                        url: 'https://dummy.example.com/hex-map',
+                        url: 'hex_maker.html',
                     },
                     {
                         id: 'hex-ruler',
@@ -811,7 +818,7 @@
                         titleEn: 'HEX RULER GEN.',
                         icon: 'straighten',
                         desc: 'ヘクスマップ用の距離計測定規画像を生成・ダウンロード。範囲・透明度をカスタマイズ可能。ココフォリアの前景・スクリーンパネルとして利用でき、ファイル名にサイズ情報を自動付与します。',
-                        url: 'https://dummy.example.com/hex-ruler',
+                        url: 'hex-ruler.html',
                     },
                     {
                         id: 'bcdice-damage',
@@ -819,7 +826,7 @@
                         titleEn: 'DAMAGE CALC.',
                         icon: 'bolt',
                         desc: 'BCDiceのダメージロールログから装甲適用後の合計ダメージを自動算出し、ココフォリア用HP減少コマンドを生成。装甲持ちの敵への複数回攻撃時に特に威力を発揮します。',
-                        url: 'https://dummy.example.com/bcdice-damage',
+                        url: 'damage_sum.html',
                     },
                 ];
 

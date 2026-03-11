@@ -198,6 +198,18 @@
     `;
     }
 
+    function syncHeaderToMain() {
+        const main = document.getElementById('main');
+        const headerInner = document.querySelector('.header-inner');
+        if (!main || !headerInner) return;
+
+        const maxWidth = getComputedStyle(main).maxWidth;
+        // main に max-width が設定されていれば header-inner に適用
+        if (maxWidth && maxWidth !== 'none') {
+            headerInner.style.maxWidth = maxWidth;
+        }
+    }
+
     /* グローバルに公開するユーティリティ */
     window.IKLab = { openModal, closeModal, SITE };
 
@@ -206,5 +218,6 @@
         buildFooter();
         initModals();
         buildGuideLinks();
+        syncHeaderToMain();
     });
 })();
