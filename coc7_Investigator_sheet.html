@@ -163,8 +163,7 @@
             #img-modal-content {
                 position: relative;
                 width: fit-content;
-                max-width: calc(100vw - 2rem);
-                margin: clamp(1rem, 4vw, 2rem) auto;
+                /* max-width は設けず JS の transform: scale() で縮小する */
                 background: var(--bg2);
                 border: 1px solid var(--border);
                 border-radius: var(--r);
@@ -172,6 +171,8 @@
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
+                /* モーダル全体をスケールするための基点（中央） */
+                transform-origin: center center;
             }
             /* モーダルヘッダー */
             .img-modal-header {
@@ -181,6 +182,14 @@
                 padding: 0.5rem 1.25rem;
                 border-bottom: 1px solid var(--border);
                 flex-shrink: 0;
+            }
+            /* 画像モーダルのオーバーレイは横スクロール可・縦スクロール不可 */
+            #image-modal {
+                overflow-x: auto;
+                overflow-y: hidden;
+                /* grid の place-items: center はそのまま使いつつ、
+                   コンテンツが幅を超えたときは左端から並べる */
+                align-items: center;
             }
             /* キャンバスエリア */
             .img-modal-body {
@@ -202,6 +211,10 @@
                 position: relative;
                 line-height: 0; /* canvas下の余白消し */
                 overflow: hidden;
+            }
+            /* canvas-size-box は構造上残すが特別なスタイルは不要 */
+            #canvas-size-box {
+                display: contents;
             }
             #modal-canvas {
                 display: block;
@@ -245,7 +258,7 @@
             .img-modal-footer {
                 display: flex;
                 align-items: center;
-                justify-content: flex-end;
+                justify-content: center;
                 gap: 0.6rem;
                 padding: 0.9rem 1.25rem;
                 border-top: 1px solid var(--border);
@@ -3102,7 +3115,7 @@
 
                         <h3>免責・権利表記</h3>
                         <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.7; border-left: 2px solid var(--border); padding-left: 0.8rem">
-                            本作は、「株式会社アークライト」及び「株式会社KADOKAWA」が権利を有する『クトゥルフ神話TRPG』シリーズの二次創作物です。非公式・個人制作であり、各社とは無関係です。使用によって生じた損害について作者は責任を負いかねます。<br /><br />
+                            本作は、「株式会社アークライト」及び「株式会社KADOKAWA」が権利を有する『クトゥルフ神話TRPG』シリーズの二次創作物です。<br /><br />
                             Call of Cthulhu is copyright ©1981, 2015, 2019 by Chaosium Inc.; all rights reserved. Arranged by Arclight Inc.<br />
                             Call of Cthulhu is a registered trademark of Chaosium Inc.<br />
                             PUBLISHED BY KADOKAWA CORPORATION 「クトゥルフ神話TRPG」「新クトゥルフ神話TRPG」
@@ -3125,9 +3138,13 @@
                 </div>
                 <div class="img-modal-body">
                     <p class="img-canvas-hint">画像をドラッグ・スケールして枠内に合わせてください</p>
-                    <div class="img-canvas-wrap">
-                        <canvas id="modal-canvas"> </canvas>
-                        <div id="clip-frame"></div>
+                    <!-- canvas-size-box: transform: scale() はレイアウトに影響しないため、
+                         この要素で「視覚上の表示サイズ」を確保する外枠として使う -->
+                    <div id="canvas-size-box">
+                        <div class="img-canvas-wrap">
+                            <canvas id="modal-canvas"> </canvas>
+                            <div id="clip-frame"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="img-modal-footer">
@@ -3670,10 +3687,45 @@
                 let imgObject = null;
                 let currentImg = null;
 
+                /* -------------------------------------------------------
+                   モーダル全体を transform: scale() で縮小する
+                   Fabricキャンバス自体は 800×800px 固定を維持する。
+                   Fabric.js はポインター座標を getBoundingClientRect() で
+                   補正するため、縮小後もドラッグ・スケール操作は正確に動く。
+                ------------------------------------------------------- */
+
                 /* モーダルを開く */
                 function openModal() {
                     modal.classList.add('open');
                     document.body.style.overflow = 'hidden';
+                    /* rAF で DOM 描画後に自然サイズを計測してスケール適用 */
+                    requestAnimationFrame(scaleModal);
+                }
+
+                /* #img-modal-content 全体をスケールする
+                   ・上下：画面内に必ず収める
+                   ・左右：モーダル幅の 1/3 まで飛び出し許可（横スクロールで補完） */
+                function scaleModal() {
+                    const mc = document.getElementById('img-modal-content');
+                    if (!mc) return;
+
+                    /* 一旦スケールをリセットして等倍時の自然サイズを取得 */
+                    mc.style.transform = '';
+                    const naturalW = mc.offsetWidth;
+                    const naturalH = mc.offsetHeight;
+
+                    const marginV = 16; /* 上下の最低余白(px) */
+
+                    /* 高さ：画面内に必ず収める */
+                    const scaleH = (window.innerHeight - marginV * 2) / naturalH;
+
+                    /* 幅：1/3 まで飛び出し許可
+                       「見える幅 ≥ モーダル幅 × 2/3」を担保するスケール上限
+                       → scale ≤ viewportW × 3/2 / naturalW               */
+                    const scaleW = (window.innerWidth * 1.5) / naturalW;
+
+                    const scale = Math.min(scaleH, scaleW, 1);
+                    mc.style.transform = `scale(${scale})`;
                 }
 
                 /* モーダルを閉じる（canvas破棄含む） */
@@ -3685,7 +3737,15 @@
                     imgObject = null;
                     modal.classList.remove('open');
                     document.body.style.overflow = '';
+                    /* スケールリセット */
+                    const mc = document.getElementById('img-modal-content');
+                    if (mc) mc.style.transform = '';
                 }
+
+                /* ウィンドウリサイズ時もモーダルが開いていれば再計算する */
+                window.addEventListener('resize', () => {
+                    if (modal.classList.contains('open')) scaleModal();
+                });
 
                 /* 市松模様パターンを生成して Fabric.js キャンバスにセット */
                 function applyCheckerboard(canvas) {

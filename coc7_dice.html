@@ -73,7 +73,7 @@
             ---------------------------------------------------------------- */
             html,
             body {
-                height: 100%;
+                height: 100dvh;
                 overflow: hidden;
             }
 
@@ -81,7 +81,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: clamp(6px, 1.5vw, 10px);
-                height: calc(100vh - var(--header-h, 56px));
+                height: calc(100dvh - var(--header-h, 56px));
                 padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px) clamp(8px, 2vw, 16px);
                 max-width: 860px;
                 width: 100%;
@@ -794,6 +794,14 @@
                                 <span>ログ表示中に左下の <strong>削除ボタン</strong> を押すと、確認ダイアログの後にすべてのログを消去できます。</span>
                             </li>
                         </ul>
+
+                        <h3>免責・権利表記</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.7; border-left: 2px solid var(--border); padding-left: 0.8rem">
+                            本作は、「株式会社アークライト」及び「株式会社KADOKAWA」が権利を有する『クトゥルフ神話TRPG』シリーズの二次創作物です。<br /><br />
+                            Call of Cthulhu is copyright ©1981, 2015, 2019 by Chaosium Inc.; all rights reserved. Arranged by Arclight Inc.<br />
+                            Call of Cthulhu is a registered trademark of Chaosium Inc.<br />
+                            PUBLISHED BY KADOKAWA CORPORATION 「クトゥルフ神話TRPG」「新クトゥルフ神話TRPG」
+                        </p>
 
                         <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
                     </div>

@@ -121,7 +121,7 @@ body {
     color: var(--text);
     font-family: var(--font-main);
     font-size: clamp(0.875rem, 2vw, 1rem);
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
     transition:
         background-color 0.4s ease,
@@ -297,7 +297,7 @@ body::before {
     width: 100%;
     max-width: 750px;
     /* 画面高さを超えないよう制限し、内部でスクロールさせる */
-    max-height: 82vh;
+    max-height: 82dvh;
     display: flex;
     flex-direction: column;
     transform: translateY(18px) scale(0.97);
