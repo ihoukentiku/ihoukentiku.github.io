@@ -1,312 +1,1204 @@
-<!DOCTYPE html>
-<html lang="ja">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ヘクスマップ作成ツール | 違法建築のTRPGラボ</title>
+        <meta
+            name="description"
+            content="TRPGやボードゲーム向けのヘクスマップ画像をカスタマイズして生成・ダウンロード。サイズ・座標・配色を自由に設定でき、ココフォリア等のオンセツールにも対応します。"
+        />
+        <meta name="author" content="違法建築" />
+        <link rel="icon" href="favicon.ico" />
 
-		<title>ヘクス作成ツール | 違法建築のTRPGラボ</title>
-		<meta name="description" content="TRPGやボードゲームなどで使えるヘクス(ヘックス)画像を、サイズや座標などをカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。" />
-		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
-		<style>
-			body {
-				font-family: "Noto Sans JP", sans-serif;
-				background: #f7f8fa;
-				margin: auto;
-				padding: 20px;
-				max-width: 850px;
-				color: #333;
-			}
+        <meta property="og:url" content="https://ihoukentiku.github.io/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="違法建築のTRPGラボ" />
+        <meta property="og:description" content="自作したTRPG用の様々な便利ツールを掲載しています。ぜひセッションの円滑化や利便度向上にお役立てください。" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-			h1 {
-				font-size: 28px;
-				border-bottom: 2px solid #ccc;
-				padding-bottom: 5px;
-				margin-bottom: 20px;
-				margin-top: 10px;
-			}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-			.section {
-				background: white;
-				padding: 16px;
-				border-radius: 5px;
-				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-				margin-bottom: 20px;
-			}
-			.section > div {
-				display: flex;
-				flex-wrap: wrap;
-				row-gap: 16px;
-				column-gap: 16px;
-			}
-			.section > div > div {
-				display: flex;
-				flex-direction: column;
-				row-gap: 16px;
-			}
+        <!-- Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
 
-			label {
-				font-weight: bold;
-			}
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
 
-			input {
-				vertical-align: middle;
-				box-sizing: border-box;
-			}
-			input[type="text"],
-			input[type="number"],
-			select {
-				border-radius: 4px;
-				font-size: 18px;
-				padding: 0px 5px 0px 5px;
-				height: 30px;
-			}
-			input[type="number"] {
-				border: 1px solid #888;
-				width: 50px;
-			}
-			input[type="color"] {
-				height: 30px;
-				border: 1px solid #aaa;
-				border-radius: 4px;
-			}
-			input[type="range"] {
-				width: 150px;
-			}
-			input[type="checkbox"] {
-				width: 20px;
-				height: 20px;
-			}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
+        <link rel="stylesheet" href="common.css" />
 
-			select {
-				width: 100px;
-			}
+        <style>
+            :root {
+                --page-width: 1400px;
+                --panel-w: 316px;
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --input-bd: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.05);
+                --input-bd: rgba(33, 150, 243, 0.4);
+            }
 
-			canvas {
-				border: 1px solid #333;
-				margin-top: 20px;
-				display: block;
-				margin-left: auto;
-				margin-right: auto;
-				max-width: 100%;
-				max-height: 600px;
-			}
+            /* ---- レイアウト（横長: 左パネル + 右プレビュー） ---- */
+            html,
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+            #main {
+                display: grid;
+                grid-template-columns: var(--panel-w) 1fr;
+                grid-template-rows: 1fr;
+                height: calc(100dvh - var(--header-h, 60px));
+                max-width: var(--page-width);
+                margin: 0 auto;
+                padding: 0.6rem clamp(0.5rem, 2vw, 1rem);
+                gap: 0.6rem;
+                overflow: hidden;
+            }
 
-			button {
-				background-color: #448ad4;
-				color: white;
-				padding: 6px 12px;
-				border: none;
-				border-radius: 4px;
-				cursor: pointer;
-				transition: background-color 0.2s;
-				font-weight: bold;
-			}
+            /* ---- 設定パネル（横長: 1列縦スクロール） ---- */
+            #settings-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                overflow-y: auto;
+                padding-right: 2px;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+            /* カラムラッパー: 横長では透過 */
+            .panel-col {
+                display: contents;
+            }
+            /* DLセクション: 横長では通常フロー */
+            .panel-dl {
+            }
 
-			button:hover {
-				background-color: #3d7bcd;
-			}
+            /* ================================================================
+               ≤ 900px: 縦並び（設定パネルを2列グリッドに）
+            ================================================================ */
+            @media (max-width: 900px) {
+                html,
+                body {
+                    height: auto;
+                    overflow: visible;
+                }
 
-			#lineOpacityValue,
-			#coordOpacityValue {
-				display: inline-block;
-				width: 45px;
-				text-align: right;
-			}
+                #main {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto auto;
+                    height: auto;
+                    overflow: visible;
+                    padding-bottom: 1rem;
+                }
 
-			#coordinateSettings {
-				margin-top: 16px;
-				margin-bottom: 16px;
-				padding-top: 10px;
-				border-top: 1px dashed #888;
-			}
-		</style>
-	</head>
-	<body>
-		<div style="position: relative">
-			<h1 style="margin: 0">ヘクス作成ツール</h1>
-			<a href="index.html" target="_blank" style="position: absolute; bottom: 10px; right: 0">
-				<button style="padding: 6px 12px">ホームページへ</button>
-			</a>
-		</div>
+                /* 設定パネル全体を2列グリッドに */
+                #settings-panel {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    align-items: start;
+                    gap: 0.4rem;
+                    overflow-y: visible;
+                    padding-right: 0;
+                }
 
-		<div class="section">
-			<div>
-				<div>
-					<label
-						>ヘクスの向き
-						<select id="orientation">
-							<option value="horizontal" selected>横向き</option>
-							<option value="vertical">縦向き</option>
-						</select>
-					</label>
-					<label>ヘクスの色 <input type="color" id="hexColor" value="#000000" /></label>
-				</div>
-				<div>
-					<label>横のヘクス数 <input type="number" id="cols" value="15" min="1" /></label>
-					<label>縦のヘクス数 <input type="number" id="rows" value="15" min="1" /></label>
-				</div>
-				<div>
-					<label>サイズ <input type="number" id="cellSize" value="90" min="1" /> px</label>
-					<label>線の太さ <input type="number" id="lineWidth" value="2" min="1" /> px</label>
-				</div>
-				<div>
-					<label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked /></label>
-					<label>1列目をずらす<input type="checkbox" id="shiftCheck" /></label>
-				</div>
-				<div>
-					<label>
-						透明度
-						<input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" />
-						<span id="lineOpacityValue">100%</span>
-					</label>
-				</div>
-			</div>
+                /* カラムラッパーをグリッドアイテム化 */
+                .panel-col {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.4rem;
+                    min-width: 0;
+                }
+                .panel-col-left {
+                    grid-column: 1;
+                }
+                .panel-col-right {
+                    grid-column: 2;
+                    height: 100%;
+                }
+                .s-sec {
+                    flex-grow: 1;
+                }
 
-			<div id="coordinateSettings">
-				<label>
-					座標を表示
-					<input type="checkbox" id="showCoordinates" checked />
-				</label>
-				<label
-					>位置
-					<select id="coordPositionSelect" style="width: 70px">
-						<option value="top">上</option>
-						<option value="middle">中央</option>
-						<option value="bottom" selected>下</option>
-					</select>
-				</label>
+                /* DLボタンは2列全幅 */
+                .panel-dl {
+                    grid-column: 1 / -1;
+                }
 
-				<label>座標の色 <input type="color" id="coordColor" value="#000000" /></label>
-				<label>文字サイズ <input type="number" id="coordFontSize" value="20" min="1" /> px</label>
-				<label>
-					透明度
-					<input type="range" id="coordOpacity" value="1.0" min="0.0" max="1.0" step="0.01" />
-					<span id="coordOpacityValue">100%</span>
-				</label>
-			</div>
+                /* プレビューエリアの最低高さ */
+                #preview-area {
+                    min-height: 400px;
+                }
+                .cv-wrap {
+                    flex: 1;
+                    min-height: 360px;
+                }
+            }
 
-			<div>
-				<button onclick="downloadHex()">ダウンロード</button>
-			</div>
-		</div>
+            /* ================================================================
+               ≤ 550px: 設定パネルも1列縦並びに戻す
+            ================================================================ */
+            @media (max-width: 550px) {
+                #settings-panel {
+                    grid-template-columns: 1fr;
+                }
+                .panel-col-left {
+                    grid-column: 1;
+                }
+                .panel-col-right {
+                    grid-column: 1;
+                }
+            }
+            .s-sec {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: 0.75rem 0.9rem;
+            }
+            .s-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--cyan);
+                margin-bottom: 0.6rem;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            .s-ttl .material-icons {
+                font-size: 0.88rem;
+            }
 
-		<canvas id="hexCanvas"></canvas>
+            /* ---- フィールド行 ---- */
+            .f {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                margin-bottom: 0.42rem;
+            }
+            .f:last-child {
+                margin-bottom: 0;
+            }
+            .f-col {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.3rem;
+            }
+            .f-sb {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .fl {
+                font-size: 0.78rem;
+                color: var(--text);
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .unit {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                flex-shrink: 0;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
 
-		<script>
-			function generateHex() {
-				const ori = document.getElementById("orientation").value === "vertical";
-				const color = document.getElementById("hexColor").value;
-				const lineWidth = parseInt(document.getElementById("lineWidth").value);
-				const lineOpacity = 1 - Math.sqrt(1 - parseFloat(document.getElementById("lineOpacity").value));
-				const cellSize = parseInt(document.getElementById("cellSize").value);
-				let cols = parseInt(document.getElementById("cols").value);
-				let rows = parseInt(document.getElementById("rows").value);
-				const showCoordinates = document.getElementById("showCoordinates").checked;
-				const coordPosition = document.getElementById("coordPositionSelect").value;
-				const coordColor = document.getElementById("coordColor").value;
-				const coordFontSize = parseInt(document.getElementById("coordFontSize").value);
-				const coordOpacity = parseFloat(document.getElementById("coordOpacity").value);
-				const fitGridCheck = document.getElementById("fitGridCheck").checked;
-				const shiftCheck = document.getElementById("shiftCheck").checked;
-				const canvas = document.getElementById("hexCanvas");
-				const ctx = canvas.getContext("2d");
+            /* ---- 入力系 ---- */
+            input[type='number'] {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                width: 50px;
+                text-align: center;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t);
+                box-sizing: border-box;
+            }
+            input[type='number']:focus {
+                outline: none;
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.12);
+            }
+            select {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 0.76rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                cursor: pointer;
+                transition: border-color var(--t);
+            }
+            select:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+            option {
+                background: var(--input-bg);
+                color: black;
+            }
 
-				const cellSizeX = fitGridCheck ? cellSize : (cellSize / 2) * Math.sqrt(3);
-				const offsetLeft = fitGridCheck ? 1 / 6 : 1 / 3;
+            /* ---- トグルスイッチ ---- */
+            .tog {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                cursor: pointer;
+            }
+            .tog input[type='checkbox'] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 30px;
+                height: 16px;
+                border-radius: 8px;
+                border: 1px solid var(--input-bd);
+                background: var(--input-bg);
+                position: relative;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition:
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .tog input[type='checkbox']::after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--text-dim);
+                top: 2px;
+                left: 2px;
+                transition:
+                    transform var(--t),
+                    background var(--t);
+            }
+            .tog input[type='checkbox']:checked {
+                background: rgba(0, 229, 255, 0.18);
+                border-color: var(--cyan);
+            }
+            .tog input[type='checkbox']:checked::after {
+                background: var(--cyan);
+                transform: translateX(14px);
+            }
+            .tl {
+                font-size: 0.78rem;
+                color: var(--text);
+                user-select: none;
+            }
 
-				if (ori) [cols, rows] = [rows, cols];
-				canvas.width = fitGridCheck ? cellSizeX * cols : cellSizeX * (cols + 1 / 3);
-				canvas.height = (cellSize * (rows + 1)) / 2;
-				if (ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
+            /* ---- セグメントコントロール ---- */
+            .seg {
+                display: flex;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .seg input[type='radio'] {
+                display: none;
+            }
+            .seg label {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                padding: 0.15rem 0.42rem;
+                color: var(--text-dim);
+                cursor: pointer;
+                border-right: 1px solid var(--input-bd);
+                transition:
+                    background var(--t),
+                    color var(--t);
+                white-space: nowrap;
+                line-height: 1.6;
+            }
+            .seg label:last-child {
+                border-right: none;
+            }
+            .seg input[type='radio']:checked + label {
+                background: rgba(0, 229, 255, 0.15);
+                color: var(--cyan);
+            }
 
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
+            /* ---- スライダー ---- */
+            input[type='range'] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 3px;
+                border-radius: 2px;
+                background: var(--input-bd);
+                outline: none;
+                cursor: pointer;
+                margin-top: 0.3rem;
+            }
+            input[type='range']::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                box-shadow: 0 0 4px rgba(0, 229, 255, 0.55);
+                cursor: pointer;
+                transition: box-shadow var(--t);
+                margin-top: 0.3rem;
+            }
+            input[type='range']::-webkit-slider-thumb:hover {
+                box-shadow: 0 0 8px rgba(0, 229, 255, 0.85);
+            }
+            input[type='range']::-moz-range-thumb {
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                cursor: pointer;
+                margin-top: 0.3rem;
+            }
+            [data-theme='light'] input[type='range'] {
+                background: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] input[type='range']::-webkit-slider-thumb {
+                border-color: var(--bg3);
+            }
 
-				ctx.strokeStyle = color;
-				ctx.lineWidth = lineWidth;
+            /* ---- Pickr ---- */
+            .pickr {
+                display: flex !important;
+                align-items: center;
+            }
+            .pickr .pcr-button {
+                width: 30px !important;
+                height: 26px !important;
+                border-radius: 4px !important;
+                border: 1px solid var(--input-bd) !important;
+                box-shadow: none !important;
+                transition: border-color var(--t) !important;
+            }
+            .pickr .pcr-button:hover {
+                border-color: var(--cyan) !important;
+            }
+            .pcr-app {
+                background: var(--bg3) !important;
+                border-color: var(--border) !important;
+            }
+            .pcr-app .pcr-interaction input {
+                background: var(--input-bg) !important;
+                border: 1px solid var(--input-bd) !important;
+                color: var(--text-bright) !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save {
+                background: var(--blue-mid) !important;
+                color: #fff !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save:hover {
+                background: var(--blue) !important;
+            }
+            [data-theme='light'] .pcr-app {
+                background: #f0f7ff !important;
+            }
+            [data-theme='light'] .pcr-app .pcr-interaction input {
+                background: white !important;
+                color: #1a3a5c !important;
+            }
 
-				for (let c = -1; c < cols + 1; c++) {
-					for (let r = -1; r < rows + 1; r++) {
-						if (shiftCheck === ((r + 2) % 2 == (c + 2) % 2)) continue;
-						const cx = (c + offsetLeft) * cellSizeX;
-						const cy = (r / 2) * cellSize;
-						const vertices = [
-							{ x: cx, y: cy }, // 左上
-							{ x: cx - (cellSizeX * 1) / 3, y: cy + cellSize / 2 }, // 左端
-							{ x: cx, y: cy + cellSize }, // 左下
-							{ x: cx + (cellSizeX * 2) / 3, y: cy + cellSize }, // 右下
-							{ x: cx + cellSizeX, y: cy + cellSize / 2 }, // 右端
-							{ x: cx + (cellSizeX * 2) / 3, y: cy }, // 右上
-						];
-						if (ori) vertices.forEach((v) => ([v.x, v.y] = [v.y, v.x]));
+            /* ---- プレビュー ---- */
+            #preview-area {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                min-width: 0;
+                overflow: hidden;
+            }
+            .cv-wrap {
+                flex: 1;
+                min-height: 0;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            #hexCanvas {
+                max-width: 100%;
+                max-height: 100%;
+                display: block;
+            }
+            @media (max-width: 680px) {
+                .cv-wrap {
+                    min-height: 300px;
+                    flex: none;
+                }
+                #preview-area {
+                    overflow: visible;
+                }
+            }
 
-						ctx.globalAlpha = lineOpacity;
-						ctx.beginPath();
-						ctx.moveTo(vertices[0].x, vertices[0].y);
-						for (let i = 1; i < vertices.length; i++) {
-							ctx.lineTo(vertices[i].x, vertices[i].y);
-						}
-						ctx.closePath();
-						ctx.stroke();
+            /* ---- ダウンロードボタン ---- */
+            .btn-dl {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.4rem;
+                width: 100%;
+                padding: 0.5rem 1rem;
+                background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+                color: #fff;
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                letter-spacing: 0.08em;
+                border: 1px solid rgba(33, 150, 243, 0.45);
+                border-radius: var(--r);
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    box-shadow var(--t);
+            }
+            .btn-dl:hover {
+                background: linear-gradient(135deg, #42a5f5, var(--blue-mid));
+                box-shadow: var(--glow-blue);
+            }
+            .btn-dl .material-icons {
+                font-size: 1rem;
+            }
 
-						if (showCoordinates && 0 <= c && 0 <= r && c < cols && r < rows) {
-							ctx.fillStyle = coordColor;
-							ctx.globalAlpha = coordOpacity;
-							ctx.font = `${coordFontSize}px 'Arial'`;
-							ctx.textAlign = "center";
-							ctx.textBaseline = "middle";
-							const coordinateText = `${c}-${r}`;
-							let px = cx + (cellSizeX * 1) / 3;
-							let py = cy + cellSize / 2;
-							if (ori) [px, py] = [py, px];
-							if (coordPosition == "top") {
-								py = py - cellSize / 2 + coordFontSize / 2 + cellSize / 25;
-							} else if (coordPosition == "bottom") {
-								py = py + cellSize / 2 - coordFontSize / 2 - cellSize / 50;
-							}
-							ctx.fillText(coordinateText, px, py);
-						}
-					}
-				}
-			}
+            /* ---- ガイド内のアイコン付きdl ---- */
+            .guide-dl {
+                display: grid;
+                grid-template-columns: 1.5rem 1fr;
+                gap: 0.3rem 0.5rem;
+                font-size: 0.88rem;
+                line-height: 1.6;
+            }
+            .guide-dl .mi {
+                font-family: 'Material Icons';
+                font-size: 1.05rem;
+                color: var(--cyan);
+                align-self: start;
+                margin-top: 0.15rem;
+            }
+            .guide-dl dt {
+                font-weight: bold;
+                color: var(--text-bright);
+            }
+            .guide-dl dd {
+                margin: 0;
+                color: var(--text);
+                grid-column: 2;
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
 
-			function downloadHex() {
-				const canvas = document.getElementById("hexCanvas");
-				const cellSize = parseInt(document.getElementById("cellSize").value); // 六角形の高さの基準サイズ
-				const fitGridCheck = document.getElementById("fitGridCheck").checked;
-				const link = document.createElement("a");
-				const c = (canvas.width / cellSize) * 2;
-				const r = (canvas.height / cellSize) * 2;
-				link.download = fitGridCheck ? `hex_${c}x${r}.png` : `hex.png`;
-				link.href = canvas.toDataURL("image/png");
-				link.click();
-			}
+        <main id="main">
+            <!-- ====== 設定パネル ====== -->
+            <div id="settings-panel">
+                <!-- 左列: 基本設定 + 線スタイル -->
+                <div class="panel-col panel-col-left">
+                    <!-- 基本設定 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">settings</span>基本設定</div>
+                        <div class="f">
+                            <span class="fl">向き</span>
+                            <div class="seg">
+                                <input type="radio" name="ori" id="ori-h" value="horizontal" checked /><label for="ori-h">横向き</label>
+                                <input type="radio" name="ori" id="ori-v" value="vertical" /><label for="ori-v">縦向き</label>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">列数（横）</span>
+                            <input type="number" id="cols" value="21" min="1" max="1000" class="custom-spinner" />
+                        </div>
+                        <div class="f">
+                            <span class="fl">行数（縦）</span>
+                            <input type="number" id="rows" value="31" min="1" max="1000" class="custom-spinner" />
+                        </div>
+                        <div class="f">
+                            <span class="fl">サイズ</span>
+                            <div class="row">
+                                <input type="number" id="cellSize" value="48" min="10" max="500" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="shiftCheck" /><span class="tl">1列目をずらす</span></label>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="drawOuter" checked /><span class="tl">外周ヘクスを描画</span></label>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="fitGridCheck" checked /><span class="tl">グリッドを使う (ココフォリア等)</span></label>
+                        </div>
+                    </div>
 
-			//イベントリスナー
-			document.addEventListener("DOMContentLoaded", function () {
-				document.getElementById("orientation").addEventListener("change", generateHex);
-				document.getElementById("hexColor").addEventListener("input", generateHex);
-				document.getElementById("lineWidth").addEventListener("input", generateHex);
-				document.getElementById("lineOpacity").addEventListener("input", function () {
-					document.getElementById("lineOpacityValue").textContent = `${Math.round(document.getElementById("lineOpacity").value * 100)}%`;
-					generateHex();
-				});
-				document.getElementById("cellSize").addEventListener("input", generateHex);
-				document.getElementById("cols").addEventListener("input", generateHex);
-				document.getElementById("rows").addEventListener("input", generateHex);
-				document.getElementById("fitGridCheck").addEventListener("input", generateHex);
-				document.getElementById("shiftCheck").addEventListener("input", generateHex);
-				document.getElementById("showCoordinates").addEventListener("input", generateHex);
-				document.getElementById("coordPositionSelect").addEventListener("change", generateHex);
-				document.getElementById("coordColor").addEventListener("input", generateHex);
-				document.getElementById("coordFontSize").addEventListener("input", generateHex);
-				document.getElementById("coordOpacity").addEventListener("input", function () {
-					document.getElementById("coordOpacityValue").textContent = `${Math.round(document.getElementById("coordOpacity").value * 100)}%`;
-					generateHex();
-				});
+                    <!-- 線スタイル -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">brush</span>線スタイル</div>
+                        <div class="f">
+                            <span class="fl">色 / 不透明度</span>
+                            <div id="hexColorPicker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">太さ</span>
+                            <div class="row">
+                                <input type="number" id="lineWidth" value="2" min="1" max="20" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">線種</span>
+                            <div class="seg">
+                                <input type="radio" name="ls" id="ls-s" value="solid" checked /><label for="ls-s">実線</label> <input type="radio" name="ls" id="ls-d" value="dashed" /><label
+                                    for="ls-d"
+                                    >破線</label
+                                >
+                                <input type="radio" name="ls" id="ls-t" value="dotted" /><label for="ls-t">点線</label>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="glowEffect" /><span class="tl">グロー効果</span></label>
+                        </div>
+                    </div>
+                    <!-- /線スタイル -->
+                </div>
+                <!-- /panel-col-left -->
 
-				generateHex();
-			});
-		</script>
-	</body>
+                <!-- 右列: ヘクス縮小 + 座標 -->
+                <div class="panel-col panel-col-right">
+                    <!-- ヘクス縮小 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">photo_size_select_small</span>ヘクス縮小</div>
+                        <div class="f f-col">
+                            <div class="f-sb">
+                                <span class="fl">縮小率</span>
+                                <div class="row">
+                                    <input type="number" id="hexScaleNum" value="100" min="10" max="100" class="custom-spinner" />
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="hexScale" value="100" min="10" max="100" step="1" />
+                        </div>
+                    </div>
+
+                    <!-- 座標 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">tag</span>座標</div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="showCoords" checked /><span class="tl">座標を表示</span></label>
+                        </div>
+                        <div id="coordOpts">
+                            <div class="f">
+                                <span class="fl">表示形式</span>
+                                <div class="seg">
+                                    <input type="radio" name="cmode" id="cm-seq" value="seq" checked /><label for="cm-seq">連番</label>
+                                    <input type="radio" name="cmode" id="cm-skip" value="skip" /><label for="cm-skip">飛び飛び</label>
+                                </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">起点</span>
+                                <select id="coordOrigin">
+                                    <option value="tl">左上</option>
+                                    <option value="bl">左下</option>
+                                    <option value="tr">右上</option>
+                                    <option value="br">右下</option>
+                                </select>
+                            </div>
+                            <div class="f">
+                                <span class="fl">開始番号</span>
+                                <div class="seg">
+                                    <input type="radio" name="cstart" id="cs-0" value="0" checked /><label for="cs-0">0から</label> <input type="radio" name="cstart" id="cs-1" value="1" /><label
+                                        for="cs-1"
+                                        >1から</label
+                                    >
+                                </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">位置</span>
+                                <div class="seg">
+                                    <input type="radio" name="cpos" id="cp-t" value="top" /><label for="cp-t">上</label> <input type="radio" name="cpos" id="cp-m" value="middle" /><label for="cp-m"
+                                        >中</label
+                                    >
+                                    <input type="radio" name="cpos" id="cp-b" value="bottom" checked /><label for="cp-b">下</label>
+                                </div>
+                            </div>
+                            <div class="f" id="coordOffsetRow">
+                                <span class="fl">辺からのオフセット</span>
+                                <div class="row">
+                                    <input type="number" id="coordOffset" value="8" min="-999" max="999" class="custom-spinner" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="f" style="margin-top: 0.42rem">
+                                <span class="fl">色 / 不透明度</span>
+                                <div id="coordColorPicker"></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">文字サイズ</span>
+                                <div class="row">
+                                    <input type="number" id="coordFontSize" value="12" min="6" max="100" class="custom-spinner" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /座標 -->
+                </div>
+                <!-- /panel-col-right -->
+
+                <!-- DL -->
+                <div class="s-sec panel-dl">
+                    <button class="btn-dl" onclick="downloadHex()"><span class="material-icons">download</span>PNG ダウンロード</button>
+                </div>
+            </div>
+
+            <!-- ====== プレビュー ====== -->
+            <div id="preview-area">
+                <div class="cv-wrap">
+                    <canvas id="hexCanvas"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <!-- ====== ガイドモーダル ====== -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <h3>基本操作</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">tune</span>
+                            <div>
+                                <dt>リアルタイムプレビュー</dt>
+                                <dd>設定パネルの値を変えると右のプレビューに即時反映されます。</dd>
+                            </div>
+                            <span class="mi">download</span>
+                            <div>
+                                <dt>PNG ダウンロード</dt>
+                                <dd>現在のプレビューをそのままPNG画像として保存します。背景は透過です。</dd>
+                            </div>
+                            <span class="mi">light_mode</span>
+                            <div>
+                                <dt>テーマ切り替え</dt>
+                                <dd>ヘッダー右端のボタンでダーク／ライトを切り替えられます（設定は保存されます）。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>基本設定</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">swap_horiz</span>
+                            <div>
+                                <dt>向き</dt>
+                                <dd>「横向き」はフラットトップ型。「縦向き」は上下に尖端が出るポインティートップ型です。</dd>
+                            </div>
+                            <span class="mi">grid_3x3</span>
+                            <div>
+                                <dt>列数・行数</dt>
+                                <dd>描画するヘクスの数を指定します。行数は偶数列と奇数列が交互に増えます</dd>
+                            </div>
+                            <span class="mi">straighten</span>
+                            <div>
+                                <dt>サイズ</dt>
+                                <dd>ヘクス1つの高さの基準サイズ（px）です。「グリッドを使う」ON時はセル幅がこの値と一致します。ココフォリアで使用する際は、24の倍数に設定することを推奨します。</dd>
+                            </div>
+                            <span class="mi">view_column</span>
+                            <div>
+                                <dt>1列目をずらす</dt>
+                                <dd>奇数列をオフセットするか偶数列をオフセットするかを切り替えます。</dd>
+                            </div>
+                            <span class="mi">border_outer</span>
+                            <div>
+                                <dt>外周ヘクスを描画</dt>
+                                <dd>外側にもう1周分のヘクスを描画します。ONのほうがマップ端の見た目が整います。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>オンセツールで使う</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">devices</span>
+                            <div>
+                                <dt>グリッドを使う</dt>
+                                <dd>ココフォリアなどのオンラインセッションツールで使用できるように、グリッドを使って擬似的なヘクスを作成します。2x2のグリッド内に一つのヘクスを作成します。</dd>
+                            </div>
+                            <span class="mi">info</span>
+                            <div>
+                                <dt>ファイル名について</dt>
+                                <dd>
+                                    「グリッドを使う」がONのとき、ダウンロードファイル名は <code>hex_CxR.png</code>（例:
+                                    hex_30x30.png）の形式になります。ココフォリアなどで使用する際は、パネルや前景のサイズをこの数字に合わせてください。
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <h3>線スタイル</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">palette</span>
+                            <div>
+                                <dt>色 / 不透明度</dt>
+                                <dd>カラーパレットから色と透明度を設定します。縮小率100%のとき、隣接辺の重複を避けるため各ヘクスは3辺のみ描画しています（不透明度がそのまま反映されます）。</dd>
+                            </div>
+                            <span class="mi">line_weight</span>
+                            <div>
+                                <dt>太さ</dt>
+                                <dd>線の太さ（px）です。グロー効果をONにしている場合、太さに比例して発光範囲も広がります。</dd>
+                            </div>
+                            <span class="mi">more_horiz</span>
+                            <div>
+                                <dt>線種</dt>
+                                <dd>実線・破線・点線を選択できます。縮小率を下げると全6辺が描画されるため、破線や点線の見た目が変わります。</dd>
+                            </div>
+                            <span class="mi">flare</span>
+                            <div>
+                                <dt>グロー効果</dt>
+                                <dd>線に発光エフェクトをかけます。暗い背景で映えます。ダウンロード時も反映されます。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>ヘクス縮小</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">photo_size_select_small</span>
+                            <div>
+                                <dt>縮小率</dt>
+                                <dd>
+                                    ヘクス間距離（セルの占有領域）はそのままに、ヘクスの描画サイズだけを縮小します。100%未満にすると辺が重複しなくなり全6辺を描画します。ここフォリアでヘクス間に隙間を作るときに便利です。
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <h3>座標表示</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">tag</span>
+                            <div>
+                                <dt>連番モード</dt>
+                                <dd>左上（など）を基点に列・行を0-0, 0-1, 1-0... と連続した番号で表示します。起点は左上・左下・右上・右下から選択可能です。</dd>
+                            </div>
+                            <span class="mi">shuffle</span>
+                            <div>
+                                <dt>飛び飛びモード</dt>
+                                <dd>内部インデックスをそのまま表示します（例: 0-0, 0-2, 1-1...）。ずらしの構造をそのまま番号に反映したいときに使います。起点の変換も適用されます。</dd>
+                            </div>
+                            <span class="mi">vertical_align_center</span>
+                            <div>
+                                <dt>位置とオフセット</dt>
+                                <dd>
+                                    座標テキストを上・中・下のどこに配置するか選びます。上・下を選んだときは「辺からのオフセット」で辺との距離（px）を調整できます。<strong>正の値で中心に近づき</strong>、負の値でヘクスの外側に出ます。縮小率に連動します。
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/pickr.min.js"></script>
+        <script src="common.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                /* ================================================================
+               カラー状態（Pickrが更新、0-255 / 0-1）
+            ================================================================ */
+                const hexCol = { r: 0, g: 229, b: 255, a: 1.0 };
+                const coordCol = { r: 0, g: 229, b: 255, a: 1.0 };
+
+                /* ================================================================
+               ユーティリティ
+            ================================================================ */
+                function toRgba(col, overrideA) {
+                    const a = overrideA !== undefined ? overrideA : col.a;
+                    return `rgba(${Math.round(col.r)},${Math.round(col.g)},${Math.round(col.b)},${a.toFixed(4)})`;
+                }
+
+                /* ================================================================
+               設定取得
+            ================================================================ */
+                function getS() {
+                    const sc = Math.min(100, Math.max(10, parseInt(document.getElementById('hexScale').value) || 100)) / 100;
+                    return {
+                        ori: document.querySelector('input[name="ori"]:checked').value,
+                        lw: Math.max(1, parseInt(document.getElementById('lineWidth').value) || 2),
+                        ls: document.querySelector('input[name="ls"]:checked').value,
+                        glow: document.getElementById('glowEffect').checked,
+                        size: Math.max(10, parseInt(document.getElementById('cellSize').value) || 90),
+                        cols: Math.max(1, parseInt(document.getElementById('cols').value) || 15),
+                        rows: Math.max(1, parseInt(document.getElementById('rows').value) || 15),
+                        fit: document.getElementById('fitGridCheck').checked,
+                        shift: document.getElementById('shiftCheck').checked,
+                        outer: document.getElementById('drawOuter').checked,
+                        sc,
+                        showC: document.getElementById('showCoords').checked,
+                        cMode: document.querySelector('input[name="cmode"]:checked').value,
+                        cOri: document.getElementById('coordOrigin').value,
+                        cSt: parseInt(document.querySelector('input[name="cstart"]:checked').value),
+                        cPos: document.querySelector('input[name="cpos"]:checked').value,
+                        cOffset: parseInt(document.getElementById('coordOffset').value) || 0,
+                        cFnt: Math.max(6, parseInt(document.getElementById('coordFontSize').value) || 20),
+                    };
+                }
+
+                /* ================================================================
+               線種適用
+            ================================================================ */
+                function applyDash(ctx, ls, lw) {
+                    if (ls === 'dashed') ctx.setLineDash([lw * 4, lw * 3]);
+                    else if (ls === 'dotted') ctx.setLineDash([lw, lw * 2.5]);
+                    else ctx.setLineDash([]);
+                }
+
+                /* ================================================================
+               ヘクス頂点計算
+               center = (gx + csx/3, gy + size/2)
+               dx = csx/3, dy = size/2
+               v0(-dx,-dy)  v1(-2dx,0)  v2(-dx,+dy)
+               v3(+dx,+dy)  v4(+2dx,0)  v5(+dx,-dy)
+            ================================================================ */
+                function hexVerts(gx, gy, csx, size, scale, ori) {
+                    const mcx = gx + csx / 3,
+                        mcy = gy + size / 2;
+                    const dx = csx / 3,
+                        dy = size / 2;
+                    const off = [
+                        [-dx, -dy],
+                        [-2 * dx, 0],
+                        [-dx, dy],
+                        [dx, dy],
+                        [2 * dx, 0],
+                        [dx, -dy],
+                    ];
+                    const v = off.map(([ox, oy]) => ({ x: mcx + ox * scale, y: mcy + oy * scale }));
+                    return ori ? v.map((p) => ({ x: p.y, y: p.x })) : v;
+                }
+
+                /* ================================================================
+               ヘクス存在チェック
+               スキップ条件: s.shift === ((r+2)%2 === (c+2)%2)
+               存在: スキップしない
+            ================================================================ */
+                function hexExists(c, r, cFrom, cTo, rFrom, rTo, shift) {
+                    if (c < cFrom || c >= cTo || r < rFrom || r >= rTo) return false;
+                    return shift !== ((r + 2) % 2 === (c + 2) % 2);
+                }
+
+                /* ================================================================
+               座標番号計算
+            ================================================================ */
+                function calcCoord(c, r, s, cols, rows) {
+                    const flipC = s.cOri === 'tr' || s.cOri === 'br';
+                    const flipR = s.cOri === 'bl' || s.cOri === 'br';
+
+                    if (s.cMode === 'seq') {
+                        /* 連番: floor(r/2) で行を整数化 */
+                        const sr = Math.floor(r / 2);
+                        const dc = flipC ? cols - 1 - c : c;
+                        const dr = flipR ? Math.ceil(rows / 2) - 1 - sr : sr;
+                        return { dc, dr };
+                    } else {
+                        /* 飛び飛び: 内部インデックスそのまま + 起点反転 */
+                        const dc = flipC ? cols - 1 - c : c;
+                        /* 行反転: 同パリティを保ちながら最大値から折り返す */
+                        const colParity = (c + 2) % 2 === 0 ? 0 : 1;
+                        /* その列に存在する行の最大値 */
+                        const candidateMax = rows % 2 === 0 ? rows - 2 + colParity : rows - 1;
+                        /* 厳密に最大r（その列のパリティが合う最大値）*/
+                        const maxR = candidateMax % 2 === colParity ? candidateMax : candidateMax - 1;
+                        const dr = flipR ? maxR - r + 2 * colParity : r;
+                        return { dc, dr };
+                    }
+                }
+
+                /* ================================================================
+               線分を1本描く（dashをリセットしない）
+            ================================================================ */
+                function drawSeg(ctx, a, b) {
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+
+                /* ================================================================
+               メイン描画
+            ================================================================ */
+                function generateHex() {
+                    const s = getS();
+                    const canvas = document.getElementById('hexCanvas');
+                    const ctx = canvas.getContext('2d');
+                    const ori = s.ori === 'vertical';
+
+                    const csx = s.fit ? s.size : (s.size / 2) * Math.sqrt(3);
+                    const offL = s.fit ? 1 / 6 : 1 / 3;
+
+                    let cols = s.cols,
+                        rows = s.rows;
+                    if (ori) [cols, rows] = [rows, cols];
+
+                    /* キャンバスサイズ */
+                    let cw = s.fit ? csx * cols : csx * (cols + 1 / 3);
+                    let ch = (s.size * (rows + 1)) / 2;
+                    if (ori) [cw, ch] = [ch, cw];
+
+                    canvas.width = Math.round(cw);
+                    canvas.height = Math.round(ch);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    /* 線設定 */
+                    ctx.strokeStyle = toRgba(hexCol);
+                    ctx.lineWidth = s.lw;
+                    applyDash(ctx, s.ls, s.lw);
+
+                    if (s.glow) {
+                        ctx.shadowColor = toRgba(hexCol, 1);
+                        ctx.shadowBlur = s.lw * 7;
+                    } else {
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                    }
+
+                    /* ループ範囲 */
+                    const cFrom = s.outer ? -1 : 0;
+                    const cTo = s.outer ? cols + 1 : cols;
+                    const rFrom = s.outer ? -1 : 0;
+                    const rTo = s.outer ? rows + 1 : rows;
+
+                    /* 縮小100%かどうかで半辺/全辺を切り替え */
+                    const halfEdge = s.sc >= 0.999;
+
+                    for (let c = cFrom; c < cTo; c++) {
+                        for (let r = rFrom; r < rTo; r++) {
+                            if (s.shift === ((r + 2) % 2 === (c + 2) % 2)) continue;
+
+                            const gx = (c + offL) * csx;
+                            const gy = (r / 2) * s.size;
+                            const v = hexVerts(gx, gy, csx, s.size, s.sc, ori);
+
+                            if (!halfEdge) {
+                                /* 縮小あり: 全6辺を描く */
+                                ctx.beginPath();
+                                ctx.moveTo(v[0].x, v[0].y);
+                                for (let i = 1; i < v.length; i++) ctx.lineTo(v[i].x, v[i].y);
+                                ctx.closePath();
+                                ctx.stroke();
+                            } else {
+                                /* 縮小なし (scale≈100%): 3辺のみ描く
+                               v5→v0 (上), v0→v1 (左上), v1→v2 (左下)
+                            */
+                                ctx.beginPath();
+                                ctx.moveTo(v[5].x, v[5].y);
+                                ctx.lineTo(v[0].x, v[0].y);
+                                ctx.lineTo(v[1].x, v[1].y);
+                                ctx.lineTo(v[2].x, v[2].y);
+                                ctx.stroke();
+
+                                /* --- 境界補完 ---
+                               欠けている3辺(v2→v3, v3→v4, v4→v5)を担当する隣接ヘクスが
+                               ループ範囲外なら自分で描く
+                               ・v2→v3 (下辺)     ← 担当: (c, r+2)
+                               ・v3→v4 (右下辺)   ← 担当: (c+1, r+1)
+                               ・v4→v5 (右上辺)   ← 担当: (c+1, r-1)
+                            */
+                                if (!hexExists(c, r + 2, cFrom, cTo, rFrom, rTo, s.shift)) drawSeg(ctx, v[2], v[3]);
+                                if (!hexExists(c + 1, r + 1, cFrom, cTo, rFrom, rTo, s.shift)) drawSeg(ctx, v[3], v[4]);
+                                if (!hexExists(c + 1, r - 1, cFrom, cTo, rFrom, rTo, s.shift)) drawSeg(ctx, v[4], v[5]);
+                            }
+
+                            /* ---- 座標ラベル ---- */
+                            if (s.showC && c >= 0 && r >= 0 && c < cols && r < rows) {
+                                ctx.shadowBlur = 0;
+                                ctx.setLineDash([]);
+
+                                const { dc, dr } = calcCoord(c, r, s, cols, rows);
+
+                                ctx.fillStyle = toRgba(coordCol);
+                                ctx.font = `${s.cFnt}px 'Share Tech Mono',monospace`;
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+
+                                /* セル中心（グリッドベース） */
+                                let px = gx + csx / 3;
+                                let py = gy + s.size / 2;
+                                if (ori) [px, py] = [py, px];
+
+                                /* 縮小後のヘクス端距離（セル中心からの距離） */
+                                const halfY = ori ? (csx / 3) * s.sc : (s.size / 2) * s.sc;
+
+                                if (s.cPos === 'top') {
+                                    /* 上端から正方向 = 中心方向（内側） */
+                                    py = py - halfY + s.cOffset;
+                                } else if (s.cPos === 'bottom') {
+                                    /* 下端から正方向 = 中心方向（内側） */
+                                    py = py + halfY - s.cOffset;
+                                }
+                                /* middle: py そのまま */
+
+                                ctx.fillText(`${dc + s.cSt}-${dr + s.cSt}`, px, py);
+
+                                /* 線設定復元 */
+                                applyDash(ctx, s.ls, s.lw);
+                                if (s.glow) {
+                                    ctx.shadowColor = toRgba(hexCol, 1);
+                                    ctx.shadowBlur = s.lw * 7;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /* ================================================================
+               ダウンロード
+            ================================================================ */
+                window.downloadHex = function () {
+                    const canvas = document.getElementById('hexCanvas');
+                    const cs = parseInt(document.getElementById('cellSize').value);
+                    const fitGrid = document.getElementById('fitGridCheck').checked;
+                    const link = document.createElement('a');
+                    if (fitGrid) {
+                        const c = Math.round((canvas.width / cs) * 2);
+                        const r = Math.round((canvas.height / cs) * 2);
+                        link.download = `hex_${c}x${r}.png`;
+                    } else {
+                        link.download = 'hex.png';
+                    }
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                };
+
+                /* ================================================================
+               スライダー ↔ number 双方向同期
+            ================================================================ */
+                function syncPair(slId, nmId) {
+                    const sl = document.getElementById(slId);
+                    const nm = document.getElementById(nmId);
+                    sl.addEventListener('input', () => {
+                        nm.value = sl.value;
+                        generateHex();
+                    });
+                    nm.addEventListener('input', () => {
+                        const v = Math.min(parseFloat(nm.max), Math.max(parseFloat(nm.min), parseFloat(nm.value) || 0));
+                        sl.value = v;
+                        generateHex();
+                    });
+                }
+
+                /* ================================================================
+               Pickr 初期化
+            ================================================================ */
+                function rgbaToHex(r, g, b, a) {
+                    const toHex = (v) => Math.round(v).toString(16).padStart(2, '0');
+                    const alphaHex = toHex(Math.round(a * 255));
+                    return `#${toHex(r)}${toHex(g)}${toHex(b)}${alphaHex}`;
+                }
+
+                function initPickr(elId, colObj) {
+                    Pickr.create({
+                        el: `#${elId}`,
+                        theme: 'nano',
+                        default: rgbaToHex(colObj.r, colObj.g, colObj.b, colObj.a), // ← HEX8形式 (#rrggbbaa)
+                        components: {
+                            preview: true,
+                            opacity: true,
+                            hue: true,
+                            interaction: { input: true, save: true },
+                        },
+                        i18n: { 'btn:save': '確定' },
+                    })
+                        .on('change', (color) => {
+                            const [r, g, b, a] = color.toRGBA();
+                            colObj.r = r;
+                            colObj.g = g;
+                            colObj.b = b;
+                            colObj.a = a;
+                            generateHex();
+                        })
+                        .on('save', (_, p) => p.hide());
+                }
+                /* ================================================================
+               DOMContentLoaded
+            ================================================================ */
+                document.addEventListener('DOMContentLoaded', () => {
+                    /* ---- Pickr / その他の初期化 ---- */
+                    initPickr('hexColorPicker', hexCol);
+                    initPickr('coordColorPicker', coordCol);
+
+                    /* 通常 input */
+                    ['lineWidth', 'cellSize', 'cols', 'rows', 'fitGridCheck', 'shiftCheck', 'glowEffect', 'drawOuter', 'showCoords', 'coordFontSize', 'coordOffset'].forEach((id) =>
+                        document.getElementById(id).addEventListener('input', generateHex)
+                    );
+
+                    /* ラジオ・select */
+                    ['ori', 'ls', 'cmode', 'cstart', 'cpos'].forEach((n) => document.querySelectorAll(`input[name="${n}"]`).forEach((el) => el.addEventListener('change', generateHex)));
+                    document.getElementById('coordOrigin').addEventListener('change', generateHex);
+
+                    /* スライダー同期 */
+                    syncPair('hexScale', 'hexScaleNum');
+
+                    /* 座標オプション 全体の表示制御 */
+                    const showCEl = document.getElementById('showCoords');
+                    const coordEl = document.getElementById('coordOpts');
+                    function updateCoordVis() {
+                        coordEl.style.opacity = showCEl.checked ? '1' : '0.3';
+                        coordEl.style.pointerEvents = showCEl.checked ? '' : 'none';
+                        coordEl.style.transition = 'opacity 0.25s';
+                    }
+                    showCEl.addEventListener('change', updateCoordVis);
+                    updateCoordVis();
+
+                    /* オフセット行: 上/下のときのみ有効 */
+                    const offsetRow = document.getElementById('coordOffsetRow');
+                    function updateOffsetVis() {
+                        const pos = document.querySelector('input[name="cpos"]:checked').value;
+                        const show = pos === 'top' || pos === 'bottom';
+                        offsetRow.style.opacity = show ? '1' : '0.3';
+                        offsetRow.style.pointerEvents = show ? '' : 'none';
+                        offsetRow.style.transition = 'opacity 0.25s';
+                    }
+                    document.querySelectorAll('input[name="cpos"]').forEach((el) =>
+                        el.addEventListener('change', () => {
+                            updateOffsetVis();
+                            generateHex();
+                        })
+                    );
+                    updateOffsetVis();
+
+                    generateHex();
+                });
+            })();
+        </script>
+    </body>
 </html>
