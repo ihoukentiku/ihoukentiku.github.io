@@ -371,7 +371,6 @@
                 box-shadow: 0 0 4px rgba(0, 229, 255, 0.55);
                 cursor: pointer;
                 transition: box-shadow var(--t);
-                margin-top: 0.3rem;
             }
             input[type='range']::-webkit-slider-thumb:hover {
                 box-shadow: 0 0 8px rgba(0, 229, 255, 0.85);
@@ -383,7 +382,6 @@
                 background: var(--cyan);
                 border: 2px solid var(--bg2);
                 cursor: pointer;
-                margin-top: 0.3rem;
             }
             [data-theme='light'] input[type='range'] {
                 background: rgba(33, 150, 243, 0.3);
@@ -398,8 +396,8 @@
                 align-items: center;
             }
             .pickr .pcr-button {
-                width: 30px !important;
-                height: 26px !important;
+                width: 50px !important;
+                height: 20px !important;
                 border-radius: 4px !important;
                 border: 1px solid var(--input-bd) !important;
                 box-shadow: none !important;
@@ -557,7 +555,7 @@
                             <label class="tog"><input type="checkbox" id="shiftCheck" /><span class="tl">1列目をずらす</span></label>
                         </div>
                         <div class="f">
-                            <label class="tog"><input type="checkbox" id="drawOuter" checked /><span class="tl">外周ヘクスを描画</span></label>
+                            <label class="tog"><input type="checkbox" id="drawOuter" /><span class="tl">外周ヘクスを描画</span></label>
                         </div>
                         <div class="f">
                             <label class="tog"><input type="checkbox" id="fitGridCheck" checked /><span class="tl">グリッドを使う (ココフォリア等)</span></label>
@@ -619,6 +617,10 @@
                         <div class="f">
                             <label class="tog"><input type="checkbox" id="showCoords" checked /><span class="tl">座標を表示</span></label>
                         </div>
+                        <div class="f" style="margin-top: 0.42rem">
+                            <span class="fl">色 / 不透明度</span>
+                            <div id="coordColorPicker"></div>
+                        </div>
                         <div id="coordOpts">
                             <div class="f">
                                 <span class="fl">表示形式</span>
@@ -626,6 +628,15 @@
                                     <input type="radio" name="cmode" id="cm-seq" value="seq" checked /><label for="cm-seq">連番</label>
                                     <input type="radio" name="cmode" id="cm-skip" value="skip" /><label for="cm-skip">飛び飛び</label>
                                 </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">座標形式</span>
+                                <select id="coordFmt">
+                                    <option value="hyphen">1-1</option>
+                                    <option value="comma">1, 1</option>
+                                    <option value="zero">0101</option>
+                                    <option value="letter">A1</option>
+                                </select>
                             </div>
                             <div class="f">
                                 <span class="fl">起点</span>
@@ -660,10 +671,6 @@
                                     <input type="number" id="coordOffset" value="8" min="-999" max="999" class="custom-spinner" />
                                     <span class="unit">px</span>
                                 </div>
-                            </div>
-                            <div class="f" style="margin-top: 0.42rem">
-                                <span class="fl">色 / 不透明度</span>
-                                <div id="coordColorPicker"></div>
                             </div>
                             <div class="f">
                                 <span class="fl">文字サイズ</span>
@@ -754,7 +761,9 @@
                             <span class="mi">devices</span>
                             <div>
                                 <dt>グリッドを使う</dt>
-                                <dd>ココフォリアなどのオンラインセッションツールで使用できるように、グリッドを使って擬似的なヘクスを作成します。2x2のグリッド内に一つのヘクスを作成します。</dd>
+                                <dd>
+                                    ココフォリアなどのオンラインセッションツールで使用できるように、グリッドを使って擬似的なヘクスを作成します。2x2のグリッド内に一つのヘクスを作成します。また、端のヘクスが欠けないよう左右（縦向き時は上下）に半マスの余白を自動追加します。
+                                </dd>
                             </div>
                             <span class="mi">info</span>
                             <div>
@@ -813,6 +822,14 @@
                                 <dt>飛び飛びモード</dt>
                                 <dd>内部インデックスをそのまま表示します（例: 0-0, 0-2, 1-1...）。ずらしの構造をそのまま番号に反映したいときに使います。起点の変換も適用されます。</dd>
                             </div>
+                            <span class="mi">format_list_numbered</span>
+                            <div>
+                                <dt>座標形式</dt>
+                                <dd>
+                                    座標の表示スタイルを選択できます。<strong>1-1</strong>（ハイフン区切り）、<strong>1, 1</strong
+                                    >（カンマ区切り）、<strong>0101</strong>（4桁ゼロ埋め）、<strong>A1</strong>（列をアルファベット、行を数字）の4種類。
+                                </dd>
+                            </div>
                             <span class="mi">vertical_align_center</span>
                             <div>
                                 <dt>位置とオフセット</dt>
@@ -870,6 +887,7 @@
                         cPos: document.querySelector('input[name="cpos"]:checked').value,
                         cOffset: parseInt(document.getElementById('coordOffset').value) || 0,
                         cFnt: Math.max(6, parseInt(document.getElementById('coordFontSize').value) || 20),
+                        cFmt: document.getElementById('coordFmt').value,
                     };
                 }
 
@@ -954,6 +972,39 @@
                 }
 
                 /* ================================================================
+               座標フォーマット
+            ================================================================ */
+                function toLetters(n) {
+                    /* 0-indexed → A, B, ... Z, AA, AB, ... */
+                    let s = '';
+                    n += 1; // 1-based
+                    while (n > 0) {
+                        const rem = (n - 1) % 26;
+                        s = String.fromCharCode(65 + rem) + s;
+                        n = Math.floor((n - 1) / 26);
+                    }
+                    return s;
+                }
+
+                function formatCoord(dc, dr, s) {
+                    const c = dc + s.cSt;
+                    const r = dr + s.cSt;
+                    switch (s.cFmt) {
+                        case 'comma':
+                            return `${c},${r}`;
+                        case 'zero': {
+                            const pad = (n) => String(Math.max(0, n)).padStart(2, '0');
+                            return `${pad(c)}${pad(r)}`;
+                        }
+                        case 'letter':
+                            /* 列をアルファベット、行を数字で表示 (行はcStを適用) */
+                            return `${toLetters(dc)}${r}`;
+                        default: /* 'hyphen' */
+                            return `${c}-${r}`;
+                    }
+                }
+
+                /* ================================================================
                メイン描画
             ================================================================ */
                 function generateHex() {
@@ -969,8 +1020,11 @@
                         rows = s.rows;
                     if (ori) [cols, rows] = [rows, cols];
 
+                    /* グリッド余白: fit モード時、ヘクスの端切れを防ぐため列方向に半マスずつ追加 */
+                    const gridPad = s.fit ? csx / 2 : 0;
+
                     /* キャンバスサイズ */
-                    let cw = s.fit ? csx * cols : csx * (cols + 1 / 3);
+                    let cw = s.fit ? csx * cols + csx : csx * (cols + 1 / 3);
                     let ch = (s.size * (rows + 1)) / 2;
                     if (ori) [cw, ch] = [ch, cw];
 
@@ -1004,7 +1058,7 @@
                         for (let r = rFrom; r < rTo; r++) {
                             if (s.shift === ((r + 2) % 2 === (c + 2) % 2)) continue;
 
-                            const gx = (c + offL) * csx;
+                            const gx = (c + offL) * csx + gridPad;
                             const gy = (r / 2) * s.size;
                             const v = hexVerts(gx, gy, csx, s.size, s.sc, ori);
 
@@ -1046,7 +1100,7 @@
                                 const { dc, dr } = calcCoord(c, r, s, cols, rows);
 
                                 ctx.fillStyle = toRgba(coordCol);
-                                ctx.font = `${s.cFnt}px 'Share Tech Mono',monospace`;
+                                ctx.font = `${s.cFnt}px monospace`;
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'middle';
 
@@ -1067,7 +1121,7 @@
                                 }
                                 /* middle: py そのまま */
 
-                                ctx.fillText(`${dc + s.cSt}-${dr + s.cSt}`, px, py);
+                                ctx.fillText(formatCoord(dc, dr, s), px, py);
 
                                 /* 線設定復元 */
                                 applyDash(ctx, s.ls, s.lw);
@@ -1087,10 +1141,14 @@
                     const canvas = document.getElementById('hexCanvas');
                     const cs = parseInt(document.getElementById('cellSize').value);
                     const fitGrid = document.getElementById('fitGridCheck').checked;
+                    const ori = document.querySelector('input[name="ori"]:checked').value === 'vertical';
                     const link = document.createElement('a');
                     if (fitGrid) {
-                        const c = Math.round((canvas.width / cs) * 2);
-                        const r = Math.round((canvas.height / cs) * 2);
+                        /* グリッド余白(1マス分=cs px)を差し引いてヘクス数を算出 */
+                        const w = ori ? canvas.width : canvas.width - cs;
+                        const h = ori ? canvas.height - cs : canvas.height;
+                        const c = Math.round((w / cs) * 2);
+                        const r = Math.round((h / cs) * 2);
                         link.download = `hex_${c}x${r}.png`;
                     } else {
                         link.download = 'hex.png';
@@ -1157,7 +1215,7 @@
                     initPickr('coordColorPicker', coordCol);
 
                     /* 通常 input */
-                    ['lineWidth', 'cellSize', 'cols', 'rows', 'fitGridCheck', 'shiftCheck', 'glowEffect', 'drawOuter', 'showCoords', 'coordFontSize', 'coordOffset'].forEach((id) =>
+                    ['lineWidth', 'cellSize', 'cols', 'rows', 'fitGridCheck', 'shiftCheck', 'glowEffect', 'drawOuter', 'showCoords', 'coordFontSize', 'coordOffset', 'coordFmt'].forEach((id) =>
                         document.getElementById(id).addEventListener('input', generateHex)
                     );
 
