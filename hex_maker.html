@@ -623,20 +623,13 @@
                         </div>
                         <div id="coordOpts">
                             <div class="f">
-                                <span class="fl">表示形式</span>
-                                <div class="seg">
-                                    <input type="radio" name="cmode" id="cm-seq" value="seq" checked /><label for="cm-seq">連番</label>
-                                    <input type="radio" name="cmode" id="cm-skip" value="skip" /><label for="cm-skip">飛び飛び</label>
-                                </div>
-                            </div>
-                            <div class="f">
                                 <span class="fl">座標形式</span>
                                 <select id="coordFmt">
                                     <option value="hyphen">1-1</option>
                                     <option value="comma">1, 1</option>
                                     <option value="zero">0101</option>
                                     <option value="letter">A1</option>
-                                    <option value="serial">1</option>
+                                    <option value="serial">連番</option>
                                 </select>
                             </div>
                             <div class="f">
@@ -648,6 +641,14 @@
                                     <option value="br">右下</option>
                                 </select>
                             </div>
+                            <div class="f" id="cmodeRow">
+                                <span class="fl">行座標の扱い</span>
+                                <div class="seg">
+                                    <input type="radio" name="cmode" id="cm-seq" value="seq" checked /><label for="cm-seq">圧縮する</label>
+                                    <input type="radio" name="cmode" id="cm-skip" value="skip" /><label for="cm-skip">半行ずつ</label>
+                                </div>
+                            </div>
+
                             <div class="f">
                                 <span class="fl">開始番号</span>
                                 <div class="seg">
@@ -813,24 +814,25 @@
 
                         <h3>座標表示</h3>
                         <dl class="guide-dl">
-                            <span class="mi">tag</span>
-                            <div>
-                                <dt>連番モード</dt>
-                                <dd>左上（など）を基点に列・行を0-0, 0-1, 1-0... と連続した番号で表示します。起点は左上・左下・右上・右下から選択可能です。</dd>
-                            </div>
-                            <span class="mi">shuffle</span>
-                            <div>
-                                <dt>飛び飛びモード</dt>
-                                <dd>内部インデックスをそのまま表示します（例: 0-0, 0-2, 1-1...）。ずらしの構造をそのまま番号に反映したいときに使います。起点の変換も適用されます。</dd>
-                            </div>
                             <span class="mi">format_list_numbered</span>
                             <div>
                                 <dt>座標形式</dt>
                                 <dd>
                                     座標の表示スタイルを選択できます。<strong>1-1</strong>（ハイフン区切り）、<strong>1, 1</strong
-                                    >（カンマ区切り）、<strong>0101</strong>（4桁ゼロ埋め）、<strong>A1</strong>（列をアルファベット、行を数字）の4種類。
+                                    >（カンマ区切り）、<strong>0101</strong>（4桁ゼロ埋め）、<strong>A1</strong>（列をアルファベット、行を数字）、<strong>連番</strong>（座標を使わず、順番に数字を付ける）の4種類。
                                 </dd>
                             </div>
+                            <span class="mi">compress</span>
+                            <div>
+                                <dt>行座標を圧縮する</dt>
+                                <dd>ズレた行を同じ行とみなし、連続した整数で番号を振ります（例: 0-0, 0-1, 1-0...）。起点は左上・左下・右上・右下から選択可能です。</dd>
+                            </div>
+                            <span class="mi">linear_scale</span>
+                            <div>
+                                <dt>半行ずつ</dt>
+                                <dd>ヘクスのオフセット構造をそのまま反映し、行番号が2ずつ増えます（例: 0-0, 0-2, 1-1...）。ずらしの構造を座標に忠実に反映したいときに使います。</dd>
+                            </div>
+
                             <span class="mi">vertical_align_center</span>
                             <div>
                                 <dt>位置とオフセット</dt>
@@ -1259,6 +1261,22 @@
                         })
                     );
                     updateOffsetVis();
+
+                    const cmodeRow = document.getElementById('cmodeRow');
+                    function updateCmodeVis() {
+                        const isSerial = document.getElementById('coordFmt').value === 'serial';
+                        cmodeRow.style.opacity = isSerial ? '0.3' : '1';
+                        cmodeRow.style.pointerEvents = isSerial ? 'none' : '';
+                        cmodeRow.style.transition = 'opacity 0.25s';
+                        if (isSerial) {
+                            document.getElementById('cm-seq').checked = true;
+                        }
+                    }
+                    document.getElementById('coordFmt').addEventListener('change', () => {
+                        updateCmodeVis();
+                        generateHex();
+                    });
+                    updateCmodeVis();
 
                     generateHex();
                 });
