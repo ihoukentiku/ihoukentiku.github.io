@@ -636,6 +636,7 @@
                                     <option value="comma">1, 1</option>
                                     <option value="zero">0101</option>
                                     <option value="letter">A1</option>
+                                    <option value="serial">1</option>
                                 </select>
                             </div>
                             <div class="f">
@@ -997,9 +998,14 @@
                             return `${pad(c)}${pad(r)}`;
                         }
                         case 'letter':
-                            /* 列をアルファベット、行を数字で表示 (行はcStを適用) */
                             return `${toLetters(dc)}${r}`;
-                        default: /* 'hyphen' */
+                        case 'serial': {
+                            const totalRows = s.rows;
+                            const totalCols = s.cols;
+                            const n = dc * Math.ceil(totalRows / 2) - (totalRows % 2) * (Math.floor(dc / 2) + Number(s.cOri === 'bl' || s.cOri === 'br') * (dc % 2)) + dr + s.cSt;
+                            return `${n}`;
+                        }
+                        default:
                             return `${c}-${r}`;
                     }
                 }
