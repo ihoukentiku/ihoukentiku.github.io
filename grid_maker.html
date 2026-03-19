@@ -1,238 +1,1097 @@
-<!DOCTYPE html>
-<html lang="ja">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>グリッド作成ツール | 違法建築のTRPGラボ</title>
-		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
-		<style>
-			body {
-				font-family: "Noto Sans JP", sans-serif;
-				background: #f7f8fa;
-				margin: auto;
-				padding: 20px;
-				max-width: 850px;
-				color: #333;
-			}
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>グリッド作成ツール | 違法建築のTRPGラボ</title>
+        <meta
+            name="description"
+            content="TRPGやボードゲーム向けグリッド（マス目）画像を生成・ダウンロード。マスサイズ・列数・行数・線色・線種・縮小率・角丸・座標表示（形式5種）などを細かくカスタマイズ可能。ココフォリア等のオンセツールのマップ素材としても利用できます。"
+        />
+        <meta name="author" content="違法建築" />
+        <link rel="icon" href="favicon.ico" />
 
-			h1 {
-				font-size: 28px;
-				border-bottom: 2px solid #ccc;
-				padding-bottom: 5px;
-				margin-bottom: 20px;
-				margin-top: 10px;
-			}
+        <meta property="og:url" content="https://ihoukentiku.github.io/grid_maker.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="グリッド作成ツール | 違法建築のTRPGラボ" />
+        <meta
+            property="og:description"
+            content="TRPGやボードゲーム向けグリッド画像を生成・ダウンロード。マスサイズ・線色・線種・縮小率・角丸・座標表示などを細かくカスタマイズ可能。ココフォリア等のオンセツールにも対応。"
+        />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-			.section {
-				background: white;
-				padding: 16px;
-				border-radius: 5px;
-				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-				margin-bottom: 20px;
-			}
-			.section > div {
-				display: flex;
-				flex-wrap: wrap;
-				row-gap: 16px;
-				column-gap: 16px;
-			}
-			.section > div > div {
-				display: flex;
-				flex-direction: column;
-				row-gap: 16px;
-			}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-			label {
-				font-weight: bold;
-			}
+        <!-- Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
 
-			input {
-				vertical-align: middle;
-				box-sizing: border-box;
-			}
-			input[type="text"],
-			input[type="number"],
-			select {
-				border-radius: 4px;
-				font-size: 18px;
-				padding: 0px 5px 0px 5px;
-				height: 30px;
-			}
-			input[type="number"] {
-				border: 1px solid #888;
-				width: 50px;
-			}
-			input[type="color"] {
-				height: 30px;
-				border: 1px solid #aaa;
-				border-radius: 4px;
-			}
-			input[type="range"] {
-				width: 150px;
-			}
-			input[type="checkbox"] {
-				width: 20px;
-				height: 20px;
-			}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
+        <link rel="stylesheet" href="common.css" />
 
-			select {
-				width: 100px;
-			}
+        <style>
+            :root {
+                --page-width: 1400px;
+                --panel-w: 316px;
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --input-bd: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.05);
+                --input-bd: rgba(33, 150, 243, 0.4);
+            }
 
-			canvas {
-				border: 1px solid #333;
-				margin-top: 20px;
-				display: block;
-				margin-left: auto;
-				margin-right: auto;
-				max-width: 100%;
-				max-height: 600px;
-			}
+            /* ---- レイアウト（横長: 左パネル + 右プレビュー） ---- */
+            html,
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+            #main {
+                display: grid;
+                grid-template-columns: var(--panel-w) 1fr;
+                grid-template-rows: 1fr;
+                height: calc(100dvh - var(--header-h, 60px));
+                max-width: var(--page-width);
+                margin: 0 auto;
+                padding: 0.6rem clamp(0.5rem, 2vw, 1rem);
+                gap: 0.6rem;
+                overflow: hidden;
+            }
 
-			button {
-				background-color: #448ad4;
-				color: white;
-				padding: 6px 12px;
-				border: none;
-				border-radius: 4px;
-				cursor: pointer;
-				transition: background-color 0.2s;
-				font-weight: bold;
-			}
+            /* ---- 設定パネル（横長: 1列縦スクロール） ---- */
+            #settings-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                overflow-y: auto;
+                padding-right: 2px;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+            .panel-col {
+                display: contents;
+            }
 
-			button:hover {
-				background-color: #3d7bcd;
-			}
+            /* ================================================================
+               ≤ 900px: 縦並び（設定パネルを2列グリッドに）
+            ================================================================ */
+            @media (max-width: 900px) {
+                html,
+                body {
+                    height: auto;
+                    overflow: visible;
+                }
+                #main {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto auto;
+                    height: auto;
+                    overflow: visible;
+                    padding-bottom: 1rem;
+                }
+                #settings-panel {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    align-items: start;
+                    gap: 0.4rem;
+                    overflow-y: visible;
+                    padding-right: 0;
+                }
+                .panel-col {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.4rem;
+                    min-width: 0;
+                }
+                .panel-col-left {
+                    grid-column: 1;
+                }
+                .panel-col-right {
+                    grid-column: 2;
+                    height: 100%;
+                }
+                .s-sec {
+                    flex-grow: 1;
+                }
+                .panel-dl {
+                    grid-column: 1 / -1;
+                }
+                #preview-area {
+                    min-height: 400px;
+                }
+                .cv-wrap {
+                    flex: 1;
+                    min-height: 360px;
+                }
+            }
 
-			#lineOpacityValue,
-			#coordOpacityValue {
-				display: inline-block;
-				width: 45px;
-				text-align: right;
-			}
+            /* ================================================================
+               ≤ 550px: 設定パネルも1列縦並びに戻す
+            ================================================================ */
+            @media (max-width: 550px) {
+                #settings-panel {
+                    grid-template-columns: 1fr;
+                }
+                .panel-col-left,
+                .panel-col-right {
+                    grid-column: 1;
+                }
+            }
 
-			#coordinateSettings {
-				margin-top: 16px;
-				margin-bottom: 16px;
-				padding-top: 10px;
-				border-top: 1px dashed #888;
-			}
-		</style>
-	</head>
-	<body>
-		<h1>グリッド作成ツール</h1>
+            /* ---- 設定カード ---- */
+            .s-sec {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: 0.75rem 0.9rem;
+            }
+            .s-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--cyan);
+                margin-bottom: 0.6rem;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            .s-ttl .material-icons {
+                font-size: 0.88rem;
+            }
 
-		<div class="section">
-			<div>
-				<label>グリッドの色 <input type="color" id="gridColor" value="#000000" /></label>
-				<label>グリッドの太さ(px) <input type="number" id="lineWidth" value="4" min="1" /></label>
-				<label>
-					グリッドの透明度
-					<input type="range" id="lineOpacity" value="1.0" min="0.0" max="1.0" step="0.01" oninput="updateOpacityValue(this.value)" />
-					<span id="opacityValue">1.0</span>
-				</label>
-			</div>
-			<div>
-				<label>1マスのサイズ(px) <input type="number" id="cellSize" value="100" min="1" /></label>
-				<label>横のマス数 <input type="number" id="cols" value="10" min="1" /></label>
-				<label>縦のマス数 <input type="number" id="rows" value="10" min="1" /></label>
-			</div>
+            /* ---- フィールド行 ---- */
+            .f {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                margin-bottom: 0.42rem;
+            }
+            .f:last-child {
+                margin-bottom: 0;
+            }
+            .f-col {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.3rem;
+            }
+            .f-sb {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .fl {
+                font-size: 0.78rem;
+                color: var(--text);
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .unit {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                flex-shrink: 0;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
 
-			<div id="coordinateSettings">
-				<label>
-					座標を表示
-					<input type="checkbox" id="showCoordinates" />
-				</label>
-				<label>座標の色 <input type="color" id="coordColor" value="#000000" /></label>
-				<label>座標の文字サイズ(px) <input type="number" id="coordFontSize" value="25" min="1" /></label>
-			</div>
+            /* ---- 入力系 ---- */
+            input[type='number'] {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                width: 50px;
+                text-align: center;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t);
+                box-sizing: border-box;
+            }
+            input[type='number']:focus {
+                outline: none;
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.12);
+            }
+            select {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 0.76rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                cursor: pointer;
+                transition: border-color var(--t);
+            }
+            select:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+            option {
+                background: var(--input-bg);
+                color: black;
+            }
 
-			<div style="margin: 0">
-				<button onclick="generateGrid()">生成</button>
-				<button onclick="downloadGrid()">ダウンロード</button>
-			</div>
-		</div>
+            /* ---- トグルスイッチ ---- */
+            .tog {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                cursor: pointer;
+            }
+            .tog input[type='checkbox'] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 30px;
+                height: 16px;
+                border-radius: 8px;
+                border: 1px solid var(--input-bd);
+                background: var(--input-bg);
+                position: relative;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition:
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .tog input[type='checkbox']::after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--text-dim);
+                top: 2px;
+                left: 2px;
+                transition:
+                    transform var(--t),
+                    background var(--t);
+            }
+            .tog input[type='checkbox']:checked {
+                background: rgba(0, 229, 255, 0.18);
+                border-color: var(--cyan);
+            }
+            .tog input[type='checkbox']:checked::after {
+                background: var(--cyan);
+                transform: translateX(14px);
+            }
+            .tl {
+                font-size: 0.78rem;
+                color: var(--text);
+                user-select: none;
+            }
 
-		<canvas id="gridCanvas"></canvas>
+            /* ---- セグメントコントロール ---- */
+            .seg {
+                display: flex;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .seg input[type='radio'] {
+                display: none;
+            }
+            .seg label {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                padding: 0.15rem 0.42rem;
+                color: var(--text-dim);
+                cursor: pointer;
+                border-right: 1px solid var(--input-bd);
+                transition:
+                    background var(--t),
+                    color var(--t);
+                white-space: nowrap;
+                line-height: 1.6;
+            }
+            .seg label:last-child {
+                border-right: none;
+            }
+            .seg input[type='radio']:checked + label {
+                background: rgba(0, 229, 255, 0.15);
+                color: var(--cyan);
+            }
 
-		<script>
-			function updateOpacityValue(value) {
-				document.getElementById("opacityValue").textContent = value;
-			}
+            /* ---- スライダー ---- */
+            input[type='range'] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 3px;
+                border-radius: 2px;
+                background: var(--input-bd);
+                outline: none;
+                cursor: pointer;
+                margin-top: 0.3rem;
+            }
+            input[type='range']::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                box-shadow: 0 0 4px rgba(0, 229, 255, 0.55);
+                cursor: pointer;
+                transition: box-shadow var(--t);
+            }
+            input[type='range']::-webkit-slider-thumb:hover {
+                box-shadow: 0 0 8px rgba(0, 229, 255, 0.85);
+            }
+            input[type='range']::-moz-range-thumb {
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                cursor: pointer;
+            }
+            [data-theme='light'] input[type='range'] {
+                background: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] input[type='range']::-webkit-slider-thumb {
+                border-color: var(--bg3);
+            }
 
-			function hexToRgba(hex, alpha) {
-				const r = parseInt(hex.slice(1, 3), 16);
-				const g = parseInt(hex.slice(3, 5), 16);
-				const b = parseInt(hex.slice(5, 7), 16);
-				return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-			}
+            /* ---- Pickr ---- */
+            .pickr {
+                display: flex !important;
+                align-items: center;
+            }
+            .pickr .pcr-button {
+                width: 50px !important;
+                height: 20px !important;
+                border-radius: 4px !important;
+                border: 1px solid var(--input-bd) !important;
+                box-shadow: none !important;
+                transition: border-color var(--t) !important;
+            }
+            .pickr .pcr-button:hover {
+                border-color: var(--cyan) !important;
+            }
+            .pcr-app {
+                background: var(--bg3) !important;
+                border-color: var(--border) !important;
+            }
+            .pcr-app .pcr-interaction input {
+                background: var(--input-bg) !important;
+                border: 1px solid var(--input-bd) !important;
+                color: var(--text-bright) !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save {
+                background: var(--blue-mid) !important;
+                color: #fff !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save:hover {
+                background: var(--blue) !important;
+            }
+            [data-theme='light'] .pcr-app {
+                background: #f0f7ff !important;
+            }
+            [data-theme='light'] .pcr-app .pcr-interaction input {
+                background: white !important;
+                color: #1a3a5c !important;
+            }
 
-			function generateGrid() {
-				const color = document.getElementById("gridColor").value;
-				const lineWidth = parseInt(document.getElementById("lineWidth").value);
-				const lineOpacity = parseFloat(document.getElementById("lineOpacity").value);
-				const cellSize = parseInt(document.getElementById("cellSize").value);
-				const cols = parseInt(document.getElementById("cols").value);
-				const rows = parseInt(document.getElementById("rows").value);
-				const showCoordinates = document.getElementById("showCoordinates").checked;
-				const coordColor = document.getElementById("coordColor").value;
-				const coordFontSize = parseInt(document.getElementById("coordFontSize").value);
+            /* ---- プレビュー ---- */
+            #preview-area {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                min-width: 0;
+                overflow: hidden;
+            }
+            .cv-wrap {
+                flex: 1;
+                min-height: 0;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            #gridCanvas {
+                max-width: 100%;
+                max-height: 100%;
+                display: block;
+            }
+            @media (max-width: 680px) {
+                .cv-wrap {
+                    min-height: 300px;
+                    flex: none;
+                }
+                #preview-area {
+                    overflow: visible;
+                }
+            }
 
-				const canvas = document.getElementById("gridCanvas");
-				const ctx = canvas.getContext("2d");
+            /* ---- ダウンロードボタン ---- */
+            .btn-dl {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.4rem;
+                width: 100%;
+                padding: 0.5rem 1rem;
+                background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+                color: #fff;
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                letter-spacing: 0.08em;
+                border: 1px solid rgba(33, 150, 243, 0.45);
+                border-radius: var(--r);
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    box-shadow var(--t);
+            }
+            .btn-dl:hover {
+                background: linear-gradient(135deg, #42a5f5, var(--blue-mid));
+                box-shadow: var(--glow-blue);
+            }
+            .btn-dl .material-icons {
+                font-size: 1rem;
+            }
 
-				canvas.width = cols * cellSize;
-				canvas.height = rows * cellSize;
+            /* ---- ガイド内のアイコン付き dl ---- */
+            .guide-dl {
+                display: grid;
+                grid-template-columns: 1.5rem 1fr;
+                gap: 0.3rem 0.5rem;
+                font-size: 0.88rem;
+                line-height: 1.6;
+            }
+            .guide-dl .mi {
+                font-family: 'Material Icons';
+                font-size: 1.05rem;
+                color: var(--cyan);
+                align-self: start;
+                margin-top: 0.15rem;
+            }
+            .guide-dl dt {
+                font-weight: bold;
+                color: var(--text-bright);
+            }
+            .guide-dl dd {
+                margin: 0;
+                color: var(--text);
+                grid-column: 2;
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
 
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
+        <main id="main">
+            <!-- ====== 設定パネル ====== -->
+            <div id="settings-panel">
+                <!-- 左列: 基本設定 + 線スタイル -->
+                <div class="panel-col panel-col-left">
+                    <!-- 基本設定 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">settings</span>基本設定</div>
+                        <div class="f">
+                            <span class="fl">列数（横）</span>
+                            <input type="number" id="cols" value="15" min="1" max="1000" class="custom-spinner" />
+                        </div>
+                        <div class="f">
+                            <span class="fl">行数（縦）</span>
+                            <input type="number" id="rows" value="15" min="1" max="1000" class="custom-spinner" />
+                        </div>
+                        <div class="f">
+                            <span class="fl">サイズ</span>
+                            <div class="row">
+                                <input type="number" id="cellSize" value="48" min="10" max="500" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                    </div>
 
-				ctx.strokeStyle = hexToRgba(color, lineOpacity);
-				ctx.lineWidth = lineWidth;
+                    <!-- 線スタイル -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">brush</span>線スタイル</div>
+                        <div class="f">
+                            <span class="fl">色 / 不透明度</span>
+                            <div id="lineColorPicker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">太さ</span>
+                            <div class="row">
+                                <input type="number" id="lineWidth" value="2" min="1" max="20" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">線種</span>
+                            <div class="seg">
+                                <input type="radio" name="ls" id="ls-s" value="solid" checked /><label for="ls-s">実線</label> <input type="radio" name="ls" id="ls-d" value="dashed" /><label
+                                    for="ls-d"
+                                    >破線</label
+                                >
+                                <input type="radio" name="ls" id="ls-t" value="dotted" /><label for="ls-t">点線</label>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="glowEffect" /><span class="tl">グロー効果</span></label>
+                        </div>
+                    </div>
+                </div>
+                <!-- /panel-col-left -->
 
-				for (let x = 0; x <= cols; x++) {
-					ctx.beginPath();
-					ctx.moveTo(x * cellSize, 0);
-					ctx.lineTo(x * cellSize, canvas.height);
-					ctx.stroke();
-				}
+                <!-- 右列: グリッドスタイル + 座標 -->
+                <div class="panel-col panel-col-right">
+                    <!-- グリッドスタイル -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">grid_on</span>グリッドスタイル</div>
+                        <div class="f f-col">
+                            <div class="f-sb">
+                                <span class="fl">縮小率</span>
+                                <div class="row">
+                                    <input type="number" id="gridScaleNum" value="100" min="10" max="100" class="custom-spinner" />
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="gridScale" value="100" min="10" max="100" step="1" />
+                        </div>
+                        <div class="f">
+                            <span class="fl">角丸</span>
+                            <div class="row">
+                                <input type="number" id="cornerRadius" value="0" min="0" max="999" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                    </div>
 
-				for (let y = 0; y <= rows; y++) {
-					ctx.beginPath();
-					ctx.moveTo(0, y * cellSize);
-					ctx.lineTo(canvas.width, y * cellSize);
-					ctx.stroke();
-				}
+                    <!-- 座標 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">tag</span>座標</div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="showCoords" checked /><span class="tl">座標を表示</span></label>
+                        </div>
+                        <div class="f" id="coordColorRow">
+                            <span class="fl">色 / 不透明度</span>
+                            <div id="coordColorPicker"></div>
+                        </div>
+                        <div id="coordOpts">
+                            <div class="f">
+                                <span class="fl">座標形式</span>
+                                <select id="coordFmt">
+                                    <option value="hyphen">1-1</option>
+                                    <option value="comma">1,1</option>
+                                    <option value="zero">0101</option>
+                                    <option value="letter">A1</option>
+                                    <option value="serial">連番</option>
+                                </select>
+                            </div>
+                            <div class="f">
+                                <span class="fl">起点</span>
+                                <select id="coordOrigin">
+                                    <option value="tl">左上</option>
+                                    <option value="bl">左下</option>
+                                    <option value="tr">右上</option>
+                                    <option value="br">右下</option>
+                                </select>
+                            </div>
+                            <div class="f">
+                                <span class="fl">開始番号</span>
+                                <div class="seg">
+                                    <input type="radio" name="cstart" id="cs-0" value="0" checked /><label for="cs-0">0から</label> <input type="radio" name="cstart" id="cs-1" value="1" /><label
+                                        for="cs-1"
+                                        >1から</label
+                                    >
+                                </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">位置</span>
+                                <div class="seg">
+                                    <input type="radio" name="cpos" id="cp-t" value="top" /><label for="cp-t">上</label> <input type="radio" name="cpos" id="cp-m" value="middle" checked /><label
+                                        for="cp-m"
+                                        >中</label
+                                    >
+                                    <input type="radio" name="cpos" id="cp-b" value="bottom" /><label for="cp-b">下</label>
+                                </div>
+                            </div>
+                            <div class="f" id="coordOffsetRow">
+                                <span class="fl">辺からのオフセット</span>
+                                <div class="row">
+                                    <input type="number" id="coordOffset" value="8" min="-999" max="999" class="custom-spinner" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">文字サイズ</span>
+                                <div class="row">
+                                    <input type="number" id="coordFontSize" value="12" min="6" max="100" class="custom-spinner" />
+                                    <span class="unit">px</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /座標 -->
+                </div>
+                <!-- /panel-col-right -->
 
-				if (showCoordinates) {
-					ctx.fillStyle = coordColor;
-					ctx.font = `${coordFontSize}px 'Arial'`;
-					ctx.textAlign = "center";
-					ctx.textBaseline = "middle";
+                <!-- DL -->
+                <div class="s-sec panel-dl">
+                    <button class="btn-dl" onclick="downloadGrid()"><span class="material-icons">download</span>PNG ダウンロード</button>
+                </div>
+            </div>
 
-					for (let c = 0; c < cols; c++) {
-						for (let r = 0; r < rows; r++) {
-							const centerX = c * cellSize + cellSize / 2;
-							const centerY = r * cellSize + cellSize / 2;
+            <!-- ====== プレビュー ====== -->
+            <div id="preview-area">
+                <div class="cv-wrap">
+                    <canvas id="gridCanvas"></canvas>
+                </div>
+            </div>
+        </main>
 
-							const displayY = r;
-							const displayX = c;
+        <!-- ====== ガイドモーダル ====== -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <h3>基本操作</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">tune</span>
+                            <div>
+                                <dt>リアルタイムプレビュー</dt>
+                                <dd>設定パネルの値を変えると右のプレビューに即時反映されます。</dd>
+                            </div>
+                            <span class="mi">download</span>
+                            <div>
+                                <dt>PNG ダウンロード</dt>
+                                <dd>現在のプレビューをそのままPNG画像として保存します。背景は透過です。</dd>
+                            </div>
+                        </dl>
 
-							const coordinateText = `${displayX}-${displayY}`;
+                        <h3>基本設定</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">grid_3x3</span>
+                            <div>
+                                <dt>列数・行数</dt>
+                                <dd>グリッドの横方向・縦方向のマス数を指定します。</dd>
+                            </div>
+                            <span class="mi">straighten</span>
+                            <div>
+                                <dt>サイズ</dt>
+                                <dd>1マスの一辺の長さ（px）です。ダウンロードされるPNG画像のマスサイズに直接対応します。</dd>
+                            </div>
+                        </dl>
 
-							ctx.fillText(coordinateText, centerX, centerY);
-						}
-					}
-				}
-			}
+                        <h3>線スタイル</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">palette</span>
+                            <div>
+                                <dt>色 / 不透明度</dt>
+                                <dd>カラーパレットで線の色と透明度を設定します。</dd>
+                            </div>
+                            <span class="mi">line_weight</span>
+                            <div>
+                                <dt>太さ</dt>
+                                <dd>線の太さ（px）です。グロー効果をONにしている場合、太さに比例して発光範囲も広がります。</dd>
+                            </div>
+                            <span class="mi">more_horiz</span>
+                            <div>
+                                <dt>線種</dt>
+                                <dd>実線・破線・点線を選択できます。縮小率100%未満または角丸ありのとき、セル個別描画モードになります。</dd>
+                            </div>
+                            <span class="mi">flare</span>
+                            <div>
+                                <dt>グロー効果</dt>
+                                <dd>線に発光エフェクトをかけます。暗い背景で映えます。ダウンロード時も反映されます。</dd>
+                            </div>
+                        </dl>
 
-			function downloadGrid() {
-				const canvas = document.getElementById("gridCanvas");
-				const link = document.createElement("a");
-				link.download = "grid.png";
-				link.href = canvas.toDataURL("image/png");
-				link.click();
-			}
-		</script>
-	</body>
+                        <h3>グリッドスタイル</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">photo_size_select_small</span>
+                            <div>
+                                <dt>縮小率</dt>
+                                <dd>マス目の占有領域はそのままに、描画するセルの大きさを縮小します。100%未満にするとマス間に隙間が生まれます。</dd>
+                            </div>
+                            <span class="mi">rounded_corner</span>
+                            <div>
+                                <dt>角丸</dt>
+                                <dd>セルの角の丸みを設定します（px）。0で直角、値を大きくするほど丸くなります。角丸を設定すると自動的にセル個別描画モードになります。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>座標表示</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">format_list_numbered</span>
+                            <div>
+                                <dt>座標形式</dt>
+                                <dd>
+                                    <strong>1-1</strong
+                                    >（ハイフン区切り）、<strong>1,1</strong>（カンマ区切り）、<strong>0101</strong>（4桁ゼロ埋め）、<strong>A1</strong>（列をアルファベット・行を数字）、<strong>連番</strong>（起点から順番に数字）の5種類。
+                                </dd>
+                            </div>
+                            <span class="mi">my_location</span>
+                            <div>
+                                <dt>起点</dt>
+                                <dd>座標の基点を左上・左下・右上・右下から選べます。</dd>
+                            </div>
+                            <span class="mi">vertical_align_center</span>
+                            <div>
+                                <dt>位置とオフセット</dt>
+                                <dd>
+                                    座標テキストをセル内の上・中・下のどこに配置するか選びます。上・下を選んだときは「辺からのオフセット」で距離を調整できます。正の値でセル中心に近づき、負の値でセル外側に出ます。
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <h3>ファイル名について</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">info</span>
+                            <div>
+                                <dt>ダウンロードファイル名</dt>
+                                <dd>ファイル名は <code>grid_{列数}x{行数}_{サイズ}px.png</code> の形式です（例: <code>grid_10x10_80px.png</code>）。</dd>
+                            </div>
+                        </dl>
+                        <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/pickr.min.js"></script>
+        <script src="common.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                /* ================================================================
+                   カラー状態（Pickrが更新、0-255 / 0-1）
+                ================================================================ */
+                const lineCol = { r: 0, g: 229, b: 255, a: 1.0 };
+                const coordCol = { r: 0, g: 229, b: 255, a: 1.0 };
+
+                /* ================================================================
+                   ユーティリティ
+                ================================================================ */
+                function toRgba(col, overrideA) {
+                    const a = overrideA !== undefined ? overrideA : col.a;
+                    return `rgba(${Math.round(col.r)},${Math.round(col.g)},${Math.round(col.b)},${a.toFixed(4)})`;
+                }
+
+                function applyDash(ctx, ls, lw) {
+                    if (ls === 'dashed') ctx.setLineDash([lw * 4, lw * 3]);
+                    else if (ls === 'dotted') ctx.setLineDash([lw, lw * 2.5]);
+                    else ctx.setLineDash([]);
+                }
+
+                /* ================================================================
+                   設定取得
+                ================================================================ */
+                function getS() {
+                    const scale = Math.min(100, Math.max(10, parseInt(document.getElementById('gridScale').value) || 100)) / 100;
+                    return {
+                        cols: Math.max(1, parseInt(document.getElementById('cols').value) || 10),
+                        rows: Math.max(1, parseInt(document.getElementById('rows').value) || 10),
+                        cellSize: Math.max(10, parseInt(document.getElementById('cellSize').value) || 80),
+                        lw: Math.max(1, parseInt(document.getElementById('lineWidth').value) || 2),
+                        ls: document.querySelector('input[name="ls"]:checked').value,
+                        glow: document.getElementById('glowEffect').checked,
+                        scale,
+                        cornerRadius: Math.max(0, parseInt(document.getElementById('cornerRadius').value) || 0),
+                        showCoords: document.getElementById('showCoords').checked,
+                        coordFmt: document.getElementById('coordFmt').value,
+                        coordOrigin: document.getElementById('coordOrigin').value,
+                        coordStart: parseInt(document.querySelector('input[name="cstart"]:checked').value),
+                        coordPos: document.querySelector('input[name="cpos"]:checked').value,
+                        coordOffset: parseInt(document.getElementById('coordOffset').value) || 0,
+                        coordFontSize: Math.max(6, parseInt(document.getElementById('coordFontSize').value) || 14),
+                    };
+                }
+
+                /* ================================================================
+                   座標計算
+                ================================================================ */
+                function calcCoord(c, r, s) {
+                    const flipC = s.coordOrigin === 'tr' || s.coordOrigin === 'br';
+                    const flipR = s.coordOrigin === 'bl' || s.coordOrigin === 'br';
+                    return {
+                        dc: flipC ? s.cols - 1 - c : c,
+                        dr: flipR ? s.rows - 1 - r : r,
+                    };
+                }
+
+                function toLetters(n) {
+                    let s = '';
+                    n += 1;
+                    while (n > 0) {
+                        const rem = (n - 1) % 26;
+                        s = String.fromCharCode(65 + rem) + s;
+                        n = Math.floor((n - 1) / 26);
+                    }
+                    return s;
+                }
+
+                function formatCoord(dc, dr, s) {
+                    const c = dc + s.coordStart;
+                    const r = dr + s.coordStart;
+                    switch (s.coordFmt) {
+                        case 'comma':
+                            return `${c},${r}`;
+                        case 'zero': {
+                            const pad = (n) => String(Math.max(0, n)).padStart(2, '0');
+                            return `${pad(c)}${pad(r)}`;
+                        }
+                        case 'letter':
+                            return `${toLetters(dc)}${r}`;
+                        case 'serial':
+                            return `${dr * s.cols + dc + s.coordStart}`;
+                        default:
+                            return `${c}-${r}`;
+                    }
+                }
+
+                /* ================================================================
+                   メイン描画
+                ================================================================ */
+                function generateGrid() {
+                    const s = getS();
+                    const canvas = document.getElementById('gridCanvas');
+                    const ctx = canvas.getContext('2d');
+
+                    canvas.width = s.cols * s.cellSize;
+                    canvas.height = s.rows * s.cellSize;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    /* 線設定 */
+                    ctx.strokeStyle = toRgba(lineCol);
+                    ctx.lineWidth = s.lw;
+                    applyDash(ctx, s.ls, s.lw);
+
+                    if (s.glow) {
+                        ctx.shadowColor = toRgba(lineCol, 1);
+                        ctx.shadowBlur = s.lw * 7;
+                    } else {
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                    }
+
+                    /* 描画モード切り替え
+                       scale=100% かつ cornerRadius=0 → ライン描画（高速・辺の重複なし）
+                       それ以外 → セル個別描画（roundRect） */
+                    const useLines = s.scale >= 0.999 && s.cornerRadius === 0;
+
+                    if (useLines) {
+                        /* ---- ライン描画モード ---- */
+                        for (let x = 0; x <= s.cols; x++) {
+                            ctx.beginPath();
+                            ctx.moveTo(x * s.cellSize, 0);
+                            ctx.lineTo(x * s.cellSize, canvas.height);
+                            ctx.stroke();
+                        }
+                        for (let y = 0; y <= s.rows; y++) {
+                            ctx.beginPath();
+                            ctx.moveTo(0, y * s.cellSize);
+                            ctx.lineTo(canvas.width, y * s.cellSize);
+                            ctx.stroke();
+                        }
+                    } else {
+                        /* ---- セル個別描画モード ---- */
+                        const margin = (s.cellSize * (1 - s.scale)) / 2;
+                        const w = s.cellSize * s.scale;
+                        const h = s.cellSize * s.scale;
+                        const rad = Math.min(s.cornerRadius, w / 2, h / 2);
+
+                        for (let c = 0; c < s.cols; c++) {
+                            for (let r = 0; r < s.rows; r++) {
+                                const x = c * s.cellSize + margin;
+                                const y = r * s.cellSize + margin;
+                                ctx.beginPath();
+                                ctx.roundRect(x, y, w, h, rad);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    /* ---- 座標ラベル ---- */
+                    if (s.showCoords) {
+                        /* グロー・破線をリセットしてから描画 */
+                        ctx.shadowBlur = 0;
+                        ctx.shadowColor = 'transparent';
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = toRgba(coordCol);
+                        ctx.font = `${s.coordFontSize}px monospace`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        /* 縮小後のセル高さの半分（位置計算用） */
+                        const halfDrawnH = (s.cellSize * s.scale) / 2;
+
+                        for (let c = 0; c < s.cols; c++) {
+                            for (let r = 0; r < s.rows; r++) {
+                                const { dc, dr } = calcCoord(c, r, s);
+                                const cx = c * s.cellSize + s.cellSize / 2;
+                                const cyCenter = r * s.cellSize + s.cellSize / 2;
+
+                                let cy;
+                                if (s.coordPos === 'top') {
+                                    cy = cyCenter - halfDrawnH + s.coordOffset;
+                                } else if (s.coordPos === 'bottom') {
+                                    cy = cyCenter + halfDrawnH - s.coordOffset;
+                                } else {
+                                    cy = cyCenter;
+                                }
+
+                                ctx.fillText(formatCoord(dc, dr, s), cx, cy);
+                            }
+                        }
+                    }
+                }
+
+                /* ================================================================
+                   ダウンロード
+                ================================================================ */
+                window.downloadGrid = function () {
+                    const s = getS();
+                    const canvas = document.getElementById('gridCanvas');
+                    const link = document.createElement('a');
+                    link.download = `grid_${s.cols}x${s.rows}_${s.cellSize}px.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                };
+
+                /* ================================================================
+                   スライダー ↔ number 双方向同期
+                ================================================================ */
+                function syncPair(slId, nmId) {
+                    const sl = document.getElementById(slId);
+                    const nm = document.getElementById(nmId);
+                    sl.addEventListener('input', () => {
+                        nm.value = sl.value;
+                        generateGrid();
+                    });
+                    nm.addEventListener('input', () => {
+                        const v = Math.min(parseFloat(nm.max), Math.max(parseFloat(nm.min), parseFloat(nm.value) || 0));
+                        sl.value = v;
+                        generateGrid();
+                    });
+                }
+
+                /* ================================================================
+                   Pickr 初期化
+                ================================================================ */
+                function rgbaToHex(r, g, b, a) {
+                    const toHex = (v) => Math.round(v).toString(16).padStart(2, '0');
+                    return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(Math.round(a * 255))}`;
+                }
+
+                function initPickr(elId, colObj) {
+                    Pickr.create({
+                        el: `#${elId}`,
+                        theme: 'nano',
+                        default: rgbaToHex(colObj.r, colObj.g, colObj.b, colObj.a),
+                        components: {
+                            preview: true,
+                            opacity: true,
+                            hue: true,
+                            interaction: { input: true, save: true },
+                        },
+                        i18n: { 'btn:save': '確定' },
+                    })
+                        .on('change', (color) => {
+                            const [r, g, b, a] = color.toRGBA();
+                            colObj.r = r;
+                            colObj.g = g;
+                            colObj.b = b;
+                            colObj.a = a;
+                            generateGrid();
+                        })
+                        .on('save', (_, p) => p.hide());
+                }
+
+                /* ================================================================
+                   DOMContentLoaded
+                ================================================================ */
+                document.addEventListener('DOMContentLoaded', () => {
+                    /* Pickr 初期化 */
+                    initPickr('lineColorPicker', lineCol);
+                    initPickr('coordColorPicker', coordCol);
+
+                    /* 通常 input（number / checkbox） */
+                    ['cols', 'rows', 'cellSize', 'lineWidth', 'cornerRadius', 'coordFontSize', 'coordOffset', 'showCoords', 'glowEffect'].forEach((id) =>
+                        document.getElementById(id).addEventListener('input', generateGrid)
+                    );
+
+                    /* select */
+                    ['coordFmt', 'coordOrigin'].forEach((id) => document.getElementById(id).addEventListener('change', generateGrid));
+
+                    /* ラジオ（ls / cstart） */
+                    ['ls', 'cstart'].forEach((n) => document.querySelectorAll(`input[name="${n}"]`).forEach((el) => el.addEventListener('change', generateGrid)));
+
+                    /* スライダー同期 */
+                    syncPair('gridScale', 'gridScaleNum');
+
+                    /* 座標オプション 表示制御（座標ON/OFFに連動） */
+                    const showCEl = document.getElementById('showCoords');
+                    const coordOptEls = [document.getElementById('coordOpts'), document.getElementById('coordColorRow')];
+                    function updateCoordVis() {
+                        const on = showCEl.checked;
+                        coordOptEls.forEach((el) => {
+                            el.style.opacity = on ? '1' : '0.3';
+                            el.style.pointerEvents = on ? '' : 'none';
+                            el.style.transition = 'opacity 0.25s';
+                        });
+                    }
+                    showCEl.addEventListener('change', updateCoordVis);
+                    updateCoordVis();
+
+                    /* オフセット行: 上/下のときのみ有効 */
+                    const offsetRow = document.getElementById('coordOffsetRow');
+                    function updateOffsetVis() {
+                        const pos = document.querySelector('input[name="cpos"]:checked').value;
+                        const show = pos === 'top' || pos === 'bottom';
+                        offsetRow.style.opacity = show ? '1' : '0.3';
+                        offsetRow.style.pointerEvents = show ? '' : 'none';
+                        offsetRow.style.transition = 'opacity 0.25s';
+                    }
+                    document.querySelectorAll('input[name="cpos"]').forEach((el) =>
+                        el.addEventListener('change', () => {
+                            updateOffsetVis();
+                            generateGrid();
+                        })
+                    );
+                    updateOffsetVis();
+
+                    generateGrid();
+                });
+            })();
+        </script>
+    </body>
 </html>
