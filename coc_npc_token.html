@@ -1364,7 +1364,7 @@
                     el.className = 'dyn-row dyn-row-cmd';
                     el.innerHTML =
                         `<input type="text" class="inp cmd-name" value="${esc(String(name))}" placeholder="名前" />` +
-                        `<input type="text" class="inp inp-mono cmd-expr" value="${esc(String(expr))}" placeholder="1D6+2+{DB}" />` +
+                        `<input type="text" class="inp inp-mono cmd-expr" value="${esc(String(expr))}" placeholder="1D6+2+DB" />` +
                         `<button class="dyn-del" title="削除">✕</button>`;
                     el.querySelector('.dyn-del').addEventListener('click', () => {
                         el.remove();
