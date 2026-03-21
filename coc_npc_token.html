@@ -1,0 +1,1665 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>NPC コマ作成 | 違法建築のTRPGラボ</title>
+        <meta
+            name="description"
+            content="クトゥルフ神話TRPG（CoC7版・CoC6版）対応のNPCコマ作成ツール。能力値ダイスロール・DB自動計算・ココフォリア用JSONエクスポート・BCDiceチャットパレット出力に対応。キーパー向け無料ブラウザツール。"
+        />
+        <meta name="author" content="違法建築" />
+        <link rel="icon" href="favicon.ico" />
+        <meta property="og:url" content="https://ihoukentiku.github.io/coc_npc_token.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="NPC コマ作成 | 違法建築のTRPGラボ" />
+        <meta property="og:description" content="CoC7・CoC6対応NPCコマ作成ツール。複数NPC管理・ダイスロール・JSON/チャパレ出力対応。" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="common.css" />
+
+        <style>
+            :root {
+                --page-width: 1300px;
+                --list-w: 210px;
+                --prev-w: 295px;
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --input-bd: rgba(33, 150, 243, 0.3);
+                --ph-h: 44px;
+                --inp-h: 2.1rem; /* 全input共通高さ */
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.05);
+                --input-bd: rgba(33, 150, 243, 0.4);
+            }
+
+            html,
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            #main {
+                display: grid;
+                grid-template-columns: var(--list-w) 1fr var(--prev-w);
+                height: calc(100dvh - var(--header-h, 60px));
+                max-width: var(--page-width);
+                margin: 0 auto;
+                gap: 0.5rem;
+                padding: 0.5rem clamp(0.4rem, 2vw, 0.8rem);
+                overflow: hidden;
+                box-sizing: border-box;
+            }
+
+            /* ── Panel ── */
+            .panel {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+            }
+            .ph {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0 0.75rem;
+                height: var(--ph-h);
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .ph-title {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.12em;
+                color: var(--cyan);
+            }
+            .pb {
+                flex: 1;
+                overflow-y: auto;
+                padding: 0.65rem 0.75rem;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+
+            /* ── NPC List ── */
+            #addNpcBtn {
+                margin-left: auto;
+                font-size: 0.8rem;
+                padding: 0.2rem 0.6rem;
+                background: rgba(0, 229, 255, 0.1);
+                border: 1px solid rgba(0, 229, 255, 0.3);
+                border-radius: calc(var(--r) - 2px);
+                color: var(--cyan);
+                cursor: pointer;
+                transition: background var(--t);
+            }
+            #addNpcBtn:hover {
+                background: rgba(0, 229, 255, 0.2);
+            }
+
+            .npc-item {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                padding: 0.45rem 0.5rem;
+                border-radius: calc(var(--r) - 2px);
+                cursor: pointer;
+                margin-bottom: 0.25rem;
+                border: 1px solid transparent;
+                transition:
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .npc-item:hover {
+                background: rgba(255, 255, 255, 0.04);
+            }
+            .npc-item.active {
+                background: rgba(0, 229, 255, 0.08);
+                border-color: rgba(0, 229, 255, 0.28);
+            }
+            .npc-name {
+                flex: 1;
+                font-size: 0.88rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .ver-badge {
+                font-size: 0.6rem;
+                font-family: var(--font-mono);
+                padding: 1px 4px;
+                border-radius: 3px;
+                background: rgba(0, 229, 255, 0.1);
+                color: var(--cyan);
+                flex-shrink: 0;
+            }
+            .npc-del {
+                opacity: 0;
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 2px 4px;
+                border-radius: 3px;
+                transition:
+                    background var(--t),
+                    opacity var(--t);
+                flex-shrink: 0;
+            }
+            .npc-item:hover .npc-del {
+                opacity: 1;
+            }
+            .npc-del:hover {
+                background: rgba(255, 80, 80, 0.15);
+                color: #f55;
+            }
+
+            /* ── Form Sections ── */
+            .s-sec {
+                background: var(--bg1);
+                border: 1px solid var(--border);
+                border-radius: calc(var(--r) - 1px);
+                padding: 0.65rem 0.8rem;
+                margin-bottom: 0.5rem;
+            }
+            .s-sec:last-child {
+                margin-bottom: 0;
+            }
+            .s-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.13em;
+                text-transform: uppercase;
+                color: var(--cyan);
+                margin-bottom: 0.6rem;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
+            .s-ttl .material-icons {
+                font-size: 0.88rem;
+            }
+
+            .f-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 0.4rem;
+            }
+            .f-row:last-child {
+                margin-bottom: 0;
+            }
+            .f-label {
+                font-size: 0.85rem;
+                color: var(--text-dim);
+                white-space: nowrap;
+                min-width: 4rem;
+            }
+
+            /* ── 共通 input スタイル ── */
+            .inp,
+            .ab-dice,
+            .ab-val,
+            .derived-val {
+                height: var(--inp-h);
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: calc(var(--r) - 3px);
+                padding: 0 0.5rem;
+                color: var(--text);
+                outline: none;
+                transition: border-color var(--t);
+                box-sizing: border-box;
+            }
+            .inp:focus,
+            .ab-dice:focus,
+            .ab-val:focus,
+            .derived-val:focus {
+                border-color: var(--cyan);
+            }
+
+            /* .inp 固有 */
+            .inp {
+                flex: 1;
+                font-family: var(--font-main);
+                font-size: 0.9rem;
+                min-width: 0;
+            }
+            .inp-mono {
+                font-family: var(--font-mono);
+                font-size: 0.83rem;
+            }
+            textarea.inp {
+                height: auto;
+                min-height: 5rem;
+                padding: 0.4rem 0.5rem;
+                line-height: 1.55;
+                resize: vertical;
+                width: 100%;
+                display: block;
+                box-sizing: border-box;
+            }
+
+            /* ── 能力値グリッド (コンテナクエリで自身の幅基準) ── */
+            .s-sec {
+                container-type: inline-size;
+            }
+            .ab-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.32rem 0.6rem;
+            }
+            @container (min-width: 470px) {
+                .ab-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            .ab-row {
+                display: grid;
+                grid-template-columns: 2.5rem 1fr var(--inp-h) 4rem;
+                align-items: center;
+                gap: 0.28rem;
+            }
+            .ab-label {
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                color: var(--cyan);
+                text-align: right;
+                padding-right: 0.15rem;
+            }
+            /* ab-dice / ab-val は共通input継承 */
+            .ab-dice {
+                font-family: var(--font-mono);
+                font-size: 0.82rem;
+                width: 100%;
+            }
+            .ab-val {
+                font-family: var(--font-mono);
+                font-size: 0.88rem;
+                text-align: center;
+                color: var(--text-bright);
+                width: 100%;
+            }
+            .ab-roll {
+                background: rgba(0, 229, 255, 0.08);
+                border: 1px solid rgba(0, 229, 255, 0.2);
+                border-radius: calc(var(--r) - 3px);
+                color: var(--cyan);
+                cursor: pointer;
+                padding: 0;
+                width: var(--inp-h);
+                height: var(--inp-h);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background var(--t);
+                flex-shrink: 0;
+            }
+            .ab-roll:hover {
+                background: rgba(0, 229, 255, 0.18);
+            }
+            .ab-roll .material-icons {
+                font-size: 0.9rem;
+            }
+
+            .ab-footer {
+                display: flex;
+                align-items: center;
+                margin-top: 0.55rem;
+            }
+
+            /* ── 派生値 ── */
+            .derived-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem 0.6rem;
+            }
+            .derived-cell {
+                display: flex;
+                flex-direction: column;
+                gap: 0.2rem;
+                width: 80px;
+            }
+            .derived-label {
+                font-size: 0.68rem;
+                font-family: var(--font-mono);
+                color: var(--text-dim);
+                letter-spacing: 0.08em;
+            }
+            /* derived-val は共通input継承、幅はcellに依存 */
+            .derived-val {
+                text-align: center;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 0.88rem;
+                width: 100%;
+            }
+            /* ── Dynamic rows ── */
+            .dyn-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+            .dyn-row {
+                display: grid;
+                gap: 0.3rem;
+                align-items: center;
+            }
+            .dyn-row-skill {
+                grid-template-columns: 1fr 4rem var(--inp-h);
+            }
+            .dyn-row-cmd {
+                grid-template-columns: 10rem 1fr var(--inp-h);
+            }
+            .dyn-del {
+                background: none;
+                border: 1px solid var(--border);
+                border-radius: calc(var(--r) - 3px);
+                color: var(--text-dim);
+                cursor: pointer;
+                font-size: 0.7rem;
+                width: var(--inp-h);
+                height: var(--inp-h);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    border-color var(--t);
+                box-sizing: border-box;
+            }
+            .dyn-del:hover {
+                background: rgba(255, 80, 80, 0.12);
+                color: #f55;
+                border-color: rgba(255, 80, 80, 0.3);
+            }
+            .dyn-add {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+                margin-top: 0.45rem;
+                font-size: 0.82rem;
+                color: var(--text-dim);
+                background: none;
+                border: 1px dashed var(--border);
+                border-radius: calc(var(--r) - 3px);
+                padding: 0.28rem 0.7rem;
+                cursor: pointer;
+                width: 100%;
+                box-sizing: border-box;
+                transition:
+                    color var(--t),
+                    border-color var(--t);
+            }
+            .dyn-add:hover {
+                color: var(--cyan);
+                border-color: rgba(0, 229, 255, 0.4);
+            }
+            .dyn-add .material-icons {
+                font-size: 0.9rem;
+            }
+
+            /* ── トグルスイッチ ── */
+            .tog {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                cursor: pointer;
+            }
+            .tog input[type='checkbox'] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 30px;
+                height: 16px;
+                border-radius: 8px;
+                border: 1px solid var(--input-bd);
+                background: var(--input-bg);
+                position: relative;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition:
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .tog input[type='checkbox']::after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--text-dim);
+                top: 2px;
+                left: 2px;
+                transition:
+                    transform var(--t),
+                    background var(--t);
+            }
+            .tog input[type='checkbox']:checked {
+                background: rgba(0, 229, 255, 0.18);
+                border-color: var(--cyan);
+            }
+            .tog input[type='checkbox']:checked::after {
+                background: var(--cyan);
+                transform: translateX(14px);
+            }
+            .tl {
+                font-size: 0.78rem;
+                color: var(--text);
+                user-select: none;
+            }
+
+            /* ── Segment / Toggle ── */
+            .seg {
+                display: flex;
+                border: 1px solid var(--border);
+                border-radius: calc(var(--r) - 2px);
+                overflow: hidden;
+            }
+            .seg input[type='radio'] {
+                display: none;
+            }
+            .seg label {
+                padding: 0.24rem 0.65rem;
+                font-size: 0.78rem;
+                cursor: pointer;
+                color: var(--text-dim);
+                border-right: 1px solid var(--border);
+                transition:
+                    background var(--t),
+                    color var(--t);
+                user-select: none;
+            }
+            .seg label:last-child {
+                border-right: none;
+            }
+            .seg input[type='radio']:checked + label {
+                background: rgba(0, 229, 255, 0.14);
+                color: var(--cyan);
+            }
+
+            /* ── Preview Panel ── */
+            .pv-tabs {
+                display: flex;
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .pv-tab {
+                padding: 0.45rem 1rem;
+                font-size: 0.8rem;
+                font-family: var(--font-mono);
+                background: none;
+                border: none;
+                border-bottom: 2px solid transparent;
+                color: var(--text-dim);
+                cursor: pointer;
+                transition:
+                    color var(--t),
+                    border-color var(--t);
+            }
+            .pv-tab.active {
+                color: var(--cyan);
+                border-bottom-color: var(--cyan);
+            }
+            .pv-out {
+                flex: 1;
+                overflow-y: auto;
+                padding: 0.65rem 0.75rem;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+            .pv-text {
+                font-family: var(--font-mono);
+                font-size: 0.73rem;
+                white-space: pre-wrap;
+                word-break: break-all;
+                color: var(--text-dim);
+                margin: 0;
+                line-height: 1.65;
+            }
+            .pv-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+                padding: 0.6rem 0.75rem;
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .btn-copy,
+            .btn-roll-copy {
+                width: 100%;
+                padding: 0.46rem;
+                border-radius: calc(var(--r) - 2px);
+                font-size: 0.85rem;
+                cursor: pointer;
+                font-family: var(--font-main);
+                transition: background var(--t);
+            }
+            .btn-copy {
+                background: rgba(0, 229, 255, 0.12);
+                border: 1px solid rgba(0, 229, 255, 0.3);
+                color: var(--cyan);
+            }
+            .btn-copy:hover {
+                background: rgba(0, 229, 255, 0.22);
+            }
+            .btn-roll-copy {
+                background: rgba(33, 150, 243, 0.12);
+                border: 1px solid rgba(33, 150, 243, 0.3);
+                color: var(--blue);
+            }
+            .btn-roll-copy:hover {
+                background: rgba(33, 150, 243, 0.22);
+            }
+
+            /* Roll-all button */
+            .btn-roll-all {
+                background: rgba(0, 229, 255, 0.08);
+                border: 1px solid rgba(0, 229, 255, 0.25);
+                border-radius: calc(var(--r) - 2px);
+                color: var(--cyan);
+                cursor: pointer;
+                font-size: 0.82rem;
+                padding: 0.28rem 0.7rem;
+                display: flex;
+                align-items: center;
+                gap: 0.28rem;
+                transition: background var(--t);
+            }
+            .btn-roll-all:hover {
+                background: rgba(0, 229, 255, 0.18);
+            }
+            .btn-roll-all .material-icons {
+                font-size: 0.95rem;
+            }
+
+            /* ── 折り畳み (NPCリスト) ── */
+            #listPanel.list-collapsed .pb {
+                display: none;
+            }
+            #toggleListBtn {
+                margin-left: auto;
+                background: none;
+                border: none;
+                color: var(--text-dim);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                padding: 2px;
+                border-radius: 4px;
+                transition: color var(--t);
+            }
+            #toggleListBtn:hover {
+                color: var(--cyan);
+            }
+            #toggleListBtn .material-icons {
+                font-size: 1.1rem;
+            }
+
+            /* ── 縦並びレイアウト (≤900px) ── */
+            #mob-tabs {
+                display: none;
+            }
+
+            @media (max-width: 900px) {
+                html,
+                body {
+                    height: auto;
+                    overflow: auto;
+                }
+
+                #main {
+                    display: flex;
+                    flex-direction: column;
+                    height: auto;
+                    overflow: visible;
+                    padding: 0.5rem clamp(0.4rem, 2vw, 0.8rem);
+                    gap: 0.5rem;
+                }
+
+                .panel {
+                    height: auto;
+                    overflow: visible;
+                }
+                .pb {
+                    max-height: none;
+                    height: auto;
+                    overflow-y: visible;
+                }
+                .pv-out {
+                    overflow-y: visible;
+                    height: auto;
+                    min-height: 200px;
+                }
+            }
+
+            @media (max-width: 600px) {
+                .dyn-row-cmd {
+                    grid-template-columns: 7rem 1fr var(--inp-h);
+                }
+            }
+
+            @media (max-width: 420px) {
+                .dyn-row-cmd {
+                    grid-template-columns: 5.5rem 1fr var(--inp-h);
+                }
+            }
+            /* ── ガイド内 dl ── */
+            .guide-dl {
+                display: grid;
+                grid-template-columns: 1.4rem 1fr;
+                gap: 0.55rem 0.5rem;
+                align-items: start;
+                line-height: 1.6;
+            }
+            .guide-dl .mi {
+                font-family: 'Material Icons';
+                font-size: 1.05rem;
+                color: var(--cyan);
+                margin-top: 0.1rem;
+            }
+            .guide-dl dt {
+                font-weight: bold;
+                color: var(--text-bright);
+            }
+            .guide-dl dd {
+                margin: 0;
+                color: var(--text);
+                font-size: 0.85rem;
+            }
+            .guide-copyright {
+                margin-top: 1rem;
+                padding: 0.75rem 0.85rem;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid var(--border);
+                border-radius: calc(var(--r) - 2px);
+                font-size: 0.75rem;
+                color: var(--text-dim);
+                line-height: 1.7;
+            }
+            .guide-copyright p {
+                margin: 0 0 0.4rem;
+            }
+            .guide-copyright p:last-child {
+                margin: 0;
+            }
+            .guide-copyright strong {
+                color: var(--text);
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
+
+        <div id="main">
+            <!-- ── NPC リスト ── -->
+            <div class="panel" id="listPanel" data-tab="list">
+                <div class="ph">
+                    <span class="material-icons" style="font-size: 1rem; color: var(--cyan)">groups</span>
+                    <span class="ph-title">NPC LIST</span>
+                    <button id="addNpcBtn">＋ 新規</button>
+                    <button id="toggleListBtn" title="折り畳む"><span class="material-icons">expand_less</span></button>
+                </div>
+                <div class="pb" id="npcListBody"></div>
+            </div>
+
+            <!-- ── 編集フォーム ── -->
+            <div class="panel" id="editPanel" data-tab="edit">
+                <div class="ph">
+                    <span class="material-icons" style="font-size: 1rem; color: var(--cyan)">edit</span>
+                    <span class="ph-title">EDIT</span>
+                    <div style="margin-left: auto">
+                        <div class="seg">
+                            <input type="radio" name="ver" id="ver7" value="7" checked /><label for="ver7">CoC7</label> <input type="radio" name="ver" id="ver6" value="6" /><label for="ver6"
+                                >CoC6</label
+                            >
+                        </div>
+                    </div>
+                </div>
+                <div class="pb" id="editBody">
+                    <!-- 基本情報 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">person</span>基本情報</div>
+                        <div class="f-row">
+                            <label class="f-label" for="npcName">名前</label>
+                            <input id="npcName" type="text" class="inp" placeholder="NPC名" />
+                        </div>
+                    </div>
+
+                    <!-- 能力値 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">fitness_center</span>能力値</div>
+                        <div class="ab-grid" id="abGrid">
+                            <!-- STR -->
+                            <div class="ab-row">
+                                <span class="ab-label">STR</span>
+                                <input type="text" id="dice-STR" class="ab-dice" value="" placeholder="3D6" />
+                                <button class="ab-roll" id="roll-STR" title="STRロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-STR" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- CON -->
+                            <div class="ab-row">
+                                <span class="ab-label">CON</span>
+                                <input type="text" id="dice-CON" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-CON" title="CONロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-CON" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- POW -->
+                            <div class="ab-row">
+                                <span class="ab-label">POW</span>
+                                <input type="text" id="dice-POW" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-POW" title="POWロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-POW" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- DEX -->
+                            <div class="ab-row">
+                                <span class="ab-label">DEX</span>
+                                <input type="text" id="dice-DEX" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-DEX" title="DEXロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-DEX" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- APP -->
+                            <div class="ab-row">
+                                <span class="ab-label">APP</span>
+                                <input type="text" id="dice-APP" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-APP" title="APPロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-APP" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- SIZ -->
+                            <div class="ab-row">
+                                <span class="ab-label">SIZ</span>
+                                <input type="text" id="dice-SIZ" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-SIZ" title="SIZロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-SIZ" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- INT -->
+                            <div class="ab-row">
+                                <span class="ab-label">INT</span>
+                                <input type="text" id="dice-INT" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-INT" title="INTロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-INT" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                            <!-- EDU -->
+                            <div class="ab-row">
+                                <span class="ab-label">EDU</span>
+                                <input type="text" id="dice-EDU" class="ab-dice" value="" />
+                                <button class="ab-roll" id="roll-EDU" title="EDUロール"><span class="material-icons">casino</span></button>
+                                <input type="number" id="val-EDU" class="ab-val" value="0" min="0" max="999" />
+                            </div>
+                        </div>
+                        <div class="ab-footer">
+                            <button class="btn-roll-all" id="rollAllBtn"><span class="material-icons">casino</span>全ロール</button>
+                        </div>
+                    </div>
+
+                    <!-- 派生値 -->
+                    <div class="s-sec">
+                        <div class="s-ttl">
+                            <span class="material-icons">monitor_heart</span>派生値
+                            <label class="tog" style="margin-left: 0.6rem">
+                                <input type="checkbox" id="sanToggle" checked />
+                                <span class="tl">SAN</span>
+                            </label>
+                        </div>
+                        <div class="derived-grid">
+                            <div class="derived-cell">
+                                <span class="derived-label">HP</span>
+                                <input type="number" id="npcHp" class="derived-val" value="0" min="0" />
+                            </div>
+                            <div class="derived-cell">
+                                <span class="derived-label">MP</span>
+                                <input type="number" id="npcMp" class="derived-val" value="0" min="0" />
+                            </div>
+                            <div class="derived-cell" id="sanCell">
+                                <span class="derived-label">SAN</span>
+                                <input type="number" id="npcSan" class="derived-val" value="0" min="0" />
+                            </div>
+                            <div class="derived-cell">
+                                <span class="derived-label">DB</span>
+                                <input type="text" id="npcDb" class="derived-val inp-mono" value="0" />
+                            </div>
+                            <div class="derived-cell" id="buildCell">
+                                <span class="derived-label">ビルド</span>
+                                <input type="number" id="npcBuild" class="derived-val" value="0" />
+                            </div>
+                            <div class="derived-cell">
+                                <span class="derived-label" id="movLabel">MOV</span>
+                                <input type="number" id="npcMov" class="derived-val" value="" placeholder="—" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 技能 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">psychology</span>技能</div>
+                        <!-- CoC6のみ: コマンド種別 -->
+                        <div class="f-row" id="cmdTypeRow" style="display: none; margin-bottom: 0.5rem">
+                            <label class="f-label">判定</label>
+                            <div class="seg">
+                                <input type="radio" name="cmdType" id="cmdCC" value="CC" checked /><label for="cmdCC">CC</label> <input type="radio" name="cmdType" id="cmdCCB" value="CCB" /><label
+                                    for="cmdCCB"
+                                    >CCB</label
+                                >
+                            </div>
+                        </div>
+                        <div class="dyn-list" id="skillsBody"></div>
+                        <button class="dyn-add" id="addSkillBtn"><span class="material-icons">add</span>技能を追加</button>
+                    </div>
+
+                    <!-- コマンド -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">code</span>コマンド / ダメージ</div>
+                        <div class="dyn-list" id="cmdsBody"></div>
+                        <button class="dyn-add" id="addCmdBtn"><span class="material-icons">add</span>コマンドを追加</button>
+                    </div>
+
+                    <!-- メモ -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">notes</span>メモ</div>
+                        <textarea id="npcMemo" class="inp" rows="4" placeholder="自由記入欄"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 出力プレビュー ── -->
+            <div class="panel" id="prevPanel" data-tab="preview">
+                <div class="ph">
+                    <span class="material-icons" style="font-size: 1rem; color: var(--cyan)">code</span>
+                    <span class="ph-title">OUTPUT</span>
+                </div>
+                <div class="pv-tabs">
+                    <button class="pv-tab active" data-pv="json">JSON</button>
+                    <button class="pv-tab" data-pv="chapare">チャパレ</button>
+                </div>
+                <div class="pv-actions">
+                    <button class="btn-copy" id="copyBtn">コピー</button>
+                    <button class="btn-roll-copy" id="rollCopyBtn">ロール＆コピー</button>
+                </div>
+                <div class="pv-out" id="pvOut">
+                    <pre class="pv-text" id="pvText"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 使い方ガイドモーダル ====== -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <h3>基本的な流れ</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">add_circle</span>
+                            <div>
+                                <dt>NPCを追加する</dt>
+                                <dd>左パネルの「＋ 新規」ボタンで NPC を追加。リストの項目をクリックして切り替えます。不要な NPC は ✕ で削除できます（1体は残ります）。</dd>
+                            </div>
+                            <span class="mi">tune</span>
+                            <div>
+                                <dt>バージョンを選ぶ</dt>
+                                <dd>EDIT パネル右上の <strong>CoC7 / CoC6</strong> で版を切り替えます。切り替えると派生値（HP・DB など）が自動で再計算されます。</dd>
+                            </div>
+                            <span class="mi">casino</span>
+                            <div>
+                                <dt>能力値を入力 / ロールする</dt>
+                                <dd>
+                                    ダイス欄に式（例：3D6）を入力して各
+                                    <span class="material-icons" style="font-size: 0.9rem; vertical-align: middle">casino</span> ボタンで個別ロール、または「全ロール」で一括ロールできます。CoC7
+                                    では結果が自動的に×5されます。
+                                </dd>
+                            </div>
+                            <span class="mi">monitor_heart</span>
+                            <div>
+                                <dt>派生値を確認・編集する</dt>
+                                <dd>HP・MP・DB などは能力値から自動計算されます。手動で上書きすることも可能です。SAN トグルで正気度の出力のオン／オフを切り替えられます。</dd>
+                            </div>
+                            <span class="mi">psychology</span>
+                            <div>
+                                <dt>技能を追加する</dt>
+                                <dd>「技能を追加」ボタンで技能行を追加。技能名と成功値（%）を入力します。CoC6 の場合は判定タイプ（CC / CCB）も選択してください。</dd>
+                            </div>
+                            <span class="mi">code</span>
+                            <div>
+                                <dt>コマンド / ダメージを追加する</dt>
+                                <dd>
+                                    武器攻撃などのダイス式を登録します。式中に <code>DB</code>・<code>db</code>
+                                    と書くとダメージボーナスの参照に変換されます（例：<code>1D6+2+DB</code>）。
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <h3>出力パネル</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">data_object</span>
+                            <div>
+                                <dt>JSON タブ</dt>
+                                <dd>ココフォリアなどにそのまま貼り付けられるキャラクター JSON を出力します。「コピー」ボタンでクリップボードにコピーできます。</dd>
+                            </div>
+                            <span class="mi">chat</span>
+                            <div>
+                                <dt>チャパレ タブ</dt>
+                                <dd>BCDice 用チャットパレットを出力します。能力値・技能・コマンド・ステータスコメントが含まれます。</dd>
+                            </div>
+                            <span class="mi">replay</span>
+                            <div>
+                                <dt>ロール＆コピー</dt>
+                                <dd>全能力値を一括ロールしてから即座にコピーします。NPCを量産する際に便利です。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>データの保存</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">save</span>
+                            <div>
+                                <dt>自動保存</dt>
+                                <dd>入力内容はブラウザのローカルストレージに自動保存されます。ページを閉じても次回アクセス時に復元されます。</dd>
+                            </div>
+                            <span class="mi">warning</span>
+                            <div>
+                                <dt>注意</dt>
+                                <dd>ブラウザのデータを削除するとNPCデータも消えます。重要なキャラクターは JSON をコピーして手元に保管してください。</dd>
+                            </div>
+                        </dl>
+
+                        <div class="guide-copyright">
+                            <p><strong>権利表示</strong></p>
+                            <p>本作は、「株式会社アークライト」及び「株式会社KADOKAWA」が権利を有する『クトゥルフ神話TRPG』シリーズの二次創作物です。</p>
+                            <p>
+                                Call of Cthulhu is copyright ©1981, 2015, 2019 by Chaosium Inc. ;all rights reserved. Arranged by Arclight Inc.<br />
+                                Call of Cthulhu is a registered trademark of Chaosium Inc.<br />
+                                PUBLISHED BY KADOKAWA CORPORATION　「クトゥルフ神話TRPG」「新クトゥルフ神話TRPG」
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="site-footer"><div class="container"></div></footer>
+
+        <script src="common.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                /* ================================================================
+                   定数
+                ================================================================ */
+                const STATS = ['STR', 'CON', 'POW', 'DEX', 'APP', 'SIZ', 'INT', 'EDU'];
+
+                const DEFAULT_DICE_7 = { STR: '', CON: '', POW: '', DEX: '', APP: '', SIZ: '', INT: '', EDU: '' };
+                const DEFAULT_DICE_6 = { STR: '', CON: '', POW: '', DEX: '', APP: '', SIZ: '', INT: '', EDU: '' };
+
+                // CoC7 DB/Build テーブル (STR+SIZ の合計 — CoC7 は能力値×5 で保存)
+                const DB_TABLE_7 = [
+                    { max: 64, db: '-2', build: -2 },
+                    { max: 84, db: '-1', build: -1 },
+                    { max: 124, db: '0', build: 0 },
+                    { max: 164, db: '+1D4', build: 1 },
+                    { max: 204, db: '+1D6', build: 2 },
+                    { max: 284, db: '+2D6', build: 3 },
+                    { max: 364, db: '+3D6', build: 4 },
+                    { max: 444, db: '+4D6', build: 5 },
+                    { max: 524, db: '+5D6', build: 6 },
+                ];
+
+                // CoC6 DB テーブル (STR+SIZ の合計)
+                const DB_TABLE_6 = [
+                    { max: 12, db: '-1D6' },
+                    { max: 16, db: '-1D4' },
+                    { max: 24, db: '0' },
+                    { max: 32, db: '+1D4' },
+                    { max: 40, db: '+1D6' },
+                    { max: 56, db: '+2D6' },
+                    { max: 72, db: '+3D6' },
+                    { max: 88, db: '+4D6' },
+                    { max: 104, db: '+5D6' },
+                    { max: 120, db: '+6D6' },
+                    { max: 136, db: '+7D6' },
+                    { max: 152, db: '+8D6' },
+                    { max: 168, db: '+9D6' },
+                    { max: 184, db: '+10D6' },
+                ];
+
+                /* ================================================================
+                   状態
+                ================================================================ */
+                let npcs = [];
+                let currentId = null;
+                let pvMode = 'json';
+                let saveTimer = null;
+
+                /* ================================================================
+                   永続化
+                ================================================================ */
+                const STORAGE_KEY = 'iklab_coc_npc_token_v1';
+
+                function saveAll() {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify({ npcs, currentId }));
+                    } catch (e) {}
+                }
+                function scheduleSave() {
+                    clearTimeout(saveTimer);
+                    saveTimer = setTimeout(saveAll, 400);
+                }
+                function loadAll() {
+                    try {
+                        const raw = localStorage.getItem(STORAGE_KEY);
+                        if (!raw) return;
+                        const data = JSON.parse(raw);
+                        npcs = data.npcs || [];
+                        currentId = data.currentId || null;
+                    } catch (e) {}
+                }
+
+                /* ================================================================
+                   NPC 生成
+                ================================================================ */
+                function uid() {
+                    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+                }
+
+                function newNpc(version = '7') {
+                    const dice = version === '7' ? DEFAULT_DICE_7 : DEFAULT_DICE_6;
+                    const abilities = {};
+                    STATS.forEach((s) => {
+                        abilities[s] = { dice: dice[s], value: 0 };
+                    });
+                    return {
+                        id: uid(),
+                        version,
+                        name: '新規NPC',
+                        externalUrl: '',
+                        abilities,
+                        hp: 0,
+                        mp: 0,
+                        san: 0,
+                        sanEnabled: true,
+                        db: '0',
+                        build: 0,
+                        mov: '',
+                        skills: [{ name: '', value: 0 }],
+                        commands: [{ name: '', expr: '' }],
+                        commandType: 'CC',
+                        memo: '',
+                    };
+                }
+
+                function getCurrentNpc() {
+                    return npcs.find((n) => n.id === currentId) || null;
+                }
+
+                /* ================================================================
+                   計算
+                ================================================================ */
+                function rollDice(expr) {
+                    if (!expr || !expr.trim()) return 0;
+                    try {
+                        const s = expr.trim().toUpperCase().replace(/\s/g, '');
+                        // split by + keeping sign, handle leading minus
+                        const tokens = s
+                            .replace(/-/g, '+-')
+                            .split('+')
+                            .filter((p) => p !== '');
+                        let total = 0;
+                        for (const tok of tokens) {
+                            if (tok.includes('D')) {
+                                const [nStr, mStr] = tok.split('D');
+                                const n = parseInt(nStr) || 1;
+                                const m = parseInt(mStr) || 6;
+                                const sign = n < 0 ? -1 : 1;
+                                for (let i = 0; i < Math.abs(n); i++) total += sign * (Math.floor(Math.random() * m) + 1);
+                            } else {
+                                total += parseInt(tok) || 0;
+                            }
+                        }
+                        return total;
+                    } catch (e) {
+                        return 0;
+                    }
+                }
+
+                function calcDB7(sum) {
+                    for (const row of DB_TABLE_7) {
+                        if (sum <= row.max) return { db: row.db, build: row.build };
+                    }
+                    const extra = Math.floor((sum - 525) / 80) + 1;
+                    return { db: `+${5 + extra}D6`, build: 6 + extra };
+                }
+
+                function calcDB6(sum) {
+                    for (const row of DB_TABLE_6) {
+                        if (sum <= row.max) return row.db;
+                    }
+                    const extra = Math.floor((sum - 185) / 16) + 1;
+                    return `+${10 + extra}D6`;
+                }
+
+                function calcDerived(npc) {
+                    const v = (s) => npc.abilities[s]?.value || 0;
+                    if (npc.version === '7') {
+                        npc.hp = Math.floor((v('CON') + v('SIZ')) / 10);
+                        npc.mp = Math.floor(v('POW') / 5);
+                        npc.san = v('POW');
+                        const { db, build } = calcDB7(v('STR') + v('SIZ'));
+                        npc.db = db;
+                        npc.build = build;
+                    } else {
+                        npc.hp = Math.ceil((v('CON') + v('SIZ')) / 2);
+                        npc.mp = v('POW');
+                        npc.san = v('POW') * 5;
+                        npc.db = calcDB6(v('STR') + v('SIZ'));
+                    }
+                }
+
+                /* ================================================================
+                   出力生成
+                ================================================================ */
+                function genJson(npc) {
+                    const v = (s) => npc.abilities[s]?.value || 0;
+                    const status = [
+                        { label: 'HP', value: npc.hp, max: npc.hp },
+                        { label: 'MP', value: npc.mp, max: npc.mp },
+                    ];
+                    if (npc.sanEnabled) status.push({ label: 'SAN', value: npc.san, max: npc.san });
+
+                    const params = STATS.map((s) => ({ label: s, value: String(v(s)) }));
+                    params.push({ label: 'DB', value: npc.db });
+                    if (npc.version === '7') params.push({ label: 'ビルド', value: String(npc.build) });
+                    const movVal = parseInt(npc.mov);
+                    if (!isNaN(movVal) && npc.mov !== '') params.push({ label: npc.version === '7' ? 'MOV' : '移動率', value: String(movVal) });
+
+                    return JSON.stringify(
+                        {
+                            kind: 'character',
+                            data: {
+                                name: npc.name || '名無し',
+                                initiative: v('DEX'),
+                                externalUrl: npc.externalUrl || '',
+                                status,
+                                params,
+                                commands: genChaPare(npc),
+                                memo: npc.memo || '',
+                            },
+                        },
+                        null,
+                        2
+                    );
+                }
+
+                function genChaPare(npc) {
+                    const v = (s) => npc.abilities[s]?.value || 0;
+                    // CoC6: 能力値は生値 (3〜18)、判定は×5で行う
+                    const av = (s) => (npc.version === '6' ? v(s) * 5 : v(s));
+                    const ct = npc.version === '7' ? 'CC' : npc.commandType || 'CC';
+                    const lines = [];
+                    if (npc.sanEnabled) lines.push(`${ct}<=${npc.san} 正気度ロール`);
+                    STATS.forEach((s) => lines.push(`${ct}<=${av(s)} ${s}`));
+                    npc.skills.filter((s) => s.name).forEach((s) => lines.push(`${ct}<=${s.value} ${s.name}`));
+                    npc.commands
+                        .filter((c) => c.expr)
+                        .forEach((c) => {
+                            const expr = c.expr.replace(/\{[Dd][Bb]\}|(?<![A-Za-z0-9_{])[Dd][Bb](?![A-Za-z0-9_}])/g, '{DB}');
+                            lines.push(c.name ? `${c.name} ${expr}` : expr);
+                        });
+                    lines.push(`//HP=${npc.hp}`, `//MP=${npc.mp}`);
+                    if (npc.sanEnabled) lines.push(`//SAN=${npc.san}`);
+                    lines.push(`//DB=${npc.db}`);
+                    if (npc.version === '7') lines.push(`//ビルド=${npc.build}`);
+                    if (npc.mov !== '') lines.push(`//${npc.version === '7' ? 'MOV' : '移動率'}=${npc.mov}`);
+                    STATS.forEach((s) => lines.push(`//${s}=${v(s)}`));
+                    return lines.join('\n');
+                }
+
+                /* ================================================================
+                   描画
+                ================================================================ */
+                function renderList() {
+                    const body = document.getElementById('npcListBody');
+                    body.innerHTML = '';
+                    npcs.forEach((npc) => {
+                        const el = document.createElement('div');
+                        el.className = 'npc-item' + (npc.id === currentId ? ' active' : '');
+                        el.innerHTML =
+                            `<span class="ver-badge">${npc.version === '7' ? 'CoC7' : 'CoC6'}</span>` +
+                            `<span class="npc-name">${esc(npc.name || '名無し')}</span>` +
+                            `<button class="npc-del" data-id="${npc.id}" title="削除">✕</button>`;
+                        el.addEventListener('click', (e) => {
+                            if (!e.target.classList.contains('npc-del')) selectNpc(npc.id);
+                        });
+                        el.querySelector('.npc-del').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteNpc(npc.id);
+                        });
+                        body.appendChild(el);
+                    });
+                }
+
+                function renderForm(npc) {
+                    if (!npc) return;
+                    // Version
+                    const verEl = document.querySelector(`input[name="ver"][value="${npc.version}"]`);
+                    if (verEl) verEl.checked = true;
+                    applyVerUI(npc.version);
+
+                    // Basic
+                    document.getElementById('npcName').value = npc.name || '';
+                    // externalUrl not shown in form
+
+                    // Command type (CoC6)
+                    const ctEl = document.querySelector(`input[name="cmdType"][value="${npc.commandType || 'CC'}"]`);
+                    if (ctEl) ctEl.checked = true;
+
+                    // Abilities
+                    STATS.forEach((s) => {
+                        const d = document.getElementById(`dice-${s}`);
+                        const v = document.getElementById(`val-${s}`);
+                        if (d) d.value = npc.abilities[s]?.dice || '';
+                        if (v) v.value = npc.abilities[s]?.value ?? 0;
+                    });
+
+                    // Derived
+                    document.getElementById('npcHp').value = npc.hp;
+                    document.getElementById('npcMp').value = npc.mp;
+                    document.getElementById('npcSan').value = npc.san;
+                    document.getElementById('npcDb').value = npc.db;
+                    document.getElementById('npcBuild').value = npc.build;
+                    document.getElementById('npcMov').value = npc.mov || '';
+                    const sanCk = document.getElementById('sanToggle');
+                    sanCk.checked = npc.sanEnabled;
+                    updateSanUI(npc.sanEnabled);
+
+                    // Skills
+                    const sb = document.getElementById('skillsBody');
+                    sb.innerHTML = '';
+                    (npc.skills.length ? npc.skills : [{ name: '', value: 0 }]).forEach((sk) => addSkillRow(sk.name, sk.value));
+
+                    // Commands
+                    const cb = document.getElementById('cmdsBody');
+                    cb.innerHTML = '';
+                    (npc.commands.length ? npc.commands : [{ name: '', expr: '' }]).forEach((c) => addCmdRow(c.name, c.expr));
+
+                    // Memo
+                    document.getElementById('npcMemo').value = npc.memo || '';
+                }
+
+                function renderPreview() {
+                    const npc = getCurrentNpc();
+                    const el = document.getElementById('pvText');
+                    if (!npc) {
+                        el.textContent = '';
+                        return;
+                    }
+                    el.textContent = pvMode === 'json' ? genJson(npc) : genChaPare(npc);
+                }
+
+                function applyVerUI(ver) {
+                    document.getElementById('buildCell').style.display = ver === '7' ? '' : 'none';
+                    document.getElementById('cmdTypeRow').style.display = ver === '6' ? '' : 'none';
+                    document.getElementById('movLabel').textContent = ver === '7' ? 'MOV' : '移動率';
+                }
+
+                function updateSanUI(enabled) {
+                    const cell = document.getElementById('sanCell');
+                    cell.style.opacity = enabled ? '1' : '0.4';
+                    cell.style.pointerEvents = enabled ? '' : 'none';
+                }
+
+                function pushDerivedToForm(npc) {
+                    document.getElementById('npcHp').value = npc.hp;
+                    document.getElementById('npcMp').value = npc.mp;
+                    document.getElementById('npcSan').value = npc.san;
+                    document.getElementById('npcDb').value = npc.db;
+                    document.getElementById('npcBuild').value = npc.build;
+                }
+
+                /* ================================================================
+                   動的行
+                ================================================================ */
+                function addSkillRow(name = '', value = 0) {
+                    const el = document.createElement('div');
+                    el.className = 'dyn-row dyn-row-skill';
+                    el.innerHTML =
+                        `<input type="text" class="inp sk-name" value="${esc(String(name))}" placeholder="技能名" />` +
+                        `<input type="number" class="inp sk-val" value="${value}" min="0" max="999" />` +
+                        `<button class="dyn-del" title="削除">✕</button>`;
+                    el.querySelector('.dyn-del').addEventListener('click', () => {
+                        el.remove();
+                        onChange();
+                    });
+                    el.querySelector('.sk-name').addEventListener('input', onChange);
+                    el.querySelector('.sk-val').addEventListener('input', onChange);
+                    document.getElementById('skillsBody').appendChild(el);
+                }
+
+                function addCmdRow(name = '', expr = '') {
+                    const el = document.createElement('div');
+                    el.className = 'dyn-row dyn-row-cmd';
+                    el.innerHTML =
+                        `<input type="text" class="inp cmd-name" value="${esc(String(name))}" placeholder="名前" />` +
+                        `<input type="text" class="inp inp-mono cmd-expr" value="${esc(String(expr))}" placeholder="1D6+2+{DB}" />` +
+                        `<button class="dyn-del" title="削除">✕</button>`;
+                    el.querySelector('.dyn-del').addEventListener('click', () => {
+                        el.remove();
+                        onChange();
+                    });
+                    el.querySelector('.cmd-name').addEventListener('input', onChange);
+                    el.querySelector('.cmd-expr').addEventListener('input', onChange);
+                    document.getElementById('cmdsBody').appendChild(el);
+                }
+
+                /* ================================================================
+                   フォーム → NPC
+                ================================================================ */
+                function readFormIntoNpc() {
+                    const npc = getCurrentNpc();
+                    if (!npc) return;
+                    npc.version = document.querySelector('input[name="ver"]:checked')?.value || '7';
+                    npc.name = document.getElementById('npcName').value;
+                    npc.externalUrl = npc.externalUrl || '';
+                    npc.commandType = document.querySelector('input[name="cmdType"]:checked')?.value || 'CC';
+                    STATS.forEach((s) => {
+                        npc.abilities[s] = {
+                            dice: document.getElementById(`dice-${s}`)?.value || '',
+                            value: parseInt(document.getElementById(`val-${s}`)?.value) || 0,
+                        };
+                    });
+                    npc.hp = parseInt(document.getElementById('npcHp').value) || 0;
+                    npc.mp = parseInt(document.getElementById('npcMp').value) || 0;
+                    npc.san = parseInt(document.getElementById('npcSan').value) || 0;
+                    npc.db = document.getElementById('npcDb').value || '0';
+                    npc.build = parseInt(document.getElementById('npcBuild').value) || 0;
+                    npc.mov = document.getElementById('npcMov').value;
+                    npc.sanEnabled = document.getElementById('sanToggle').checked;
+                    npc.memo = document.getElementById('npcMemo').value;
+                    npc.skills = [];
+                    document.querySelectorAll('#skillsBody .dyn-row').forEach((row) => {
+                        npc.skills.push({ name: row.querySelector('.sk-name')?.value || '', value: parseInt(row.querySelector('.sk-val')?.value) || 0 });
+                    });
+                    npc.commands = [];
+                    document.querySelectorAll('#cmdsBody .dyn-row').forEach((row) => {
+                        npc.commands.push({ name: row.querySelector('.cmd-name')?.value || '', expr: row.querySelector('.cmd-expr')?.value || '' });
+                    });
+                }
+
+                /* ================================================================
+                   アクション
+                ================================================================ */
+                function onChange() {
+                    readFormIntoNpc();
+                    renderPreview();
+                    renderList();
+                    scheduleSave();
+                }
+
+                function selectNpc(id) {
+                    if (currentId) readFormIntoNpc();
+                    currentId = id;
+                    renderList();
+                    const npc = getCurrentNpc();
+                    if (npc) renderForm(npc);
+                    renderPreview();
+                    saveAll();
+                }
+
+                function addNpc() {
+                    if (currentId) readFormIntoNpc();
+                    const ver = document.querySelector('input[name="ver"]:checked')?.value || '7';
+                    const npc = newNpc(ver);
+                    npcs.push(npc);
+                    currentId = npc.id;
+                    renderList();
+                    renderForm(npc);
+                    renderPreview();
+                    saveAll();
+                }
+
+                function deleteNpc(id) {
+                    if (npcs.length <= 1) return;
+                    npcs = npcs.filter((n) => n.id !== id);
+                    if (currentId === id) {
+                        currentId = npcs[0]?.id || null;
+                        if (currentId) renderForm(getCurrentNpc());
+                    }
+                    renderList();
+                    renderPreview();
+                    saveAll();
+                }
+
+                function rollAbility(stat) {
+                    const npc = getCurrentNpc();
+                    if (!npc) return;
+                    const dice = document.getElementById(`dice-${stat}`)?.value || npc.abilities[stat]?.dice || '';
+                    if (!dice) return;
+                    let val = rollDice(dice);
+                    if (npc.version === '7') val *= 5;
+                    val = Math.max(0, val);
+                    const valEl = document.getElementById(`val-${stat}`);
+                    if (valEl) valEl.value = val;
+                    npc.abilities[stat] = { dice, value: val };
+                    calcDerived(npc);
+                    pushDerivedToForm(npc);
+                    renderPreview();
+                    renderList();
+                    scheduleSave();
+                }
+
+                function rollAll() {
+                    const npc = getCurrentNpc();
+                    if (!npc) return;
+                    STATS.forEach((s) => {
+                        const dice = document.getElementById(`dice-${s}`)?.value || npc.abilities[s]?.dice || '';
+                        if (!dice) return;
+                        let val = rollDice(dice);
+                        if (npc.version === '7') val *= 5;
+                        val = Math.max(0, val);
+                        const el = document.getElementById(`val-${s}`);
+                        if (el) el.value = val;
+                        npc.abilities[s] = { dice, value: val };
+                    });
+                    calcDerived(npc);
+                    pushDerivedToForm(npc);
+                    renderPreview();
+                    renderList();
+                    scheduleSave();
+                }
+
+                function copyText(text, btn) {
+                    const orig = btn.textContent;
+                    const ok = () => {
+                        btn.textContent = 'コピー完了 ✓';
+                        setTimeout(() => {
+                            btn.textContent = orig;
+                        }, 1600);
+                    };
+                    if (navigator.clipboard) {
+                        navigator.clipboard
+                            .writeText(text)
+                            .then(ok)
+                            .catch(() => fallbackCopy(text, ok));
+                    } else {
+                        fallbackCopy(text, ok);
+                    }
+                }
+
+                function fallbackCopy(text, cb) {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    cb?.();
+                }
+
+                /* ================================================================
+                   イベント
+                ================================================================ */
+                function initEvents() {
+                    document.getElementById('addNpcBtn').addEventListener('click', addNpc);
+
+                    // バージョン切り替え
+                    document.querySelectorAll('input[name="ver"]').forEach((r) => {
+                        r.addEventListener('change', () => {
+                            const npc = getCurrentNpc();
+                            if (npc) {
+                                npc.version = r.value;
+                                calcDerived(npc);
+                                pushDerivedToForm(npc);
+                            }
+                            applyVerUI(r.value);
+                            onChange();
+                        });
+                    });
+
+                    // コマンド種別 (CoC6)
+                    document.querySelectorAll('input[name="cmdType"]').forEach((r) => r.addEventListener('change', onChange));
+
+                    // 基本情報
+                    ['npcName', 'npcMemo'].forEach((id) => {
+                        document.getElementById(id)?.addEventListener('input', onChange);
+                    });
+
+                    // 能力値
+                    STATS.forEach((s) => {
+                        document.getElementById(`dice-${s}`)?.addEventListener('input', onChange);
+                        document.getElementById(`val-${s}`)?.addEventListener('input', () => {
+                            const npc = getCurrentNpc();
+                            if (npc) {
+                                npc.abilities[s].value = parseInt(document.getElementById(`val-${s}`).value) || 0;
+                                calcDerived(npc);
+                                pushDerivedToForm(npc);
+                            }
+                            onChange();
+                        });
+                        document.getElementById(`roll-${s}`)?.addEventListener('click', () => rollAbility(s));
+                    });
+
+                    // 派生値 (手動)
+                    ['npcHp', 'npcMp', 'npcSan', 'npcDb', 'npcBuild', 'npcMov'].forEach((id) => {
+                        document.getElementById(id)?.addEventListener('input', onChange);
+                    });
+
+                    // SAN トグル
+                    document.getElementById('sanToggle').addEventListener('change', function () {
+                        updateSanUI(this.checked);
+                        onChange();
+                    });
+
+                    // 全ロール
+                    document.getElementById('rollAllBtn').addEventListener('click', rollAll);
+
+                    // 技能・コマンド追加
+                    document.getElementById('addSkillBtn').addEventListener('click', () => {
+                        addSkillRow();
+                        onChange();
+                    });
+                    document.getElementById('addCmdBtn').addEventListener('click', () => {
+                        addCmdRow();
+                        onChange();
+                    });
+
+                    // プレビュータブ
+                    document.querySelectorAll('.pv-tab').forEach((btn) => {
+                        btn.addEventListener('click', () => {
+                            document.querySelectorAll('.pv-tab').forEach((b) => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            pvMode = btn.dataset.pv;
+                            renderPreview();
+                        });
+                    });
+
+                    // コピーボタン
+                    document.getElementById('copyBtn').addEventListener('click', function () {
+                        const npc = getCurrentNpc();
+                        if (!npc) return;
+                        copyText(pvMode === 'json' ? genJson(npc) : genChaPare(npc), this);
+                    });
+                    document.getElementById('rollCopyBtn').addEventListener('click', function () {
+                        rollAll();
+                        const npc = getCurrentNpc();
+                        if (!npc) return;
+                        copyText(pvMode === 'json' ? genJson(npc) : genChaPare(npc), this);
+                    });
+                }
+
+                /* ================================================================
+                   NPCリスト折り畳み
+                ================================================================ */
+                function initCollapsibleList() {
+                    const btn = document.getElementById('toggleListBtn');
+                    const panel = document.getElementById('listPanel');
+                    if (!btn || !panel) return;
+                    function updateIcon() {
+                        btn.querySelector('.material-icons').textContent = panel.classList.contains('list-collapsed') ? 'expand_more' : 'expand_less';
+                    }
+                    btn.addEventListener('click', () => {
+                        panel.classList.toggle('list-collapsed');
+                        updateIcon();
+                    });
+                    // デフォルト: 狭いときは折り畳む
+                    if (window.innerWidth <= 900) {
+                        panel.classList.add('list-collapsed');
+                        updateIcon();
+                    }
+                }
+
+                /* ================================================================
+                   ユーティリティ
+                ================================================================ */
+                function esc(s) {
+                    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                }
+
+                /* ================================================================
+                   初期化
+                ================================================================ */
+                document.addEventListener('DOMContentLoaded', () => {
+                    loadAll();
+                    if (npcs.length === 0) {
+                        const npc = newNpc('7');
+                        npcs.push(npc);
+                        currentId = npc.id;
+                    } else if (!currentId || !npcs.find((n) => n.id === currentId)) {
+                        currentId = npcs[0].id;
+                    }
+                    renderList();
+                    renderForm(getCurrentNpc());
+                    renderPreview();
+                    initEvents();
+                    initCollapsibleList();
+                    if (window.IKLab?.initNumSpinners) IKLab.initNumSpinners();
+                });
+            })();
+        </script>
+    </body>
+</html>
