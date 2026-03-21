@@ -1,277 +1,1512 @@
-<!DOCTYPE html>
-<html lang="ja">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ヘクス定規作成ツール | 違法建築のTRPGラボ</title>
+        <meta
+            name="description"
+            content="TRPG・ボードゲーム向けヘクスマップ用距離計測定規を無料で生成。距離ごとの色分け・カラースキーム・セルサイズ・テキスト縁取り・カスタムセルをブラウザ上で設定しPNG出力。ココフォリア・ユドナリウム等のオンセツール前景・スクリーンパネルとして利用可能。"
+        />
+        <meta name="author" content="違法建築" />
+        <link rel="icon" href="favicon.ico" />
+        <meta property="og:url" content="https://ihoukentiku.github.io/hex_ruler.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="ヘクス定規作成ツール | 違法建築のTRPGラボ" />
+        <meta property="og:description" content="ヘクスマップ用距離計測定規を生成。カラースキーム・距離ごとの色・カスタムセルをカスタマイズしてPNG出力。" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-		<title>ヘクス定規作成ツール | 違法建築のTRPGラボ</title>
-		<meta
-			name="description"
-			content="TRPGやボードゲームで使えるヘクス(ヘックス)マップ用の距離計測定規を、範囲や向き、透明度をカスタマイズしてダウンロードできます。グリッドに合わせればココフォリア等のオンセツールでも使用可能です。
-    （ファイル名にスクリーンパネル/前景でのサイズを記載します）"
-		/>
-		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
-		<style>
-			body {
-				font-family: "Noto Sans JP", sans-serif;
-				background: #f7f8fa;
-				margin: auto;
-				padding: 20px;
-				max-width: 800px;
-				color: #333;
-			}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
 
-			h1 {
-				font-size: 28px;
-				border-bottom: 2px solid #ccc;
-				padding-bottom: 5px;
-				margin-bottom: 20px;
-				margin-top: 10px;
-			}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
+        <link rel="stylesheet" href="common.css" />
 
-			.section {
-				background: white;
-				padding: 16px;
-				border-radius: 5px;
-				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-				margin-bottom: 20px;
-			}
-			.section > div {
-				display: flex;
-				flex-wrap: wrap;
-				row-gap: 16px;
-				column-gap: 16px;
-			}
-			.section > div > div {
-				display: flex;
-				flex-direction: column;
-				row-gap: 16px;
-			}
+        <style>
+            :root {
+                --page-width: 1400px;
+                --panel-w: 310px;
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --input-bd: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.05);
+                --input-bd: rgba(33, 150, 243, 0.4);
+            }
 
-			label {
-				font-weight: bold;
-			}
+            html,
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+            #main {
+                display: grid;
+                grid-template-columns: var(--panel-w) 1fr;
+                height: calc(100dvh - var(--header-h, 60px));
+                max-width: var(--page-width);
+                margin: 0 auto;
+                padding: 0.6rem clamp(0.5rem, 2vw, 1rem);
+                gap: 0.6rem;
+                overflow: hidden;
+            }
 
-			input {
-				vertical-align: middle;
-				box-sizing: border-box;
-			}
-			input[type="text"],
-			input[type="number"],
-			select {
-				border-radius: 4px;
-				font-size: 18px;
-				padding: 0px 5px 0px 5px;
-				height: 30px;
-			}
-			input[type="number"] {
-				border: 1px solid #888;
-				width: 50px;
-			}
-			input[type="color"] {
-				height: 30px;
-				border: 1px solid #aaa;
-				border-radius: 4px;
-			}
-			input[type="range"] {
-				width: 150px;
-			}
-			input[type="checkbox"] {
-				width: 20px;
-				height: 20px;
-			}
+            /* ── 設定パネル ── */
+            #settings-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                overflow-y: auto;
+                padding-right: 2px;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+            .panel-col {
+                display: contents;
+            }
 
-			canvas {
-				margin-top: 20px;
-				display: block;
-				margin-left: auto;
-				margin-right: auto;
-				max-width: 100%;
-				height: auto;
-			}
+            .s-sec {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: 0.75rem 0.9rem;
+            }
+            .s-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--cyan);
+                margin-bottom: 0.6rem;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            .s-ttl .material-icons {
+                font-size: 0.88rem;
+            }
 
-			button {
-				background-color: #448ad4;
-				color: white;
-				padding: 6px 12px;
-				border: none;
-				border-radius: 4px;
-				cursor: pointer;
-				transition: background-color 0.2s;
-				font-weight: bold;
-			}
+            .f {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                margin-bottom: 0.42rem;
+            }
+            .f:last-child {
+                margin-bottom: 0;
+            }
+            .f-col {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.3rem;
+            }
+            .f-sb {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .fl {
+                font-size: 0.78rem;
+                color: var(--text);
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .unit {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                flex-shrink: 0;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
 
-			button:hover {
-				background-color: #3d7bcd;
-			}
+            /* ── 入力系 ── */
+            input[type='number'] {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                width: 54px;
+                text-align: center;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t);
+                box-sizing: border-box;
+            }
+            input[type='number']:focus {
+                outline: none;
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.12);
+            }
+            select {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 0.76rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                cursor: pointer;
+                transition: border-color var(--t);
+            }
+            select:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+            option {
+                background: var(--bg2);
+                color: var(--text);
+            }
 
-			#opacityValue,
-			#textOpacityValue {
-				display: inline-block;
-				width: 45px;
-				text-align: right;
-			}
-			select {
-				width: 90px;
-			}
-		</style>
-	</head>
-	<body>
-		<div style="position: relative">
-			<h1 style="margin: 0">ヘクス定規作成ツール</h1>
-			<a href="https://ihoukentiku.github.io" target="_blank" style="position: absolute; bottom: 10px; right: 0">
-				<button style="padding: 6px 12px">ホームページへ</button>
-			</a>
-		</div>
+            /* ── セグメントコントロール ── */
+            .seg {
+                display: flex;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .seg input[type='radio'] {
+                display: none;
+            }
+            .seg label {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                padding: 0.15rem 0.48rem;
+                color: var(--text-dim);
+                cursor: pointer;
+                border-right: 1px solid var(--input-bd);
+                transition:
+                    background var(--t),
+                    color var(--t);
+                white-space: nowrap;
+                line-height: 1.6;
+            }
+            .seg label:last-child {
+                border-right: none;
+            }
+            .seg input[type='radio']:checked + label {
+                background: rgba(0, 229, 255, 0.15);
+                color: var(--cyan);
+            }
 
-		<div class="section">
-			<div>
-				<div>
-					<label
-						>ヘクスの向き
-						<select id="orientation">
-							<option value="horizontal" selected>横向き</option>
-							<option value="vertical">縦向き</option>
-						</select>
-					</label>
-					<label for="distanceMethod"
-						>距離計測方法
-						<select id="distanceMethod" style="margin-left: 16px">
-							<option value="manhattan">マス数</option>
-							<option value="euclidean">直線距離</option>
-						</select>
-					</label>
-				</div>
-				<div>
-					<label>グリッドに合わせる<input type="checkbox" id="fitGridCheck" checked /></label>
+            /* ── トグルスイッチ ── */
+            .tog {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                cursor: pointer;
+            }
+            .tog input[type='checkbox'] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 30px;
+                height: 16px;
+                border-radius: 8px;
+                border: 1px solid var(--input-bd);
+                background: var(--input-bg);
+                position: relative;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition:
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .tog input[type='checkbox']::after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--text-dim);
+                top: 2px;
+                left: 2px;
+                transition:
+                    transform var(--t),
+                    background var(--t);
+            }
+            .tog input[type='checkbox']:checked {
+                background: rgba(0, 229, 255, 0.18);
+                border-color: var(--cyan);
+            }
+            .tog input[type='checkbox']:checked::after {
+                background: var(--cyan);
+                transform: translateX(14px);
+            }
+            .tl {
+                font-size: 0.78rem;
+                color: var(--text);
+                user-select: none;
+            }
 
-					<label for="distance">範囲 <input type="number" id="distance" min="1" value="5" /></label>
-				</div>
-				<div>
-					<label for="opacity"
-						>マスの透明度
-						<input type="range" id="opacity" min="0" max="1" step="0.01" value="1" />
-						<span id="opacityValue">100%</span>
-					</label>
-					<label for="textOpacity"
-						>数字の透明度
-						<input type="range" id="textOpacity" min="0" max="1" step="0.01" value="1" />
-						<span id="textOpacityValue">100%</span>
-					</label>
-				</div>
-			</div>
-			<div style="margin-top: 16px">
-				<button onclick="downloadRuler()">ダウンロード</button>
-			</div>
-		</div>
+            /* ── スライダー ── */
+            input[type='range'] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 3px;
+                border-radius: 2px;
+                background: var(--input-bd);
+                outline: none;
+                cursor: pointer;
+                margin-top: 0.3rem;
+                margin-bottom: 0.3rem;
+            }
+            input[type='range']::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                box-shadow: 0 0 4px rgba(0, 229, 255, 0.55);
+                cursor: pointer;
+                transition: box-shadow var(--t);
+            }
+            input[type='range']::-webkit-slider-thumb:hover {
+                box-shadow: 0 0 8px rgba(0, 229, 255, 0.85);
+            }
+            input[type='range']::-moz-range-thumb {
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                cursor: pointer;
+            }
+            [data-theme='light'] input[type='range'] {
+                background: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] input[type='range']::-webkit-slider-thumb {
+                border-color: var(--bg3);
+            }
 
-		<canvas id="rulerCanvas"></canvas>
+            /* ── Pickr ── */
+            .pickr {
+                display: flex !important;
+                align-items: center;
+            }
+            .pickr .pcr-button {
+                width: 50px !important;
+                height: 20px !important;
+                border-radius: 4px !important;
+                border: 1px solid var(--input-bd) !important;
+                box-shadow: none !important;
+                transition: border-color var(--t) !important;
+            }
+            .pickr .pcr-button:hover {
+                border-color: var(--cyan) !important;
+            }
+            .pcr-app {
+                background: var(--bg3) !important;
+                border-color: var(--border) !important;
+            }
+            .pcr-app .pcr-interaction input {
+                background: var(--input-bg) !important;
+                border: 1px solid var(--input-bd) !important;
+                color: var(--text-bright) !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save {
+                background: var(--blue-mid, var(--blue)) !important;
+                color: #fff !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save:hover {
+                background: var(--blue) !important;
+            }
+            [data-theme='light'] .pcr-app {
+                background: #f0f7ff !important;
+            }
+            [data-theme='light'] .pcr-app .pcr-interaction input {
+                background: white !important;
+                color: #1a3a5c !important;
+            }
 
-		<script>
-			const canvas = document.getElementById("rulerCanvas");
-			const ctx = canvas.getContext("2d");
+            /* ── カラーリスト ── */
+            #colorPickerWrap {
+                max-height: 190px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+                margin-top: 0.3rem;
+                margin-bottom: 0.42rem;
+            }
+            .color-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.4rem;
+                margin-bottom: 0.28rem;
+            }
+            .color-row:last-child {
+                margin-bottom: 0;
+            }
+            .color-d-label {
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                flex: 1;
+            }
+            #colorPickerWrap .pickr .pcr-button {
+                width: 38px !important;
+                height: 18px !important;
+            }
 
-			function calculateDistance(x, y, method) {
-				switch (method) {
-					case "euclidean":
-						return Math.round(Math.sqrt((x * x * 3) / 4 + (y * y) / 4) + 0.14);
-					case "manhattan":
-						return (Math.abs(x) + Math.max(Math.abs(x), Math.abs(y))) / 2;
-				}
-			}
+            /* ── プレビュー ── */
+            #preview-area {
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                min-width: 0;
+                overflow: hidden;
+            }
+            .cv-wrap {
+                flex: 1;
+                min-height: 0;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                position: relative;
+                cursor: crosshair;
+            }
+            #rulerCanvas {
+                max-width: 100%;
+                max-height: 100%;
+                display: block;
+            }
+            .canvas-hint {
+                position: absolute;
+                bottom: 0.5rem;
+                right: 0.6rem;
+                font-size: 0.65rem;
+                color: var(--text-dim);
+                font-family: var(--font-mono);
+                pointer-events: none;
+                opacity: 0.7;
+            }
 
-			function generateRuler() {
-				const ori = document.getElementById("orientation").value === "vertical";
-				const distance = parseInt(document.getElementById("distance").value);
-				const opacity = parseFloat(document.getElementById("opacity").value);
-				const textOpacity = parseFloat(document.getElementById("textOpacity").value);
-				const method = document.getElementById("distanceMethod").value;
-				const fitGridCheck = document.getElementById("fitGridCheck").checked;
-				const cellSize = 90;
-				let distanceX = (distanceY = distance);
+            /* ── ダウンロードボタン ── */
+            .btn-dl {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.4rem;
+                width: 100%;
+                padding: 0.5rem 1rem;
+                background: linear-gradient(135deg, var(--blue-mid, #1e88e5), var(--blue-dark, #1565c0));
+                color: #fff;
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                letter-spacing: 0.08em;
+                border: 1px solid rgba(33, 150, 243, 0.45);
+                border-radius: var(--r);
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    box-shadow var(--t);
+            }
+            .btn-dl:hover {
+                background: linear-gradient(135deg, #42a5f5, var(--blue-mid, #1e88e5));
+                box-shadow: var(--glow-blue);
+            }
+            .btn-dl .material-icons {
+                font-size: 1rem;
+            }
 
-				const cellSizeX = fitGridCheck ? cellSize : (cellSize / 2) * Math.sqrt(3);
-				if (method === "euclidean") distanceX = Math.round((distance * 2) / Math.sqrt(3));
+            /* ── カスタムセル情報 ── */
+            .custom-cell-info {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                margin-top: 0.2rem;
+                line-height: 1.5;
+            }
+            .custom-cell-count {
+                font-family: var(--font-mono);
+                color: var(--cyan);
+            }
+            .btn-sub {
+                background: var(--input-bg);
+                color: var(--text-dim);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                padding: 0.25rem 0.55rem;
+                cursor: pointer;
+                transition:
+                    border-color var(--t),
+                    color var(--t);
+            }
+            .btn-sub:hover {
+                border-color: var(--cyan);
+                color: var(--cyan);
+            }
 
-				canvas.width = fitGridCheck ? (distanceX * 2 + 3) * cellSizeX : (distanceX * 2 + 1 + 1 / 3) * cellSizeX;
-				canvas.height = (distanceY * 2 + 1) * cellSize;
+            /* ── セル編集ポップアップ ── */
+            #cell-popup {
+                position: fixed;
+                z-index: 200;
+                background: var(--bg-card);
+                border: 1px solid var(--border-bright);
+                border-radius: var(--r);
+                padding: 0.85rem 1rem;
+                min-width: 210px;
+                box-shadow:
+                    0 4px 24px rgba(0, 0, 0, 0.55),
+                    var(--glow-card);
+                display: none;
+            }
+            .cp-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.55rem;
+            }
+            .cp-title {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                color: var(--cyan);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+            .cp-close {
+                background: none;
+                border: none;
+                color: var(--text-dim);
+                cursor: pointer;
+                font-size: 1rem;
+                padding: 0;
+                line-height: 1;
+                transition: color var(--t);
+            }
+            .cp-close:hover {
+                color: var(--text-bright);
+            }
+            .cp-coord {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                color: var(--text-dim);
+                margin-bottom: 0.55rem;
+            }
+            .cp-field {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+                margin-bottom: 0.4rem;
+            }
+            .cp-field:last-of-type {
+                margin-bottom: 0;
+            }
+            .cp-label {
+                font-size: 0.78rem;
+                color: var(--text);
+                white-space: nowrap;
+            }
+            #cp-text {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 0.9rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                width: 90px;
+                text-align: center;
+                box-sizing: border-box;
+            }
+            #cp-text:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+            .cp-divider {
+                border: none;
+                border-top: 1px solid var(--border);
+                margin: 0.5rem 0;
+            }
+            .cp-btns {
+                display: flex;
+                gap: 0.4rem;
+                margin-top: 0.55rem;
+            }
+            .cp-btn-reset {
+                background: var(--input-bg);
+                color: var(--text-dim);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                font-family: var(--font-mono);
+                font-size: 0.75rem;
+                padding: 0.3rem 0.7rem;
+                cursor: pointer;
+                flex: 1;
+                transition:
+                    border-color var(--t),
+                    color var(--t);
+            }
+            .cp-btn-reset:hover {
+                border-color: rgba(255, 80, 80, 0.6);
+                color: rgba(255, 100, 100, 0.9);
+            }
+            #cell-popup .pickr .pcr-button {
+                width: 44px !important;
+                height: 22px !important;
+            }
+            #cell-popup input[type='number'] {
+                width: 60px;
+            }
 
-				if (ori) [canvas.width, canvas.height] = [canvas.height, canvas.width];
+            /* ── ガイド内 dl ── */
+            .guide-dl {
+                display: grid;
+                grid-template-columns: 1.5rem 1fr;
+                gap: 0.3rem 0.5rem;
+                font-size: 0.88rem;
+                line-height: 1.6;
+            }
+            .guide-dl .mi {
+                font-family: 'Material Icons';
+                font-size: 1.05rem;
+                color: var(--cyan);
+                align-self: start;
+                margin-top: 0.15rem;
+            }
+            .guide-dl dt {
+                font-weight: bold;
+                color: var(--text-bright);
+            }
+            .guide-dl dd {
+                margin: 0;
+                color: var(--text);
+                grid-column: 2;
+            }
 
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
+            @media (max-width: 900px) {
+                html,
+                body {
+                    height: auto;
+                    overflow: visible;
+                }
+                #main {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto auto;
+                    height: auto;
+                    overflow: visible;
+                    padding-bottom: 1rem;
+                }
+                #settings-panel {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    align-items: start;
+                    gap: 0.4rem;
+                    overflow-y: visible;
+                    padding-right: 0;
+                }
+                .panel-col {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.4rem;
+                    min-width: 0;
+                }
+                .panel-col-left {
+                    grid-column: 1;
+                }
+                .panel-col-right {
+                    grid-column: 2;
+                }
+                .panel-dl {
+                    grid-column: 1 / -1;
+                }
+                #preview-area {
+                    min-height: 400px;
+                }
+                .cv-wrap {
+                    flex: 1;
+                    min-height: 360px;
+                }
+            }
+            @media (max-width: 550px) {
+                #settings-panel {
+                    grid-template-columns: 1fr;
+                }
+                .panel-col-left,
+                .panel-col-right {
+                    grid-column: 1;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
 
-				function getGradientColor(d, maxD, opacity) {
-					if (d === 0) return `rgba(255, 255, 255, ${opacity})`;
-					if (maxD === 1) return `rgba(255, 102, 102, ${opacity})`;
-					const hue = ((d - 1) / (maxD - 1)) * 270;
-					return `hsla(${hue}, 100%, 70%, ${opacity})`;
-				}
+        <div id="main">
+            <!-- ── 設定パネル ── -->
+            <div id="settings-panel">
+                <!-- 左列 -->
+                <div class="panel-col panel-col-left">
+                    <!-- 基本設定 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">tune</span>基本設定</div>
+                        <div class="f">
+                            <span class="fl">向き</span>
+                            <div class="seg">
+                                <input type="radio" name="ori" id="oriH" value="h" checked /><label for="oriH">横向き</label> <input type="radio" name="ori" id="oriV" value="v" /><label for="oriV"
+                                    >縦向き</label
+                                >
+                            </div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">範囲</span>
+                            <div class="row">
+                                <input type="number" id="range" min="1" max="20" value="5" class="custom-spinner" />
+                                <span class="unit">ヘクス</span>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">距離計測</span>
+                            <div class="seg">
+                                <input type="radio" name="method" id="methMhtn" value="manhattan" checked /><label for="methMhtn">マス数</label>
+                                <input type="radio" name="method" id="methEucl" value="euclidean" /><label for="methEucl">直線</label>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">ヘクスサイズ</span>
+                            <div class="row">
+                                <input type="number" id="cellSize" min="10" max="200" value="48" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                        <div class="f">
+                            <label class="tog">
+                                <input type="checkbox" id="fitGrid" checked />
+                                <span class="tl">グリッドを使う (ココフォリア等)</span>
+                            </label>
+                        </div>
+                    </div>
 
-				for (let r = -distanceY; r <= distanceY; r++) {
-					for (let c = -distanceX; c <= distanceX; c++) {
-						const d = calculateDistance(c, r * 2 + (c % 2), method);
-						if (d > distance) continue;
-						let cx = fitGridCheck ? (c + distanceX + 1 / 6 + 1) * cellSizeX : (c + distanceX + 1 / 3) * cellSizeX;
-						let cy = (r + distanceY + (c % 2) / 2) * cellSize;
-						const vertices = [
-							{ x: cx, y: cy }, // 左上
-							{ x: cx - (cellSizeX * 1) / 3, y: cy + cellSize / 2 }, // 左端
-							{ x: cx, y: cy + cellSize }, // 左下
-							{ x: cx + (cellSizeX * 2) / 3, y: cy + cellSize }, // 右下
-							{ x: cx + cellSizeX, y: cy + cellSize / 2 }, // 右端
-							{ x: cx + (cellSizeX * 2) / 3, y: cy }, // 右上
-						];
-						if (ori) vertices.forEach((v) => ([v.x, v.y] = [v.y, v.x]));
+                    <!-- セルの色 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">palette</span>セルの色</div>
+                        <div class="f" style="margin-top: 0.3rem">
+                            <span class="fl">スキーム</span>
+                            <select id="colorScheme">
+                                <option value="rainbow">レインボー</option>
+                                <option value="heat">熱 (赤→黄)</option>
+                                <option value="cold">寒 (青→紺)</option>
+                                <option value="mono">モノクロ</option>
+                                <option value="none">無色</option>
+                                <option value="custom">カスタム</option>
+                            </select>
+                        </div>
+                        <div id="colorPickerWrap"></div>
+                        <div class="f f-col">
+                            <div class="f-sb">
+                                <span class="fl">不透明度</span>
+                                <div class="row">
+                                    <input type="number" id="cellOpacityNum" min="0" max="100" value="100" class="custom-spinner" />
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="cellOpacity" min="0" max="100" step="1" value="100" />
+                        </div>
+                    </div>
+                </div>
+                <!-- 右列 -->
+                <div class="panel-col panel-col-right">
+                    <!-- カスタムセル（折り返し時に右列の先頭） -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">edit</span>カスタムセル</div>
+                        <div class="custom-cell-info">プレビュー上のヘクスをクリックして<br />テキスト・色・文字色を個別設定できます。</div>
+                        <div class="f" style="margin-top: 0.5rem">
+                            <span class="fl">カスタム数: <span class="custom-cell-count" id="customCount">0</span></span>
+                            <button class="btn-sub" id="clearCustomBtn">すべて解除</button>
+                        </div>
+                    </div>
 
-						// パスを描画
-						ctx.fillStyle = getGradientColor(d, distance, opacity);
-						ctx.beginPath();
-						ctx.moveTo(vertices[0].x, vertices[0].y);
-						for (let i = 1; i < vertices.length; i++) {
-							ctx.lineTo(vertices[i].x, vertices[i].y);
-						}
-						ctx.closePath(); // パスを閉じる
-						ctx.fill();
-						ctx.fillStyle = `rgba(0, 0, 0, ${textOpacity})`;
-						ctx.font = "bold 40px Arial";
-						ctx.textAlign = "center";
-						ctx.textBaseline = "middle";
-						let px = cx + (cellSizeX * 1) / 3;
-						let py = cy + cellSize / 2;
-						if (ori) [px, py] = [py, px];
-						ctx.fillText(d, px, py);
-					}
-				}
-			}
+                    <!-- テキスト -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">text_fields</span>テキスト</div>
+                        <div class="f">
+                            <span class="fl">文字色</span>
+                            <div id="textColorPicker"></div>
+                        </div>
+                        <div class="f" style="margin-top: 0.3rem">
+                            <span class="fl">文字サイズ</span>
+                            <div class="row">
+                                <input type="number" id="fontSize" min="6" max="200" value="20" class="custom-spinner" />
+                                <span class="unit">px</span>
+                            </div>
+                        </div>
+                        <div class="f f-col">
+                            <div class="f-sb">
+                                <span class="fl">不透明度</span>
+                                <div class="row">
+                                    <input type="number" id="textOpacityNum" min="0" max="100" value="100" class="custom-spinner" />
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="textOpacity" min="0" max="100" step="1" value="100" />
+                        </div>
+                        <div class="f">
+                            <label class="tog">
+                                <input type="checkbox" id="strokeEnabled" checked />
+                                <span class="tl">縁取り</span>
+                            </label>
+                            <div id="strokeColorRow" class="row" style="opacity: 1; transition: opacity 0.25s">
+                                <span class="fl">色</span>
+                                <div id="strokeColorPicker"></div>
+                            </div>
+                        </div>
+                    </div>
 
-			function downloadRuler() {
-				const canvas = document.getElementById("rulerCanvas");
-				const link = document.createElement("a");
-				const fitGridCheck = document.getElementById("fitGridCheck").checked;
-				const c = (canvas.width / 90) * 2;
-				const r = (canvas.height / 90) * 2;
-				link.download = fitGridCheck ? `hex_ruler_${c}x${r}.png` : `hex_ruler.png`;
-				link.href = canvas.toDataURL();
-				link.click();
-			}
+                    <!-- ダウンロード -->
+                    <div class="s-sec panel-dl">
+                        <button class="btn-dl" id="downloadBtn"><span class="material-icons">download</span>PNG ダウンロード</button>
+                    </div>
+                </div>
+            </div>
 
-			//イベントリスナー
-			document.addEventListener("DOMContentLoaded", function () {
-				document.getElementById("orientation").addEventListener("change", generateRuler);
-				document.getElementById("distanceMethod").addEventListener("change", generateRuler);
-				document.getElementById("distance").addEventListener("input", generateRuler);
-				document.getElementById("fitGridCheck").addEventListener("input", generateRuler);
-				document.getElementById("opacity").addEventListener("input", function () {
-					document.getElementById("opacityValue").textContent = `${Math.round(document.getElementById("opacity").value * 100)}%`;
-					generateRuler();
-				});
-				document.getElementById("textOpacity").addEventListener("input", function () {
-					document.getElementById("textOpacityValue").textContent = `${Math.round(document.getElementById("textOpacity").value * 100)}%`;
-					generateRuler();
-				});
-			});
+            <!-- ── プレビュー ── -->
+            <div id="preview-area">
+                <div class="cv-wrap" id="cvWrap">
+                    <canvas id="rulerCanvas"></canvas>
+                    <div class="canvas-hint">クリックでヘクスを編集</div>
+                </div>
+            </div>
+        </div>
 
-			generateRuler();
-		</script>
-	</body>
+        <!-- ── セル編集ポップアップ ── -->
+        <div id="cell-popup">
+            <div class="cp-header">
+                <span class="cp-title">ヘクスを編集</span>
+                <button class="cp-close" id="cpClose">✕</button>
+            </div>
+            <div class="cp-coord" id="cpCoord"></div>
+            <div class="cp-field">
+                <span class="cp-label">テキスト</span>
+                <input type="text" id="cp-text" placeholder="距離の数字" maxlength="8" />
+            </div>
+            <hr class="cp-divider" />
+            <div class="cp-field">
+                <span class="cp-label">セルの色</span>
+                <div id="popupCellColorPicker"></div>
+            </div>
+            <div class="cp-field">
+                <span class="cp-label">文字色</span>
+                <div id="popupTextColorPicker"></div>
+            </div>
+            <div class="cp-field">
+                <span class="cp-label">文字サイズ</span>
+                <div class="row">
+                    <input type="number" id="cp-fontSize" min="6" max="200" value="20" class="custom-spinner" />
+                    <span class="unit">px</span>
+                </div>
+            </div>
+            <div class="cp-btns">
+                <button class="cp-btn-reset" id="cpReset">このヘクスをリセット</button>
+            </div>
+        </div>
+
+        <!-- ====== ガイドモーダル ====== -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
+                        <h3>基本操作</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">tune</span>
+                            <div>
+                                <dt>リアルタイムプレビュー</dt>
+                                <dd>設定パネルの値を変えると右のプレビューに即時反映されます。</dd>
+                            </div>
+                            <span class="mi">edit</span>
+                            <div>
+                                <dt>カスタムヘクス編集</dt>
+                                <dd>プレビュー上のヘクスをクリックすると、そのヘクスのテキスト・色・文字色・文字サイズを個別に設定できます。変更は即時反映されます。</dd>
+                            </div>
+                            <span class="mi">download</span>
+                            <div>
+                                <dt>PNG ダウンロード</dt>
+                                <dd>現在のプレビューをそのままPNG画像として保存します。背景は透過です。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>基本設定</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">view_module</span>
+                            <div>
+                                <dt>向き</dt>
+                                <dd><strong>横向き</strong>はフラットトップ、<strong>縦向き</strong>はポインティートップのヘクスを描画します。</dd>
+                            </div>
+                            <span class="mi">grid_3x3</span>
+                            <div>
+                                <dt>範囲</dt>
+                                <dd>中心ヘクスからの最大距離（ヘクス数）を設定します。</dd>
+                            </div>
+                            <span class="mi">straighten</span>
+                            <div>
+                                <dt>距離計測方法</dt>
+                                <dd><strong>マス数</strong>はヘクスの移動数（立方座標距離）、<strong>直線</strong>はピクセルベースの直線距離です。</dd>
+                            </div>
+                            <span class="mi">grid_on</span>
+                            <div>
+                                <dt>グリッドを使う</dt>
+                                <dd>ONにするとヘクスを正方形グリッドに収まるよう横に引き伸ばします。ココフォリア等のグリッドのみに対応したオンラインセッションツールで使用する場合に使用します。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>セルの色</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">opacity</span>
+                            <div>
+                                <dt>不透明度（グローバル）</dt>
+                                <dd>全ヘクスの色の不透明度を一括で調整します。各距離のカラーピッカーで設定したα値にこの値が乗算されます。</dd>
+                            </div>
+                            <span class="mi">palette</span>
+                            <div>
+                                <dt>スキーム</dt>
+                                <dd>レインボー・熱・寒・モノクロ・無色（全て透明）・カスタムから選択。スキームを変えると各距離のカラーピッカーの色が一括更新されます。</dd>
+                            </div>
+                            <span class="mi">colorize</span>
+                            <div>
+                                <dt>距離ごとの色</dt>
+                                <dd>各距離（0=中心〜N）の色を個別にカラーピッカーで設定できます。アルファチャンネルで距離ごとの透明度も設定可能です。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>テキスト</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">opacity</span>
+                            <div>
+                                <dt>不透明度（グローバル）</dt>
+                                <dd>全テキストの不透明度を一括調整。カラーピッカーのα値に乗算されます。</dd>
+                            </div>
+                            <span class="mi">format_size</span>
+                            <div>
+                                <dt>文字サイズ</dt>
+                                <dd>デフォルトの文字サイズ（px）です。カスタムヘクスで個別上書き可能です。</dd>
+                            </div>
+                            <span class="mi">text_fields</span>
+                            <div>
+                                <dt>縁取り</dt>
+                                <dd>テキストに縁取りを付けます。背景が透明な場合でも文字を見やすくできます。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>ダウンロードファイル名</h3>
+                        <dl class="guide-dl">
+                            <span class="mi">info</span>
+                            <div>
+                                <dt>ファイル名形式</dt>
+                                <dd><code>hex_ruler_{横}x{縦}.png</code>（グリッドに合わせる ON 時）、それ以外は <code>hex_ruler.png</code></dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="site-footer"><div class="container"></div></footer>
+        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/pickr.min.js"></script>
+        <script src="common.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                /* ================================================================
+                   カラーユーティリティ
+                ================================================================ */
+                function hslToHex(h, s, l) {
+                    s /= 100;
+                    l /= 100;
+                    const a = s * Math.min(l, 1 - l);
+                    const f = (n) => {
+                        const k = (n + h / 30) % 12;
+                        const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                        return Math.round(255 * c)
+                            .toString(16)
+                            .padStart(2, '0');
+                    };
+                    return `#${f(0)}${f(8)}${f(4)}`;
+                }
+                function lerpI(a, b, t) {
+                    return Math.round(a + (b - a) * t);
+                }
+                function interpolateHex(c1, c2, t) {
+                    const p = (c) => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+                    const [r1, g1, b1] = p(c1),
+                        [r2, g2, b2] = p(c2);
+                    return `#${lerpI(r1, r2, t).toString(16).padStart(2, '0')}${lerpI(g1, g2, t).toString(16).padStart(2, '0')}${lerpI(b1, b2, t).toString(16).padStart(2, '0')}`;
+                }
+
+                const SCHEMES = {
+                    rainbow: (d, maxD) => (d === 0 ? '#ffffff' : maxD <= 1 ? '#ff6464' : hslToHex(((d - 1) / (maxD - 1)) * 270, 100, 70)),
+                    heat: (d, maxD) => (d === 0 ? '#ffffff' : maxD <= 1 ? '#ff4040' : interpolateHex('#ff4040', '#ffee40', (d - 1) / (maxD - 1))),
+                    cold: (d, maxD) => (d === 0 ? '#ffffff' : maxD <= 1 ? '#64d4ff' : interpolateHex('#64d4ff', '#4040ee', (d - 1) / (maxD - 1))),
+                    mono: (d, maxD) => (d === 0 ? '#ffffff' : maxD <= 1 ? '#aaaaaa' : interpolateHex('#dddddd', '#444444', (d - 1) / (maxD - 1))),
+                };
+
+                // {r,g,b,a} → rgba文字列（グローバル不透明度を乗算）
+                function toRgba(col, mul) {
+                    const baseA = typeof col.a === 'number' && !isNaN(col.a) ? col.a : 1;
+                    const a = baseA * (mul !== undefined ? mul : 1);
+                    return `rgba(${Math.round(col.r)},${Math.round(col.g)},${Math.round(col.b)},${a.toFixed(4)})`;
+                }
+                function hexToCol(hex) {
+                    return { r: parseInt(hex.slice(1, 3), 16), g: parseInt(hex.slice(3, 5), 16), b: parseInt(hex.slice(5, 7), 16), a: 1.0 };
+                }
+                function pickrToCol(color) {
+                    const [r, g, b, a] = color.toRGBA();
+                    return { r, g, b, a };
+                }
+                function colToPickrStr(col) {
+                    return `rgba(${Math.round(col.r)},${Math.round(col.g)},${Math.round(col.b)},${col.a.toFixed(4)})`;
+                }
+                function schemeCol(d, range, scheme) {
+                    if (scheme === 'none') return { r: 0, g: 0, b: 0, a: 0 };
+                    return hexToCol(SCHEMES[scheme] ? SCHEMES[scheme](d, range) : '#aaaaaa');
+                }
+
+                /* ================================================================
+                   状態
+                ================================================================ */
+                let distColors = [];
+                let distPickrs = [];
+                let textPickr, strokePickr, popupCellPickr, popupTextPickr;
+                let textCol = { r: 0, g: 0, b: 0, a: 1.0 };
+                let strokeCol = { r: 255, g: 255, b: 255, a: 1.0 };
+                let popupCellCol = { r: 255, g: 100, b: 100, a: 1.0 };
+                let popupTextCol = { r: 0, g: 0, b: 0, a: 1.0 };
+                let suppressPopupChange = false;
+
+                const customCells = new Map(); // key:"c,r" → {text, color, textColor, fontSize}
+                let editingCell = null;
+
+                /* ================================================================
+                   ゲッター
+                ================================================================ */
+                function getCellSize() { return Math.max(10, parseInt(document.getElementById('cellSize').value) || 48); }
+                function getRange() {
+                    return Math.max(1, parseInt(document.getElementById('range').value) || 5);
+                }
+                function isOri() {
+                    return document.querySelector('input[name="ori"]:checked').value === 'v';
+                }
+                function isMethod() {
+                    return document.querySelector('input[name="method"]:checked').value;
+                }
+                function isFitGrid() {
+                    return document.getElementById('fitGrid').checked;
+                }
+                function getCellOpacity() {
+                    const v = parseInt(document.getElementById('cellOpacity').value);
+                    return (isNaN(v) ? 100 : v) / 100;
+                }
+                function getTextOpacity() {
+                    const v = parseInt(document.getElementById('textOpacity').value);
+                    return (isNaN(v) ? 100 : v) / 100;
+                }
+                function getGlobalFontSize() {
+                    return Math.max(6, parseInt(document.getElementById('fontSize').value) || 20);
+                }
+
+                /* ================================================================
+                   距離計算
+                ================================================================ */
+                // c%2 が負になる問題を回避するヘルパー
+                function colOdd(c) {
+                    return ((c % 2) + 2) % 2;
+                }
+
+                function calcDist(c, r, method) {
+                    if (method === 'manhattan') {
+                        // 立方座標での hex 距離 (odd-q offset)
+                        const cx = c;
+                        const cz = r - (c - (c & 1)) / 2;
+                        const cy = -cx - cz;
+                        return Math.max(Math.abs(cx), Math.abs(cy), Math.abs(cz));
+                    } else {
+                        // 直線距離（ピクセルベース近似）
+                        const odd = colOdd(c);
+                        return Math.round(Math.sqrt((c * c * 3) / 4 + ((r * 2 + odd) * (r * 2 + odd)) / 4) + 0.14);
+                    }
+                }
+
+                /* ================================================================
+                   ヘクス頂点計算 (flat-top)
+                ================================================================ */
+                function hexVertices(hx, hy, cellSizeX, cellSizeY, ori) {
+                    const v = [
+                        { x: hx, y: hy },
+                        { x: hx - cellSizeX / 3, y: hy + cellSizeY / 2 },
+                        { x: hx, y: hy + cellSizeY },
+                        { x: hx + (cellSizeX * 2) / 3, y: hy + cellSizeY },
+                        { x: hx + cellSizeX, y: hy + cellSizeY / 2 },
+                        { x: hx + (cellSizeX * 2) / 3, y: hy },
+                    ];
+                    if (ori)
+                        v.forEach((p) => {
+                            [p.x, p.y] = [p.y, p.x];
+                        });
+                    return v;
+                }
+
+                /* ================================================================
+                   メイン描画
+                ================================================================ */
+                function render() {
+                    const range = getRange();
+                    const ori = isOri();
+                    const method = isMethod();
+                    const fitGrid = isFitGrid();
+                    const cellOpMul = getCellOpacity();
+                    const textOpMul = getTextOpacity();
+                    const strokeOn = document.getElementById('strokeEnabled').checked;
+                    const globalFS = getGlobalFontSize();
+
+                    const cs = getCellSize();
+                    const cellSizeY = cs;
+                    const cellSizeX = fitGrid ? cs : (cs / 2) * Math.sqrt(3);
+
+                    let distX = range;
+                    let distY = range;
+                    if (method === 'euclidean') distX = Math.round((range * 2) / Math.sqrt(3));
+
+                    const canvasW = fitGrid ? (distX * 2 + 2) * cellSizeX : (distX * 2 + 1 + 1 / 3) * cellSizeX;
+                    const canvasH = (distY * 2 + 1) * cellSizeY;
+
+                    const canvas = document.getElementById('rulerCanvas');
+                    canvas.width = ori ? canvasH : canvasW;
+                    canvas.height = ori ? canvasW : canvasH;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    for (let r = -distY; r <= distY; r++) {
+                        for (let c = -distX; c <= distX; c++) {
+                            const d = calcDist(c, r, method);
+                            if (d > range) continue;
+
+                            const key = `${c},${r}`;
+                            const custom = customCells.get(key);
+                            const odd = colOdd(c);
+
+                            // ヘクス基準点
+                            let hx = fitGrid ? (c + distX + 1 / 6 + 0.5) * cellSizeX : (c + distX + 1 / 3) * cellSizeX;
+                            let hy = (r + distY + odd / 2) * cellSizeY;
+
+                            const verts = hexVertices(hx, hy, cellSizeX, cellSizeY, ori);
+
+                            // 塗りつぶし
+                            const cellCol = custom?.color ?? distColors[d] ?? { r: 128, g: 128, b: 128, a: 0 };
+                            const effA = (typeof cellCol.a === 'number' ? cellCol.a : 1) * cellOpMul;
+                            if (effA > 0) {
+                                ctx.beginPath();
+                                ctx.moveTo(verts[0].x, verts[0].y);
+                                for (let i = 1; i < verts.length; i++) ctx.lineTo(verts[i].x, verts[i].y);
+                                ctx.closePath();
+                                ctx.fillStyle = toRgba(cellCol, cellOpMul);
+                                ctx.fill();
+                            }
+
+                            // 境界線
+                            const isEditing = editingCell && editingCell.c === c && editingCell.r === r;
+                            ctx.beginPath();
+                            ctx.moveTo(verts[0].x, verts[0].y);
+                            for (let i = 1; i < verts.length; i++) ctx.lineTo(verts[i].x, verts[i].y);
+                            ctx.closePath();
+                            ctx.strokeStyle = isEditing ? 'rgba(0,229,255,0.9)' : 'rgba(0,0,0,0.22)';
+                            ctx.lineWidth = isEditing ? 3 : 1;
+                            ctx.stroke();
+
+                            // テキスト中心
+                            let tx = hx + cellSizeX / 3;
+                            let ty = hy + cellSizeY / 2;
+                            if (ori) [tx, ty] = [ty, tx];
+
+                            // テキスト
+                            const text = custom?.text !== undefined && custom.text !== '' ? custom.text : String(d);
+                            const fontSize = custom?.fontSize ?? globalFS;
+                            const tCol = custom?.textColor ?? textCol;
+
+                            ctx.font = `bold ${fontSize}px Arial`;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+
+                            if (strokeOn) {
+                                ctx.save();
+                                ctx.strokeStyle = toRgba(strokeCol, textOpMul);
+                                ctx.lineWidth = Math.max(2, fontSize * 0.18);
+                                ctx.lineJoin = 'round';
+                                ctx.strokeText(text, tx, ty);
+                                ctx.restore();
+                            }
+                            ctx.fillStyle = toRgba(tCol, textOpMul);
+                            ctx.fillText(text, tx, ty);
+                        }
+                    }
+                }
+
+                /* ================================================================
+                   カスタムセル編集
+                ================================================================ */
+                function applyCellEdit() {
+                    if (!editingCell) return;
+                    const key = `${editingCell.c},${editingCell.r}`;
+                    customCells.set(key, {
+                        text: document.getElementById('cp-text').value,
+                        color: { r: popupCellCol.r, g: popupCellCol.g, b: popupCellCol.b, a: popupCellCol.a ?? 1 },
+                        textColor: { r: popupTextCol.r, g: popupTextCol.g, b: popupTextCol.b, a: popupTextCol.a ?? 1 },
+                        fontSize: Math.max(6, parseInt(document.getElementById('cp-fontSize').value) || getGlobalFontSize()),
+                    });
+                    updateCustomCount();
+                    render();
+                }
+
+                function showCellPopup(c, r, screenX, screenY, defaultDist) {
+                    editingCell = { c, r };
+                    const custom = customCells.get(`${c},${r}`);
+
+                    document.getElementById('cp-text').value = custom?.text ?? String(defaultDist);
+                    document.getElementById('cpCoord').textContent = `ヘクス (${c}, ${r})  / デフォルト距離: ${defaultDist}`;
+                    document.getElementById('cp-fontSize').value = custom?.fontSize ?? getGlobalFontSize();
+
+                    const defaultCellCol = distColors[defaultDist] ?? { r: 128, g: 128, b: 128, a: 1 };
+                    popupCellCol = custom?.color ? { ...custom.color } : { ...defaultCellCol };
+                    popupTextCol = custom?.textColor ? { ...custom.textColor } : { ...textCol };
+
+                    suppressPopupChange = true;
+                    popupCellPickr?.setColor(colToPickrStr(popupCellCol));
+                    popupTextPickr?.setColor(colToPickrStr(popupTextCol));
+                    suppressPopupChange = false;
+
+                    const popup = document.getElementById('cell-popup');
+                    popup.style.display = 'block';
+                    const pw = popup.offsetWidth || 230;
+                    const ph = popup.offsetHeight || 260;
+                    let left = screenX + 14;
+                    let top = screenY + 14;
+                    if (left + pw > window.innerWidth - 8) left = screenX - pw - 14;
+                    if (top + ph > window.innerHeight - 8) top = screenY - ph - 14;
+                    popup.style.left = Math.max(8, left) + 'px';
+                    popup.style.top = Math.max(8, top) + 'px';
+                    render();
+                }
+
+                function closeCellPopup() {
+                    editingCell = null;
+                    document.getElementById('cell-popup').style.display = 'none';
+                    render();
+                }
+
+                function updateCustomCount() {
+                    document.getElementById('customCount').textContent = customCells.size;
+                }
+
+                /* ================================================================
+                   キャンバスクリック → 最近傍ヘクス
+                ================================================================ */
+                document.getElementById('cvWrap').addEventListener('click', function (e) {
+                    const canvas = document.getElementById('rulerCanvas');
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    let clickX = (e.clientX - rect.left) * scaleX;
+                    let clickY = (e.clientY - rect.top) * scaleY;
+
+                    const ori = isOri();
+                    const fitGrid = isFitGrid();
+                    const method = isMethod();
+                    const range = getRange();
+                    const cs = getCellSize();
+                    const cellSizeY = cs;
+                    const cellSizeX = fitGrid ? cs : (cs / 2) * Math.sqrt(3);
+                    let distX = range;
+                    if (method === 'euclidean') distX = Math.round((range * 2) / Math.sqrt(3));
+                    const distY = range;
+
+                    if (ori) [clickX, clickY] = [clickY, clickX];
+
+                    let best = null,
+                        bestDist2 = Infinity;
+                    for (let r = -distY; r <= distY; r++) {
+                        for (let c = -distX; c <= distX; c++) {
+                            const d = calcDist(c, r, method);
+                            if (d > range) continue;
+                            const odd = colOdd(c);
+                            const hx = fitGrid ? (c + distX + 1 / 6 + 0.5) * cellSizeX : (c + distX + 1 / 3) * cellSizeX;
+                            const hy = (r + distY + odd / 2) * cellSizeY;
+                            const cx = hx + cellSizeX / 3;
+                            const cy = hy + cellSizeY / 2;
+                            const dist2 = (clickX - cx) ** 2 + (clickY - cy) ** 2;
+                            if (dist2 < bestDist2) {
+                                bestDist2 = dist2;
+                                best = { c, r, d };
+                            }
+                        }
+                    }
+                    if (!best || bestDist2 > (cs * 0.65) ** 2) {
+                        closeCellPopup();
+                        return;
+                    }
+                    showCellPopup(best.c, best.r, e.clientX, e.clientY, best.d);
+                });
+
+                /* ================================================================
+                   スライダー ↔ number 双方向同期
+                ================================================================ */
+                function syncPair(slId, nmId) {
+                    const sl = document.getElementById(slId);
+                    const nm = document.getElementById(nmId);
+                    sl.addEventListener('input', () => {
+                        nm.value = sl.value;
+                        render();
+                    });
+                    nm.addEventListener('input', () => {
+                        const v = Math.min(parseFloat(nm.max), Math.max(parseFloat(nm.min), parseFloat(nm.value) || 0));
+                        sl.value = v;
+                        render();
+                    });
+                }
+
+                /* ================================================================
+                   距離ごとカラーピッカー構築
+                ================================================================ */
+                function buildColorPickers() {
+                    distPickrs.forEach((p) => {
+                        try {
+                            p.destroyAndRemove();
+                        } catch (e) {}
+                    });
+                    distPickrs = [];
+                    distColors = [];
+
+                    const range = getRange();
+                    const scheme = document.getElementById('colorScheme').value;
+                    const wrap = document.getElementById('colorPickerWrap');
+                    wrap.innerHTML = '';
+
+                    for (let d = 0; d <= range; d++) {
+                        const col = schemeCol(d, range, scheme);
+                        distColors[d] = col;
+
+                        const row = document.createElement('div');
+                        row.className = 'color-row';
+                        const label = document.createElement('span');
+                        label.className = 'color-d-label';
+                        label.textContent = d === 0 ? '中心' : `距離 ${d}`;
+                        const pickrEl = document.createElement('div');
+                        row.appendChild(label);
+                        row.appendChild(pickrEl);
+                        wrap.appendChild(row);
+
+                        (function (idx, el, initCol) {
+                            const p = Pickr.create({
+                                el: el,
+                                theme: 'nano',
+                                default: colToPickrStr(initCol),
+                                components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
+                                i18n: { 'btn:save': '確定' },
+                            });
+                            p.on('change', (color) => {
+                                distColors[idx] = pickrToCol(color);
+                                render();
+                            }).on('save', (_, inst) => inst.hide());
+                            distPickrs[idx] = p;
+                        })(d, pickrEl, col);
+                    }
+                }
+
+                function applyScheme() {
+                    const range = getRange();
+                    const scheme = document.getElementById('colorScheme').value;
+                    if (scheme === 'custom') return;
+                    for (let d = 0; d <= range; d++) {
+                        const col = schemeCol(d, range, scheme);
+                        distColors[d] = col;
+                        distPickrs[d]?.setColor(colToPickrStr(col));
+                    }
+                }
+
+                /* ================================================================
+                   グローバル Pickr 初期化
+                ================================================================ */
+                function initGlobalPickrs() {
+                    textPickr = Pickr.create({
+                        el: document.getElementById('textColorPicker'),
+                        theme: 'nano',
+                        default: colToPickrStr(textCol),
+                        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
+                        i18n: { 'btn:save': '確定' },
+                    });
+                    textPickr
+                        .on('change', (color) => {
+                            textCol = pickrToCol(color);
+                            render();
+                        })
+                        .on('save', (_, p) => p.hide());
+
+                    strokePickr = Pickr.create({
+                        el: document.getElementById('strokeColorPicker'),
+                        theme: 'nano',
+                        default: colToPickrStr(strokeCol),
+                        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
+                        i18n: { 'btn:save': '確定' },
+                    });
+                    strokePickr
+                        .on('change', (color) => {
+                            strokeCol = pickrToCol(color);
+                            render();
+                        })
+                        .on('save', (_, p) => p.hide());
+                }
+
+                function initPopupPickrs() {
+                    popupCellPickr = Pickr.create({
+                        el: document.getElementById('popupCellColorPicker'),
+                        theme: 'nano',
+                        default: colToPickrStr(popupCellCol),
+                        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
+                        i18n: { 'btn:save': '確定' },
+                    });
+                    popupCellPickr
+                        .on('change', (color) => {
+                            if (suppressPopupChange) return;
+                            popupCellCol = pickrToCol(color);
+                            applyCellEdit();
+                        })
+                        .on('save', (_, p) => p.hide());
+
+                    popupTextPickr = Pickr.create({
+                        el: document.getElementById('popupTextColorPicker'),
+                        theme: 'nano',
+                        default: colToPickrStr(popupTextCol),
+                        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
+                        i18n: { 'btn:save': '確定' },
+                    });
+                    popupTextPickr
+                        .on('change', (color) => {
+                            if (suppressPopupChange) return;
+                            popupTextCol = pickrToCol(color);
+                            applyCellEdit();
+                        })
+                        .on('save', (_, p) => p.hide());
+                }
+
+                /* ================================================================
+                   イベントリスナー
+                ================================================================ */
+                document.querySelectorAll('input[name="ori"]').forEach((radio) => {
+                    radio.addEventListener('change', () => {
+                        render();
+                    });
+                });
+                document.getElementById('cellSize').addEventListener('input', render);
+                document.getElementById('range').addEventListener('input', () => {
+                    buildColorPickers();
+                    render();
+                });
+                document.querySelectorAll('input[name="method"]').forEach((r) => r.addEventListener('change', render));
+                document.getElementById('fitGrid').addEventListener('change', render);
+                document.getElementById('colorScheme').addEventListener('change', () => {
+                    buildColorPickers();
+                    applyScheme();
+                    render();
+                });
+                document.getElementById('fontSize').addEventListener('input', render);
+
+                // 縁取りトグル
+                const strokeToggle = document.getElementById('strokeEnabled');
+                const strokeRow = document.getElementById('strokeColorRow');
+                strokeToggle.addEventListener('change', () => {
+                    const on = strokeToggle.checked;
+                    strokeRow.style.opacity = on ? '1' : '0.3';
+                    strokeRow.style.pointerEvents = on ? '' : 'none';
+                    render();
+                });
+
+                // ポップアップ
+                document.getElementById('cp-text').addEventListener('input', applyCellEdit);
+                document.getElementById('cp-fontSize').addEventListener('input', applyCellEdit);
+                document.getElementById('cpClose').addEventListener('click', closeCellPopup);
+                document.getElementById('cpReset').addEventListener('click', () => {
+                    if (!editingCell) return;
+                    customCells.delete(`${editingCell.c},${editingCell.r}`);
+                    updateCustomCount();
+                    closeCellPopup();
+                });
+
+                // カスタム全解除
+                document.getElementById('clearCustomBtn').addEventListener('click', () => {
+                    customCells.clear();
+                    updateCustomCount();
+                    closeCellPopup();
+                });
+
+                // ダウンロード
+                document.getElementById('downloadBtn').addEventListener('click', () => {
+                    const canvas = document.getElementById('rulerCanvas');
+                    const fitGrid = isFitGrid();
+                    const link = document.createElement('a');
+                    if (fitGrid) {
+                        const cs = getCellSize();
+                        const cw = Math.round((canvas.width / cs) * 2);
+                        const ch = Math.round((canvas.height / cs) * 2);
+                        link.download = `hex_ruler_${cw}x${ch}.png`;
+                    } else {
+                        link.download = 'hex_ruler.png';
+                    }
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+
+                /* ================================================================
+                   初期化
+                ================================================================ */
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (window.IKLab?.initNumSpinners) IKLab.initNumSpinners();
+
+                    initGlobalPickrs();
+                    initPopupPickrs();
+                    buildColorPickers();
+
+                    syncPair('cellOpacity', 'cellOpacityNum');
+                    syncPair('textOpacity', 'textOpacityNum');
+
+                    render();
+                });
+            })();
+        </script>
+    </body>
 </html>
