@@ -1,0 +1,1413 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TRPGマップ作成ツール | 違法建築のTRPGラボ</title>
+        <meta name="description" content="TRPGのマップをブラウザ上で作成できるツール。スクエア/ヘクスグリッド対応。洞窟・屋内・屋外を自由にデザインし、画像として出力できます。" />
+        <meta name="author" content="違法建築" />
+        <link rel="icon" href="favicon.ico" />
+        <meta property="og:url" content="https://ihoukentiku.github.io/trpg_map_maker.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="TRPGマップ作成ツール | 違法建築のTRPGラボ" />
+        <meta property="og:description" content="TRPGのマップをブラウザ上で作成できるツール。スクエア/ヘクスグリッド対応。" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
+        <link rel="stylesheet" href="common.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+        <style>
+            :root {
+                --page-width: 100%;
+                --toolbar-w: 48px;
+                --prop-w: 260px;
+                --layer-w: 240px;
+                --statusbar-h: 28px;
+                --input-bg: rgba(255,255,255,0.06);
+                --input-bd: rgba(33,150,243,0.3);
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0,0,0,0.05);
+                --input-bd: rgba(33,150,243,0.4);
+            }
+            html, body { height: 100dvh; overflow: hidden; }
+
+            /* ---- レイアウト ---- */
+            #main {
+                display: grid;
+                grid-template-columns: var(--toolbar-w) var(--prop-w) 1fr var(--layer-w);
+                grid-template-rows: 1fr var(--statusbar-h);
+                height: calc(100dvh - var(--header-h, 60px));
+                overflow: hidden;
+            }
+
+            /* ---- ヘッダー拡張 ---- */
+            .header-ext {
+                display: flex; align-items: center; gap: 0.6rem;
+                margin-left: auto; margin-right: 0.6rem;
+            }
+            .header-ext .seg { display: flex; border: 1px solid var(--input-bd); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+            .header-ext .seg input[type='radio'] { display: none; }
+            .header-ext .seg label {
+                font-family: var(--font-mono); font-size: 0.7rem; padding: 0.2rem 0.55rem;
+                color: var(--text-dim); cursor: pointer; border-right: 1px solid var(--input-bd);
+                transition: background var(--t), color var(--t); white-space: nowrap; line-height: 1.6;
+            }
+            .header-ext .seg label:last-child { border-right: none; }
+            .header-ext .seg input[type='radio']:checked + label { background: rgba(0,229,255,0.15); color: var(--cyan); }
+
+            /* ---- ツールバー ---- */
+            #toolbar {
+                grid-column: 1; grid-row: 1; display: flex; flex-direction: column;
+                background: var(--bg2); border-right: 1px solid var(--border);
+                padding: 4px 0; gap: 2px; overflow-y: auto; scrollbar-width: none;
+            }
+            #toolbar::-webkit-scrollbar { display: none; }
+            .tb-sep { height: 1px; margin: 4px 6px; background: var(--border); }
+            .tb-btn {
+                position: relative; width: var(--toolbar-w); height: 40px;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                color: var(--text-dim); border-radius: 0; transition: color var(--t), background var(--t); gap: 1px;
+            }
+            .tb-btn:hover { color: var(--text); background: var(--cyan-muted); }
+            .tb-btn.active { color: var(--cyan); background: rgba(0,229,255,0.12); border-left: 2px solid var(--cyan); }
+            .tb-btn .material-icons { font-size: 1.2rem; }
+            .tb-btn .tb-label { font-size: 0.5rem; font-family: var(--font-main); letter-spacing: -0.02em; white-space: nowrap; }
+            .tb-advanced { display: flex; }
+            body.mode-simple .tb-advanced, body.mode-simple .tb-sep-advanced { display: none; }
+
+            /* ---- プロパティパネル ---- */
+            #prop-panel {
+                grid-column: 2; grid-row: 1; display: flex; flex-direction: column;
+                gap: 0; padding: 0; overflow-y: auto; background: var(--bg-card);
+                border-right: 1px solid var(--border); scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+            .s-sec { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+            .s-sec:last-child { border-bottom: none; }
+            .s-ttl {
+                font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
+                text-transform: uppercase; color: var(--cyan); margin-bottom: 0.5rem;
+                display: flex; align-items: center; gap: 0.35rem;
+            }
+            .s-ttl .material-icons { font-size: 0.88rem; }
+            .f { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.42rem; }
+            .f:last-child { margin-bottom: 0; }
+            .f-col { flex-direction: column; align-items: stretch; gap: 0.3rem; }
+            .fl { font-size: 0.78rem; color: var(--text); white-space: nowrap; flex-shrink: 0; }
+            .unit { font-size: 0.72rem; color: var(--text-dim); flex-shrink: 0; }
+            .row { display: flex; align-items: center; gap: 0.3rem; }
+
+            input[type='number'] {
+                background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
+                color: var(--text-bright); font-family: var(--font-mono); font-size: 1rem;
+                padding: 0.15rem 0.35rem; height: 26px; width: 50px; text-align: center;
+                transition: border-color var(--t), box-shadow var(--t);
+            }
+            input[type='number']:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,0.12); }
+            select {
+                background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 4px;
+                color: var(--text-bright); font-family: var(--font-mono); font-size: 0.76rem;
+                padding: 0.15rem 0.35rem; height: 26px; cursor: pointer;
+            }
+            select:focus { outline: none; border-color: var(--cyan); }
+
+            .tog { display: flex; align-items: center; gap: 0.45rem; cursor: pointer; }
+            .tog input[type='checkbox'] {
+                appearance: none; -webkit-appearance: none; width: 30px; height: 16px; border-radius: 8px;
+                border: 1px solid var(--input-bd); background: var(--input-bg);
+                position: relative; cursor: pointer; flex-shrink: 0;
+                transition: background var(--t), border-color var(--t);
+            }
+            .tog input[type='checkbox']::after {
+                content: ''; position: absolute; width: 10px; height: 10px; border-radius: 50%;
+                background: var(--text-dim); top: 2px; left: 2px;
+                transition: transform var(--t), background var(--t);
+            }
+            .tog input[type='checkbox']:checked { background: rgba(0,229,255,0.18); border-color: var(--cyan); }
+            .tog input[type='checkbox']:checked::after { background: var(--cyan); transform: translateX(14px); }
+            .tl { font-size: 0.78rem; color: var(--text); }
+
+            .seg { display: flex; border: 1px solid var(--input-bd); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+            .seg input[type='radio'] { display: none; }
+            .seg label {
+                font-family: var(--font-mono); font-size: 0.7rem; padding: 0.15rem 0.42rem;
+                color: var(--text-dim); cursor: pointer; border-right: 1px solid var(--input-bd);
+                transition: background var(--t), color var(--t); white-space: nowrap; line-height: 1.6;
+            }
+            .seg label:last-child { border-right: none; }
+            .seg input[type='radio']:checked + label { background: rgba(0,229,255,0.15); color: var(--cyan); }
+
+            input[type='range'] {
+                -webkit-appearance: none; appearance: none; width: 100%; height: 3px;
+                border-radius: 2px; background: var(--input-bd); outline: none; cursor: pointer; margin-top: 0.3rem;
+            }
+            input[type='range']::-webkit-slider-thumb {
+                -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+                background: var(--cyan); border: 2px solid var(--bg2);
+                box-shadow: 0 0 4px rgba(0,229,255,0.55); cursor: pointer;
+            }
+            input[type='range']::-moz-range-thumb {
+                width: 13px; height: 13px; border-radius: 50%;
+                background: var(--cyan); border: 2px solid var(--bg2); cursor: pointer;
+            }
+
+            .pickr { display: flex !important; align-items: center; }
+            .pickr .pcr-button {
+                width: 50px !important; height: 20px !important; border-radius: 4px !important;
+                border: 1px solid var(--input-bd) !important; box-shadow: none !important;
+            }
+            .pickr .pcr-button:hover { border-color: var(--cyan) !important; }
+
+            .prop-group { display: none; }
+            .prop-group.active { display: flex; flex-direction: column; gap: 0; }
+
+            .btn-action {
+                display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+                width: 100%; padding: 0.4rem 0.6rem;
+                background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+                color: #fff; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em;
+                border: 1px solid rgba(33,150,243,0.45); border-radius: var(--r);
+                cursor: pointer; transition: background var(--t), box-shadow var(--t);
+            }
+            .btn-action:hover { background: linear-gradient(135deg,#42a5f5,var(--blue-mid)); box-shadow: var(--glow-blue); }
+
+            /* ---- キャンバス ---- */
+            #canvas-area {
+                grid-column: 3; grid-row: 1; position: relative; overflow: hidden;
+                cursor: crosshair;
+                background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
+                background-size: 20px 20px;
+                background-position: 0 0;
+            }
+            #canvas-area canvas { display: block; }
+
+            /* ---- レイヤーパネル ---- */
+            #layer-panel {
+                grid-column: 4; grid-row: 1; display: flex; flex-direction: column;
+                background: var(--bg-card); border-left: 1px solid var(--border); overflow: hidden;
+            }
+            .lp-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+            }
+            .lp-title { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cyan); }
+            .lp-actions { display: flex; gap: 2px; }
+            .lp-btn {
+                width: 26px; height: 26px; display: grid; place-items: center; border-radius: 4px;
+                color: var(--text-dim); transition: color var(--t), background var(--t);
+            }
+            .lp-btn:hover { color: var(--cyan); background: var(--cyan-muted); }
+            .lp-btn .material-icons { font-size: 1rem; }
+            #layer-list { flex: 1; overflow-y: auto; padding: 4px; scrollbar-width: thin; scrollbar-color: var(--border-bright) transparent; }
+
+            .layer-item {
+                display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.4rem;
+                border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: var(--text);
+                transition: background var(--t); user-select: none;
+            }
+            .layer-item:hover { background: var(--cyan-muted); }
+            .layer-item.selected { background: rgba(0,229,255,0.12); color: var(--cyan); }
+            .layer-item.drag-over-top { border-top: 2px solid var(--cyan); }
+            .layer-item.drag-over-bottom { border-bottom: 2px solid var(--cyan); }
+            .layer-item .material-icons { font-size: 0.9rem; color: var(--text-dim); cursor: pointer; }
+            .layer-item .layer-name {
+                flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            }
+            .layer-item .layer-name-input {
+                flex: 1; background: var(--input-bg); border: 1px solid var(--cyan);
+                border-radius: 3px; color: var(--text-bright); font-size: 0.75rem;
+                padding: 0 0.2rem; outline: none; font-family: inherit;
+            }
+
+            #layer-props {
+                border-top: 1px solid var(--border); padding: 0.5rem 0.6rem; flex-shrink: 0;
+                display: flex; flex-direction: column; gap: 0.4rem;
+            }
+            #layer-props .f { margin-bottom: 0.2rem; }
+
+            /* ---- 右クリックメニュー ---- */
+            #ctx-menu {
+                position: fixed; z-index: 1000; background: var(--bg2); border: 1px solid var(--border);
+                border-radius: var(--r); padding: 4px 0; min-width: 160px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.5); display: none;
+            }
+            #ctx-menu.open { display: block; }
+            .ctx-item {
+                display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem;
+                font-size: 0.75rem; color: var(--text); cursor: pointer; transition: background var(--t);
+            }
+            .ctx-item:hover { background: var(--cyan-muted); color: var(--cyan); }
+            .ctx-item .material-icons { font-size: 0.9rem; }
+            .ctx-sep { height: 1px; margin: 4px 0.5rem; background: var(--border); }
+
+            /* ---- ステータスバー ---- */
+            #statusbar {
+                grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 1.2rem;
+                padding: 0 0.75rem; background: var(--bg2); border-top: 1px solid var(--border);
+                font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim);
+                white-space: nowrap; overflow: hidden;
+            }
+            #statusbar span { display: flex; align-items: center; gap: 0.25rem; }
+            #statusbar .material-icons { font-size: 0.8rem; }
+
+            /* 選択オブジェクト情報 */
+            #sel-info .f { margin-bottom: 0.25rem; }
+            #sel-info input[type='number'] { width: 58px; }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
+        <main id="main">
+            <!-- ツールバー -->
+            <div id="toolbar">
+                <button class="tb-btn" data-tool="settings" title="設定"><span class="material-icons">settings</span><span class="tb-label">設定</span></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-icons">near_me</span><span class="tb-label">選択</span></button>
+                <button class="tb-btn" data-tool="cell" title="セル塗り (B)"><span class="material-icons">grid_on</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn" data-tool="rect" title="矩形 (R)"><span class="material-icons">crop_square</span><span class="tb-label">矩形</span></button>
+                <button class="tb-btn" data-tool="ellipse" title="楕円 (E)"><span class="material-icons">circle</span><span class="tb-label">楕円</span></button>
+                <button class="tb-btn" data-tool="line" title="直線 (L)"><span class="material-icons">horizontal_rule</span><span class="tb-label">直線</span></button>
+                <button class="tb-btn" data-tool="path" title="折線 (P)"><span class="material-icons">polyline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn" data-tool="polygon" title="多角形 (G)"><span class="material-icons">pentagon</span><span class="tb-label">多角形</span></button>
+                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-icons">draw</span><span class="tb-label">自由線</span></button>
+                <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-icons">title</span><span class="tb-label">文字</span></button>
+                <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-icons">image</span><span class="tb-label">画像</span></button>
+                <div class="tb-sep tb-advanced tb-sep-advanced"></div>
+                <button class="tb-btn tb-advanced" data-tool="terrain" title="地形ブラシ"><span class="material-icons">landscape</span><span class="tb-label">地形</span></button>
+                <button class="tb-btn tb-advanced" data-tool="wall" title="壁 (W)"><span class="material-icons">fence</span><span class="tb-label">壁</span></button>
+                <button class="tb-btn tb-advanced" data-tool="room" title="部屋生成"><span class="material-icons">meeting_room</span><span class="tb-label">部屋</span></button>
+                <button class="tb-btn tb-advanced" data-tool="door" title="ドア"><span class="material-icons">door_front</span><span class="tb-label">ドア</span></button>
+                <button class="tb-btn tb-advanced" data-tool="object" title="オブジェクト"><span class="material-icons">chair</span><span class="tb-label">配置</span></button>
+                <button class="tb-btn tb-advanced" data-tool="label" title="ラベル"><span class="material-icons">pin_drop</span><span class="tb-label">ラベル</span></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn" data-tool="export" title="出力"><span class="material-icons">download</span><span class="tb-label">出力</span></button>
+                <button class="tb-btn" data-tool="save" title="保存/読込"><span class="material-icons">save</span><span class="tb-label">保存</span></button>
+            </div>
+
+            <!-- プロパティパネル -->
+            <div id="prop-panel">
+                <!-- 設定 -->
+                <div class="prop-group" data-prop="settings">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">grid_4x4</span>グリッド</div>
+                        <div class="f"><span class="fl">色</span><div id="grid-color-picker"></div></div>
+                        <div class="f"><span class="fl">太さ</span><div class="row"><input type="number" id="grid-line-width" value="1" min="1" max="10" class="custom-spinner" /><span class="unit">px</span></div></div>
+                        <div class="f"><span class="fl">線種</span>
+                            <div class="seg">
+                                <input type="radio" name="grid-style" id="gs-solid" value="solid" checked /><label for="gs-solid">実線</label>
+                                <input type="radio" name="grid-style" id="gs-dash" value="dashed" /><label for="gs-dash">破線</label>
+                                <input type="radio" name="grid-style" id="gs-dot" value="dotted" /><label for="gs-dot">点線</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 選択ツール -->
+                <div class="prop-group active" data-prop="select">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">near_me</span>選択ツール</div>
+                        <div id="sel-info">
+                            <p class="fl" style="opacity:0.5" id="sel-none">オブジェクトを選択してください</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- セル塗り -->
+                <div class="prop-group" data-prop="cell">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">grid_on</span>セル塗り</div>
+                        <div class="f">
+                            <span class="fl">ツール</span>
+                            <div class="seg">
+                                <input type="radio" name="cell-tool" id="ct-pen" value="pen" checked /><label for="ct-pen">ペン</label>
+                                <input type="radio" name="cell-tool" id="ct-eraser" value="eraser" /><label for="ct-eraser">消しゴム</label>
+                            </div>
+                        </div>
+                        <button class="btn-action" id="add-cell-layer" style="margin-top:0.4rem">セルレイヤーを追加</button>
+                    </div>
+                </div>
+                <!-- 矩形 -->
+                <div class="prop-group" data-prop="rect"><div class="s-sec"><div class="s-ttl"><span class="material-icons">crop_square</span>矩形</div><div class="f"><label class="tog"><input type="checkbox" id="rect-snap" checked /><span class="tl">グリッドスナップ</span></label></div></div></div>
+                <!-- 楕円 -->
+                <div class="prop-group" data-prop="ellipse"><div class="s-sec"><div class="s-ttl"><span class="material-icons">circle</span>楕円</div><div class="f"><label class="tog"><input type="checkbox" id="ellipse-snap" checked /><span class="tl">グリッドスナップ</span></label></div></div></div>
+                <!-- 直線 -->
+                <div class="prop-group" data-prop="line"><div class="s-sec"><div class="s-ttl"><span class="material-icons">horizontal_rule</span>直線</div><div class="f"><label class="tog"><input type="checkbox" id="line-snap" checked /><span class="tl">グリッドスナップ</span></label></div></div></div>
+                <!-- 折線 -->
+                <div class="prop-group" data-prop="path"><div class="s-sec"><div class="s-ttl"><span class="material-icons">polyline</span>折線 (ポリライン)</div><div class="f"><label class="tog"><input type="checkbox" id="path-snap" checked /><span class="tl">グリッドスナップ</span></label></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 頂点追加 / Enter: 確定 / Esc: キャンセル</p></div></div>
+                <!-- 多角形 -->
+                <div class="prop-group" data-prop="polygon"><div class="s-sec"><div class="s-ttl"><span class="material-icons">pentagon</span>多角形 (ポリゴン)</div><div class="f"><label class="tog"><input type="checkbox" id="polygon-snap" checked /><span class="tl">グリッドスナップ</span></label></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 頂点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p></div></div>
+                <!-- フリーハンド -->
+                <div class="prop-group" data-prop="freehand"><div class="s-sec"><div class="s-ttl"><span class="material-icons">draw</span>フリーハンド</div><div class="f"><span class="fl">線幅</span><div class="row"><input type="number" id="freehand-width" value="3" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div></div></div></div>
+                <!-- テキスト -->
+                <div class="prop-group" data-prop="text"><div class="s-sec"><div class="s-ttl"><span class="material-icons">title</span>テキスト</div><div class="f"><span class="fl">フォント</span><select id="text-font"><option value="Noto Sans JP">Noto Sans JP</option><option value="Noto Serif JP">Noto Serif JP</option><option value="Share Tech Mono">Share Tech Mono</option></select></div><div class="f"><span class="fl">サイズ</span><div class="row"><input type="number" id="text-size" value="20" min="6" max="200" class="custom-spinner" /><span class="unit">px</span></div></div></div></div>
+                <!-- 画像 -->
+                <div class="prop-group" data-prop="image"><div class="s-sec"><div class="s-ttl"><span class="material-icons">image</span>画像挿入</div><input type="file" id="image-upload" accept="image/*" style="display:none" /><button class="btn-action" id="image-upload-btn">画像を選択</button></div></div>
+                <!-- 高度ツール（プレースホルダー） -->
+                <div class="prop-group" data-prop="terrain"><div class="s-sec"><div class="s-ttl"><span class="material-icons">landscape</span>地形ブラシ</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="wall"><div class="s-sec"><div class="s-ttl"><span class="material-icons">fence</span>壁</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="room"><div class="s-sec"><div class="s-ttl"><span class="material-icons">meeting_room</span>部屋生成</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="door"><div class="s-sec"><div class="s-ttl"><span class="material-icons">door_front</span>ドア</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="object"><div class="s-sec"><div class="s-ttl"><span class="material-icons">chair</span>オブジェクト配置</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="label"><div class="s-sec"><div class="s-ttl"><span class="material-icons">pin_drop</span>ラベル</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="export"><div class="s-sec"><div class="s-ttl"><span class="material-icons">download</span>出力</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-prop="save"><div class="s-sec"><div class="s-ttl"><span class="material-icons">save</span>保存 / 読込</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+
+                <!-- フィル / ストローク -->
+                <div id="fill-stroke-sec" class="s-sec" style="display:none">
+                    <div class="s-ttl"><span class="material-icons">palette</span>フィル / ストローク</div>
+                    <div class="f"><span class="fl">フィル</span><div id="fill-color-picker"></div></div>
+                    <div class="f"><span class="fl">ストローク</span><div id="stroke-color-picker"></div></div>
+                    <div class="f"><span class="fl">線幅</span><div class="row"><input type="number" id="stroke-width" value="2" min="0" max="100" class="custom-spinner" /><span class="unit">px</span></div></div>
+                    <div class="f"><span class="fl">線種</span>
+                        <div class="seg">
+                            <input type="radio" name="stroke-style" id="ss-solid" value="solid" checked /><label for="ss-solid">実線</label>
+                            <input type="radio" name="stroke-style" id="ss-dash" value="dashed" /><label for="ss-dash">破線</label>
+                            <input type="radio" name="stroke-style" id="ss-dot" value="dotted" /><label for="ss-dot">点線</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- キャンバス -->
+            <div id="canvas-area"><canvas id="main-canvas"></canvas></div>
+
+            <!-- レイヤーパネル -->
+            <div id="layer-panel">
+                <div class="lp-header">
+                    <span class="lp-title">Layers</span>
+                    <div class="lp-actions">
+                        <button class="lp-btn" id="layer-add" title="レイヤー追加"><span class="material-icons">add</span></button>
+                        <button class="lp-btn" id="layer-group" title="グループ化"><span class="material-icons">folder</span></button>
+                        <button class="lp-btn" id="layer-delete" title="削除"><span class="material-icons">delete_outline</span></button>
+                    </div>
+                </div>
+                <div id="layer-list"></div>
+                <div id="layer-props">
+                    <div class="f"><span class="fl">不透明度</span><span class="unit" id="layer-opacity-val">100%</span></div>
+                    <input type="range" id="layer-opacity" value="1" min="0" max="1" step="0.01" />
+                    <div class="f"><span class="fl">ブレンド</span>
+                        <select id="layer-blend"><option value="source-over">通常</option><option value="multiply">乗算</option><option value="screen">スクリーン</option><option value="overlay">オーバーレイ</option><option value="darken">暗く</option><option value="lighten">明るく</option></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステータスバー -->
+            <div id="statusbar">
+                <span><span class="material-icons">mouse</span><span id="sb-coord">0, 0</span></span>
+                <span><span class="material-icons">search</span><span id="sb-zoom">100%</span></span>
+                <span><span class="material-icons">grid_4x4</span><span id="sb-grid">50px</span></span>
+                <span id="sb-selection"></span>
+            </div>
+        </main>
+
+        <!-- 右クリックメニュー -->
+        <div id="ctx-menu">
+            <div class="ctx-item" data-action="rename"><span class="material-icons">edit</span>名前を変更</div>
+            <div class="ctx-item" data-action="duplicate"><span class="material-icons">content_copy</span>複製</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" data-action="bring-front"><span class="material-icons">flip_to_front</span>最前面へ</div>
+            <div class="ctx-item" data-action="send-back"><span class="material-icons">flip_to_back</span>最背面へ</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" data-action="lock"><span class="material-icons">lock</span>ロック</div>
+            <div class="ctx-item" data-action="delete"><span class="material-icons">delete</span>削除</div>
+        </div>
+
+        <!-- モーダル -->
+        <div class="modal-overlay" id="guide-modal"><div class="modal"><div class="modal-header"><span class="modal-title">使い方ガイド</span><button class="modal-close" onclick="IKLab.closeModal('guide-modal')"><span class="material-icons">close</span></button></div><div class="modal-body"><p>準備中です。</p></div></div></div>
+        <div class="modal-overlay" id="save-modal"><div class="modal"><div class="modal-header"><span class="modal-title">マイマップ</span><button class="modal-close" onclick="IKLab.closeModal('save-modal')"><span class="material-icons">close</span></button></div><div class="modal-body"><p style="color:var(--text-dim)">後ほど実装されます。</p></div></div></div>
+
+        <script src="common.js"></script>
+        <script>
+'use strict';
+
+/* ================================================================
+   ヘッダー拡張
+================================================================ */
+(function injectHeaderExtension() {
+    const wait = () => {
+        const nav = document.querySelector('.header-nav');
+        if (!nav) return requestAnimationFrame(wait);
+        const ext = document.createElement('div');
+        ext.className = 'header-ext';
+        ext.innerHTML = `
+            <div class="seg"><input type="radio" name="edit-mode" id="em-simple" value="simple"><label for="em-simple">簡易</label><input type="radio" name="edit-mode" id="em-advanced" value="advanced" checked><label for="em-advanced">高度</label></div>
+            <div class="seg"><input type="radio" name="grid-type" id="gt-square" value="square" checked><label for="gt-square">スクエア</label><input type="radio" name="grid-type" id="gt-hex" value="hex"><label for="gt-hex">ヘクス</label></div>`;
+        nav.parentNode.insertBefore(ext, nav);
+    };
+    wait();
+})();
+
+/* ================================================================
+   App 状態
+================================================================ */
+const App = {
+    editMode: 'advanced',
+    gridType: 'square',
+    activeTool: 'select',
+    cellSize: 50,
+    canvas: null,
+    fillColor: '#4a90c4',
+    fillOpacity: 1,
+    strokeColor: '#000000',
+    strokeOpacity: 1,
+    strokeWidth: 2,
+    strokeDashArray: null,       // null=実線, [10,5]=破線, [2,4]=点線
+    gridColor: 'rgba(0,0,0,1)',
+    gridLineWidth: 1,
+    gridDashArray: null,
+    nextLayerId: 10,
+    layerCounters: {},           // 種別ごとのレイヤー連番 { '矩形': 2, 'セル': 1, ... }
+    selectedLayerIds: [],        // レイヤーパネル上の選択
+    lastClickedLayerId: null,
+    _drawing: null,
+    _pathPoints: [],
+    _polygonPoints: [],
+    _lineStart: null,
+    _snapPt: null,
+};
+
+/* ヘルパー */
+function rgba(hex, a) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+}
+function snapToGrid(x, y) {
+    const cs = App.cellSize;
+    const sx = Math.round(x / cs) * cs, sy = Math.round(y / cs) * cs;
+    const thresh = 10 / App.canvas.getZoom();
+    return Math.hypot(sx - x, sy - y) <= thresh ? { x: sx, y: sy } : null;
+}
+function snapToEditPoints(x, y, points) {
+    const thresh = 8 / App.canvas.getZoom();
+    let best = null, bestD = Infinity;
+    for (const p of points) {
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < thresh && d < bestD) { bestD = d; best = p; }
+    }
+    return best;
+}
+function getDashArray(style, w) {
+    if (style === 'dashed') return [w * 5, w * 3];
+    if (style === 'dotted') return [w, w * 2];
+    return null;
+}
+function getMapLayers() {
+    return App.canvas.getObjects().filter(o => o._isMapLayer);
+}
+function updateFillStrokeVisibility() {
+    const drawTools = ['cell','rect','ellipse','line','path','freehand','text','terrain','wall','room'];
+    let show = drawTools.includes(App.activeTool);
+    if (App.activeTool === 'select') {
+        show = App.canvas.getActiveObjects().some(o => o._isMapLayer && !o._isCellLayer);
+    }
+    document.getElementById('fill-stroke-sec').style.display = show ? '' : 'none';
+}
+
+/* ================================================================
+   Pickr
+================================================================ */
+let fillPickr, strokePickr, gridPickr;
+
+function initPickr() {
+    const opts = (el, def) => ({
+        el, theme: 'nano', default: def,
+        components: { preview: true, opacity: true, hue: true, interaction: { hex: true, rgba: true, input: true, save: true } },
+    });
+    fillPickr = Pickr.create(opts('#fill-color-picker', App.fillColor));
+    fillPickr.on('save', (c) => {
+        if (c) { App.fillColor = c.toHEXA().toString().slice(0,7); App.fillOpacity = c.toRGBA()[3]; }
+        fillPickr.hide();
+        if (App.activeTool === 'select') {
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+                .forEach(o => o.set({ fill: rgba(App.fillColor, App.fillOpacity) }));
+            App.canvas.renderAll();
+        }
+    });
+    strokePickr = Pickr.create(opts('#stroke-color-picker', App.strokeColor));
+    strokePickr.on('save', (c) => {
+        if (c) { App.strokeColor = c.toHEXA().toString().slice(0,7); App.strokeOpacity = c.toRGBA()[3]; }
+        strokePickr.hide();
+        if (App.activeTool === 'select') {
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+                .forEach(o => o.set({ stroke: rgba(App.strokeColor, App.strokeOpacity) }));
+            App.canvas.renderAll();
+        }
+    });
+    gridPickr = Pickr.create(opts('#grid-color-picker', 'rgba(0,0,0,1)'));
+    gridPickr.on('save', (c) => {
+        if (c) App.gridColor = c.toRGBA().toString();
+        gridPickr.hide();
+        drawGrid();
+    });
+}
+
+/* ================================================================
+   キャンバス初期化
+================================================================ */
+function initCanvas() {
+    const area = document.getElementById('canvas-area');
+    const c = document.getElementById('main-canvas');
+    c.width = area.clientWidth; c.height = area.clientHeight;
+
+    App.canvas = new fabric.Canvas('main-canvas', {
+        selection: true, preserveObjectStacking: true,
+        stopContextMenu: true, fireRightClick: true,
+    });
+    App.canvas.setWidth(area.clientWidth);
+    App.canvas.setHeight(area.clientHeight);
+
+    const vpt = App.canvas.viewportTransform;
+    vpt[4] = Math.round(area.clientWidth / 2); vpt[5] = Math.round(area.clientHeight / 2);
+    App.canvas.setViewportTransform(vpt);
+
+    // ズーム
+    App.canvas.on('mouse:wheel', function(opt) {
+        let zoom = App.canvas.getZoom() * (0.999 ** opt.e.deltaY);
+        zoom = Math.min(20, Math.max(0.05, zoom));
+        App.canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        opt.e.preventDefault(); opt.e.stopPropagation();
+        drawGrid(); updateStatusBar();
+    });
+
+    // パン
+    let isPanning = false, panX = 0, panY = 0, spaceHeld = false;
+    document.addEventListener('keydown', e => { if (e.code === 'Space' && !e.repeat) { spaceHeld = true; e.preventDefault(); } });
+    document.addEventListener('keyup', e => { if (e.code === 'Space') spaceHeld = false; });
+
+    App.canvas.on('mouse:down', function(opt) {
+        const e = opt.e, ptr = App.canvas.getPointer(e);
+
+        // 右クリック → コンテキストメニュー
+        if (e.button === 2) {
+            e.preventDefault();
+            if (opt.target && opt.target._isMapLayer) {
+                App.canvas.setActiveObject(opt.target);
+                showContextMenu(e.clientX, e.clientY, opt.target);
+            } else {
+                hideContextMenu();
+            }
+            return;
+        }
+
+        hideContextMenu();
+
+        // パン
+        if (e.altKey || spaceHeld) {
+            isPanning = true; panX = e.clientX; panY = e.clientY;
+            App.canvas.selection = false; App.canvas.defaultCursor = 'grab';
+            return;
+        }
+
+        // ツール別
+        switch (App.activeTool) {
+            case 'rect': case 'ellipse': {
+                const snap = document.getElementById(App.activeTool + '-snap')?.checked;
+                const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                App._drawing = { startX: pt.x, startY: pt.y, obj: null };
+                break;
+            }
+            case 'line': {
+                const snap = document.getElementById('line-snap')?.checked;
+                const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                if (!App._lineStart) { App._lineStart = pt; }
+                else {
+                    const hsw = App.strokeWidth / 2;
+                    const line = new fabric.Line([
+                        App._lineStart.x - hsw, App._lineStart.y - hsw,
+                        pt.x - hsw, pt.y - hsw
+                    ], {
+                        stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+                        strokeDashArray: App.strokeDashArray, fill: null,
+                        selectable: false, evented: false, objectCaching: false,
+                    });
+                    addLayerObject('直線', line);
+                    removePreview(); App._lineStart = null;
+                }
+                break;
+            }
+            case 'path': {
+                const snap = document.getElementById('path-snap')?.checked;
+                const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
+                App._pathPoints.push({ x: pt.x, y: pt.y });
+                break;
+            }
+            case 'polygon': {
+                const snap = document.getElementById('polygon-snap')?.checked;
+                const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
+                App._polygonPoints.push({ x: pt.x, y: pt.y });
+                break;
+            }
+            case 'cell': {
+                const col = Math.floor(ptr.x / App.cellSize), row = Math.floor(ptr.y / App.cellSize);
+                const tool = document.querySelector('input[name="cell-tool"]:checked')?.value || 'pen';
+                handleCellPaint(col, row, tool);
+                App._drawing = { cellTool: tool };
+                break;
+            }
+            case 'text': {
+                if (opt.target && opt.target._isMapText) { opt.target.enterEditing(); App.canvas.renderAll(); return; }
+                const font = document.getElementById('text-font')?.value || 'Noto Sans JP';
+                const size = parseInt(document.getElementById('text-size')?.value) || 20;
+                const tb = new fabric.Textbox('テキスト', {
+                    left: ptr.x, top: ptr.y, fontFamily: font, fontSize: size,
+                    fill: rgba(App.fillColor, App.fillOpacity),
+                    stroke: App.strokeWidth > 0 ? rgba(App.strokeColor, App.strokeOpacity) : null,
+                    strokeWidth: App.strokeWidth > 0 ? App.strokeWidth : 0,
+                    editable: true, objectCaching: false, _isMapText: true,
+                });
+                addLayerObject('テキスト', tb);
+                tb.enterEditing(); tb.selectAll(); App.canvas.renderAll();
+                break;
+            }
+        }
+    });
+
+    App.canvas.on('mouse:move', function(opt) {
+        const ptr = App.canvas.getPointer(opt.e);
+        document.getElementById('sb-coord').textContent =
+            `${Math.floor(ptr.x / App.cellSize)}, ${Math.floor(ptr.y / App.cellSize)}`;
+
+        if (isPanning) {
+            App._snapPt = null;
+            const v = App.canvas.viewportTransform;
+            v[4] = Math.round(v[4] + opt.e.clientX - panX);
+            v[5] = Math.round(v[5] + opt.e.clientY - panY);
+            panX = opt.e.clientX; panY = opt.e.clientY;
+            App.canvas.requestRenderAll(); drawGrid(); return;
+        }
+
+        // スナップ先を計算（水色マーカー用）
+        {
+            const _snapIds = { rect:'rect-snap', ellipse:'ellipse-snap', line:'line-snap', path:'path-snap', polygon:'polygon-snap' };
+            const _sid = _snapIds[App.activeTool];
+            if (_sid && document.getElementById(_sid)?.checked) {
+                const _editPts = App.activeTool === 'path' ? App._pathPoints
+                    : App.activeTool === 'polygon' ? App._polygonPoints : [];
+                const _raw = snapToGrid(ptr.x, ptr.y); // null = グリッドから遠い
+                App._snapPt = snapToEditPoints(ptr.x, ptr.y, _editPts) || _raw || null;
+            } else {
+                App._snapPt = null;
+            }
+            App.canvas.requestRenderAll(); // マーカー更新のため常時再描画
+        }
+
+        // 矩形/楕円
+        if (App._drawing && (App.activeTool === 'rect' || App.activeTool === 'ellipse')) {
+            const snap = document.getElementById(App.activeTool + '-snap')?.checked;
+            const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const d = App._drawing;
+            const left = Math.min(d.startX, pt.x), top = Math.min(d.startY, pt.y);
+            const w = Math.abs(pt.x - d.startX), h = Math.abs(pt.y - d.startY);
+            const hsw = App.strokeWidth / 2;
+            const aLeft = left - hsw, aTop = top - hsw;
+            if (!d.obj) {
+                d.obj = App.activeTool === 'rect'
+                    ? new fabric.Rect({ left: aLeft, top: aTop, width: w, height: h, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true })
+                    : new fabric.Ellipse({ left: aLeft, top: aTop, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true });
+                App.canvas.add(d.obj);
+            } else {
+                d.obj.set({ left: aLeft, top: aTop });
+                if (App.activeTool === 'rect') d.obj.set({ width: w, height: h });
+                else d.obj.set({ rx: w/2, ry: h/2 });
+            }
+            App.canvas.renderAll();
+        }
+
+        // 直線プレビュー
+        if (App.activeTool === 'line' && App._lineStart) {
+            const snap = document.getElementById('line-snap')?.checked;
+            const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const hsw = App.strokeWidth / 2;
+            removePreview();
+            App.canvas.add(new fabric.Line([
+                App._lineStart.x - hsw, App._lineStart.y - hsw,
+                pt.x - hsw, pt.y - hsw
+            ], {
+                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth,
+                selectable: false, evented: false, isPreview: true, objectCaching: false,
+            }));
+            App.canvas.renderAll();
+        }
+
+        // 折線プレビュー
+        if (App.activeTool === 'path' && App._pathPoints.length > 0) {
+            const snap = document.getElementById('path-snap')?.checked;
+            const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
+            removePreview();
+            App.canvas.add(new fabric.Polyline([...App._pathPoints, pt], {
+                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth,
+                fill: rgba(App.fillColor, App.fillOpacity * 0.3),
+                selectable: false, evented: false, isPreview: true, objectCaching: false,
+            }));
+            App.canvas.renderAll();
+        }
+
+        // 多角形プレビュー
+        if (App.activeTool === 'polygon' && App._polygonPoints.length > 0) {
+            const snap = document.getElementById('polygon-snap')?.checked;
+            const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
+            removePreview();
+            App.canvas.add(new fabric.Polygon([...App._polygonPoints, pt], {
+                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth,
+                fill: rgba(App.fillColor, App.fillOpacity * 0.3),
+                selectable: false, evented: false, isPreview: true, objectCaching: false,
+            }));
+            App.canvas.renderAll();
+        }
+
+        // セル塗り
+        if (App._drawing && App.activeTool === 'cell') {
+            handleCellPaint(Math.floor(ptr.x / App.cellSize), Math.floor(ptr.y / App.cellSize), App._drawing.cellTool);
+        }
+    });
+
+    App.canvas.on('mouse:up', function() {
+        if (isPanning) { isPanning = false; App.canvas.selection = (App.activeTool === 'select'); App.canvas.defaultCursor = 'default'; return; }
+        if (App._drawing && (App.activeTool === 'rect' || App.activeTool === 'ellipse')) {
+            const d = App._drawing;
+            if (d.obj) {
+                App.canvas.remove(d.obj);
+                const w = d.obj.width ?? d.obj.rx * 2, h = d.obj.height ?? d.obj.ry * 2;
+                if (w > 2 && h > 2) { d.obj.set({ isPreview: false }); addLayerObject(App.activeTool === 'rect' ? '矩形' : '楕円', d.obj); }
+            }
+            App._drawing = null;
+        }
+        if (App._drawing && App.activeTool === 'cell') App._drawing = null;
+    });
+
+    App.canvas.on('text:editing:exited', function(opt) {
+        if (opt.target?._isMapText && opt.target.text.trim() === '') { App.canvas.remove(opt.target); App.canvas.discardActiveObject(); }
+        renderLayerList(); App.canvas.renderAll();
+    });
+
+    App.canvas.on('selection:created', () => { syncLayerSelectionFromCanvas(); updateSelectionInfo(); });
+    App.canvas.on('selection:updated', () => { syncLayerSelectionFromCanvas(); updateSelectionInfo(); });
+    App.canvas.on('selection:cleared', () => { App.selectedLayerIds = []; renderLayerList(); updateSelectionInfo(); });
+    App.canvas.on('object:modified', updateSelectionInfo);
+    App.canvas.on('path:created', opt => { if (opt.path) { opt.path.set({ selectable: false, evented: false }); addLayerObject('フリーハンド', opt.path); } });
+
+    window.addEventListener('resize', () => { App.canvas.setWidth(area.clientWidth); App.canvas.setHeight(area.clientHeight); drawGrid(); });
+    App.canvas.on('mouse:out', () => { App._snapPt = null; App.canvas.requestRenderAll(); });
+
+    _initGridRenderer();
+    updateStatusBar();
+}
+
+function removePreview() { App.canvas.getObjects().filter(o => o.isPreview).forEach(o => App.canvas.remove(o)); }
+
+/* ================================================================
+   グリッド（after:renderで直接描画 — Fabricオブジェクト不使用）
+================================================================ */
+function drawGrid() {
+    // after:render フックで自動描画されるため renderAll を呼ぶだけでよい
+    if (App.canvas) App.canvas.requestRenderAll();
+}
+
+function _initGridRenderer() {
+    const area = document.getElementById('canvas-area');
+    App.canvas.on('after:render', function() {
+        const vpt = App.canvas.viewportTransform;
+        const zoom = App.canvas.getZoom();
+
+        // チェッカーボード背景をビューポートに追従させる
+        const S = 20 * zoom;
+        const ox = ((vpt[4] % S) + S) % S;
+        const oy = ((vpt[5] % S) + S) % S;
+        area.style.backgroundSize = `${S}px ${S}px`;
+        area.style.backgroundPosition = `${ox}px ${oy}px`;
+        const cw = App.canvas.getWidth(), ch = App.canvas.getHeight(), cs = App.cellSize;
+        const wl = -vpt[4]/zoom, wt = -vpt[5]/zoom, wr = wl+cw/zoom, wb = wt+ch/zoom;
+        const sc = Math.floor(wl/cs)-1, ec = Math.ceil(wr/cs)+1;
+        const sr = Math.floor(wt/cs)-1, er = Math.ceil(wb/cs)+1;
+
+        const ctx = App.canvas.getContext();
+        ctx.save();
+        ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+        ctx.strokeStyle = App.gridColor;
+        ctx.lineWidth = App.gridLineWidth;
+        ctx.setLineDash(App.gridDashArray || []);
+        ctx.beginPath();
+        for (let c = sc; c <= ec; c++) { ctx.moveTo(c*cs, sr*cs); ctx.lineTo(c*cs, er*cs); }
+        for (let r = sr; r <= er; r++) { ctx.moveTo(sc*cs, r*cs); ctx.lineTo(ec*cs, r*cs); }
+        ctx.stroke();
+        ctx.restore();
+
+        // スナップ先マーカー（水色の中抜き四角）
+        if (App._snapPt) {
+            const sz = 8 / zoom;
+            ctx.save();
+            ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+            ctx.strokeStyle = '#00bcd4';
+            ctx.lineWidth = 1.5 / zoom;
+            ctx.setLineDash([]);
+            ctx.strokeRect(App._snapPt.x - sz / 2, App._snapPt.y - sz / 2, sz, sz);
+            ctx.restore();
+        }
+    });
+}
+
+/* ================================================================
+   レイヤー管理
+================================================================ */
+function addLayerObject(typeName, obj) {
+    const id = App.nextLayerId++;
+    App.layerCounters[typeName] = (App.layerCounters[typeName] || 0) + 1;
+    obj.set({
+        _layerId: id, _isMapLayer: true,
+        _layerName: `${typeName}${App.layerCounters[typeName]}`,
+        borderColor: '#40b7fc', cornerColor: 'white', cornerStrokeColor: '#40b7fc',
+        cornerSize: 10, transparentCorners: false, borderScaleFactor: 2,
+    });
+    // フリーハンド等、既にcanvas上にある場合はadd不要
+    if (!App.canvas.getObjects().includes(obj)) App.canvas.add(obj);
+    // 新規レイヤーをパネル上でハイライト（canvasのactive化はしない — 現ツールの操作性を維持）
+    App.selectedLayerIds = [id];
+    renderLayerList();
+    App.canvas.renderAll();
+}
+
+function syncLayerSelectionFromCanvas() {
+    App.selectedLayerIds = App.canvas.getActiveObjects().filter(o => o._isMapLayer).map(o => o._layerId);
+    renderLayerList();
+}
+
+function renderLayerList() {
+    const list = document.getElementById('layer-list');
+    list.innerHTML = '';
+    const layers = getMapLayers().reverse();
+
+    layers.forEach(obj => {
+        const item = document.createElement('div');
+        item.className = 'layer-item' + (App.selectedLayerIds.includes(obj._layerId) ? ' selected' : '');
+        item.dataset.id = obj._layerId;
+        item.draggable = true;
+
+        // 可視アイコン
+        const vis = document.createElement('span');
+        vis.className = 'material-icons';
+        vis.textContent = obj.visible ? 'visibility' : 'visibility_off';
+        vis.addEventListener('click', e => { e.stopPropagation(); obj.set({ visible: !obj.visible }); App.canvas.renderAll(); renderLayerList(); });
+
+        // 名前
+        const name = document.createElement('span');
+        name.className = 'layer-name';
+        name.textContent = obj._layerName || 'レイヤー';
+
+        item.appendChild(vis);
+        item.appendChild(name);
+
+        // クリック（Ctrl/Shift対応 + ツール切替）
+        item.addEventListener('click', e => {
+            const id = obj._layerId;
+            if (e.ctrlKey || e.metaKey) {
+                if (App.selectedLayerIds.includes(id)) App.selectedLayerIds = App.selectedLayerIds.filter(i => i !== id);
+                else App.selectedLayerIds.push(id);
+            } else if (e.shiftKey && App.lastClickedLayerId != null) {
+                const allIds = layers.map(l => l._layerId);
+                const a = allIds.indexOf(App.lastClickedLayerId), b = allIds.indexOf(id);
+                const range = allIds.slice(Math.min(a,b), Math.max(a,b)+1);
+                App.selectedLayerIds = [...new Set([...App.selectedLayerIds, ...range])];
+            } else {
+                App.selectedLayerIds = [id];
+            }
+            App.lastClickedLayerId = id;
+            // セルツール中のセルレイヤー選択 → ペイント対象切替のみ（ツール変更・canvas操作不可）
+            const isCellException = App.activeTool === 'cell' && obj._isCellLayer;
+            if (!isCellException && App.activeTool !== 'select') {
+                setActiveTool('select');
+            }
+            // セル例外時はcanvasのactive設定をスキップ（動かせない状態を維持）
+            if (!isCellException) {
+                applyLayerSelectionToCanvas();
+            }
+            renderLayerList();
+            updateSelectionInfo();
+        });
+
+        // ダブルクリック → 名前変更
+        item.addEventListener('dblclick', e => {
+            e.stopPropagation();
+            const input = document.createElement('input');
+            input.type = 'text'; input.className = 'layer-name-input';
+            input.value = obj._layerName || '';
+            name.replaceWith(input);
+            input.focus(); input.select();
+            const commit = () => { obj._layerName = input.value || obj._layerName; renderLayerList(); };
+            input.addEventListener('blur', commit);
+            input.addEventListener('keydown', ev => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.value = obj._layerName; input.blur(); } });
+        });
+
+        // 右クリック
+        item.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            if (!App.selectedLayerIds.includes(obj._layerId)) {
+                App.selectedLayerIds = [obj._layerId];
+                applyLayerSelectionToCanvas(); renderLayerList();
+            }
+            showContextMenu(e.clientX, e.clientY, obj);
+        });
+
+        // ドラッグ＆ドロップ
+        item.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', String(obj._layerId)); item.style.opacity = '0.4'; });
+        item.addEventListener('dragend', () => { item.style.opacity = '1'; document.querySelectorAll('.layer-item').forEach(i => i.classList.remove('drag-over-top','drag-over-bottom')); });
+        item.addEventListener('dragover', e => {
+            e.preventDefault();
+            const rect = item.getBoundingClientRect();
+            item.classList.toggle('drag-over-top', e.clientY < rect.top + rect.height/2);
+            item.classList.toggle('drag-over-bottom', e.clientY >= rect.top + rect.height/2);
+        });
+        item.addEventListener('dragleave', () => { item.classList.remove('drag-over-top','drag-over-bottom'); });
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            document.querySelectorAll('.layer-item').forEach(i => i.classList.remove('drag-over-top','drag-over-bottom'));
+            const draggedId = parseInt(e.dataTransfer.getData('text/plain'));
+            if (draggedId === obj._layerId) return;
+
+            const rect = item.getBoundingClientRect();
+            const above = e.clientY < rect.top + rect.height / 2;
+
+            // 複数選択時は全選択レイヤーを一括移動
+            const draggedIds = App.selectedLayerIds.includes(draggedId)
+                ? [...App.selectedLayerIds] : [draggedId];
+            if (draggedIds.includes(obj._layerId)) return;
+
+            // 現在のマップレイヤー順を取得（canvas z順: 低→高）
+            const mapLayers = getMapLayers();
+            const draggedObjs = mapLayers.filter(o => draggedIds.includes(o._layerId));
+            const remaining = mapLayers.filter(o => !draggedIds.includes(o._layerId));
+
+            // ドロップ先のインデックス（remaining配列内）
+            const targetIdx = remaining.findIndex(o => o._layerId === obj._layerId);
+            // UI上で「上」= canvas z-indexが高い = remaining配列の後方
+            const insertIdx = above ? targetIdx + 1 : targetIdx;
+            remaining.splice(insertIdx, 0, ...draggedObjs);
+
+            // canvas上のマップレイヤーを再配置
+            mapLayers.forEach(o => App.canvas.remove(o));
+            remaining.forEach(o => App.canvas.add(o));
+
+            renderLayerList(); App.canvas.renderAll();
+        });
+
+        list.appendChild(item);
+    });
+}
+
+function applyLayerSelectionToCanvas() {
+    // discardActiveObject が selection:cleared を発火して App.selectedLayerIds を消すので先に退避
+    const idsToSelect = [...App.selectedLayerIds];
+    App.canvas.discardActiveObject();
+    const objs = App.canvas.getObjects().filter(o => idsToSelect.includes(o._layerId));
+    if (objs.length === 1) {
+        objs[0].set({ selectable: true, evented: true });
+        App.canvas.setActiveObject(objs[0]);
+    } else if (objs.length > 1) {
+        objs.forEach(o => o.set({ selectable: true, evented: true }));
+        const sel = new fabric.ActiveSelection(objs, { canvas: App.canvas });
+        App.canvas.setActiveObject(sel);
+    }
+    App.canvas.renderAll();
+}
+
+/* ================================================================
+   選択オブジェクト情報表示
+================================================================ */
+function updateSelectionInfo() {
+    const info = document.getElementById('sel-info');
+    const none = document.getElementById('sel-none');
+    const active = App.canvas.getActiveObjects().filter(o => o._isMapLayer);
+    if (active.length === 0) {
+        info.innerHTML = '<p class="fl" style="opacity:0.5" id="sel-none">オブジェクトを選択してください</p>';
+        return;
+    }
+    if (active.length === 1) {
+        const o = active[0];
+        info.innerHTML = `
+            <div class="f"><span class="fl">名前</span><span class="unit">${o._layerName}</span></div>
+            <div class="f"><span class="fl">X</span><input type="number" id="si-x" value="${Math.round(o.left)}" class="custom-spinner" /></div>
+            <div class="f"><span class="fl">Y</span><input type="number" id="si-y" value="${Math.round(o.top)}" class="custom-spinner" /></div>
+            <div class="f"><span class="fl">幅</span><span class="unit">${Math.round(o.width * (o.scaleX||1))}</span></div>
+            <div class="f"><span class="fl">高さ</span><span class="unit">${Math.round(o.height * (o.scaleY||1))}</span></div>
+            <div class="f"><span class="fl">回転</span><span class="unit">${Math.round(o.angle||0)}°</span></div>`;
+        // X/Y 編集
+        info.querySelector('#si-x')?.addEventListener('change', function() { o.set({ left: parseInt(this.value) }); o.setCoords(); App.canvas.renderAll(); });
+        info.querySelector('#si-y')?.addEventListener('change', function() { o.set({ top: parseInt(this.value) }); o.setCoords(); App.canvas.renderAll(); });
+    } else {
+        info.innerHTML = `<p class="fl" style="opacity:0.5">${active.length} 個のオブジェクトを選択中</p>`;
+    }
+    if (window.IKLab?.initNumSpinners) IKLab.initNumSpinners(info);
+    updateFillStrokeVisibility();
+}
+
+/* ================================================================
+   セルレイヤー
+================================================================ */
+function getOrCreateCellLayer() {
+    // 選択中のセルレイヤーを探す
+    const selected = App.canvas.getObjects().find(o => o._isCellLayer && App.selectedLayerIds.includes(o._layerId));
+    if (selected) return selected;
+    // 最上位のセルレイヤー
+    const existing = getMapLayers().reverse().find(o => o._isCellLayer);
+    if (existing) return existing;
+    // なければ新規作成
+    return createCellLayer();
+}
+
+function createCellLayer() {
+    const group = new fabric.Group([], {
+        selectable: false, evented: false, objectCaching: false,
+        _isCellLayer: true, _cellData: new Map(),
+    });
+    addLayerObject('セル', group);
+    // 作成直後に選択状態にする
+    App.selectedLayerIds = [group._layerId];
+    renderLayerList();
+    return group;
+}
+
+function handleCellPaint(col, row, tool) {
+    const layer = getOrCreateCellLayer();
+    // 使用するセルレイヤーを選択状態にする（描き始め時の自動選択）
+    if (!App.selectedLayerIds.includes(layer._layerId)) {
+        App.selectedLayerIds = [layer._layerId];
+        renderLayerList();
+    }
+    const key = `${col},${row}`;
+    const cs = App.cellSize;
+
+    if (tool === 'pen') {
+        // 既存セルを探す
+        const existing = layer._cellData?.get(key);
+        if (existing) {
+            existing.set({ fill: rgba(App.fillColor, App.fillOpacity) });
+        } else {
+            const rect = new fabric.Rect({
+                left: col * cs,
+                top: row * cs,
+                width: cs, height: cs,
+                fill: rgba(App.fillColor, App.fillOpacity),
+                stroke: null, strokeWidth: 0,
+                selectable: false, evented: false, objectCaching: false,
+            });
+            layer.addWithUpdate(rect);
+            if (!layer._cellData) layer._cellData = new Map();
+            layer._cellData.set(key, rect);
+        }
+    } else if (tool === 'eraser') {
+        const existing = layer._cellData?.get(key);
+        if (existing) { layer.removeWithUpdate(existing); layer._cellData.delete(key); }
+    }
+    App.canvas.renderAll();
+}
+
+/* ================================================================
+   右クリックメニュー
+================================================================ */
+let ctxTarget = null;
+
+function showContextMenu(x, y, target) {
+    ctxTarget = target;
+    const menu = document.getElementById('ctx-menu');
+    menu.style.left = x + 'px'; menu.style.top = y + 'px';
+    menu.classList.add('open');
+    // ロック表示更新
+    const lockItem = menu.querySelector('[data-action="lock"]');
+    if (lockItem) {
+        const icon = lockItem.querySelector('.material-icons');
+        icon.textContent = target.lockMovementX ? 'lock_open' : 'lock';
+        lockItem.childNodes[1].textContent = target.lockMovementX ? 'ロック解除' : 'ロック';
+    }
+}
+function hideContextMenu() { document.getElementById('ctx-menu').classList.remove('open'); ctxTarget = null; }
+
+function handleContextAction(action) {
+    if (!ctxTarget) return;
+    switch (action) {
+        case 'rename': {
+            const items = document.querySelectorAll('.layer-item');
+            const item = [...items].find(i => parseInt(i.dataset.id) === ctxTarget._layerId);
+            if (item) item.dispatchEvent(new MouseEvent('dblclick'));
+            break;
+        }
+        case 'duplicate': {
+            ctxTarget.clone(function(cloned) {
+                cloned.set({ left: cloned.left + 20, top: cloned.top + 20 });
+                addLayerObject(ctxTarget._layerName + ' コピー', cloned);
+            });
+            break;
+        }
+        case 'bring-front': {
+            App.canvas.bringToFront(ctxTarget);
+            renderLayerList(); App.canvas.renderAll();
+            break;
+        }
+        case 'send-back': {
+            App.canvas.sendToBack(ctxTarget);
+            renderLayerList(); App.canvas.renderAll();
+            break;
+        }
+        case 'lock': {
+            const locked = !ctxTarget.lockMovementX;
+            ctxTarget.set({ lockMovementX: locked, lockMovementY: locked, lockRotation: locked, lockScalingX: locked, lockScalingY: locked, hasControls: !locked });
+            App.canvas.renderAll();
+            break;
+        }
+        case 'delete': {
+            App.canvas.remove(ctxTarget);
+            App.canvas.discardActiveObject();
+            App.selectedLayerIds = App.selectedLayerIds.filter(id => id !== ctxTarget._layerId);
+            renderLayerList(); App.canvas.renderAll();
+            break;
+        }
+    }
+    hideContextMenu();
+}
+
+/* ================================================================
+   モード・ツール切替
+================================================================ */
+function setEditMode(mode) {
+    App.editMode = mode;
+    document.body.classList.toggle('mode-simple', mode === 'simple');
+    const adv = ['terrain','wall','room','door','object','label'];
+    if (mode === 'simple' && adv.includes(App.activeTool)) setActiveTool('select');
+}
+function setGridType(type) { App.gridType = type; drawGrid(); }
+
+function setActiveTool(toolName) {
+    removePreview(); App._drawing = null; App._lineStart = null; App._pathPoints = []; App._polygonPoints = [];
+    App.canvas.isDrawingMode = false;
+    App.activeTool = toolName;
+
+    document.querySelectorAll('#toolbar .tb-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === toolName));
+    document.querySelectorAll('#prop-panel .prop-group').forEach(pg => pg.classList.toggle('active', pg.dataset.prop === toolName));
+
+    const isSelect = toolName === 'select' || toolName === 'settings';
+    App.canvas.selection = isSelect;
+    // 選択モードではセルレイヤーも含む全レイヤーを操作可能にする
+    getMapLayers().forEach(obj => {
+        obj.set({ selectable: isSelect, evented: isSelect });
+    });
+    if (!isSelect) App.canvas.discardActiveObject();
+
+    // セルツール切替時: 最上位セルレイヤーを自動選択
+    if (toolName === 'cell') {
+        const cellLayer = getMapLayers().reverse().find(o => o._isCellLayer);
+        if (cellLayer && !App.selectedLayerIds.includes(cellLayer._layerId)) {
+            App.selectedLayerIds = [cellLayer._layerId];
+            renderLayerList();
+        }
+    }
+
+    if (toolName === 'freehand') {
+        App.canvas.isDrawingMode = true;
+        App.canvas.freeDrawingBrush.width = parseInt(document.getElementById('freehand-width')?.value) || 3;
+        App.canvas.freeDrawingBrush.color = rgba(App.strokeColor, App.strokeOpacity);
+    }
+    App.canvas.renderAll();
+    updateFillStrokeVisibility();
+    updateSelectionInfo();
+}
+
+/* ================================================================
+   画像挿入
+================================================================ */
+function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+        fabric.Image.fromURL(evt.target.result, img => {
+            img.set({ left: 0, top: 0, objectCaching: false });
+            addLayerObject('画像', img);
+        }, { crossOrigin: 'Anonymous' });
+    };
+    reader.readAsDataURL(file); e.target.value = '';
+}
+
+/* ================================================================
+   ステータスバー
+================================================================ */
+function updateStatusBar() {
+    if (!App.canvas) return;
+    document.getElementById('sb-zoom').textContent = Math.round(App.canvas.getZoom() * 100) + '%';
+    document.getElementById('sb-grid').textContent = App.cellSize + 'px';
+}
+
+/* ================================================================
+   キーボードショートカット
+================================================================ */
+document.addEventListener('keydown', e => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
+    const key = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && key === 'z') { e.preventDefault(); return; }
+    if (ctrl && key === 's') { e.preventDefault(); return; }
+    if (ctrl && key === 'g') { e.preventDefault(); return; }
+
+    if (e.key === 'Enter' && App.activeTool === 'path' && App._pathPoints.length >= 2) {
+        removePreview();
+        addLayerObject('折線', new fabric.Polyline(App._pathPoints, {
+            stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+            strokeDashArray: App.strokeDashArray,
+            fill: rgba(App.fillColor, App.fillOpacity),
+            selectable: false, evented: false, objectCaching: false,
+        }));
+        App._pathPoints = []; e.preventDefault(); return;
+    }
+    if (e.key === 'Enter' && App.activeTool === 'polygon' && App._polygonPoints.length >= 3) {
+        removePreview();
+        addLayerObject('多角形', new fabric.Polygon(App._polygonPoints, {
+            stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+            strokeDashArray: App.strokeDashArray,
+            fill: rgba(App.fillColor, App.fillOpacity),
+            selectable: false, evented: false, objectCaching: false,
+        }));
+        App._polygonPoints = []; e.preventDefault(); return;
+    }
+    if (e.key === 'Escape') { removePreview(); App._pathPoints = []; App._polygonPoints = []; App._lineStart = null; App._drawing = null; return; }
+
+    const shortcuts = { v:'select', b:'cell', r:'rect', e:'ellipse', l:'line', p:'path', g:'polygon', d:'freehand', t:'text', i:'image', w:'wall' };
+    if (shortcuts[key]) {
+        const adv = ['terrain','wall','room','door','object','label'];
+        if (adv.includes(shortcuts[key]) && App.editMode === 'simple') return;
+        setActiveTool(shortcuts[key]); return;
+    }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && App.activeTool === 'select') {
+        App.canvas.getActiveObjects().forEach(o => App.canvas.remove(o));
+        App.canvas.discardActiveObject();
+        App.selectedLayerIds = [];
+        renderLayerList(); App.canvas.renderAll(); updateSelectionInfo();
+    }
+});
+
+/* ================================================================
+   初期化
+================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.IKLab?.initNumSpinners) IKLab.initNumSpinners();
+    if (window.IKLab?.initModals) IKLab.initModals();
+
+    initPickr();
+    initCanvas();
+
+    // ツールバー
+    document.querySelectorAll('#toolbar .tb-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.tool === 'save') { IKLab.openModal('save-modal'); return; }
+            setActiveTool(btn.dataset.tool);
+        });
+    });
+
+    // モード切替
+    document.querySelectorAll('input[name="edit-mode"]').forEach(r => r.addEventListener('change', () => setEditMode(r.value)));
+    document.querySelectorAll('input[name="grid-type"]').forEach(r => r.addEventListener('change', () => setGridType(r.value)));
+
+    // 線幅 — ダッシュ配列も現在のスタイルに合わせて再計算 + 選択中オブジェクトに即適用
+    document.getElementById('stroke-width').addEventListener('input', function() {
+        App.strokeWidth = parseInt(this.value) || 0;
+        const style = document.querySelector('input[name="stroke-style"]:checked')?.value || 'solid';
+        App.strokeDashArray = getDashArray(style, App.strokeWidth);
+        if (App.activeTool === 'select') {
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+                .forEach(o => o.set({ strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray }));
+            App.canvas.renderAll();
+        }
+    });
+
+    // 線種
+    document.querySelectorAll('input[name="stroke-style"]').forEach(r => r.addEventListener('change', () => {
+        App.strokeDashArray = getDashArray(r.value, App.strokeWidth);
+        if (App.activeTool === 'select') {
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+                .forEach(o => o.set({ strokeDashArray: App.strokeDashArray }));
+            App.canvas.renderAll();
+        }
+    }));
+
+    // グリッド設定
+    document.getElementById('grid-line-width').addEventListener('input', function() {
+        App.gridLineWidth = parseInt(this.value) || 1; drawGrid();
+    });
+    document.querySelectorAll('input[name="grid-style"]').forEach(r => r.addEventListener('change', () => {
+        App.gridDashArray = getDashArray(r.value, App.gridLineWidth); drawGrid();
+    }));
+
+    // レイヤー不透明度・ブレンド
+    document.getElementById('layer-opacity').addEventListener('input', function() {
+        const val = parseFloat(this.value);
+        document.getElementById('layer-opacity-val').textContent = Math.round(val * 100) + '%';
+        App.canvas.getActiveObjects().forEach(o => o.set({ opacity: val }));
+        App.canvas.renderAll();
+    });
+    document.getElementById('layer-blend').addEventListener('change', function() {
+        App.canvas.getActiveObjects().forEach(o => o.set({ globalCompositeOperation: this.value }));
+        App.canvas.renderAll();
+    });
+
+    // フリーハンド線幅
+    document.getElementById('freehand-width')?.addEventListener('input', function() {
+        if (App.canvas.isDrawingMode) App.canvas.freeDrawingBrush.width = parseInt(this.value) || 3;
+    });
+
+    // 画像
+    document.getElementById('image-upload-btn')?.addEventListener('click', () => document.getElementById('image-upload').click());
+    document.getElementById('image-upload')?.addEventListener('change', handleImageUpload);
+
+    // レイヤー追加（空グループ）
+    document.getElementById('layer-add')?.addEventListener('click', () => {
+        const group = new fabric.Group([], { selectable: true, evented: true, objectCaching: false });
+        addLayerObject('レイヤー', group);
+    });
+
+    // セルレイヤー追加
+    document.getElementById('add-cell-layer')?.addEventListener('click', createCellLayer);
+
+    // レイヤー削除
+    document.getElementById('layer-delete')?.addEventListener('click', () => {
+        App.canvas.getActiveObjects().forEach(o => App.canvas.remove(o));
+        App.canvas.discardActiveObject();
+        App.selectedLayerIds = [];
+        renderLayerList(); App.canvas.renderAll(); updateSelectionInfo();
+    });
+
+    // レイヤーリスト空白クリック → 選択解除
+    document.getElementById('layer-list').addEventListener('click', e => {
+        if (!e.target.closest('.layer-item')) {
+            App.selectedLayerIds = [];
+            App.canvas.discardActiveObject();
+            App.canvas.renderAll();
+            renderLayerList();
+            updateSelectionInfo();
+        }
+    });
+
+    // 右クリックメニュー
+    document.querySelectorAll('#ctx-menu .ctx-item').forEach(item => {
+        item.addEventListener('click', () => handleContextAction(item.dataset.action));
+    });
+    document.addEventListener('click', e => { if (!e.target.closest('#ctx-menu')) hideContextMenu(); });
+    document.addEventListener('contextmenu', e => { if (!e.target.closest('#layer-list') && !e.target.closest('.canvas-container')) hideContextMenu(); });
+});
+        </script>
+    </body>
+</html>
