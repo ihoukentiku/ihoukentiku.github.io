@@ -326,21 +326,14 @@
                 <button class="tb-btn" data-tool="settings" title="設定"><span class="material-icons">settings</span><span class="tb-label">設定</span></button>
                 <div class="tb-sep"></div>
                 <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-icons">near_me</span><span class="tb-label">選択</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="cell" title="セル塗り (B)"><span class="material-icons">grid_on</span><span class="tb-label">セル</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="rect" title="矩形 (R)"><span class="material-icons">crop_square</span><span class="tb-label">矩形</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="ellipse" title="楕円 (E)"><span class="material-icons">circle</span><span class="tb-label">楕円</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="line" title="直線 (L)"><span class="material-icons">horizontal_rule</span><span class="tb-label">直線</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="path" title="折線 (P)"><span class="material-icons">polyline</span><span class="tb-label">折線</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="polygon" title="多角形 (G)"><span class="material-icons">pentagon</span><span class="tb-label">多角形</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="curve" title="曲線 (C)"><span class="material-icons">gesture</span><span class="tb-label">曲線</span></button>
-                <button class="tb-btn tb-simple-only" data-tool="freehand" title="フリーハンド (D)"><span class="material-icons">draw</span><span class="tb-label">自由線</span></button>
-                <button class="tb-btn tb-advanced" data-category="terrain" title="地形"><span class="material-icons">landscape</span><span class="tb-label">地形</span></button>
-                <button class="tb-btn tb-advanced" data-category="wall" title="壁"><span class="material-icons">fence</span><span class="tb-label">壁</span></button>
-                <button class="tb-btn tb-advanced" data-category="room" title="部屋生成"><span class="material-icons">meeting_room</span><span class="tb-label">部屋</span></button>
-                <button class="tb-btn tb-advanced" data-category="door" title="ドア"><span class="material-icons">door_front</span><span class="tb-label">ドア</span></button>
-                <button class="tb-btn tb-advanced" data-category="object" title="配置"><span class="material-icons">chair</span><span class="tb-label">配置</span></button>
-                <button class="tb-btn tb-advanced" data-category="road" title="道"><span class="material-icons">route</span><span class="tb-label">道</span></button>
-                <button class="tb-btn tb-advanced" data-category="vector" title="ベクター"><span class="material-icons">draw</span><span class="tb-label">ベクター</span></button>
+                <button class="tb-btn" data-tool="cell" title="セル塗り (B)"><span class="material-icons">grid_on</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn" data-tool="rect" title="矩形 (R)"><span class="material-icons">crop_square</span><span class="tb-label">矩形</span></button>
+                <button class="tb-btn" data-tool="ellipse" title="楕円 (E)"><span class="material-icons">circle</span><span class="tb-label">楕円</span></button>
+                <button class="tb-btn" data-tool="line" title="直線 (L)"><span class="material-icons">horizontal_rule</span><span class="tb-label">直線</span></button>
+                <button class="tb-btn" data-tool="path" title="折線 (P)"><span class="material-icons">polyline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn" data-tool="polygon" title="多角形 (G)"><span class="material-icons">pentagon</span><span class="tb-label">多角形</span></button>
+                <button class="tb-btn" data-tool="curve" title="曲線 (C)"><span class="material-icons">gesture</span><span class="tb-label">曲線</span></button>
+                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-icons">draw</span><span class="tb-label">自由線</span></button>
                 <div class="tb-sep"></div>
                 <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-icons">title</span><span class="tb-label">文字</span></button>
                 <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-icons">image</span><span class="tb-label">画像</span></button>
@@ -407,63 +400,6 @@
                 <div class="prop-group" data-prop="text"><div class="s-sec"><div class="s-ttl"><span class="material-icons">title</span>テキスト</div><div class="f"><span class="fl">フォント</span><select id="text-font"><option value="Noto Sans JP">Noto Sans JP</option><option value="Noto Serif JP">Noto Serif JP</option><option value="Share Tech Mono">Share Tech Mono</option></select></div><div class="f"><span class="fl">サイズ</span><div class="row"><input type="number" id="text-size" value="20" min="6" max="200" class="custom-spinner" /><span class="unit">px</span></div></div></div></div>
                 <!-- 画像 -->
                 <div class="prop-group" data-prop="image"><div class="s-sec"><div class="s-ttl"><span class="material-icons">image</span>画像挿入</div><input type="file" id="image-upload" accept="image/*" style="display:none" /><button class="btn-action" id="image-upload-btn">画像を選択</button></div></div>
-                <!-- 高度カテゴリグループ -->
-                <div class="prop-group" data-category-group="terrain">
-                    <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">landscape</span>地形ブラシ</div>
-                        <div class="tool-tiles" id="terrain-sub-tiles">
-                            <div class="tool-tile active" data-terrain-sub="pen"><span class="material-icons">grid_on</span>セル</div>
-                            <div class="tool-tile" data-terrain-sub="eraser"><span class="material-icons">auto_fix_normal</span>消去</div>
-                            <div class="tool-tile" data-terrain-sub="rect"><span class="material-icons">crop_square</span>矩形</div>
-                            <div class="tool-tile" data-terrain-sub="ellipse"><span class="material-icons">circle</span>楕円</div>
-                            <div class="tool-tile" data-terrain-sub="polygon"><span class="material-icons">pentagon</span>多角形</div>
-                            <div class="tool-tile" data-terrain-sub="curve"><span class="material-icons">gesture</span>曲線</div>
-                        </div>
-                        <div style="display:none">
-                            <input type="radio" name="terrain-tool" id="tt-pen" value="pen" checked />
-                            <input type="radio" name="terrain-tool" id="tt-eraser" value="eraser" />
-                            <input type="radio" name="terrain-tool" id="tt-rect" value="rect" />
-                            <input type="radio" name="terrain-tool" id="tt-ellipse" value="ellipse" />
-                            <input type="radio" name="terrain-tool" id="tt-polygon" value="polygon" />
-                            <input type="radio" name="terrain-tool" id="tt-curve" value="curve" />
-                        </div>
-                        <div class="f" style="margin-top:0.4rem"><span class="fl">カテゴリ</span>
-                            <div class="seg">
-                                <input type="radio" name="terrain-cat" id="tc-indoor" value="indoor" checked /><label for="tc-indoor">屋内</label>
-                                <input type="radio" name="terrain-cat" id="tc-outdoor" value="outdoor" /><label for="tc-outdoor">屋外</label>
-                                <input type="radio" name="terrain-cat" id="tc-cave" value="cave" /><label for="tc-cave">洞窟</label>
-                            </div>
-                        </div>
-                        <div id="terrain-preset-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:0.5rem"></div>
-                        <div style="margin-top:0.5rem;border-top:1px solid var(--border);padding-top:0.5rem">
-                            <div class="f"><span class="fl" style="font-size:0.7rem">選択中</span><span id="terrain-current-name" style="font-size:0.7rem;color:var(--cyan)">石床</span></div>
-                            <div id="terrain-preview" style="height:28px;border-radius:3px;border:1px solid var(--border);margin-top:0.3rem"></div>
-                        </div>
-                        <button class="btn-action" id="add-terrain-layer" style="margin-top:0.5rem">地形レイヤーを追加</button>
-                    </div>
-                </div>
-                <div class="prop-group" data-category-group="wall"><div class="s-sec"><div class="s-ttl"><span class="material-icons">fence</span>壁</div><div class="tool-tiles"><div class="tool-tile" data-vector-tool="line"><span class="material-icons">horizontal_rule</span>直線</div><div class="tool-tile" data-vector-tool="path"><span class="material-icons">polyline</span>折線</div><div class="tool-tile" data-vector-tool="polygon"><span class="material-icons">pentagon</span>多角形</div></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.5rem">後ほど実装</p></div></div>
-                <div class="prop-group" data-category-group="room"><div class="s-sec"><div class="s-ttl"><span class="material-icons">meeting_room</span>部屋生成</div><div class="tool-tiles"><div class="tool-tile" data-vector-tool="rect"><span class="material-icons">crop_square</span>矩形</div><div class="tool-tile" data-vector-tool="polygon"><span class="material-icons">pentagon</span>多角形</div></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.5rem">後ほど実装</p></div></div>
-                <div class="prop-group" data-category-group="door"><div class="s-sec"><div class="s-ttl"><span class="material-icons">door_front</span>ドア</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-category-group="object"><div class="s-sec"><div class="s-ttl"><span class="material-icons">chair</span>オブジェクト配置</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-category-group="road"><div class="s-sec"><div class="s-ttl"><span class="material-icons">route</span>道</div><div class="tool-tiles"><div class="tool-tile" data-vector-tool="path"><span class="material-icons">polyline</span>折線</div><div class="tool-tile" data-vector-tool="curve"><span class="material-icons">gesture</span>曲線</div></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.5rem">後ほど実装</p></div></div>
-                <div class="prop-group" data-category-group="vector">
-                    <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">draw</span>ベクター</div>
-                        <div class="tool-tiles" id="vector-sub-tiles">
-                            <div class="tool-tile" data-vector-tool="rect"><span class="material-icons">crop_square</span>矩形</div>
-                            <div class="tool-tile" data-vector-tool="ellipse"><span class="material-icons">circle</span>楕円</div>
-                            <div class="tool-tile" data-vector-tool="line"><span class="material-icons">horizontal_rule</span>直線</div>
-                            <div class="tool-tile" data-vector-tool="path"><span class="material-icons">polyline</span>折線</div>
-                            <div class="tool-tile" data-vector-tool="polygon"><span class="material-icons">pentagon</span>多角形</div>
-                            <div class="tool-tile" data-vector-tool="curve"><span class="material-icons">gesture</span>曲線</div>
-                            <div class="tool-tile" data-vector-tool="freehand"><span class="material-icons">draw</span>自由線</div>
-                            <div class="tool-tile" data-vector-tool="text"><span class="material-icons">title</span>文字</div>
-                            <div class="tool-tile" data-vector-tool="image"><span class="material-icons">image</span>画像</div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display:none">
                     <div class="s-ttl"><span class="material-icons">palette</span>フィル / ストローク</div>
@@ -589,7 +525,6 @@
         const ext = document.createElement('div');
         ext.className = 'header-ext';
         ext.innerHTML = `
-            <div class="seg"><input type="radio" name="edit-mode" id="em-simple" value="simple"><label for="em-simple">簡易</label><input type="radio" name="edit-mode" id="em-advanced" value="advanced" checked><label for="em-advanced">高度</label></div>
             <div class="seg"><input type="radio" name="grid-type" id="gt-square" value="square" checked><label for="gt-square">スクエア</label><input type="radio" name="grid-type" id="gt-hex" value="hex"><label for="gt-hex">ヘクス</label></div>`;
         nav.parentNode.insertBefore(ext, nav);
     };
@@ -600,7 +535,6 @@
    App 状態
 ================================================================ */
 const App = {
-    editMode: 'advanced',
     gridType: 'square',
     activeTool: 'select',
     cellSize: 60,
@@ -633,7 +567,6 @@ const App = {
     _exportRect: null,   // { x, y, w, h } キャンバス座標での出力範囲
     _exportDrag: null,   // 1クリック目の開始点
     _shiftHeld: false,   // Shift押下中はスナップ一時無効
-    activeCategory: null, // 高度モードの選択中カテゴリ
 };
 
 /* ================================================================
@@ -864,11 +797,9 @@ function updateFillStrokeVisibility() {
     if (App.activeTool === 'select') {
         show = App.canvas.getActiveObjects().some(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
     }
-    // 地形カテゴリでは塗りつぶし/ストロークパネルを非表示（プリセットを使用）
-    if (App.activeCategory === 'terrain') show = false;
     document.getElementById('fill-stroke-sec').style.display = show ? '' : 'none';
-    // 角丸は矩形ツール（地形カテゴリ以外） or 選択中の矩形にのみ表示
-    let showRadius = App.activeTool === 'rect' && App.activeCategory !== 'terrain';
+    // 角丸は矩形ツール or 選択中の矩形にのみ表示
+    let showRadius = App.activeTool === 'rect';
     if (App.activeTool === 'select') {
         showRadius = App.canvas.getActiveObjects().some(o => o._isMapLayer && o.type === 'rect');
     }
@@ -1015,19 +946,11 @@ function initCanvas() {
                     if (w > 2 && h > 2) {
                         removePreview();
                         const left = Math.min(d.startX, pt.x), top = Math.min(d.startY, pt.y);
-                        if (App.activeCategory === 'terrain') {
-                            const fill = getTerrainFill(_activeTerrainPreset);
-                            const obj = App.activeTool === 'rect'
-                                ? new fabric.Rect({ left, top, width: w, height: h, fill, stroke: null, strokeWidth: 0, objectCaching: false, _terrainId: _activeTerrainPreset.id })
-                                : new fabric.Ellipse({ left, top, rx: w/2, ry: h/2, fill, stroke: null, strokeWidth: 0, objectCaching: false, _terrainId: _activeTerrainPreset.id });
-                            addTerrainShape(obj);
-                        } else {
-                            const hsw = App.strokeWidth / 2;
-                            const obj = App.activeTool === 'rect'
-                                ? new fabric.Rect({ left: left - hsw, top: top - hsw, width: w, height: h, rx: App.cornerRadius, ry: App.cornerRadius, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, objectCaching: false })
-                                : new fabric.Ellipse({ left: left - hsw, top: top - hsw, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, objectCaching: false });
-                            addLayerObject(App.activeTool === 'rect' ? '矩形' : '楕円', obj);
-                        }
+                        const hsw = App.strokeWidth / 2;
+                        const obj = App.activeTool === 'rect'
+                            ? new fabric.Rect({ left: left - hsw, top: top - hsw, width: w, height: h, rx: App.cornerRadius, ry: App.cornerRadius, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, objectCaching: false })
+                            : new fabric.Ellipse({ left: left - hsw, top: top - hsw, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, objectCaching: false });
+                        addLayerObject(App.activeTool === 'rect' ? '矩形' : '楕円', obj);
                     }
                     App._drawing = null;
                 }
@@ -1071,15 +994,9 @@ function initCanvas() {
             }
             case 'cell': {
                 const col = Math.floor(ptr.x / App.cellSize), row = Math.floor(ptr.y / App.cellSize);
-                if (App.activeCategory === 'terrain') {
-                    const tSub = document.querySelector('input[name="terrain-tool"]:checked')?.value || 'pen';
-                    handleTerrainPaint(col, row, tSub === 'eraser' ? 'eraser' : 'pen');
-                    App._drawing = { cellTool: tSub };
-                } else {
-                    const tool = document.querySelector('input[name="cell-tool"]:checked')?.value || 'pen';
-                    handleCellPaint(col, row, tool);
-                    App._drawing = { cellTool: tool };
-                }
+                const tool = document.querySelector('input[name="cell-tool"]:checked')?.value || 'pen';
+                handleCellPaint(col, row, tool);
+                App._drawing = { cellTool: tool };
                 break;
             }
             case 'text': {
@@ -1138,18 +1055,10 @@ function initCanvas() {
             const w = Math.abs(pt.x - d.startX), h = Math.abs(pt.y - d.startY);
             removePreview();
             if (w > 0 || h > 0) {
-                let preview;
-                if (App.activeCategory === 'terrain') {
-                    const fill = getTerrainFill(_activeTerrainPreset);
-                    preview = App.activeTool === 'rect'
-                        ? new fabric.Rect({ left, top, width: w, height: h, fill, stroke: null, strokeWidth: 0, selectable: false, evented: false, objectCaching: false, isPreview: true, opacity: 0.6 })
-                        : new fabric.Ellipse({ left, top, rx: w/2, ry: h/2, fill, stroke: null, strokeWidth: 0, selectable: false, evented: false, objectCaching: false, isPreview: true, opacity: 0.6 });
-                } else {
-                    const hsw = App.strokeWidth / 2;
-                    preview = App.activeTool === 'rect'
-                        ? new fabric.Rect({ left: left - hsw, top: top - hsw, width: w, height: h, rx: App.cornerRadius, ry: App.cornerRadius, fill: rgba(App.fillColor, App.fillOpacity * 0.5), stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true })
-                        : new fabric.Ellipse({ left: left - hsw, top: top - hsw, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity * 0.5), stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true });
-                }
+                const hsw = App.strokeWidth / 2;
+                const preview = App.activeTool === 'rect'
+                    ? new fabric.Rect({ left: left - hsw, top: top - hsw, width: w, height: h, rx: App.cornerRadius, ry: App.cornerRadius, fill: rgba(App.fillColor, App.fillOpacity * 0.5), stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true })
+                    : new fabric.Ellipse({ left: left - hsw, top: top - hsw, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity * 0.5), stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true });
                 App.canvas.add(preview);
             }
             App.canvas.renderAll();
@@ -1183,23 +1092,20 @@ function initCanvas() {
             App.canvas.renderAll();
         }
 
-        // 多角形プレビュー（通常 + 地形）
+        // 多角形プレビュー
         if (App.activeTool === 'polygon' && App._polygonPoints.length > 0) {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
             removePreview();
-            const isTerrain = App.activeCategory === 'terrain';
-            const fill = isTerrain ? getTerrainFill(_activeTerrainPreset) : rgba(App.fillColor, App.fillOpacity * 0.3);
-            const stroke = isTerrain ? 'rgba(0,229,255,0.4)' : rgba(App.strokeColor, App.strokeOpacity * 0.5);
             App.canvas.add(new fabric.Polygon([...App._polygonPoints, pt], {
-                stroke, strokeWidth: isTerrain ? 1 : App.strokeWidth, fill,
+                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth,
+                fill: rgba(App.fillColor, App.fillOpacity * 0.3),
                 selectable: false, evented: false, isPreview: true, objectCaching: false,
-                opacity: isTerrain ? 0.6 : 1,
             }));
             App.canvas.renderAll();
         }
 
-        // 曲線プレビュー（通常 + 地形）
+        // 曲線プレビュー
         if (App.activeTool === 'curve' && App._curvePoints.length > 0) {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
@@ -1207,13 +1113,9 @@ function initCanvas() {
             const previewPts = [...App._curvePoints, pt];
             const d = buildBezierPath(previewPts);
             if (d) {
-                const isTerrain = App.activeCategory === 'terrain';
-                const fill = isTerrain ? getTerrainFill(_activeTerrainPreset) : '';
-                const stroke = isTerrain ? 'rgba(0,229,255,0.4)' : rgba(App.strokeColor, App.strokeOpacity * 0.5);
                 App.canvas.add(new fabric.Path(d, {
-                    stroke, strokeWidth: isTerrain ? 1 : App.strokeWidth, fill,
-                    selectable: false, evented: false, isPreview: true, objectCaching: false,
-                    opacity: isTerrain ? 0.6 : 1,
+                    stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth,
+                    fill: '', selectable: false, evented: false, isPreview: true, objectCaching: false,
                 }));
             }
             App.canvas.renderAll();
@@ -1230,14 +1132,9 @@ function initCanvas() {
             App.canvas.requestRenderAll();
         }
 
-        // セル塗り / 地形塗り（ドラッグ）
+        // セル塗り（ドラッグ）
         if (App._drawing && App.activeTool === 'cell') {
-            const col = Math.floor(ptr.x / App.cellSize), row = Math.floor(ptr.y / App.cellSize);
-            if (App.activeCategory === 'terrain') {
-                handleTerrainPaint(col, row, App._drawing.cellTool === 'eraser' ? 'eraser' : 'pen');
-            } else {
-                handleCellPaint(col, row, App._drawing.cellTool);
-            }
+            handleCellPaint(Math.floor(ptr.x / App.cellSize), Math.floor(ptr.y / App.cellSize), App._drawing.cellTool);
         }
     });
 
@@ -1416,8 +1313,7 @@ function renderLayerList() {
             }
             App.lastClickedLayerId = id;
             // セル/地形ツール中の同種レイヤー選択 → ペイント対象切替のみ
-            const isPaintException = (App.activeTool === 'cell' && obj._isCellLayer)
-                || (App.activeTool === 'cell' && App.activeCategory === 'terrain' && obj._isTerrainLayer);
+            const isPaintException = (App.activeTool === 'cell' && obj._isCellLayer);
             if (!isPaintException && App.activeTool !== 'select') {
                 setActiveTool('select');
             }
@@ -1606,9 +1502,8 @@ function handleCellPaint(col, row, tool) {
 }
 
 /* ================================================================
-   地形レイヤー
+   地形パターン（データのみ保持 — 描画UIは別途実装）
 ================================================================ */
-let _activeTerrainPreset = TERRAIN_PRESETS.indoor[0]; // 現在選択中のプリセット
 let _terrainPatternCache = new Map(); // key: `${id}_${cellSize}` → fabric.Pattern
 
 function getTerrainFill(preset) {
@@ -1618,106 +1513,6 @@ function getTerrainFill(preset) {
         _terrainPatternCache.set(key, generateTerrainPattern(preset.color, preset.pattern, App.cellSize));
     }
     return _terrainPatternCache.get(key);
-}
-
-function getOrCreateTerrainLayer() {
-    const selected = App.canvas.getObjects().find(o => o._isTerrainLayer && App.selectedLayerIds.includes(o._layerId));
-    if (selected) return selected;
-    const existing = getMapLayers().reverse().find(o => o._isTerrainLayer);
-    if (existing) return existing;
-    return createTerrainLayer();
-}
-
-function createTerrainLayer() {
-    const group = new fabric.Group([], {
-        selectable: false, evented: false, objectCaching: false,
-        _isTerrainLayer: true, _cellData: new Map(),
-    });
-    addLayerObject('地形', group);
-    App.selectedLayerIds = [group._layerId];
-    renderLayerList();
-    return group;
-}
-
-function handleTerrainPaint(col, row, tool) {
-    const layer = getOrCreateTerrainLayer();
-    if (!App.selectedLayerIds.includes(layer._layerId)) {
-        App.selectedLayerIds = [layer._layerId];
-        renderLayerList();
-    }
-    const key = `${col},${row}`;
-    const cs = App.cellSize;
-
-    if (tool === 'pen') {
-        const fill = getTerrainFill(_activeTerrainPreset);
-        const existing = layer._cellData?.get(key);
-        if (existing) {
-            existing.set({ fill: fill, _terrainId: _activeTerrainPreset.id });
-        } else {
-            const rect = new fabric.Rect({
-                left: col * cs, top: row * cs,
-                width: cs, height: cs,
-                fill: fill,
-                stroke: null, strokeWidth: 0,
-                selectable: false, evented: false, objectCaching: false,
-                _cellCol: col, _cellRow: row,
-                _terrainId: _activeTerrainPreset.id,
-            });
-            layer.addWithUpdate(rect);
-            if (!layer._cellData) layer._cellData = new Map();
-            layer._cellData.set(key, rect);
-        }
-    } else if (tool === 'eraser') {
-        const existing = layer._cellData?.get(key);
-        if (existing) { layer.removeWithUpdate(existing); layer._cellData.delete(key); }
-    }
-    App.canvas.renderAll();
-}
-
-function addTerrainShape(obj) {
-    const layer = getOrCreateTerrainLayer();
-    if (!App.selectedLayerIds.includes(layer._layerId)) {
-        App.selectedLayerIds = [layer._layerId];
-        renderLayerList();
-    }
-    obj.set({ selectable: false, evented: false });
-    layer.addWithUpdate(obj);
-    App.canvas.renderAll();
-}
-
-function renderTerrainPresets(category) {
-    const list = document.getElementById('terrain-preset-list');
-    if (!list) return;
-    const presets = TERRAIN_PRESETS[category] || [];
-    list.innerHTML = '';
-    presets.forEach(p => {
-        const btn = document.createElement('div');
-        btn.className = 'terrain-btn' + (p.id === _activeTerrainPreset.id ? ' active' : '');
-        btn.dataset.terrainId = p.id;
-        // 背景にプリセットパターンを描画
-        const preview = generateTerrainPattern(p.color, p.pattern, 48);
-        btn.style.background = `url(${preview.source.toDataURL()})`;
-        btn.style.backgroundSize = '48px 48px';
-        btn.innerHTML = `<span>${p.name}</span>`;
-        btn.addEventListener('click', () => {
-            _activeTerrainPreset = p;
-            list.querySelectorAll('.terrain-btn').forEach(b => b.classList.toggle('active', b.dataset.terrainId === p.id));
-            updateTerrainPreview();
-        });
-        list.appendChild(btn);
-    });
-    updateTerrainPreview();
-}
-
-function updateTerrainPreview() {
-    const el = document.getElementById('terrain-preview');
-    const nameEl = document.getElementById('terrain-current-name');
-    if (!el) return;
-    const p = _activeTerrainPreset;
-    if (nameEl) nameEl.textContent = p.name;
-    const preview = generateTerrainPattern(p.color, p.pattern, 48);
-    el.style.background = `url(${preview.source.toDataURL()})`;
-    el.style.backgroundSize = '48px 48px';
 }
 
 /* ================================================================
@@ -1784,71 +1579,9 @@ function handleContextAction(action) {
 }
 
 /* ================================================================
-   モード・ツール切替
+   ツール切替
 ================================================================ */
-function setEditMode(mode) {
-    App.editMode = mode;
-    document.body.classList.toggle('mode-simple', mode === 'simple');
-    document.body.classList.toggle('mode-advanced', mode === 'advanced');
-    const adv = ['wall','room','door','object','label','road'];
-    if (mode === 'simple') {
-        App.activeCategory = null;
-        document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
-            pg.classList.toggle('active', !!pg.dataset.prop && pg.dataset.prop === App.activeTool));
-        if (adv.includes(App.activeTool)) setActiveTool('select');
-    } else {
-        setActiveCategory(App.activeCategory || 'terrain');
-    }
-}
 function setGridType(type) { App.gridType = type; drawGrid(); }
-
-function setActiveCategory(catName) {
-    App.activeCategory = catName;
-
-    // ツールバー: カテゴリボタンのアクティブ状態
-    document.querySelectorAll('#toolbar .tb-btn[data-category]').forEach(btn =>
-        btn.classList.toggle('active', btn.dataset.category === catName));
-    document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach(btn =>
-        btn.classList.remove('active'));
-
-    // プロパティパネル: カテゴリグループを表示
-    document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
-        pg.classList.toggle('active', pg.dataset.categoryGroup === catName));
-
-    // カテゴリ別のデフォルトツール（常に選択ツール）
-    const defaultTool = 'select';
-
-    // 描画状態リセット
-    removePreview(); App._drawing = null; App._lineStart = null; App._pathPoints = []; App._polygonPoints = []; App._curvePoints = [];
-    App._exportMode = false; App._exportDrag = null;
-    App.canvas.isDrawingMode = false;
-    App.activeTool = defaultTool;
-
-    const isSelect = defaultTool === 'select';
-    App.canvas.selection = isSelect;
-    getMapLayers().forEach(obj => obj.set({ selectable: isSelect, evented: isSelect }));
-    if (!isSelect) App.canvas.discardActiveObject();
-
-    // カテゴリ別セットアップ
-    if (catName === 'terrain') {
-        const terrainLayer = getMapLayers().reverse().find(o => o._isTerrainLayer);
-        if (terrainLayer && !App.selectedLayerIds.includes(terrainLayer._layerId)) {
-            App.selectedLayerIds = [terrainLayer._layerId];
-            renderLayerList();
-        }
-        const cat = document.querySelector('input[name="terrain-cat"]:checked')?.value || 'indoor';
-        renderTerrainPresets(cat);
-    }
-
-    // ベクタータイルのアクティブ状態
-    document.querySelectorAll('[data-vector-tool]').forEach(tile =>
-        tile.classList.toggle('active', tile.dataset.vectorTool === defaultTool));
-
-    App.canvas.defaultCursor = 'default';
-    App.canvas.renderAll();
-    updateFillStrokeVisibility();
-    updateSelectionInfo();
-}
 
 function setActiveTool(toolName) {
     removePreview(); App._drawing = null; App._lineStart = null; App._pathPoints = []; App._polygonPoints = []; App._curvePoints = [];
@@ -1856,44 +1589,27 @@ function setActiveTool(toolName) {
     App.canvas.isDrawingMode = false;
     App.activeTool = toolName;
 
-    // ツールバー: 簡易モードのツールボタンのみ更新
+    // ツールバーボタンのアクティブ状態
     document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach(btn =>
         btn.classList.toggle('active', btn.dataset.tool === toolName));
 
-    // プロパティパネル
-    if (App.editMode !== 'advanced' || App.activeCategory == null || toolName === 'select' || toolName === 'settings') {
-        // 簡易モード or 選択/設定ツール: data-prop グループを切替
-        document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
-            pg.classList.toggle('active', pg.dataset.prop === toolName));
-    } else {
-        // 高度モード: カテゴリパネルはそのまま、ベクタータイルのみ更新
-        document.querySelectorAll('[data-vector-tool]').forEach(tile =>
-            tile.classList.toggle('active', tile.dataset.vectorTool === toolName));
-    }
+    // プロパティパネル: data-prop グループを切替
+    document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
+        pg.classList.toggle('active', pg.dataset.prop === toolName));
 
     const isSelect = toolName === 'select' || toolName === 'settings';
     App.canvas.selection = isSelect;
-    // 選択モードではセルレイヤーも含む全レイヤーを操作可能にする
     getMapLayers().forEach(obj => {
         obj.set({ selectable: isSelect, evented: isSelect });
     });
     if (!isSelect) App.canvas.discardActiveObject();
 
-    // セルツール切替時のレイヤー自動選択
+    // セルツール切替時: 最上位セルレイヤーを自動選択
     if (toolName === 'cell') {
-        if (App.activeCategory === 'terrain') {
-            // 地形カテゴリでは地形レイヤーを自動選択
-            const terrainLayer = getMapLayers().reverse().find(o => o._isTerrainLayer);
-            if (terrainLayer && !App.selectedLayerIds.includes(terrainLayer._layerId)) {
-                App.selectedLayerIds = [terrainLayer._layerId];
-                renderLayerList();
-            }
-        } else {
-            const cellLayer = getMapLayers().reverse().find(o => o._isCellLayer);
-            if (cellLayer && !App.selectedLayerIds.includes(cellLayer._layerId)) {
-                App.selectedLayerIds = [cellLayer._layerId];
-                renderLayerList();
-            }
+        const cellLayer = getMapLayers().reverse().find(o => o._isCellLayer);
+        if (cellLayer && !App.selectedLayerIds.includes(cellLayer._layerId)) {
+            App.selectedLayerIds = [cellLayer._layerId];
+            renderLayerList();
         }
     }
 
@@ -2354,38 +2070,24 @@ document.addEventListener('keydown', e => {
     }
     if (e.key === 'Enter' && App._polygonPoints.length >= 3 && App.activeTool === 'polygon') {
         removePreview();
-        if (App.activeCategory === 'terrain') {
-            addTerrainShape(new fabric.Polygon(App._polygonPoints, {
-                fill: getTerrainFill(_activeTerrainPreset), stroke: null, strokeWidth: 0,
-                objectCaching: false, _terrainId: _activeTerrainPreset.id,
-            }));
-        } else {
-            addLayerObject('多角形', new fabric.Polygon(App._polygonPoints, {
-                stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
-                strokeDashArray: App.strokeDashArray,
-                fill: rgba(App.fillColor, App.fillOpacity),
-                selectable: false, evented: false, objectCaching: false,
-            }));
-        }
+        addLayerObject('多角形', new fabric.Polygon(App._polygonPoints, {
+            stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+            strokeDashArray: App.strokeDashArray,
+            fill: rgba(App.fillColor, App.fillOpacity),
+            selectable: false, evented: false, objectCaching: false,
+        }));
         App._polygonPoints = []; e.preventDefault(); return;
     }
     if (e.key === 'Enter' && App._curvePoints.length >= 2 && App.activeTool === 'curve') {
         removePreview();
         const d = buildBezierPath(App._curvePoints);
         if (d) {
-            if (App.activeCategory === 'terrain') {
-                addTerrainShape(new fabric.Path(d, {
-                    fill: getTerrainFill(_activeTerrainPreset), stroke: null, strokeWidth: 0,
-                    objectCaching: false, _terrainId: _activeTerrainPreset.id,
-                }));
-            } else {
-                addLayerObject('曲線', new fabric.Path(d, {
-                    stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
-                    strokeDashArray: App.strokeDashArray,
-                    fill: '',
-                    objectCaching: false,
-                }));
-            }
+            addLayerObject('曲線', new fabric.Path(d, {
+                stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+                strokeDashArray: App.strokeDashArray,
+                fill: '',
+                objectCaching: false,
+            }));
         }
         App._curvePoints = []; e.preventDefault(); return;
     }
@@ -2394,22 +2096,8 @@ document.addEventListener('keydown', e => {
         removePreview(); App._pathPoints = []; App._polygonPoints = []; App._curvePoints = []; App._lineStart = null; App._drawing = null; return;
     }
 
-    const shortcuts = { v:'select', b:'cell', r:'rect', e:'ellipse', l:'line', p:'path', g:'polygon', d:'freehand', t:'text', i:'image', w:'wall', c:'curve' };
-    if (shortcuts[key]) {
-        const adv = ['wall','room','door','object','label','road'];
-        if (adv.includes(shortcuts[key]) && App.editMode === 'simple') return;
-        if (App.editMode === 'advanced') {
-            const vectorTools = ['rect','ellipse','line','path','polygon','freehand','text','image','curve'];
-            const catMap = { w:'wall' };
-            if (catMap[key]) {
-                setActiveCategory(catMap[key]); return;
-            } else if (vectorTools.includes(shortcuts[key])) {
-                if (App.activeCategory !== 'vector') setActiveCategory('vector');
-                setActiveTool(shortcuts[key]); return;
-            }
-        }
-        setActiveTool(shortcuts[key]); return;
-    }
+    const shortcuts = { v:'select', b:'cell', r:'rect', e:'ellipse', l:'line', p:'path', g:'polygon', d:'freehand', t:'text', i:'image', c:'curve' };
+    if (shortcuts[key]) { setActiveTool(shortcuts[key]); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && App.activeTool === 'select') {
         App.canvas.getActiveObjects().forEach(o => App.canvas.remove(o));
         App.canvas.discardActiveObject();
@@ -2430,37 +2118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ツールバー (ツールボタン)
     document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            // 高度モードで文字/画像を直接クリック → カテゴリを解除してpropパネルを表示
-            if (App.editMode === 'advanced' && ['text','image'].includes(btn.dataset.tool)) {
-                App.activeCategory = null;
-                document.querySelectorAll('#toolbar .tb-btn[data-category]').forEach(b => b.classList.remove('active'));
-            }
-            setActiveTool(btn.dataset.tool);
-        });
-    });
-    // ツールバー (高度モード: カテゴリボタン)
-    document.querySelectorAll('#toolbar .tb-btn[data-category]').forEach(btn => {
-        btn.addEventListener('click', () => setActiveCategory(btn.dataset.category));
-    });
-
-    // 地形サブツールタイル
-    document.querySelectorAll('[data-terrain-sub]').forEach(tile => {
-        tile.addEventListener('click', () => {
-            const sub = tile.dataset.terrainSub;
-            const radio = document.getElementById('tt-' + sub);
-            if (radio) radio.checked = true;
-            document.querySelectorAll('[data-terrain-sub]').forEach(t =>
-                t.classList.toggle('active', t.dataset.terrainSub === sub));
-            // pen/eraser は cell ツール、その他は対応するベクターツールに統合
-            const toolMap = { pen: 'cell', eraser: 'cell', rect: 'rect', ellipse: 'ellipse', polygon: 'polygon', curve: 'curve' };
-            setActiveTool(toolMap[sub] || 'cell');
-        });
-    });
-
-    // ベクターサブツールタイル（vector/wall/room/road カテゴリ内）
-    document.querySelectorAll('[data-vector-tool]').forEach(tile => {
-        tile.addEventListener('click', () => setActiveTool(tile.dataset.vectorTool));
+        btn.addEventListener('click', () => setActiveTool(btn.dataset.tool));
     });
 
     document.getElementById('tb-export')?.addEventListener('click', () => {
@@ -2474,8 +2132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // モード切替・グリッドタイプ（event delegation: ヘッダーが遅延挿入されるため）
     document.addEventListener('change', e => {
-        if (e.target.name === 'edit-mode') setEditMode(e.target.value);
-        else if (e.target.name === 'grid-type') setGridType(e.target.value);
+        if (e.target.name === 'grid-type') setGridType(e.target.value);
     });
 
     // 線幅 — ダッシュ配列も現在のスタイルに合わせて再計算 + 選択中オブジェクトに即適用
@@ -2557,17 +2214,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // セルレイヤー追加
     document.getElementById('add-cell-layer')?.addEventListener('click', createCellLayer);
 
-    // 地形ツール
-    document.getElementById('add-terrain-layer')?.addEventListener('click', createTerrainLayer);
-    document.querySelectorAll('input[name="terrain-cat"]').forEach(r => r.addEventListener('change', () => {
-        renderTerrainPresets(r.value);
-    }));
-    document.querySelectorAll('input[name="terrain-tool"]').forEach(r => r.addEventListener('change', () => {
-        // サブツール切替時に描画中の状態をリセット + スナップ表示更新
-        removePreview(); App._drawing = null; App._polygonPoints = []; App._curvePoints = [];
-        updateFillStrokeVisibility();
-    }));
-
     // レイヤー削除
     document.getElementById('layer-delete')?.addEventListener('click', () => {
         App.canvas.getActiveObjects().forEach(o => App.canvas.remove(o));
@@ -2594,8 +2240,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', e => { if (!e.target.closest('#ctx-menu')) hideContextMenu(); });
     document.addEventListener('contextmenu', e => { if (!e.target.closest('#layer-list') && !e.target.closest('.canvas-container')) hideContextMenu(); });
 
-    // 初期モード適用（ツールバー表示 + カテゴリ初期化）
-    setEditMode(App.editMode);
+    // 初期ツール適用
+    setActiveTool('select');
 });
         </script>
     </body>
