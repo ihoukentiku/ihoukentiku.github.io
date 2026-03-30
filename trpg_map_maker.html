@@ -84,14 +84,24 @@
             .tb-btn {
                 position: relative; width: var(--toolbar-w); height: 40px;
                 display: flex; flex-direction: column; align-items: center; justify-content: center;
-                color: var(--text-dim); border-radius: 0; transition: color var(--t), background var(--t); gap: 1px;
+                color: var(--text); border-radius: 0; transition: color var(--t), background var(--t); gap: 1px;
             }
-            .tb-btn:hover { color: var(--text); background: var(--cyan-muted); }
+            .tb-btn:hover { color: var(--text-bright); background: var(--cyan-muted); }
             .tb-btn.active { color: var(--cyan); background: rgba(0,229,255,0.12); border-left: 2px solid var(--cyan); }
             .tb-btn .material-icons { font-size: 1.2rem; }
             .tb-btn .tb-label { font-size: 0.5rem; font-family: var(--font-main); letter-spacing: -0.02em; white-space: nowrap; }
-            .tb-advanced { display: flex; }
-            body.mode-simple .tb-advanced, body.mode-simple .tb-sep-advanced { display: none; }
+            /* ツールタイル（高度モードのサブツール選択） */
+            .tool-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 0.6rem; }
+            .tool-tile {
+                aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                border: 1px solid var(--border); border-radius: 4px; cursor: pointer;
+                color: var(--text-dim); font-size: 0.55rem; gap: 2px;
+                transition: background var(--t), border-color var(--t), color var(--t);
+                padding: 3px 2px; text-align: center; line-height: 1.2;
+            }
+            .tool-tile:hover { background: var(--bg3); color: var(--text); }
+            .tool-tile.active { background: rgba(0,229,255,0.12); border-color: var(--cyan); color: var(--cyan); }
+            .tool-tile .material-icons { font-size: 1.1rem; }
 
             /* ---- プロパティパネル ---- */
             #prop-panel {
@@ -102,6 +112,15 @@
             }
             .s-sec { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
             .s-sec:last-child { border-bottom: none; }
+            #snap-targets.disabled { opacity: 0.3; pointer-events: none; }
+            .terrain-btn {
+                border: 2px solid transparent; border-radius: 3px; padding: 2px 0;
+                font-size: 0.65rem; text-align: center; cursor: pointer;
+                color: var(--text); transition: border-color var(--t);
+                line-height: 1.3; position: relative; overflow: hidden;
+            }
+            .terrain-btn span { position: relative; z-index: 1; text-shadow: 0 0 3px rgba(0,0,0,0.7); }
+            .terrain-btn.active { border-color: var(--cyan); box-shadow: 0 0 6px var(--glow-cyan); }
             .s-ttl {
                 font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
                 text-transform: uppercase; color: var(--cyan); margin-bottom: 0.5rem;
@@ -194,7 +213,7 @@
                 grid-column: 3; grid-row: 1; position: relative; overflow: hidden;
                 cursor: crosshair;
                 background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
-                background-size: 20px 20px;
+                background-size: 12px 12px;
                 background-position: 0 0;
             }
             #canvas-area canvas { display: block; }
@@ -243,6 +262,32 @@
             }
             #layer-props .f { margin-bottom: 0.2rem; }
 
+            /* ---- 保存アイテム ---- */
+            .save-item {
+                display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem;
+                background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+                transition: border-color var(--t);
+            }
+            .save-item:hover { border-color: var(--cyan); }
+            .save-item .save-thumb {
+                width: 80px; height: 60px; object-fit: cover; border-radius: 3px;
+                background: repeating-conic-gradient(#444 0% 25%,#555 25% 50%); background-size: 8px 8px;
+                flex-shrink: 0;
+            }
+            .save-item .save-info { flex: 1; min-width: 0; }
+            .save-item .save-name {
+                font-size: 0.85rem; color: var(--text-bright); font-weight: 700;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.2rem;
+            }
+            .save-item .save-date { font-size: 0.65rem; color: var(--text-dim); }
+            .save-item .save-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+            .save-item .save-actions button {
+                width: 30px; height: 30px; border-radius: 4px; color: var(--text-dim);
+                display: grid; place-items: center; transition: background var(--t), color var(--t);
+            }
+            .save-item .save-actions button:hover { background: var(--cyan-muted); color: var(--cyan); }
+            .save-item .save-actions .material-icons { font-size: 1rem; }
+
             /* ---- 右クリックメニュー ---- */
             #ctx-menu {
                 position: fixed; z-index: 1000; background: var(--bg2); border: 1px solid var(--border);
@@ -281,25 +326,27 @@
                 <button class="tb-btn" data-tool="settings" title="設定"><span class="material-icons">settings</span><span class="tb-label">設定</span></button>
                 <div class="tb-sep"></div>
                 <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-icons">near_me</span><span class="tb-label">選択</span></button>
-                <button class="tb-btn" data-tool="cell" title="セル塗り (B)"><span class="material-icons">grid_on</span><span class="tb-label">セル</span></button>
-                <button class="tb-btn" data-tool="rect" title="矩形 (R)"><span class="material-icons">crop_square</span><span class="tb-label">矩形</span></button>
-                <button class="tb-btn" data-tool="ellipse" title="楕円 (E)"><span class="material-icons">circle</span><span class="tb-label">楕円</span></button>
-                <button class="tb-btn" data-tool="line" title="直線 (L)"><span class="material-icons">horizontal_rule</span><span class="tb-label">直線</span></button>
-                <button class="tb-btn" data-tool="path" title="折線 (P)"><span class="material-icons">polyline</span><span class="tb-label">折線</span></button>
-                <button class="tb-btn" data-tool="polygon" title="多角形 (G)"><span class="material-icons">pentagon</span><span class="tb-label">多角形</span></button>
-                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-icons">draw</span><span class="tb-label">自由線</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="cell" title="セル塗り (B)"><span class="material-icons">grid_on</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="rect" title="矩形 (R)"><span class="material-icons">crop_square</span><span class="tb-label">矩形</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="ellipse" title="楕円 (E)"><span class="material-icons">circle</span><span class="tb-label">楕円</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="line" title="直線 (L)"><span class="material-icons">horizontal_rule</span><span class="tb-label">直線</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="path" title="折線 (P)"><span class="material-icons">polyline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="polygon" title="多角形 (G)"><span class="material-icons">pentagon</span><span class="tb-label">多角形</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="curve" title="曲線 (C)"><span class="material-icons">gesture</span><span class="tb-label">曲線</span></button>
+                <button class="tb-btn tb-simple-only" data-tool="freehand" title="フリーハンド (D)"><span class="material-icons">draw</span><span class="tb-label">自由線</span></button>
+                <button class="tb-btn tb-advanced" data-category="terrain" title="地形"><span class="material-icons">landscape</span><span class="tb-label">地形</span></button>
+                <button class="tb-btn tb-advanced" data-category="wall" title="壁"><span class="material-icons">fence</span><span class="tb-label">壁</span></button>
+                <button class="tb-btn tb-advanced" data-category="room" title="部屋生成"><span class="material-icons">meeting_room</span><span class="tb-label">部屋</span></button>
+                <button class="tb-btn tb-advanced" data-category="door" title="ドア"><span class="material-icons">door_front</span><span class="tb-label">ドア</span></button>
+                <button class="tb-btn tb-advanced" data-category="object" title="配置"><span class="material-icons">chair</span><span class="tb-label">配置</span></button>
+                <button class="tb-btn tb-advanced" data-category="road" title="道"><span class="material-icons">route</span><span class="tb-label">道</span></button>
+                <button class="tb-btn tb-advanced" data-category="vector" title="ベクター"><span class="material-icons">draw</span><span class="tb-label">ベクター</span></button>
+                <div class="tb-sep"></div>
                 <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-icons">title</span><span class="tb-label">文字</span></button>
                 <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-icons">image</span><span class="tb-label">画像</span></button>
-                <div class="tb-sep tb-advanced tb-sep-advanced"></div>
-                <button class="tb-btn tb-advanced" data-tool="terrain" title="地形ブラシ"><span class="material-icons">landscape</span><span class="tb-label">地形</span></button>
-                <button class="tb-btn tb-advanced" data-tool="wall" title="壁 (W)"><span class="material-icons">fence</span><span class="tb-label">壁</span></button>
-                <button class="tb-btn tb-advanced" data-tool="room" title="部屋生成"><span class="material-icons">meeting_room</span><span class="tb-label">部屋</span></button>
-                <button class="tb-btn tb-advanced" data-tool="door" title="ドア"><span class="material-icons">door_front</span><span class="tb-label">ドア</span></button>
-                <button class="tb-btn tb-advanced" data-tool="object" title="オブジェクト"><span class="material-icons">chair</span><span class="tb-label">配置</span></button>
-                <button class="tb-btn tb-advanced" data-tool="label" title="ラベル"><span class="material-icons">pin_drop</span><span class="tb-label">ラベル</span></button>
                 <div class="tb-sep"></div>
-                <button class="tb-btn" data-tool="export" title="出力"><span class="material-icons">download</span><span class="tb-label">出力</span></button>
-                <button class="tb-btn" data-tool="save" title="保存/読込"><span class="material-icons">save</span><span class="tb-label">保存</span></button>
+                <button class="tb-btn" id="tb-export" title="出力"><span class="material-icons">download</span><span class="tb-label">出力</span></button>
+                <button class="tb-btn" id="tb-save" title="保存/読込"><span class="material-icons">save</span><span class="tb-label">保存</span></button>
             </div>
 
             <!-- プロパティパネル -->
@@ -343,30 +390,79 @@
                     </div>
                 </div>
                 <!-- 矩形 -->
-                <div class="prop-group" data-prop="rect"><div class="s-sec"><div class="s-ttl"><span class="material-icons">crop_square</span>矩形</div><div class="f"><label class="tog"><input type="checkbox" id="rect-snap" checked /><span class="tl">グリッドスナップ</span></label></div></div></div>
+                <div class="prop-group" data-prop="rect"><div class="s-sec"><div class="s-ttl"><span class="material-icons">crop_square</span>矩形</div></div></div>
                 <!-- 楕円 -->
-                <div class="prop-group" data-prop="ellipse"><div class="s-sec"><div class="s-ttl"><span class="material-icons">circle</span>楕円</div><div class="f"><label class="tog"><input type="checkbox" id="ellipse-snap" checked /><span class="tl">グリッドスナップ</span></label></div></div></div>
+                <div class="prop-group" data-prop="ellipse"><div class="s-sec"><div class="s-ttl"><span class="material-icons">circle</span>楕円</div></div></div>
                 <!-- 直線 -->
-                <div class="prop-group" data-prop="line"><div class="s-sec"><div class="s-ttl"><span class="material-icons">horizontal_rule</span>直線</div><div class="f"><label class="tog"><input type="checkbox" id="line-snap" checked /><span class="tl">グリッドスナップ</span></label></div></div></div>
+                <div class="prop-group" data-prop="line"><div class="s-sec"><div class="s-ttl"><span class="material-icons">horizontal_rule</span>直線</div></div></div>
                 <!-- 折線 -->
-                <div class="prop-group" data-prop="path"><div class="s-sec"><div class="s-ttl"><span class="material-icons">polyline</span>折線 (ポリライン)</div><div class="f"><label class="tog"><input type="checkbox" id="path-snap" checked /><span class="tl">グリッドスナップ</span></label></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 頂点追加 / Enter: 確定 / Esc: キャンセル</p></div></div>
+                <div class="prop-group" data-prop="path"><div class="s-sec"><div class="s-ttl"><span class="material-icons">polyline</span>折線 (ポリライン)</div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 頂点追加 / Enter: 確定 / Esc: キャンセル</p></div></div>
                 <!-- 多角形 -->
-                <div class="prop-group" data-prop="polygon"><div class="s-sec"><div class="s-ttl"><span class="material-icons">pentagon</span>多角形 (ポリゴン)</div><div class="f"><label class="tog"><input type="checkbox" id="polygon-snap" checked /><span class="tl">グリッドスナップ</span></label></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 頂点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p></div></div>
+                <div class="prop-group" data-prop="polygon"><div class="s-sec"><div class="s-ttl"><span class="material-icons">pentagon</span>多角形 (ポリゴン)</div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 頂点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p></div></div>
+                <!-- 曲線 -->
+                <div class="prop-group" data-prop="curve"><div class="s-sec"><div class="s-ttl"><span class="material-icons">gesture</span>曲線 (ベジェ)</div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.3rem">クリック: 制御点追加 / Enter: 確定 / Esc: キャンセル</p></div></div>
                 <!-- フリーハンド -->
                 <div class="prop-group" data-prop="freehand"><div class="s-sec"><div class="s-ttl"><span class="material-icons">draw</span>フリーハンド</div><div class="f"><span class="fl">線幅</span><div class="row"><input type="number" id="freehand-width" value="3" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div></div></div></div>
                 <!-- テキスト -->
                 <div class="prop-group" data-prop="text"><div class="s-sec"><div class="s-ttl"><span class="material-icons">title</span>テキスト</div><div class="f"><span class="fl">フォント</span><select id="text-font"><option value="Noto Sans JP">Noto Sans JP</option><option value="Noto Serif JP">Noto Serif JP</option><option value="Share Tech Mono">Share Tech Mono</option></select></div><div class="f"><span class="fl">サイズ</span><div class="row"><input type="number" id="text-size" value="20" min="6" max="200" class="custom-spinner" /><span class="unit">px</span></div></div></div></div>
                 <!-- 画像 -->
                 <div class="prop-group" data-prop="image"><div class="s-sec"><div class="s-ttl"><span class="material-icons">image</span>画像挿入</div><input type="file" id="image-upload" accept="image/*" style="display:none" /><button class="btn-action" id="image-upload-btn">画像を選択</button></div></div>
-                <!-- 高度ツール（プレースホルダー） -->
-                <div class="prop-group" data-prop="terrain"><div class="s-sec"><div class="s-ttl"><span class="material-icons">landscape</span>地形ブラシ</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="wall"><div class="s-sec"><div class="s-ttl"><span class="material-icons">fence</span>壁</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="room"><div class="s-sec"><div class="s-ttl"><span class="material-icons">meeting_room</span>部屋生成</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="door"><div class="s-sec"><div class="s-ttl"><span class="material-icons">door_front</span>ドア</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="object"><div class="s-sec"><div class="s-ttl"><span class="material-icons">chair</span>オブジェクト配置</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="label"><div class="s-sec"><div class="s-ttl"><span class="material-icons">pin_drop</span>ラベル</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="export"><div class="s-sec"><div class="s-ttl"><span class="material-icons">download</span>出力</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
-                <div class="prop-group" data-prop="save"><div class="s-sec"><div class="s-ttl"><span class="material-icons">save</span>保存 / 読込</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <!-- 高度カテゴリグループ -->
+                <div class="prop-group" data-category-group="terrain">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">landscape</span>地形ブラシ</div>
+                        <div class="tool-tiles" id="terrain-sub-tiles">
+                            <div class="tool-tile active" data-terrain-sub="pen"><span class="material-icons">grid_on</span>セル</div>
+                            <div class="tool-tile" data-terrain-sub="eraser"><span class="material-icons">auto_fix_normal</span>消去</div>
+                            <div class="tool-tile" data-terrain-sub="rect"><span class="material-icons">crop_square</span>矩形</div>
+                            <div class="tool-tile" data-terrain-sub="ellipse"><span class="material-icons">circle</span>楕円</div>
+                            <div class="tool-tile" data-terrain-sub="polygon"><span class="material-icons">pentagon</span>多角形</div>
+                            <div class="tool-tile" data-terrain-sub="curve"><span class="material-icons">gesture</span>曲線</div>
+                        </div>
+                        <div style="display:none">
+                            <input type="radio" name="terrain-tool" id="tt-pen" value="pen" checked />
+                            <input type="radio" name="terrain-tool" id="tt-eraser" value="eraser" />
+                            <input type="radio" name="terrain-tool" id="tt-rect" value="rect" />
+                            <input type="radio" name="terrain-tool" id="tt-ellipse" value="ellipse" />
+                            <input type="radio" name="terrain-tool" id="tt-polygon" value="polygon" />
+                            <input type="radio" name="terrain-tool" id="tt-curve" value="curve" />
+                        </div>
+                        <div class="f" style="margin-top:0.4rem"><span class="fl">カテゴリ</span>
+                            <div class="seg">
+                                <input type="radio" name="terrain-cat" id="tc-indoor" value="indoor" checked /><label for="tc-indoor">屋内</label>
+                                <input type="radio" name="terrain-cat" id="tc-outdoor" value="outdoor" /><label for="tc-outdoor">屋外</label>
+                                <input type="radio" name="terrain-cat" id="tc-cave" value="cave" /><label for="tc-cave">洞窟</label>
+                            </div>
+                        </div>
+                        <div id="terrain-preset-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:0.5rem"></div>
+                        <div style="margin-top:0.5rem;border-top:1px solid var(--border);padding-top:0.5rem">
+                            <div class="f"><span class="fl" style="font-size:0.7rem">選択中</span><span id="terrain-current-name" style="font-size:0.7rem;color:var(--cyan)">石床</span></div>
+                            <div id="terrain-preview" style="height:28px;border-radius:3px;border:1px solid var(--border);margin-top:0.3rem"></div>
+                        </div>
+                        <button class="btn-action" id="add-terrain-layer" style="margin-top:0.5rem">地形レイヤーを追加</button>
+                    </div>
+                </div>
+                <div class="prop-group" data-category-group="wall"><div class="s-sec"><div class="s-ttl"><span class="material-icons">fence</span>壁</div><div class="tool-tiles"><div class="tool-tile" data-vector-tool="line"><span class="material-icons">horizontal_rule</span>直線</div><div class="tool-tile" data-vector-tool="path"><span class="material-icons">polyline</span>折線</div><div class="tool-tile" data-vector-tool="polygon"><span class="material-icons">pentagon</span>多角形</div></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.5rem">後ほど実装</p></div></div>
+                <div class="prop-group" data-category-group="room"><div class="s-sec"><div class="s-ttl"><span class="material-icons">meeting_room</span>部屋生成</div><div class="tool-tiles"><div class="tool-tile" data-vector-tool="rect"><span class="material-icons">crop_square</span>矩形</div><div class="tool-tile" data-vector-tool="polygon"><span class="material-icons">pentagon</span>多角形</div></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.5rem">後ほど実装</p></div></div>
+                <div class="prop-group" data-category-group="door"><div class="s-sec"><div class="s-ttl"><span class="material-icons">door_front</span>ドア</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-category-group="object"><div class="s-sec"><div class="s-ttl"><span class="material-icons">chair</span>オブジェクト配置</div><p class="fl" style="opacity:0.5">後ほど実装</p></div></div>
+                <div class="prop-group" data-category-group="road"><div class="s-sec"><div class="s-ttl"><span class="material-icons">route</span>道</div><div class="tool-tiles"><div class="tool-tile" data-vector-tool="path"><span class="material-icons">polyline</span>折線</div><div class="tool-tile" data-vector-tool="curve"><span class="material-icons">gesture</span>曲線</div></div><p class="fl" style="opacity:0.5;font-size:0.68rem;margin-top:0.5rem">後ほど実装</p></div></div>
+                <div class="prop-group" data-category-group="vector">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-icons">draw</span>ベクター</div>
+                        <div class="tool-tiles" id="vector-sub-tiles">
+                            <div class="tool-tile" data-vector-tool="rect"><span class="material-icons">crop_square</span>矩形</div>
+                            <div class="tool-tile" data-vector-tool="ellipse"><span class="material-icons">circle</span>楕円</div>
+                            <div class="tool-tile" data-vector-tool="line"><span class="material-icons">horizontal_rule</span>直線</div>
+                            <div class="tool-tile" data-vector-tool="path"><span class="material-icons">polyline</span>折線</div>
+                            <div class="tool-tile" data-vector-tool="polygon"><span class="material-icons">pentagon</span>多角形</div>
+                            <div class="tool-tile" data-vector-tool="curve"><span class="material-icons">gesture</span>曲線</div>
+                            <div class="tool-tile" data-vector-tool="freehand"><span class="material-icons">draw</span>自由線</div>
+                            <div class="tool-tile" data-vector-tool="text"><span class="material-icons">title</span>文字</div>
+                            <div class="tool-tile" data-vector-tool="image"><span class="material-icons">image</span>画像</div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display:none">
@@ -379,7 +475,21 @@
                             <input type="radio" name="stroke-style" id="ss-solid" value="solid" checked /><label for="ss-solid">実線</label>
                             <input type="radio" name="stroke-style" id="ss-dash" value="dashed" /><label for="ss-dash">破線</label>
                             <input type="radio" name="stroke-style" id="ss-dot" value="dotted" /><label for="ss-dot">点線</label>
+                            <input type="radio" name="stroke-style" id="ss-dashdot" value="dashdot" /><label for="ss-dashdot">一点鎖</label>
+                            <input type="radio" name="stroke-style" id="ss-longdash" value="longdash" /><label for="ss-longdash">長破線</label>
                         </div>
+                    </div>
+                    <div class="f" id="corner-radius-row"><span class="fl">角丸</span><div class="row"><input type="number" id="corner-radius" value="0" min="0" max="500" class="custom-spinner" /><span class="unit">px</span></div></div>
+                </div>
+
+                <!-- 共通スナップ設定（一番下） -->
+                <div id="snap-sec" class="s-sec" style="display:none">
+                    <div class="s-ttl"><span class="material-icons">grid_goldenratio</span>スナップ</div>
+                    <div class="f"><label class="tog"><input type="checkbox" id="snap-enabled" checked /><span class="tl">スナップ有効 <kbd style="font-size:0.6rem;opacity:0.5;margin-left:0.3rem">Shift: 一時無効</kbd></span></label></div>
+                    <div id="snap-targets">
+                        <div class="f"><label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label></div>
+                        <div class="f"><label class="tog"><input type="checkbox" id="snap-center" /><span class="tl">セル中心</span></label></div>
+                        <div class="f"><label class="tog"><input type="checkbox" id="snap-midpoint" /><span class="tl">辺の中点</span></label></div>
                     </div>
                 </div>
             </div>
@@ -430,7 +540,40 @@
 
         <!-- モーダル -->
         <div class="modal-overlay" id="guide-modal"><div class="modal"><div class="modal-header"><span class="modal-title">使い方ガイド</span><button class="modal-close" onclick="IKLab.closeModal('guide-modal')"><span class="material-icons">close</span></button></div><div class="modal-body"><p>準備中です。</p></div></div></div>
-        <div class="modal-overlay" id="save-modal"><div class="modal"><div class="modal-header"><span class="modal-title">マイマップ</span><button class="modal-close" onclick="IKLab.closeModal('save-modal')"><span class="material-icons">close</span></button></div><div class="modal-body"><p style="color:var(--text-dim)">後ほど実装されます。</p></div></div></div>
+
+        <!-- 出力モーダル -->
+        <div class="modal-overlay" id="export-modal"><div class="modal" style="max-width:960px;width:92vw"><div class="modal-header"><span class="modal-title">画像出力</span><button class="modal-close" onclick="IKLab.closeModal('export-modal')"><span class="material-icons">close</span></button></div><div class="modal-body" style="padding:1rem">
+            <div style="text-align:center;margin-bottom:0.6rem"><div id="export-preview-wrap" style="display:inline-block;background:repeating-conic-gradient(#444 0% 25%,#555 25% 50%);background-size:12px 12px;border-radius:4px;overflow:hidden;line-height:0">
+                <img id="export-preview-img" style="max-width:min(900px,88vw);max-height:55vh;display:block" />
+            </div></div>
+            <div id="export-modal-info" style="text-align:center;font-size:0.72rem;color:var(--text-dim);margin-bottom:0.6rem"></div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.6rem 1.2rem;margin-bottom:0.5rem">
+                <div class="f" style="margin:0;gap:0.4rem"><span class="fl">形式</span>
+                    <div class="seg"><input type="radio" name="export-format" id="ef-png" value="png" checked><label for="ef-png">PNG</label><input type="radio" name="export-format" id="ef-jpeg" value="jpeg"><label for="ef-jpeg">JPEG</label><input type="radio" name="export-format" id="ef-svg" value="svg"><label for="ef-svg">SVG</label></div>
+                </div>
+                <div class="f" style="margin:0;gap:0.4rem"><span class="fl">背景</span>
+                    <div class="seg"><input type="radio" name="export-bg" id="eb-trans" value="transparent" checked><label for="eb-trans">透明</label><input type="radio" name="export-bg" id="eb-white" value="white"><label for="eb-white">白</label></div>
+                </div>
+                <label class="tog" style="margin:0"><input type="checkbox" id="export-grid" checked /><span class="tl">グリッド</span></label>
+                <div class="f" style="margin:0;gap:0.4rem"><span class="fl">セル解像度</span>
+                    <div class="row"><input type="number" id="export-cell-px" value="50" min="10" max="500" step="10" class="custom-spinner" /><span class="unit">px/セル</span></div>
+                </div>
+                <span id="export-output-size" style="font-size:0.65rem;color:var(--text-dim);margin-left:auto"></span>
+            </div>
+            <button class="btn-action" id="export-btn" style="width:100%;padding:0.5rem"><span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:0.3rem">download</span>ダウンロード</button>
+        </div></div></div>
+
+        <!-- 保存モーダル -->
+        <div class="modal-overlay" id="save-modal"><div class="modal" style="max-width:650px"><div class="modal-header"><span class="modal-title">マイマップ</span><button class="modal-close" onclick="IKLab.closeModal('save-modal')"><span class="material-icons">close</span></button></div><div class="modal-body" style="padding:1rem">
+            <div style="display:flex;gap:0.4rem;margin-bottom:1rem;flex-wrap:wrap">
+                <button class="btn-action" id="save-new-btn" style="flex:1;min-width:120px"><span class="material-icons" style="font-size:0.9rem;vertical-align:middle;margin-right:0.2rem">save</span>新規保存</button>
+                <button class="btn-action" id="save-export-btn" style="flex:1;min-width:120px"><span class="material-icons" style="font-size:0.9rem;vertical-align:middle;margin-right:0.2rem">file_download</span>JSON出力</button>
+                <button class="btn-action" id="save-import-btn" style="flex:1;min-width:120px"><span class="material-icons" style="font-size:0.9rem;vertical-align:middle;margin-right:0.2rem">file_upload</span>JSON読込</button>
+                <input type="file" id="save-import-input" accept=".json" style="display:none" />
+            </div>
+            <div id="save-list" style="display:grid;gap:0.6rem;max-height:400px;overflow-y:auto;scrollbar-width:thin"></div>
+            <div id="save-empty" style="text-align:center;color:var(--text-dim);padding:2rem 0;font-size:0.85rem">保存データはありません</div>
+        </div></div></div>
 
         <script src="common.js"></script>
         <script>
@@ -460,7 +603,7 @@ const App = {
     editMode: 'advanced',
     gridType: 'square',
     activeTool: 'select',
-    cellSize: 50,
+    cellSize: 60,
     canvas: null,
     fillColor: '#4a90c4',
     fillOpacity: 1,
@@ -468,6 +611,7 @@ const App = {
     strokeOpacity: 1,
     strokeWidth: 2,
     strokeDashArray: null,       // null=実線, [10,5]=破線, [2,4]=点線
+    cornerRadius: 0,
     gridColor: 'rgba(0,0,0,1)',
     gridLineWidth: 1,
     gridDashArray: null,
@@ -478,9 +622,178 @@ const App = {
     _drawing: null,
     _pathPoints: [],
     _polygonPoints: [],
+    _curvePoints: [],
     _lineStart: null,
+    snapEnabled: true,
+    snapIntersection: true,
+    snapCenter: false,
+    snapMidpoint: false,
     _snapPt: null,
+    _exportMode: false,  // 出力範囲選択モード
+    _exportRect: null,   // { x, y, w, h } キャンバス座標での出力範囲
+    _exportDrag: null,   // 1クリック目の開始点
+    _shiftHeld: false,   // Shift押下中はスナップ一時無効
+    activeCategory: null, // 高度モードの選択中カテゴリ
 };
+
+/* ================================================================
+   地形プリセット
+================================================================ */
+const TERRAIN_PRESETS = {
+    indoor: [
+        { id: 'stone_floor', name: '石床',   color: '#8a8a8a', pattern: 'speckle' },
+        { id: 'wood_floor',  name: '木床',   color: '#a0724e', pattern: 'stripe'  },
+        { id: 'tile_floor',  name: 'タイル', color: '#c4b9a0', pattern: 'grid'    },
+        { id: 'brick',       name: 'レンガ', color: '#a85d3e', pattern: 'brick'   },
+        { id: 'carpet',      name: 'カーペット', color: '#7b3344', pattern: 'none' },
+        { id: 'marble',      name: '大理石', color: '#d4cfc8', pattern: 'speckle' },
+    ],
+    outdoor: [
+        { id: 'grass',       name: '草',      color: '#4a8c3f', pattern: 'speckle' },
+        { id: 'dirt',        name: '土',      color: '#8b6e4e', pattern: 'speckle' },
+        { id: 'sand',        name: '砂',      color: '#d4c07a', pattern: 'dot'     },
+        { id: 'water_s',     name: '水(浅)',  color: '#5ba3cf', pattern: 'wave'    },
+        { id: 'water_d',     name: '水(深)',  color: '#2a6496', pattern: 'wave'    },
+        { id: 'swamp',       name: '沼',      color: '#5e7a4a', pattern: 'wave'    },
+        { id: 'road',        name: '道',      color: '#9e9078', pattern: 'none'    },
+        { id: 'snow',        name: '雪',      color: '#e8e8ee', pattern: 'dot'     },
+    ],
+    cave: [
+        { id: 'cave_stone',  name: '石床',    color: '#6b6b6b', pattern: 'speckle' },
+        { id: 'gravel',      name: '砂利',    color: '#7a7568', pattern: 'dot'     },
+        { id: 'cave_water',  name: '水',      color: '#3a7aaa', pattern: 'wave'    },
+        { id: 'lava',        name: '溶岩',    color: '#c43e1a', pattern: 'wave'    },
+        { id: 'ice',         name: '氷',      color: '#aad4e6', pattern: 'hatch'   },
+        { id: 'moss',        name: '苔',      color: '#4e6e3a', pattern: 'speckle' },
+    ],
+};
+
+function generateTerrainPattern(baseColor, patternType, cellSize) {
+    const sz = cellSize;
+    const c = document.createElement('canvas');
+    c.width = sz; c.height = sz;
+    const ctx = c.getContext('2d');
+    // ベース色
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, sz, sz);
+    // パターン描画
+    const pColor = adjustBrightness(baseColor, -30);
+    const pColorLight = adjustBrightness(baseColor, 20);
+    ctx.strokeStyle = pColor; ctx.fillStyle = pColor;
+    switch (patternType) {
+        case 'stripe': {
+            // フローリング: 4段の横板、横目地のみ
+            const rows = 4;
+            const bh = sz / rows;
+            const line = adjustBrightness(baseColor, -30);
+            ctx.strokeStyle = line;
+            ctx.lineWidth = Math.max(1, sz / 40);
+            for (let r = 1; r < rows; r++) {
+                const y = r * bh;
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(sz, y); ctx.stroke();
+            }
+            break;
+        }
+        case 'grid': {
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = adjustBrightness(baseColor, -15);
+            const step = sz / 2;
+            for (let x = step; x < sz; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, sz); ctx.stroke(); }
+            for (let y = step; y < sz; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(sz, y); ctx.stroke(); }
+            break;
+        }
+        case 'brick': {
+            // レンガ: 4段、偶数段は半レンガオフセット、色統一
+            const rows = 4;
+            const bh = sz / rows;
+            const brickW = sz / 2;
+            const mortar = adjustBrightness(baseColor, -40);
+            const mw = Math.max(1, sz / 40);
+            ctx.strokeStyle = mortar;
+            ctx.lineWidth = mw;
+            // 横目地
+            for (let r = 0; r <= rows; r++) {
+                ctx.beginPath(); ctx.moveTo(0, r * bh); ctx.lineTo(sz, r * bh); ctx.stroke();
+            }
+            // 縦目地
+            for (let r = 0; r < rows; r++) {
+                const y = r * bh;
+                const off = r % 2 === 0 ? 0 : brickW * 0.5;
+                for (let x = off; x <= sz; x += brickW) {
+                    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + bh); ctx.stroke();
+                }
+            }
+            break;
+        }
+        case 'hatch': {
+            ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
+            const step = Math.max(4, sz / 6);
+            for (let x = 0; x < sz * 2; x += step) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - sz, sz); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x - sz, 0); ctx.lineTo(x, sz); ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            break;
+        }
+        case 'dot': {
+            ctx.globalAlpha = 0.35;
+            const step = Math.max(5, sz / 5);
+            const r = Math.max(1, sz / 25);
+            for (let y = step / 2; y < sz; y += step) {
+                for (let x = step / 2; x < sz; x += step) {
+                    ctx.beginPath();
+                    ctx.arc(x + (Math.sin(x * 7 + y * 3) * step * 0.2), y + (Math.cos(x * 3 + y * 7) * step * 0.2), r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+            break;
+        }
+        case 'speckle': {
+            ctx.globalAlpha = 0.25;
+            const count = Math.max(8, Math.floor(sz * sz / 80));
+            const r = Math.max(1, sz / 30);
+            // deterministic pseudo-random based on baseColor hash
+            let seed = 0;
+            for (let i = 0; i < baseColor.length; i++) seed = (seed * 31 + baseColor.charCodeAt(i)) | 0;
+            const rng = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+            for (let i = 0; i < count; i++) {
+                ctx.fillStyle = rng() > 0.5 ? pColor : pColorLight;
+                ctx.beginPath();
+                ctx.arc(rng() * sz, rng() * sz, r * (0.5 + rng()), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            break;
+        }
+        case 'wave': {
+            ctx.lineWidth = Math.max(1, sz / 25);
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = pColorLight;
+            const amp = sz / 10, wl = sz / 2;
+            for (let row = 0; row < 3; row++) {
+                const yBase = sz * (row + 0.5) / 3;
+                ctx.beginPath();
+                for (let x = 0; x <= sz; x += 2) {
+                    ctx.lineTo(x, yBase + Math.sin((x / wl) * Math.PI * 2 + row) * amp);
+                }
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            break;
+        }
+        // 'none': ベース色のみ
+    }
+    return new fabric.Pattern({ source: c, repeat: 'repeat' });
+}
+
+function adjustBrightness(hex, amount) {
+    let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
 
 /* ヘルパー */
 function rgba(hex, a) {
@@ -488,10 +801,25 @@ function rgba(hex, a) {
     return `rgba(${r},${g},${b},${a})`;
 }
 function snapToGrid(x, y) {
+    if (!App.snapEnabled || App._shiftHeld) return null;
     const cs = App.cellSize;
-    const sx = Math.round(x / cs) * cs, sy = Math.round(y / cs) * cs;
-    const thresh = 10 / App.canvas.getZoom();
-    return Math.hypot(sx - x, sy - y) <= thresh ? { x: sx, y: sy } : null;
+    const thresh = 18 / App.canvas.getZoom();
+    let best = null, bestD = Infinity;
+    const tryPt = (sx, sy) => {
+        const d = Math.hypot(sx - x, sy - y);
+        if (d < thresh && d < bestD) { bestD = d; best = { x: sx, y: sy }; }
+    };
+    if (App.snapIntersection) {
+        tryPt(Math.round(x / cs) * cs, Math.round(y / cs) * cs);
+    }
+    if (App.snapCenter) {
+        tryPt((Math.floor(x / cs) + 0.5) * cs, (Math.floor(y / cs) + 0.5) * cs);
+    }
+    if (App.snapMidpoint) {
+        tryPt((Math.floor(x / cs) + 0.5) * cs, Math.round(y / cs) * cs);
+        tryPt(Math.round(x / cs) * cs, (Math.floor(y / cs) + 0.5) * cs);
+    }
+    return best;
 }
 function snapToEditPoints(x, y, points) {
     const thresh = 8 / App.canvas.getZoom();
@@ -505,18 +833,49 @@ function snapToEditPoints(x, y, points) {
 function getDashArray(style, w) {
     if (style === 'dashed') return [w * 5, w * 3];
     if (style === 'dotted') return [w, w * 2];
+    if (style === 'dashdot') return [w * 5, w * 2, w, w * 2];
+    if (style === 'longdash') return [w * 10, w * 4];
     return null;
+}
+function buildBezierPath(pts) {
+    if (pts.length < 2) return '';
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    if (pts.length === 2) {
+        d += ` L ${pts[1].x} ${pts[1].y}`;
+    } else {
+        for (let i = 1; i < pts.length - 1; i++) {
+            const p1 = pts[i], p2 = pts[i + 1];
+            if (i === pts.length - 2) {
+                d += ` Q ${p1.x} ${p1.y}, ${p2.x} ${p2.y}`;
+            } else {
+                const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+                d += ` Q ${p1.x} ${p1.y}, ${mx} ${my}`;
+            }
+        }
+    }
+    return d;
 }
 function getMapLayers() {
     return App.canvas.getObjects().filter(o => o._isMapLayer);
 }
 function updateFillStrokeVisibility() {
-    const drawTools = ['cell','rect','ellipse','line','path','freehand','text','terrain','wall','room'];
+    const drawTools = ['cell','rect','ellipse','line','path','polygon','freehand','text','wall','room','curve'];
     let show = drawTools.includes(App.activeTool);
     if (App.activeTool === 'select') {
-        show = App.canvas.getActiveObjects().some(o => o._isMapLayer && !o._isCellLayer);
+        show = App.canvas.getActiveObjects().some(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
     }
+    // 地形カテゴリでは塗りつぶし/ストロークパネルを非表示（プリセットを使用）
+    if (App.activeCategory === 'terrain') show = false;
     document.getElementById('fill-stroke-sec').style.display = show ? '' : 'none';
+    // 角丸は矩形ツール（地形カテゴリ以外） or 選択中の矩形にのみ表示
+    let showRadius = App.activeTool === 'rect' && App.activeCategory !== 'terrain';
+    if (App.activeTool === 'select') {
+        showRadius = App.canvas.getActiveObjects().some(o => o._isMapLayer && o.type === 'rect');
+    }
+    document.getElementById('corner-radius-row').style.display = showRadius ? '' : 'none';
+    // スナップ設定: 描画系ツールで表示
+    const snapTools = ['rect','ellipse','line','path','polygon','curve','wall','room','door','object','label'];
+    document.getElementById('snap-sec').style.display = snapTools.includes(App.activeTool) ? '' : 'none';
 }
 
 /* ================================================================
@@ -534,7 +893,7 @@ function initPickr() {
         if (c) { App.fillColor = c.toHEXA().toString().slice(0,7); App.fillOpacity = c.toRGBA()[3]; }
         fillPickr.hide();
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
                 .forEach(o => o.set({ fill: rgba(App.fillColor, App.fillOpacity) }));
             App.canvas.renderAll();
         }
@@ -544,7 +903,7 @@ function initPickr() {
         if (c) { App.strokeColor = c.toHEXA().toString().slice(0,7); App.strokeOpacity = c.toRGBA()[3]; }
         strokePickr.hide();
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
                 .forEach(o => o.set({ stroke: rgba(App.strokeColor, App.strokeOpacity) }));
             App.canvas.renderAll();
         }
@@ -587,8 +946,14 @@ function initCanvas() {
 
     // パン
     let isPanning = false, panX = 0, panY = 0, spaceHeld = false;
-    document.addEventListener('keydown', e => { if (e.code === 'Space' && !e.repeat) { spaceHeld = true; e.preventDefault(); } });
-    document.addEventListener('keyup', e => { if (e.code === 'Space') spaceHeld = false; });
+    document.addEventListener('keydown', e => {
+        if (e.code === 'Space' && !e.repeat) { spaceHeld = true; e.preventDefault(); }
+        if (e.key === 'Shift') App._shiftHeld = true;
+    });
+    document.addEventListener('keyup', e => {
+        if (e.code === 'Space') spaceHeld = false;
+        if (e.key === 'Shift') App._shiftHeld = false;
+    });
 
     App.canvas.on('mouse:down', function(opt) {
         const e = opt.e, ptr = App.canvas.getPointer(e);
@@ -614,17 +979,62 @@ function initCanvas() {
             return;
         }
 
+        // 出力範囲選択モード（アクティブツールに関係なく動作）
+        if (App._exportMode) {
+            const pt = snapToGrid(ptr.x, ptr.y) || ptr;
+            if (!App._exportDrag) {
+                App._exportDrag = { startX: pt.x, startY: pt.y };
+                App._exportRect = null;
+            } else {
+                const d = App._exportDrag;
+                App._exportRect = {
+                    x: Math.min(d.startX, pt.x), y: Math.min(d.startY, pt.y),
+                    w: Math.abs(pt.x - d.startX), h: Math.abs(pt.y - d.startY),
+                };
+                App._exportDrag = null;
+                App._exportMode = false;
+                App.canvas.defaultCursor = 'default';
+                if (App._exportRect.w < 5 || App._exportRect.h < 5) { App._exportRect = null; }
+                App.canvas.requestRenderAll();
+                if (App._exportRect) openExportModal();
+            }
+            return;
+        }
+
         // ツール別
         switch (App.activeTool) {
             case 'rect': case 'ellipse': {
-                const snap = document.getElementById(App.activeTool + '-snap')?.checked;
-                const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
-                App._drawing = { startX: pt.x, startY: pt.y, obj: null };
+                const pt = snapToGrid(ptr.x, ptr.y) || ptr;
+                if (!App._drawing) {
+                    // 1クリック目: 開始点を記録
+                    App._drawing = { startX: pt.x, startY: pt.y, obj: null };
+                } else {
+                    // 2クリック目: 確定
+                    const d = App._drawing;
+                    const w = Math.abs(pt.x - d.startX), h = Math.abs(pt.y - d.startY);
+                    if (w > 2 && h > 2) {
+                        removePreview();
+                        const left = Math.min(d.startX, pt.x), top = Math.min(d.startY, pt.y);
+                        if (App.activeCategory === 'terrain') {
+                            const fill = getTerrainFill(_activeTerrainPreset);
+                            const obj = App.activeTool === 'rect'
+                                ? new fabric.Rect({ left, top, width: w, height: h, fill, stroke: null, strokeWidth: 0, objectCaching: false, _terrainId: _activeTerrainPreset.id })
+                                : new fabric.Ellipse({ left, top, rx: w/2, ry: h/2, fill, stroke: null, strokeWidth: 0, objectCaching: false, _terrainId: _activeTerrainPreset.id });
+                            addTerrainShape(obj);
+                        } else {
+                            const hsw = App.strokeWidth / 2;
+                            const obj = App.activeTool === 'rect'
+                                ? new fabric.Rect({ left: left - hsw, top: top - hsw, width: w, height: h, rx: App.cornerRadius, ry: App.cornerRadius, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, objectCaching: false })
+                                : new fabric.Ellipse({ left: left - hsw, top: top - hsw, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, objectCaching: false });
+                            addLayerObject(App.activeTool === 'rect' ? '矩形' : '楕円', obj);
+                        }
+                    }
+                    App._drawing = null;
+                }
                 break;
             }
             case 'line': {
-                const snap = document.getElementById('line-snap')?.checked;
-                const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                const pt = snapToGrid(ptr.x, ptr.y) || ptr;
                 if (!App._lineStart) { App._lineStart = pt; }
                 else {
                     const hsw = App.strokeWidth / 2;
@@ -642,24 +1052,34 @@ function initCanvas() {
                 break;
             }
             case 'path': {
-                const snap = document.getElementById('path-snap')?.checked;
-                const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                const raw = snapToGrid(ptr.x, ptr.y) || ptr;
                 const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
                 App._pathPoints.push({ x: pt.x, y: pt.y });
                 break;
             }
             case 'polygon': {
-                const snap = document.getElementById('polygon-snap')?.checked;
-                const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+                const raw = snapToGrid(ptr.x, ptr.y) || ptr;
                 const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
                 App._polygonPoints.push({ x: pt.x, y: pt.y });
                 break;
             }
+            case 'curve': {
+                const raw = snapToGrid(ptr.x, ptr.y) || ptr;
+                const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
+                App._curvePoints.push({ x: pt.x, y: pt.y });
+                break;
+            }
             case 'cell': {
                 const col = Math.floor(ptr.x / App.cellSize), row = Math.floor(ptr.y / App.cellSize);
-                const tool = document.querySelector('input[name="cell-tool"]:checked')?.value || 'pen';
-                handleCellPaint(col, row, tool);
-                App._drawing = { cellTool: tool };
+                if (App.activeCategory === 'terrain') {
+                    const tSub = document.querySelector('input[name="terrain-tool"]:checked')?.value || 'pen';
+                    handleTerrainPaint(col, row, tSub === 'eraser' ? 'eraser' : 'pen');
+                    App._drawing = { cellTool: tSub };
+                } else {
+                    const tool = document.querySelector('input[name="cell-tool"]:checked')?.value || 'pen';
+                    handleCellPaint(col, row, tool);
+                    App._drawing = { cellTool: tool };
+                }
                 break;
             }
             case 'text': {
@@ -694,47 +1114,50 @@ function initCanvas() {
             App.canvas.requestRenderAll(); drawGrid(); return;
         }
 
-        // スナップ先を計算（水色マーカー用）
+        // スナップ先を計算（水色マーカー用 — スナップ対応ツールのみ）
         {
-            const _snapIds = { rect:'rect-snap', ellipse:'ellipse-snap', line:'line-snap', path:'path-snap', polygon:'polygon-snap' };
-            const _sid = _snapIds[App.activeTool];
-            if (_sid && document.getElementById(_sid)?.checked) {
+            const _snapTools = ['rect','ellipse','line','path','polygon','curve','wall','room','door','object','label'];
+            const _needSnap = _snapTools.includes(App.activeTool) || App._exportMode;
+            if (_needSnap) {
                 const _editPts = App.activeTool === 'path' ? App._pathPoints
-                    : App.activeTool === 'polygon' ? App._polygonPoints : [];
-                const _raw = snapToGrid(ptr.x, ptr.y); // null = グリッドから遠い
+                    : App.activeTool === 'polygon' ? App._polygonPoints
+                    : App.activeTool === 'curve' ? App._curvePoints : [];
+                const _raw = snapToGrid(ptr.x, ptr.y);
                 App._snapPt = snapToEditPoints(ptr.x, ptr.y, _editPts) || _raw || null;
             } else {
                 App._snapPt = null;
             }
-            App.canvas.requestRenderAll(); // マーカー更新のため常時再描画
+            App.canvas.requestRenderAll();
         }
 
-        // 矩形/楕円
+        // 矩形/楕円プレビュー（1クリック後、マウス追従）
         if (App._drawing && (App.activeTool === 'rect' || App.activeTool === 'ellipse')) {
-            const snap = document.getElementById(App.activeTool + '-snap')?.checked;
-            const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const pt = snapToGrid(ptr.x, ptr.y) || ptr;
             const d = App._drawing;
             const left = Math.min(d.startX, pt.x), top = Math.min(d.startY, pt.y);
             const w = Math.abs(pt.x - d.startX), h = Math.abs(pt.y - d.startY);
-            const hsw = App.strokeWidth / 2;
-            const aLeft = left - hsw, aTop = top - hsw;
-            if (!d.obj) {
-                d.obj = App.activeTool === 'rect'
-                    ? new fabric.Rect({ left: aLeft, top: aTop, width: w, height: h, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true })
-                    : new fabric.Ellipse({ left: aLeft, top: aTop, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity), stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true });
-                App.canvas.add(d.obj);
-            } else {
-                d.obj.set({ left: aLeft, top: aTop });
-                if (App.activeTool === 'rect') d.obj.set({ width: w, height: h });
-                else d.obj.set({ rx: w/2, ry: h/2 });
+            removePreview();
+            if (w > 0 || h > 0) {
+                let preview;
+                if (App.activeCategory === 'terrain') {
+                    const fill = getTerrainFill(_activeTerrainPreset);
+                    preview = App.activeTool === 'rect'
+                        ? new fabric.Rect({ left, top, width: w, height: h, fill, stroke: null, strokeWidth: 0, selectable: false, evented: false, objectCaching: false, isPreview: true, opacity: 0.6 })
+                        : new fabric.Ellipse({ left, top, rx: w/2, ry: h/2, fill, stroke: null, strokeWidth: 0, selectable: false, evented: false, objectCaching: false, isPreview: true, opacity: 0.6 });
+                } else {
+                    const hsw = App.strokeWidth / 2;
+                    preview = App.activeTool === 'rect'
+                        ? new fabric.Rect({ left: left - hsw, top: top - hsw, width: w, height: h, rx: App.cornerRadius, ry: App.cornerRadius, fill: rgba(App.fillColor, App.fillOpacity * 0.5), stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true })
+                        : new fabric.Ellipse({ left: left - hsw, top: top - hsw, rx: w/2, ry: h/2, fill: rgba(App.fillColor, App.fillOpacity * 0.5), stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray, selectable: false, evented: false, objectCaching: false, isPreview: true });
+                }
+                App.canvas.add(preview);
             }
             App.canvas.renderAll();
         }
 
         // 直線プレビュー
         if (App.activeTool === 'line' && App._lineStart) {
-            const snap = document.getElementById('line-snap')?.checked;
-            const pt = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const pt = snapToGrid(ptr.x, ptr.y) || ptr;
             const hsw = App.strokeWidth / 2;
             removePreview();
             App.canvas.add(new fabric.Line([
@@ -749,8 +1172,7 @@ function initCanvas() {
 
         // 折線プレビュー
         if (App.activeTool === 'path' && App._pathPoints.length > 0) {
-            const snap = document.getElementById('path-snap')?.checked;
-            const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
             removePreview();
             App.canvas.add(new fabric.Polyline([...App._pathPoints, pt], {
@@ -761,37 +1183,66 @@ function initCanvas() {
             App.canvas.renderAll();
         }
 
-        // 多角形プレビュー
+        // 多角形プレビュー（通常 + 地形）
         if (App.activeTool === 'polygon' && App._polygonPoints.length > 0) {
-            const snap = document.getElementById('polygon-snap')?.checked;
-            const raw = (snap ? snapToGrid(ptr.x, ptr.y) : null) || ptr;
+            const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
             removePreview();
+            const isTerrain = App.activeCategory === 'terrain';
+            const fill = isTerrain ? getTerrainFill(_activeTerrainPreset) : rgba(App.fillColor, App.fillOpacity * 0.3);
+            const stroke = isTerrain ? 'rgba(0,229,255,0.4)' : rgba(App.strokeColor, App.strokeOpacity * 0.5);
             App.canvas.add(new fabric.Polygon([...App._polygonPoints, pt], {
-                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5), strokeWidth: App.strokeWidth,
-                fill: rgba(App.fillColor, App.fillOpacity * 0.3),
+                stroke, strokeWidth: isTerrain ? 1 : App.strokeWidth, fill,
                 selectable: false, evented: false, isPreview: true, objectCaching: false,
+                opacity: isTerrain ? 0.6 : 1,
             }));
             App.canvas.renderAll();
         }
 
-        // セル塗り
+        // 曲線プレビュー（通常 + 地形）
+        if (App.activeTool === 'curve' && App._curvePoints.length > 0) {
+            const raw = snapToGrid(ptr.x, ptr.y) || ptr;
+            const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
+            removePreview();
+            const previewPts = [...App._curvePoints, pt];
+            const d = buildBezierPath(previewPts);
+            if (d) {
+                const isTerrain = App.activeCategory === 'terrain';
+                const fill = isTerrain ? getTerrainFill(_activeTerrainPreset) : '';
+                const stroke = isTerrain ? 'rgba(0,229,255,0.4)' : rgba(App.strokeColor, App.strokeOpacity * 0.5);
+                App.canvas.add(new fabric.Path(d, {
+                    stroke, strokeWidth: isTerrain ? 1 : App.strokeWidth, fill,
+                    selectable: false, evented: false, isPreview: true, objectCaching: false,
+                    opacity: isTerrain ? 0.6 : 1,
+                }));
+            }
+            App.canvas.renderAll();
+        }
+
+        // 出力範囲プレビュー（exportモード、1クリック後のマウス追従）
+        if (App._exportMode && App._exportDrag) {
+            const ep = snapToGrid(ptr.x, ptr.y) || ptr;
+            const d = App._exportDrag;
+            App._exportRect = {
+                x: Math.min(d.startX, ep.x), y: Math.min(d.startY, ep.y),
+                w: Math.abs(ep.x - d.startX), h: Math.abs(ep.y - d.startY),
+            };
+            App.canvas.requestRenderAll();
+        }
+
+        // セル塗り / 地形塗り（ドラッグ）
         if (App._drawing && App.activeTool === 'cell') {
-            handleCellPaint(Math.floor(ptr.x / App.cellSize), Math.floor(ptr.y / App.cellSize), App._drawing.cellTool);
+            const col = Math.floor(ptr.x / App.cellSize), row = Math.floor(ptr.y / App.cellSize);
+            if (App.activeCategory === 'terrain') {
+                handleTerrainPaint(col, row, App._drawing.cellTool === 'eraser' ? 'eraser' : 'pen');
+            } else {
+                handleCellPaint(col, row, App._drawing.cellTool);
+            }
         }
     });
 
     App.canvas.on('mouse:up', function() {
         if (isPanning) { isPanning = false; App.canvas.selection = (App.activeTool === 'select'); App.canvas.defaultCursor = 'default'; return; }
-        if (App._drawing && (App.activeTool === 'rect' || App.activeTool === 'ellipse')) {
-            const d = App._drawing;
-            if (d.obj) {
-                App.canvas.remove(d.obj);
-                const w = d.obj.width ?? d.obj.rx * 2, h = d.obj.height ?? d.obj.ry * 2;
-                if (w > 2 && h > 2) { d.obj.set({ isPreview: false }); addLayerObject(App.activeTool === 'rect' ? '矩形' : '楕円', d.obj); }
-            }
-            App._drawing = null;
-        }
         if (App._drawing && App.activeTool === 'cell') App._drawing = null;
     });
 
@@ -804,6 +1255,12 @@ function initCanvas() {
     App.canvas.on('selection:updated', () => { syncLayerSelectionFromCanvas(); updateSelectionInfo(); });
     App.canvas.on('selection:cleared', () => { App.selectedLayerIds = []; renderLayerList(); updateSelectionInfo(); });
     App.canvas.on('object:modified', updateSelectionInfo);
+    App.canvas.on('object:moving', function(opt) {
+        if (!App.snapEnabled) return;
+        const obj = opt.target;
+        const snapped = snapToGrid(obj.left, obj.top);
+        if (snapped) obj.set({ left: snapped.x, top: snapped.y });
+    });
     App.canvas.on('path:created', opt => { if (opt.path) { opt.path.set({ selectable: false, evented: false }); addLayerObject('フリーハンド', opt.path); } });
 
     window.addEventListener('resize', () => { App.canvas.setWidth(area.clientWidth); App.canvas.setHeight(area.clientHeight); drawGrid(); });
@@ -830,7 +1287,7 @@ function _initGridRenderer() {
         const zoom = App.canvas.getZoom();
 
         // チェッカーボード背景をビューポートに追従させる
-        const S = 20 * zoom;
+        const S = 12 * zoom;
         const ox = ((vpt[4] % S) + S) % S;
         const oy = ((vpt[5] % S) + S) % S;
         area.style.backgroundSize = `${S}px ${S}px`;
@@ -851,6 +1308,33 @@ function _initGridRenderer() {
         for (let r = sr; r <= er; r++) { ctx.moveTo(sc*cs, r*cs); ctx.lineTo(ec*cs, r*cs); }
         ctx.stroke();
         ctx.restore();
+
+        // 出力モード: キャンバス全体を暗く、選択範囲だけ明るく
+        if (App._exportMode) {
+            ctx.save();
+            ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+            const r = App._exportRect;
+            if (r && r.w > 0 && r.h > 0) {
+                // 範囲外を暗くする
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.beginPath();
+                ctx.rect(wl - cs, wt - cs, (wr - wl) + cs * 2, r.y - wt + cs);
+                ctx.rect(wl - cs, r.y, r.x - wl + cs, r.h);
+                ctx.rect(r.x + r.w, r.y, wr - r.x - r.w + cs, r.h);
+                ctx.rect(wl - cs, r.y + r.h, (wr - wl) + cs * 2, wb - r.y - r.h + cs);
+                ctx.fill();
+                // 選択範囲の枠
+                ctx.strokeStyle = '#00e5ff';
+                ctx.lineWidth = 2 / zoom;
+                ctx.setLineDash([]);
+                ctx.strokeRect(r.x, r.y, r.w, r.h);
+            } else {
+                // まだ範囲未指定: 全体を暗く
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(wl - cs, wt - cs, (wr - wl) + cs * 2, (wb - wt) + cs * 2);
+            }
+            ctx.restore();
+        }
 
         // スナップ先マーカー（水色の中抜き四角）
         if (App._snapPt) {
@@ -931,13 +1415,13 @@ function renderLayerList() {
                 App.selectedLayerIds = [id];
             }
             App.lastClickedLayerId = id;
-            // セルツール中のセルレイヤー選択 → ペイント対象切替のみ（ツール変更・canvas操作不可）
-            const isCellException = App.activeTool === 'cell' && obj._isCellLayer;
-            if (!isCellException && App.activeTool !== 'select') {
+            // セル/地形ツール中の同種レイヤー選択 → ペイント対象切替のみ
+            const isPaintException = (App.activeTool === 'cell' && obj._isCellLayer)
+                || (App.activeTool === 'cell' && App.activeCategory === 'terrain' && obj._isTerrainLayer);
+            if (!isPaintException && App.activeTool !== 'select') {
                 setActiveTool('select');
             }
-            // セル例外時はcanvasのactive設定をスキップ（動かせない状態を維持）
-            if (!isCellException) {
+            if (!isPaintException) {
                 applyLayerSelectionToCanvas();
             }
             renderLayerList();
@@ -1108,6 +1592,7 @@ function handleCellPaint(col, row, tool) {
                 fill: rgba(App.fillColor, App.fillOpacity),
                 stroke: null, strokeWidth: 0,
                 selectable: false, evented: false, objectCaching: false,
+                _cellCol: col, _cellRow: row,
             });
             layer.addWithUpdate(rect);
             if (!layer._cellData) layer._cellData = new Map();
@@ -1118,6 +1603,121 @@ function handleCellPaint(col, row, tool) {
         if (existing) { layer.removeWithUpdate(existing); layer._cellData.delete(key); }
     }
     App.canvas.renderAll();
+}
+
+/* ================================================================
+   地形レイヤー
+================================================================ */
+let _activeTerrainPreset = TERRAIN_PRESETS.indoor[0]; // 現在選択中のプリセット
+let _terrainPatternCache = new Map(); // key: `${id}_${cellSize}` → fabric.Pattern
+
+function getTerrainFill(preset) {
+    if (preset.pattern === 'none') return preset.color;
+    const key = `${preset.id}_${App.cellSize}`;
+    if (!_terrainPatternCache.has(key)) {
+        _terrainPatternCache.set(key, generateTerrainPattern(preset.color, preset.pattern, App.cellSize));
+    }
+    return _terrainPatternCache.get(key);
+}
+
+function getOrCreateTerrainLayer() {
+    const selected = App.canvas.getObjects().find(o => o._isTerrainLayer && App.selectedLayerIds.includes(o._layerId));
+    if (selected) return selected;
+    const existing = getMapLayers().reverse().find(o => o._isTerrainLayer);
+    if (existing) return existing;
+    return createTerrainLayer();
+}
+
+function createTerrainLayer() {
+    const group = new fabric.Group([], {
+        selectable: false, evented: false, objectCaching: false,
+        _isTerrainLayer: true, _cellData: new Map(),
+    });
+    addLayerObject('地形', group);
+    App.selectedLayerIds = [group._layerId];
+    renderLayerList();
+    return group;
+}
+
+function handleTerrainPaint(col, row, tool) {
+    const layer = getOrCreateTerrainLayer();
+    if (!App.selectedLayerIds.includes(layer._layerId)) {
+        App.selectedLayerIds = [layer._layerId];
+        renderLayerList();
+    }
+    const key = `${col},${row}`;
+    const cs = App.cellSize;
+
+    if (tool === 'pen') {
+        const fill = getTerrainFill(_activeTerrainPreset);
+        const existing = layer._cellData?.get(key);
+        if (existing) {
+            existing.set({ fill: fill, _terrainId: _activeTerrainPreset.id });
+        } else {
+            const rect = new fabric.Rect({
+                left: col * cs, top: row * cs,
+                width: cs, height: cs,
+                fill: fill,
+                stroke: null, strokeWidth: 0,
+                selectable: false, evented: false, objectCaching: false,
+                _cellCol: col, _cellRow: row,
+                _terrainId: _activeTerrainPreset.id,
+            });
+            layer.addWithUpdate(rect);
+            if (!layer._cellData) layer._cellData = new Map();
+            layer._cellData.set(key, rect);
+        }
+    } else if (tool === 'eraser') {
+        const existing = layer._cellData?.get(key);
+        if (existing) { layer.removeWithUpdate(existing); layer._cellData.delete(key); }
+    }
+    App.canvas.renderAll();
+}
+
+function addTerrainShape(obj) {
+    const layer = getOrCreateTerrainLayer();
+    if (!App.selectedLayerIds.includes(layer._layerId)) {
+        App.selectedLayerIds = [layer._layerId];
+        renderLayerList();
+    }
+    obj.set({ selectable: false, evented: false });
+    layer.addWithUpdate(obj);
+    App.canvas.renderAll();
+}
+
+function renderTerrainPresets(category) {
+    const list = document.getElementById('terrain-preset-list');
+    if (!list) return;
+    const presets = TERRAIN_PRESETS[category] || [];
+    list.innerHTML = '';
+    presets.forEach(p => {
+        const btn = document.createElement('div');
+        btn.className = 'terrain-btn' + (p.id === _activeTerrainPreset.id ? ' active' : '');
+        btn.dataset.terrainId = p.id;
+        // 背景にプリセットパターンを描画
+        const preview = generateTerrainPattern(p.color, p.pattern, 48);
+        btn.style.background = `url(${preview.source.toDataURL()})`;
+        btn.style.backgroundSize = '48px 48px';
+        btn.innerHTML = `<span>${p.name}</span>`;
+        btn.addEventListener('click', () => {
+            _activeTerrainPreset = p;
+            list.querySelectorAll('.terrain-btn').forEach(b => b.classList.toggle('active', b.dataset.terrainId === p.id));
+            updateTerrainPreview();
+        });
+        list.appendChild(btn);
+    });
+    updateTerrainPreview();
+}
+
+function updateTerrainPreview() {
+    const el = document.getElementById('terrain-preview');
+    const nameEl = document.getElementById('terrain-current-name');
+    if (!el) return;
+    const p = _activeTerrainPreset;
+    if (nameEl) nameEl.textContent = p.name;
+    const preview = generateTerrainPattern(p.color, p.pattern, 48);
+    el.style.background = `url(${preview.source.toDataURL()})`;
+    el.style.backgroundSize = '48px 48px';
 }
 
 /* ================================================================
@@ -1189,18 +1789,87 @@ function handleContextAction(action) {
 function setEditMode(mode) {
     App.editMode = mode;
     document.body.classList.toggle('mode-simple', mode === 'simple');
-    const adv = ['terrain','wall','room','door','object','label'];
-    if (mode === 'simple' && adv.includes(App.activeTool)) setActiveTool('select');
+    document.body.classList.toggle('mode-advanced', mode === 'advanced');
+    const adv = ['wall','room','door','object','label','road'];
+    if (mode === 'simple') {
+        App.activeCategory = null;
+        document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
+            pg.classList.toggle('active', !!pg.dataset.prop && pg.dataset.prop === App.activeTool));
+        if (adv.includes(App.activeTool)) setActiveTool('select');
+    } else {
+        setActiveCategory(App.activeCategory || 'terrain');
+    }
 }
 function setGridType(type) { App.gridType = type; drawGrid(); }
 
+function setActiveCategory(catName) {
+    App.activeCategory = catName;
+
+    // ツールバー: カテゴリボタンのアクティブ状態
+    document.querySelectorAll('#toolbar .tb-btn[data-category]').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.category === catName));
+    document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach(btn =>
+        btn.classList.remove('active'));
+
+    // プロパティパネル: カテゴリグループを表示
+    document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
+        pg.classList.toggle('active', pg.dataset.categoryGroup === catName));
+
+    // カテゴリ別のデフォルトツール（常に選択ツール）
+    const defaultTool = 'select';
+
+    // 描画状態リセット
+    removePreview(); App._drawing = null; App._lineStart = null; App._pathPoints = []; App._polygonPoints = []; App._curvePoints = [];
+    App._exportMode = false; App._exportDrag = null;
+    App.canvas.isDrawingMode = false;
+    App.activeTool = defaultTool;
+
+    const isSelect = defaultTool === 'select';
+    App.canvas.selection = isSelect;
+    getMapLayers().forEach(obj => obj.set({ selectable: isSelect, evented: isSelect }));
+    if (!isSelect) App.canvas.discardActiveObject();
+
+    // カテゴリ別セットアップ
+    if (catName === 'terrain') {
+        const terrainLayer = getMapLayers().reverse().find(o => o._isTerrainLayer);
+        if (terrainLayer && !App.selectedLayerIds.includes(terrainLayer._layerId)) {
+            App.selectedLayerIds = [terrainLayer._layerId];
+            renderLayerList();
+        }
+        const cat = document.querySelector('input[name="terrain-cat"]:checked')?.value || 'indoor';
+        renderTerrainPresets(cat);
+    }
+
+    // ベクタータイルのアクティブ状態
+    document.querySelectorAll('[data-vector-tool]').forEach(tile =>
+        tile.classList.toggle('active', tile.dataset.vectorTool === defaultTool));
+
+    App.canvas.defaultCursor = 'default';
+    App.canvas.renderAll();
+    updateFillStrokeVisibility();
+    updateSelectionInfo();
+}
+
 function setActiveTool(toolName) {
-    removePreview(); App._drawing = null; App._lineStart = null; App._pathPoints = []; App._polygonPoints = [];
+    removePreview(); App._drawing = null; App._lineStart = null; App._pathPoints = []; App._polygonPoints = []; App._curvePoints = [];
+    App._exportMode = false; App._exportDrag = null; App._exportRect = null;
     App.canvas.isDrawingMode = false;
     App.activeTool = toolName;
 
-    document.querySelectorAll('#toolbar .tb-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === toolName));
-    document.querySelectorAll('#prop-panel .prop-group').forEach(pg => pg.classList.toggle('active', pg.dataset.prop === toolName));
+    // ツールバー: 簡易モードのツールボタンのみ更新
+    document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach(btn =>
+        btn.classList.toggle('active', btn.dataset.tool === toolName));
+
+    // プロパティパネル
+    if (App.editMode !== 'advanced' || App.activeCategory == null || toolName === 'select' || toolName === 'settings') {
+        // 簡易モード or 選択/設定ツール: data-prop グループを切替
+        document.querySelectorAll('#prop-panel .prop-group').forEach(pg =>
+            pg.classList.toggle('active', pg.dataset.prop === toolName));
+    } else {
+        // 高度モード: カテゴリパネルはそのまま、ベクタータイルのみ更新
+        document.querySelectorAll('[data-vector-tool]').forEach(tile =>
+            tile.classList.toggle('active', tile.dataset.vectorTool === toolName));
+    }
 
     const isSelect = toolName === 'select' || toolName === 'settings';
     App.canvas.selection = isSelect;
@@ -1210,12 +1879,21 @@ function setActiveTool(toolName) {
     });
     if (!isSelect) App.canvas.discardActiveObject();
 
-    // セルツール切替時: 最上位セルレイヤーを自動選択
+    // セルツール切替時のレイヤー自動選択
     if (toolName === 'cell') {
-        const cellLayer = getMapLayers().reverse().find(o => o._isCellLayer);
-        if (cellLayer && !App.selectedLayerIds.includes(cellLayer._layerId)) {
-            App.selectedLayerIds = [cellLayer._layerId];
-            renderLayerList();
+        if (App.activeCategory === 'terrain') {
+            // 地形カテゴリでは地形レイヤーを自動選択
+            const terrainLayer = getMapLayers().reverse().find(o => o._isTerrainLayer);
+            if (terrainLayer && !App.selectedLayerIds.includes(terrainLayer._layerId)) {
+                App.selectedLayerIds = [terrainLayer._layerId];
+                renderLayerList();
+            }
+        } else {
+            const cellLayer = getMapLayers().reverse().find(o => o._isCellLayer);
+            if (cellLayer && !App.selectedLayerIds.includes(cellLayer._layerId)) {
+                App.selectedLayerIds = [cellLayer._layerId];
+                renderLayerList();
+            }
         }
     }
 
@@ -1224,6 +1902,7 @@ function setActiveTool(toolName) {
         App.canvas.freeDrawingBrush.width = parseInt(document.getElementById('freehand-width')?.value) || 3;
         App.canvas.freeDrawingBrush.color = rgba(App.strokeColor, App.strokeOpacity);
     }
+    App.canvas.defaultCursor = 'default';
     App.canvas.renderAll();
     updateFillStrokeVisibility();
     updateSelectionInfo();
@@ -1240,7 +1919,7 @@ function handleImageUpload(e) {
         fabric.Image.fromURL(evt.target.result, img => {
             img.set({ left: 0, top: 0, objectCaching: false });
             addLayerObject('画像', img);
-        }, { crossOrigin: 'Anonymous' });
+        });
     };
     reader.readAsDataURL(file); e.target.value = '';
 }
@@ -1255,13 +1934,412 @@ function updateStatusBar() {
 }
 
 /* ================================================================
+   エクスポート
+================================================================ */
+function calcAutoExportRect() {
+    const objs = getMapLayers();
+    if (objs.length === 0) return null;
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    objs.forEach(o => {
+        const br = o.getBoundingRect(true);
+        const zoom = App.canvas.getZoom(), vpt = App.canvas.viewportTransform;
+        const oLeft = (br.left - vpt[4]) / zoom, oTop = (br.top - vpt[5]) / zoom;
+        x1 = Math.min(x1, oLeft); y1 = Math.min(y1, oTop);
+        x2 = Math.max(x2, oLeft + br.width / zoom); y2 = Math.max(y2, oTop + br.height / zoom);
+    });
+    const cs = App.cellSize;
+    x1 = Math.floor(x1 / cs) * cs; y1 = Math.floor(y1 / cs) * cs;
+    x2 = Math.ceil(x2 / cs) * cs; y2 = Math.ceil(y2 / cs) * cs;
+    return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+function renderExportRegion(r, includeGrid, bgMode) {
+    const savedVpt = App.canvas.viewportTransform.slice();
+    const savedW = App.canvas.width, savedH = App.canvas.height;
+    const savedGridColor = App.gridColor;
+    const savedBg = App.canvas.backgroundColor;
+    const savedRect = App._exportRect;
+    const savedMode = App._exportMode;
+    const savedSnap = App._snapPt;
+
+    if (!includeGrid) App.gridColor = 'rgba(0,0,0,0)';
+    if (bgMode === 'white') App.canvas.backgroundColor = '#ffffff';
+    else App.canvas.backgroundColor = null;
+    App._exportRect = null;
+    App._exportMode = false;
+    App._snapPt = null;
+
+    App.canvas.setDimensions({ width: Math.round(r.w), height: Math.round(r.h) });
+    App.canvas.setViewportTransform([1, 0, 0, 1, -r.x, -r.y]);
+    App.canvas.renderAll();
+
+    const dataURL = App.canvas.getElement().toDataURL('image/png');
+
+    App.gridColor = savedGridColor;
+    App.canvas.backgroundColor = savedBg;
+    App._exportRect = savedRect;
+    App._exportMode = savedMode;
+    App._snapPt = savedSnap;
+    App.canvas.setDimensions({ width: savedW, height: savedH });
+    App.canvas.setViewportTransform(savedVpt);
+    App.canvas.renderAll();
+    return dataURL;
+}
+
+function updateExportPreview() {
+    const r = App._exportRect;
+    if (!r || r.w < 1 || r.h < 1) return;
+    const includeGrid = document.getElementById('export-grid')?.checked ?? true;
+    const bg = document.querySelector('input[name="export-bg"]:checked')?.value || 'transparent';
+    const preview = renderExportRegion(r, includeGrid, bg);
+    document.getElementById('export-preview-img').src = preview;
+}
+
+function openExportModal() {
+    const r = App._exportRect;
+    if (!r || r.w < 1 || r.h < 1) return;
+    const cs = App.cellSize;
+    document.getElementById('export-modal-info').textContent =
+        `${(r.w/cs).toFixed(1)} × ${(r.h/cs).toFixed(1)} マス  (内部: ${Math.round(r.w)} × ${Math.round(r.h)} px)`;
+    const cellPxEl = document.getElementById('export-cell-px');
+    if (cellPxEl && !cellPxEl._userChanged) cellPxEl.value = cs;
+    updateExportOutputSize();
+    updateExportPreview();
+    IKLab.openModal('export-modal');
+    IKLab.initNumSpinners(document.getElementById('export-modal'));
+}
+
+function getExportScale() {
+    const cellPx = parseInt(document.getElementById('export-cell-px')?.value) || 50;
+    return cellPx / App.cellSize;
+}
+
+function updateExportOutputSize() {
+    const el = document.getElementById('export-output-size');
+    if (!el) return;
+    const r = App._exportRect;
+    if (!r) { el.textContent = ''; return; }
+    const scale = getExportScale();
+    el.textContent = `出力サイズ: ${Math.round(r.w * scale)} × ${Math.round(r.h * scale)} px`;
+}
+
+function handleExport() {
+    const r = App._exportRect;
+    if (!r || r.w < 1 || r.h < 1) { alert('出力範囲を指定してください'); return; }
+
+    const fmt = document.querySelector('input[name="export-format"]:checked').value;
+    const bg = document.querySelector('input[name="export-bg"]:checked').value;
+    const scale = getExportScale();
+    const includeGrid = document.getElementById('export-grid').checked;
+
+    const savedVpt = App.canvas.viewportTransform.slice();
+    const savedW = App.canvas.width, savedH = App.canvas.height;
+    const savedGridColor = App.gridColor;
+    const savedBg = App.canvas.backgroundColor;
+    const savedRect = App._exportRect;
+
+    if (!includeGrid) App.gridColor = 'rgba(0,0,0,0)';
+    if (bg === 'white') App.canvas.backgroundColor = '#ffffff';
+    else if (bg === 'transparent') App.canvas.backgroundColor = null;
+    App._exportRect = null;
+
+    const outW = Math.round(r.w * scale), outH = Math.round(r.h * scale);
+    App.canvas.setDimensions({ width: outW, height: outH });
+    App.canvas.setViewportTransform([scale, 0, 0, scale, -r.x * scale, -r.y * scale]);
+    App.canvas.renderAll();
+
+    if (fmt === 'svg') {
+        const svgStr = App.canvas.toSVG();
+        const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'trpg-map.svg'; a.click();
+        URL.revokeObjectURL(url);
+    } else {
+        // getElement() で実際の描画結果（グリッド含む）をキャプチャ
+        const mimeType = fmt === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const quality = fmt === 'jpeg' ? 0.92 : undefined;
+        const dataURL = App.canvas.getElement().toDataURL(mimeType, quality);
+        const a = document.createElement('a'); a.href = dataURL;
+        a.download = `trpg-map.${fmt === 'jpeg' ? 'jpg' : 'png'}`; a.click();
+    }
+
+    App.gridColor = savedGridColor;
+    App.canvas.backgroundColor = savedBg;
+    App._exportRect = savedRect;
+    App.canvas.setDimensions({ width: savedW, height: savedH });
+    App.canvas.setViewportTransform(savedVpt);
+    App.canvas.renderAll();
+    IKLab.closeModal('export-modal');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('export-btn')?.addEventListener('click', handleExport);
+    document.getElementById('export-cell-px')?.addEventListener('input', () => {
+        document.getElementById('export-cell-px')._userChanged = true;
+        updateExportOutputSize();
+    });
+    // プレビュー更新: グリッド・背景の変更を反映
+    document.getElementById('export-grid')?.addEventListener('change', updateExportPreview);
+    document.querySelectorAll('input[name="export-bg"]').forEach(r => r.addEventListener('change', updateExportPreview));
+});
+
+/* ================================================================
+   保存 / 読込  — IndexedDB
+================================================================ */
+const SAVE_CUSTOM_PROPS = ['_layerId','_isMapLayer','_layerName','_isCellLayer','_isTerrainLayer','_isMapText','_cellCol','_cellRow','_terrainId'];
+const DB_NAME = 'trpg-mapper';
+const DB_VERSION = 1;
+const STORE_NAME = 'maps';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+function dbGetAll() {
+    return openDB().then(db => new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    }));
+}
+
+function dbPut(record) {
+    return openDB().then(db => new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.put(record);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    }));
+}
+
+function dbDelete(id) {
+    return openDB().then(db => new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    }));
+}
+
+function buildSaveData() {
+    return {
+        version: 1,
+        cellSize: App.cellSize,
+        gridType: App.gridType,
+        gridColor: App.gridColor,
+        gridLineWidth: App.gridLineWidth,
+        gridDashArray: App.gridDashArray,
+        nextLayerId: App.nextLayerId,
+        layerCounters: App.layerCounters,
+        viewportTransform: App.canvas.viewportTransform.slice(),
+        canvas: App.canvas.toJSON(SAVE_CUSTOM_PROPS),
+    };
+}
+
+function restoreSaveData(data) {
+    App.cellSize = data.cellSize || 50;
+    App.gridType = data.gridType || 'square';
+    App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
+    App.gridLineWidth = data.gridLineWidth || 1;
+    App.gridDashArray = data.gridDashArray || null;
+    App.nextLayerId = data.nextLayerId || 10;
+    App.layerCounters = data.layerCounters || {};
+    App.selectedLayerIds = [];
+    App._pathPoints = []; App._polygonPoints = []; App._curvePoints = [];
+    App._lineStart = null; App._drawing = null;
+
+    App.canvas.loadFromJSON(data.canvas, function() {
+        if (data.viewportTransform) App.canvas.setViewportTransform(data.viewportTransform);
+        App.canvas.getObjects().forEach(obj => {
+            if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
+                obj._cellData = new Map();
+                obj.getObjects().forEach(r => {
+                    if (r._cellCol !== undefined && r._cellRow !== undefined) {
+                        obj._cellData.set(`${r._cellCol},${r._cellRow}`, r);
+                    }
+                });
+            }
+        });
+        renderLayerList();
+        App.canvas.renderAll();
+        drawGrid();
+    });
+}
+
+function generateThumbnail() {
+    const rect = calcAutoExportRect();
+    if (!rect) return null;
+    const savedVpt = App.canvas.viewportTransform.slice();
+    const savedW = App.canvas.width, savedH = App.canvas.height;
+    const savedRect = App._exportRect;
+    App._exportRect = null;
+
+    const thumbW = 160, thumbH = 120;
+    const scale = Math.min(thumbW / rect.w, thumbH / rect.h, 1);
+    App.canvas.setDimensions({ width: Math.round(rect.w * scale), height: Math.round(rect.h * scale) });
+    App.canvas.setViewportTransform([scale, 0, 0, scale, -rect.x * scale, -rect.y * scale]);
+    App.canvas.renderAll();
+    const url = App.canvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 1 });
+
+    App._exportRect = savedRect;
+    App.canvas.setDimensions({ width: savedW, height: savedH });
+    App.canvas.setViewportTransform(savedVpt);
+    App.canvas.renderAll();
+    return url;
+}
+
+async function saveNewProject(name) {
+    const record = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: name || `マップ ${new Date().toLocaleDateString('ja-JP')}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        thumbnail: generateThumbnail(),
+        data: buildSaveData(),
+    };
+    await dbPut(record);
+    return record;
+}
+
+async function overwriteProject(id, name) {
+    const record = {
+        id, name,
+        updatedAt: new Date().toISOString(),
+        thumbnail: generateThumbnail(),
+        data: buildSaveData(),
+    };
+    // createdAt を維持
+    const all = await dbGetAll();
+    const existing = all.find(r => r.id === id);
+    record.createdAt = existing?.createdAt || record.updatedAt;
+    await dbPut(record);
+}
+
+function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+async function renderSaveList() {
+    const list = document.getElementById('save-list');
+    const empty = document.getElementById('save-empty');
+    const records = await dbGetAll();
+    records.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+
+    list.innerHTML = '';
+    if (records.length === 0) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+
+    records.forEach(rec => {
+        const item = document.createElement('div');
+        item.className = 'save-item';
+        item.innerHTML = `
+            <img class="save-thumb" src="${rec.thumbnail || ''}" alt="" />
+            <div class="save-info">
+                <div class="save-name">${escHtml(rec.name)}</div>
+                <div class="save-date">更新: ${fmtDate(rec.updatedAt)}</div>
+            </div>
+            <div class="save-actions">
+                <button title="開く" data-act="open"><span class="material-icons">folder_open</span></button>
+                <button title="上書き保存" data-act="overwrite"><span class="material-icons">save</span></button>
+                <button title="複製" data-act="dup"><span class="material-icons">content_copy</span></button>
+                <button title="名前変更" data-act="rename"><span class="material-icons">edit</span></button>
+                <button title="削除" data-act="delete"><span class="material-icons">delete</span></button>
+            </div>`;
+
+        item.querySelector('[data-act="open"]').addEventListener('click', () => {
+            restoreSaveData(rec.data);
+            IKLab.closeModal('save-modal');
+        });
+        item.querySelector('[data-act="overwrite"]').addEventListener('click', async () => {
+            await overwriteProject(rec.id, rec.name);
+            renderSaveList();
+        });
+        item.querySelector('[data-act="dup"]').addEventListener('click', async () => {
+            await saveNewProject(rec.name + ' (コピー)');
+            renderSaveList();
+        });
+        item.querySelector('[data-act="rename"]').addEventListener('click', () => {
+            const newName = prompt('新しい名前', rec.name);
+            if (newName && newName !== rec.name) {
+                rec.name = newName;
+                dbPut(rec).then(() => renderSaveList());
+            }
+        });
+        item.querySelector('[data-act="delete"]').addEventListener('click', async () => {
+            if (!confirm(`「${rec.name}」を削除しますか？`)) return;
+            await dbDelete(rec.id);
+            renderSaveList();
+        });
+        list.appendChild(item);
+    });
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function openSaveModal() {
+    await renderSaveList();
+    IKLab.openModal('save-modal');
+}
+
+function handleExportJSON() {
+    const data = buildSaveData();
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `trpg-map-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function handleImportJSON(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.canvas) { alert('無効なファイル形式です'); return; }
+            restoreSaveData(data);
+            IKLab.closeModal('save-modal');
+        } catch (err) { alert('読込エラー: ' + err.message); }
+    };
+    reader.readAsText(file);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('save-new-btn')?.addEventListener('click', async () => {
+        const name = prompt('マップ名', `マップ ${new Date().toLocaleDateString('ja-JP')}`);
+        if (!name) return;
+        await saveNewProject(name);
+        renderSaveList();
+    });
+    document.getElementById('save-export-btn')?.addEventListener('click', handleExportJSON);
+    document.getElementById('save-import-btn')?.addEventListener('click', () => document.getElementById('save-import-input').click());
+    document.getElementById('save-import-input')?.addEventListener('change', e => { if (e.target.files[0]) handleImportJSON(e.target.files[0]); e.target.value = ''; });
+});
+
+/* ================================================================
    キーボードショートカット
 ================================================================ */
 document.addEventListener('keydown', e => {
     if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
     const key = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey;
     if (ctrl && key === 'z') { e.preventDefault(); return; }
-    if (ctrl && key === 's') { e.preventDefault(); return; }
+    if (ctrl && key === 's') { e.preventDefault(); openSaveModal(); return; }
     if (ctrl && key === 'g') { e.preventDefault(); return; }
 
     if (e.key === 'Enter' && App.activeTool === 'path' && App._pathPoints.length >= 2) {
@@ -1274,22 +2352,62 @@ document.addEventListener('keydown', e => {
         }));
         App._pathPoints = []; e.preventDefault(); return;
     }
-    if (e.key === 'Enter' && App.activeTool === 'polygon' && App._polygonPoints.length >= 3) {
+    if (e.key === 'Enter' && App._polygonPoints.length >= 3 && App.activeTool === 'polygon') {
         removePreview();
-        addLayerObject('多角形', new fabric.Polygon(App._polygonPoints, {
-            stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
-            strokeDashArray: App.strokeDashArray,
-            fill: rgba(App.fillColor, App.fillOpacity),
-            selectable: false, evented: false, objectCaching: false,
-        }));
+        if (App.activeCategory === 'terrain') {
+            addTerrainShape(new fabric.Polygon(App._polygonPoints, {
+                fill: getTerrainFill(_activeTerrainPreset), stroke: null, strokeWidth: 0,
+                objectCaching: false, _terrainId: _activeTerrainPreset.id,
+            }));
+        } else {
+            addLayerObject('多角形', new fabric.Polygon(App._polygonPoints, {
+                stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+                strokeDashArray: App.strokeDashArray,
+                fill: rgba(App.fillColor, App.fillOpacity),
+                selectable: false, evented: false, objectCaching: false,
+            }));
+        }
         App._polygonPoints = []; e.preventDefault(); return;
     }
-    if (e.key === 'Escape') { removePreview(); App._pathPoints = []; App._polygonPoints = []; App._lineStart = null; App._drawing = null; return; }
+    if (e.key === 'Enter' && App._curvePoints.length >= 2 && App.activeTool === 'curve') {
+        removePreview();
+        const d = buildBezierPath(App._curvePoints);
+        if (d) {
+            if (App.activeCategory === 'terrain') {
+                addTerrainShape(new fabric.Path(d, {
+                    fill: getTerrainFill(_activeTerrainPreset), stroke: null, strokeWidth: 0,
+                    objectCaching: false, _terrainId: _activeTerrainPreset.id,
+                }));
+            } else {
+                addLayerObject('曲線', new fabric.Path(d, {
+                    stroke: rgba(App.strokeColor, App.strokeOpacity), strokeWidth: App.strokeWidth,
+                    strokeDashArray: App.strokeDashArray,
+                    fill: '',
+                    objectCaching: false,
+                }));
+            }
+        }
+        App._curvePoints = []; e.preventDefault(); return;
+    }
+    if (e.key === 'Escape') {
+        if (App._exportMode) { App._exportMode = false; App._exportDrag = null; App._exportRect = null; App.canvas.defaultCursor = 'default'; App.canvas.requestRenderAll(); return; }
+        removePreview(); App._pathPoints = []; App._polygonPoints = []; App._curvePoints = []; App._lineStart = null; App._drawing = null; return;
+    }
 
-    const shortcuts = { v:'select', b:'cell', r:'rect', e:'ellipse', l:'line', p:'path', g:'polygon', d:'freehand', t:'text', i:'image', w:'wall' };
+    const shortcuts = { v:'select', b:'cell', r:'rect', e:'ellipse', l:'line', p:'path', g:'polygon', d:'freehand', t:'text', i:'image', w:'wall', c:'curve' };
     if (shortcuts[key]) {
-        const adv = ['terrain','wall','room','door','object','label'];
+        const adv = ['wall','room','door','object','label','road'];
         if (adv.includes(shortcuts[key]) && App.editMode === 'simple') return;
+        if (App.editMode === 'advanced') {
+            const vectorTools = ['rect','ellipse','line','path','polygon','freehand','text','image','curve'];
+            const catMap = { w:'wall' };
+            if (catMap[key]) {
+                setActiveCategory(catMap[key]); return;
+            } else if (vectorTools.includes(shortcuts[key])) {
+                if (App.activeCategory !== 'vector') setActiveCategory('vector');
+                setActiveTool(shortcuts[key]); return;
+            }
+        }
         setActiveTool(shortcuts[key]); return;
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && App.activeTool === 'select') {
@@ -1310,17 +2428,55 @@ document.addEventListener('DOMContentLoaded', () => {
     initPickr();
     initCanvas();
 
-    // ツールバー
-    document.querySelectorAll('#toolbar .tb-btn').forEach(btn => {
+    // ツールバー (ツールボタン)
+    document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.tool === 'save') { IKLab.openModal('save-modal'); return; }
+            // 高度モードで文字/画像を直接クリック → カテゴリを解除してpropパネルを表示
+            if (App.editMode === 'advanced' && ['text','image'].includes(btn.dataset.tool)) {
+                App.activeCategory = null;
+                document.querySelectorAll('#toolbar .tb-btn[data-category]').forEach(b => b.classList.remove('active'));
+            }
             setActiveTool(btn.dataset.tool);
         });
     });
+    // ツールバー (高度モード: カテゴリボタン)
+    document.querySelectorAll('#toolbar .tb-btn[data-category]').forEach(btn => {
+        btn.addEventListener('click', () => setActiveCategory(btn.dataset.category));
+    });
 
-    // モード切替
-    document.querySelectorAll('input[name="edit-mode"]').forEach(r => r.addEventListener('change', () => setEditMode(r.value)));
-    document.querySelectorAll('input[name="grid-type"]').forEach(r => r.addEventListener('change', () => setGridType(r.value)));
+    // 地形サブツールタイル
+    document.querySelectorAll('[data-terrain-sub]').forEach(tile => {
+        tile.addEventListener('click', () => {
+            const sub = tile.dataset.terrainSub;
+            const radio = document.getElementById('tt-' + sub);
+            if (radio) radio.checked = true;
+            document.querySelectorAll('[data-terrain-sub]').forEach(t =>
+                t.classList.toggle('active', t.dataset.terrainSub === sub));
+            // pen/eraser は cell ツール、その他は対応するベクターツールに統合
+            const toolMap = { pen: 'cell', eraser: 'cell', rect: 'rect', ellipse: 'ellipse', polygon: 'polygon', curve: 'curve' };
+            setActiveTool(toolMap[sub] || 'cell');
+        });
+    });
+
+    // ベクターサブツールタイル（vector/wall/room/road カテゴリ内）
+    document.querySelectorAll('[data-vector-tool]').forEach(tile => {
+        tile.addEventListener('click', () => setActiveTool(tile.dataset.vectorTool));
+    });
+
+    document.getElementById('tb-export')?.addEventListener('click', () => {
+        App._exportMode = true;
+        App._exportDrag = null;
+        App._exportRect = null;
+        App.canvas.defaultCursor = 'crosshair';
+        App.canvas.requestRenderAll();
+    });
+    document.getElementById('tb-save')?.addEventListener('click', openSaveModal);
+
+    // モード切替・グリッドタイプ（event delegation: ヘッダーが遅延挿入されるため）
+    document.addEventListener('change', e => {
+        if (e.target.name === 'edit-mode') setEditMode(e.target.value);
+        else if (e.target.name === 'grid-type') setGridType(e.target.value);
+    });
 
     // 線幅 — ダッシュ配列も現在のスタイルに合わせて再計算 + 選択中オブジェクトに即適用
     document.getElementById('stroke-width').addEventListener('input', function() {
@@ -1328,7 +2484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const style = document.querySelector('input[name="stroke-style"]:checked')?.value || 'solid';
         App.strokeDashArray = getDashArray(style, App.strokeWidth);
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
                 .forEach(o => o.set({ strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray }));
             App.canvas.renderAll();
         }
@@ -1338,11 +2494,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="stroke-style"]').forEach(r => r.addEventListener('change', () => {
         App.strokeDashArray = getDashArray(r.value, App.strokeWidth);
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer)
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
                 .forEach(o => o.set({ strokeDashArray: App.strokeDashArray }));
             App.canvas.renderAll();
         }
     }));
+
+    // 角丸
+    document.getElementById('corner-radius').addEventListener('input', function() {
+        App.cornerRadius = parseInt(this.value) || 0;
+        if (App.activeTool === 'select') {
+            App.canvas.getActiveObjects().filter(o => o._isMapLayer && o.type === 'rect')
+                .forEach(o => o.set({ rx: App.cornerRadius, ry: App.cornerRadius }));
+            App.canvas.renderAll();
+        }
+    });
 
     // グリッド設定
     document.getElementById('grid-line-width').addEventListener('input', function() {
@@ -1369,6 +2535,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (App.canvas.isDrawingMode) App.canvas.freeDrawingBrush.width = parseInt(this.value) || 3;
     });
 
+    // スナップ設定
+    document.getElementById('snap-enabled')?.addEventListener('change', function() {
+        App.snapEnabled = this.checked;
+        document.getElementById('snap-targets').classList.toggle('disabled', !this.checked);
+    });
+    document.getElementById('snap-intersection')?.addEventListener('change', function() { App.snapIntersection = this.checked; });
+    document.getElementById('snap-center')?.addEventListener('change', function() { App.snapCenter = this.checked; });
+    document.getElementById('snap-midpoint')?.addEventListener('change', function() { App.snapMidpoint = this.checked; });
+
     // 画像
     document.getElementById('image-upload-btn')?.addEventListener('click', () => document.getElementById('image-upload').click());
     document.getElementById('image-upload')?.addEventListener('change', handleImageUpload);
@@ -1381,6 +2556,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // セルレイヤー追加
     document.getElementById('add-cell-layer')?.addEventListener('click', createCellLayer);
+
+    // 地形ツール
+    document.getElementById('add-terrain-layer')?.addEventListener('click', createTerrainLayer);
+    document.querySelectorAll('input[name="terrain-cat"]').forEach(r => r.addEventListener('change', () => {
+        renderTerrainPresets(r.value);
+    }));
+    document.querySelectorAll('input[name="terrain-tool"]').forEach(r => r.addEventListener('change', () => {
+        // サブツール切替時に描画中の状態をリセット + スナップ表示更新
+        removePreview(); App._drawing = null; App._polygonPoints = []; App._curvePoints = [];
+        updateFillStrokeVisibility();
+    }));
 
     // レイヤー削除
     document.getElementById('layer-delete')?.addEventListener('click', () => {
@@ -1407,6 +2593,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('click', e => { if (!e.target.closest('#ctx-menu')) hideContextMenu(); });
     document.addEventListener('contextmenu', e => { if (!e.target.closest('#layer-list') && !e.target.closest('.canvas-container')) hideContextMenu(); });
+
+    // 初期モード適用（ツールバー表示 + カテゴリ初期化）
+    setEditMode(App.editMode);
 });
         </script>
     </body>
