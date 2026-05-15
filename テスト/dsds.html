@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Fabric.js SVG Path Sampling</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background-color: #f0f0f0;
+            }
+            canvas {
+                border: 1px solid #ccc;
+                background-color: none;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="myCanvas" width="900" height="1800"></canvas>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+        <script>
+            // ここにJavaScriptコードを記述します
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const canvas = new fabric.Canvas("myCanvas");
+
+                canvas.on("mouse:wheel", function (opt) {
+                    var delta = opt.e.deltaY;
+                    var zoom = canvas.getZoom();
+                    zoom *= 0.999 ** delta;
+                    if (zoom > 20) zoom = 20;
+                    if (zoom < 0.01) zoom = 0.01;
+                    canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+                    opt.e.preventDefault();
+                    opt.e.stopPropagation();
+                });
+                canvas.on("mouse:down", function (opt) {
+                    var evt = opt.e;
+                    if (evt.altKey === true) {
+                        this.isDragging = true;
+                        this.selection = false;
+                        this.lastPosX = evt.clientX;
+                        this.lastPosY = evt.clientY;
+                    }
+                });
+                canvas.on("mouse:move", function (opt) {
+                    if (this.isDragging) {
+                        var e = opt.e;
+                        var vpt = this.viewportTransform;
+                        vpt[4] += e.clientX - this.lastPosX;
+                        vpt[5] += e.clientY - this.lastPosY;
+                        this.requestRenderAll();
+                        this.lastPosX = e.clientX;
+                        this.lastPosY = e.clientY;
+                    }
+                });
+                canvas.on("mouse:up", function (opt) {
+                    // on mouse up we want to recalculate new interaction
+                    // for all objects, so we call setViewportTransform
+                    this.setViewportTransform(this.viewportTransform);
+                    this.isDragging = false;
+                    this.selection = true;
+                });
+
+                /**
+                 * D形式のSVGパスを等間隔にサンプリングし、元のSVGの頂点も必ず含めます。
+                 * また、アンカーポイントに近いサンプリング点を削除し、処理を軽量化します。
+                 *
+                 * @param {string} svgDPath D形式のSVGパスデータ（例: "M10 10 L100 10 L100 100 Z"）
+                 * @param {number} intervalPx サンプリング間隔（ピクセル単位）
+                 * @returns {Array<{x: number, y: number}>} サンプリングされた点の座標の配列
+                 */
+                function sampleSvgPath(svgDPath, intervalPx) {
+                    if (typeof svgDPath !== "string" || svgDPath.trim() === "") {
+                        console.error("無効なSVG Dパスが指定されました。");
+                        return [];
+                    }
+                    if (typeof intervalPx !== "number" || intervalPx <= 0) {
+                        console.error("無効なサンプリング間隔が指定されました。正の数を指定してください。");
+                        return [];
+                    }
+
+                    const minDistanceToAnchor = intervalPx / 2; // アンカーポイントからの最小距離
+
+                    // 一時的なSVG要素を作成し、DOMに追加します。
+                    const svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    svgElement.style.position = "absolute";
+                    svgElement.style.width = "0";
+                    svgElement.style.height = "0";
+                    svgElement.style.overflow = "hidden";
+                    document.body.appendChild(svgElement);
+
+                    const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    pathElement.setAttribute("d", svgDPath);
+                    svgElement.appendChild(pathElement);
+
+                    const allPoints = new Map(); // 重複を避けるためにMapを使用し、キーは"x,y"形式
+                    const anchorPoints = []; // アンカーポイントを別途保持
+
+                    try {
+                        const totalLength = pathElement.getTotalLength();
+
+                        // 1. 等間隔のサンプリング点を追加
+                        for (let currentLength = 0; currentLength <= totalLength; currentLength += intervalPx) {
+                            const point = pathElement.getPointAtLength(currentLength);
+                            const key = `${Math.round(point.x * 1000) / 1000},${Math.round(point.y * 1000) / 1000}`;
+                            allPoints.set(key, { x: point.x, y: point.y, length: currentLength, isAnchor: false });
+                        }
+
+                        // 2. 元のパスの頂点（アンカーポイント）を抽出し、追加
+                        // ここではSVGPathElement.pathSegListの代替として、D属性を簡易的にパースします。
+                        // より堅牢な解析が必要な場合は、専用のライブラリ（例: svg-path-parser）の利用を検討してください。
+                        const pathCommands = svgDPath.match(/[MmLlHhVvCcSsQqTtAaZz][^MmLlHhVvCcSsQqTtAaZz]*/g) || [];
+                        let currentX = 0;
+                        let currentY = 0;
+                        let startX = 0;
+                        let startY = 0;
+
+                        pathCommands.forEach((cmdStr) => {
+                            const command = cmdStr[0];
+                            const params = cmdStr
+                                .substring(1)
+                                .trim()
+                                .split(/[\s,]+/)
+                                .map(Number)
+                                .filter((n) => !isNaN(n));
+
+                            let lastX = currentX; // 前のコマンドの終了点
+                            let lastY = currentY; // 前のコマンドの終了点
+
+                            switch (command) {
+                                case "M": // moveto (absolute)
+                                    currentX = params[0];
+                                    currentY = params[1];
+                                    startX = currentX;
+                                    startY = currentY;
+                                    break;
+                                case "m": // moveto (relative)
+                                    currentX += params[0];
+                                    currentY += params[1];
+                                    startX = currentX;
+                                    startY = currentY;
+                                    break;
+                                case "L": // lineto (absolute)
+                                    currentX = params[0];
+                                    currentY = params[1];
+                                    break;
+                                case "l": // lineto (relative)
+                                    currentX += params[0];
+                                    currentY += params[1];
+                                    break;
+                                case "H": // horizontal lineto (absolute)
+                                    currentX = params[0];
+                                    break;
+                                case "h": // horizontal lineto (relative)
+                                    currentX += params[0];
+                                    break;
+                                case "V": // vertical lineto (absolute)
+                                    currentY = params[0];
+                                    break;
+                                case "v": // vertical lineto (relative)
+                                    currentY += params[0];
+                                    break;
+                                case "C": // curveto (absolute)
+                                    currentX = params[4];
+                                    currentY = params[5];
+                                    break;
+                                case "c": // curveto (relative)
+                                    currentX += params[4];
+                                    currentY += params[5];
+                                    break;
+                                case "S": // smooth curveto (absolute)
+                                    currentX = params[2];
+                                    currentY = params[3];
+                                    break;
+                                case "s": // smooth curveto (relative)
+                                    currentX += params[2];
+                                    currentY += params[3];
+                                    break;
+                                case "Q": // quadratic bezier curveto (absolute)
+                                    currentX = params[2];
+                                    currentY = params[3];
+                                    break;
+                                case "q": // quadratic bezier curveto (relative)
+                                    currentX += params[2];
+                                    currentY += params[3];
+                                    break;
+                                case "T": // smooth quadratic bezier curveto (absolute)
+                                    currentX = params[0];
+                                    currentY = params[1];
+                                    break;
+                                case "t": // smooth quadratic bezier curveto (relative)
+                                    currentX += params[0];
+                                    currentY += params[1];
+                                    break;
+                                case "A": // elliptical arc (absolute)
+                                    currentX = params[5];
+                                    currentY = params[6];
+                                    break;
+                                case "a": // elliptical arc (relative)
+                                    currentX += params[5];
+                                    currentY += params[6];
+                                    break;
+                                case "Z": // closepath
+                                case "z": // closepath
+                                    currentX = startX;
+                                    currentY = startY;
+                                    break;
+                                default:
+                                    return;
+                            }
+                            // アンカーポイントとして追加
+                            const anchorPoint = { x: currentX, y: currentY };
+                            const key = `${Math.round(anchorPoint.x * 1000) / 1000},${Math.round(anchorPoint.y * 1000) / 1000}`;
+
+                            // すでにそのアンカーポイントがMapに存在するかどうかを確認
+                            if (!allPoints.has(key) || !allPoints.get(key).isAnchor) {
+                                // 新しいアンカーポイント、または既存の点がアンカーポイントとしてマークされていない場合
+                                allPoints.set(key, { x: anchorPoint.x, y: anchorPoint.y, length: -1, isAnchor: true });
+                                anchorPoints.push(allPoints.get(key)); // アンカーポイントリストに追加
+                            }
+                        });
+
+                        // 3. アンカーポイントの正確なパス長を取得（軽量化）
+                        // 各アンカーポイントについて、パスの全長を二分探索でパス長を特定します。
+                        // これにより、getPointAtLengthを何度も呼び出すよりも効率的になります。
+                        anchorPoints.forEach((p) => {
+                            if (p.length === -1) {
+                                // まだパス長が設定されていないアンカーポイント
+                                let low = 0;
+                                let high = totalLength;
+                                let foundLength = -1;
+                                const tolerance = 0.01; // 許容誤差
+
+                                // 二分探索でパス上の点の位置を特定
+                                for (let i = 0; i < 100; i++) {
+                                    // 100回程度で十分な精度が得られるはず
+                                    const mid = (low + high) / 2;
+                                    const pointAtMid = pathElement.getPointAtLength(mid);
+                                    const dist = Math.sqrt(Math.pow(pointAtMid.x - p.x, 2) + Math.pow(pointAtMid.y - p.y, 2));
+
+                                    if (dist < tolerance) {
+                                        foundLength = mid;
+                                        break;
+                                    }
+
+                                    // 次の点を予測して探索範囲を絞る（簡易的な最適化）
+                                    // この部分は複雑なので、シンプルに二分探索を継続
+                                    if (mid < totalLength / 2) {
+                                        // パスの前半
+                                        if (pointAtMid.x < p.x) low = mid;
+                                        else high = mid;
+                                    } else {
+                                        // パスの後半
+                                        if (pointAtMid.x > p.x) high = mid;
+                                        else low = mid;
+                                    }
+                                }
+                                p.length = foundLength !== -1 ? foundLength : 0; // 見つからない場合は0（開始点）とする
+                            }
+                        });
+
+                        // 4. アンカーポイントから近すぎるサンプリング点を削除
+                        const finalPoints = [];
+                        allPoints.forEach((point) => {
+                            // アンカーポイント自体は常に含める
+                            if (point.isAnchor) {
+                                finalPoints.push(point);
+                                return;
+                            }
+
+                            let isTooCloseToAnchor = false;
+                            for (const anchor of anchorPoints) {
+                                const dist = Math.sqrt(Math.pow(point.x - anchor.x, 2) + Math.pow(point.y - anchor.y, 2));
+                                if (dist <= minDistanceToAnchor) {
+                                    isTooCloseToAnchor = true;
+                                    break;
+                                }
+                            }
+
+                            if (!isTooCloseToAnchor) {
+                                finalPoints.push(point);
+                            }
+                        });
+
+                        // 5. パス長でソート
+                        finalPoints.sort((a, b) => a.length - b.length);
+
+                        // lengthプロパティとisAnchorプロパティは返り値に不要なので削除
+                        return finalPoints.map(({ x, y }) => ({ x, y }));
+                    } catch (error) {
+                        console.error("SVGパスのサンプリング中にエラーが発生しました:", error);
+                        return [];
+                    } finally {
+                        // 使用した一時的なSVG要素をDOMから削除します。
+                        document.body.removeChild(svgElement);
+                    }
+                }
+
+                const svgPathData = "M10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80";
+                const complexPath3 = "M20 20 l 50 0 h 50 v 50 l -50 0 c -20 -20, -20 20, 0 0 s 50 50, 0 100 a 50 50 0 1 0 100 0 l 50 -50 C 250 100, 250 20, 200 20 s -50 50, 0 100 v -50 h -50 Z";
+
+                // Fabric.jsのパスオブジェクトを作成
+                const path = new fabric.Path(complexPath3, {
+                    fill: "",
+                    stroke: "blue",
+                    strokeWidth: 2,
+                    left: 50,
+                    top: 50,
+                });
+
+                canvas.add(path);
+                canvas.renderAll();
+
+                // パスから50px間隔で点をサンプリング
+                const sampledPoints = sampleSvgPath(complexPath3, 20);
+                console.log("サンプリングされた点:", sampledPoints);
+
+                // サンプリングされた点をキャンバス上に描画して確認
+                let points = [];
+                sampledPoints.forEach((point) => {
+                    const circle = new fabric.Circle({
+                        radius: 3,
+                        fill: "red",
+                        left: point.x,
+                        top: point.y,
+                        originX: "center",
+                        originY: "center",
+                    });
+                    points.push(circle);
+                });
+                const pointGroup = new fabric.Group(points, {
+                    left: 47.5,
+                    top: 47.5,
+                });
+                canvas.add(pointGroup);
+                canvas.renderAll();
+            });
+        </script>
+    </body>
+</html>

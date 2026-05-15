@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Fabric.js 画像パターン敷き詰めたRect</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+        <style>
+            body {
+                font-family: sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-top: 20px;
+            }
+            canvas {
+                border: 1px solid #ccc;
+                margin-top: 20px;
+            }
+            input [type="file"] {
+                margin-bottom: 10px;
+            }
+            button {
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>画像をパターンで敷き詰めたRectを作成</h1>
+
+        <input type="file" id="imageLoader" accept="image/*" />
+        <button id="clearCanvas">キャンバスをクリア</button>
+
+        <canvas id="myCanvas" width="1500" height="750"></canvas>
+
+        <script>
+            const canvas = new fabric.Canvas("myCanvas");
+            const imageLoader = document.getElementById("imageLoader");
+            const clearCanvasButton = document.getElementById("clearCanvas");
+            let currentPattern; // 現在のパターンを保持
+
+            imageLoader.addEventListener("change", handleImage, false);
+            clearCanvasButton.addEventListener("click", clearCanvas);
+
+            function handleImage(e) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const imgObj = new Image();
+                    imgObj.src = event.target.result;
+                    imgObj.onload = function () {
+                        // 画像からパターンを作成
+                        currentPattern = new fabric.Pattern({
+                            source: imgObj,
+                            repeat: "repeat",
+                        });
+                        const rect = new fabric.Rect({
+                            width: canvas.width,
+                            height: canvas.height,
+                            fill: currentPattern,
+                        });
+                        canvas.add(rect);
+                        createBlurredShape();
+                    };
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+
+            function createBlurredShape() {
+                // 黒いパス図形を作成 (例として星形)
+                const path = new fabric.Path("M 100 10 L 130 70 L 190 80 L 145 130 L 160 190 L 100 160 L 40 190 L 55 130 L 10 80 L 70 70 Z");
+                path.set({
+                    fill: "black",
+                    left: 50,
+                    top: 50,
+                });
+
+                // 図形のバウンディングボックスを取得
+                const boundingBox = path.getBoundingRect();
+                const padding = 20; // 余白
+
+                // 画像化する範囲を計算
+                const imgLeft = boundingBox.left - padding;
+                const imgTop = boundingBox.top - padding;
+                const imgWidth = boundingBox.width + 2 * padding;
+                const imgHeight = boundingBox.height + 2 * padding;
+
+                // 一時的なキャンバスを作成して描画
+                const tempCanvas = new fabric.Canvas();
+                tempCanvas.setDimensions({
+                    width: imgWidth,
+                    height: imgHeight,
+                });
+
+                const clonedPath = fabric.util.object.clone(path);
+                clonedPath.set({
+                    left: path.left - imgLeft,
+                    top: path.top - imgTop,
+                });
+                tempCanvas.add(clonedPath);
+                tempCanvas.renderAll();
+
+                // ImageDataとして取得
+                const imageDataURL = tempCanvas.toDataURL();
+
+                // ImageDataからfabric.Imageを作成
+                fabric.Image.fromURL(imageDataURL, (img) => {
+                    // 4. Imageオブジェクトにぼかしフィルターを適用
+                    const blurFilter = new fabric.Image.filters.Blur({
+                        blur: 0.8, // ぼかしの強度 (0から1の範囲)
+                    });
+                    img.filters.push(blurFilter);
+                    img.applyFilters();
+                    img.globalCompositeOperation = "destination-in";
+
+                    // ぼかした画像をキャンバスに追加
+                    canvas.add(img);
+                    canvas.renderAll();
+                });
+                // path.set({
+                //     shadow: new fabric.Shadow({
+                //         color: "rgba(0,0,0)", // 影の色（黒で半透明）
+                //         blur: 100, // ぼかしの強さ
+                //         offsetX: 0, // X軸方向のオフセット
+                //         offsetY: 0, // Y軸方向のオフセット
+                //     }),
+                //     globalCompositeOperation: "destination-in",
+                // });
+                // canvas.add(path);
+                // canvas.renderAll();
+            }
+
+            function clearCanvas() {
+                canvas.clear();
+            }
+        </script>
+    </body>
+</html>

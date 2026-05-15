@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="ja" data-theme="dark" prefix="og: http://ogp.me/ns#">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ロールテーブル作成 | 違法建築のTRPGラボ</title>
+        <meta name="description" content="BCDiceで使えるロールテーブルをGUIで作成するツール。" />
+        <link rel="icon" href="favicon.ico" />
+        <meta property="og:url" content="https://ihoukentiku.github.io/roll_table.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="ロールテーブル作成 | 違法建築のTRPGラボ" />
+        <meta property="og:site_name" content="違法建築のTRPGラボ" />
+        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@ihoukentiku" />
+        <meta name="twitter:creator" content="@ihoukentiku" />
+        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-T4SJ8S23EC');
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+        <link rel="stylesheet" href="common.css" />
+
+        <style>
+            :root {
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --input-bd: rgba(33, 150, 243, 0.3);
+                --page-width: 700px;
+                --gap: 10px;
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.05);
+                --input-bd: rgba(33, 150, 243, 0.4);
+            }
+
+            /* ページスクロール */
+            html,
+            body {
+                height: auto;
+                overflow-x: hidden;
+            }
+            body {
+                padding-bottom: 3rem;
+            }
+
+            #main {
+                max-width: var(--page-width);
+                margin: 0 auto;
+                padding: var(--gap) clamp(0.5rem, 2vw, 1rem);
+                display: flex;
+                flex-direction: column;
+                gap: var(--gap);
+            }
+
+            /* カード共通 */
+            .rt-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                backdrop-filter: blur(6px);
+            }
+
+            /* ===============================================================
+           セットアップ
+        =============================================================== */
+            #card-setup {
+                padding: 10px 14px;
+            }
+            .setup-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .setup-label {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.1em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+            .setup-name-group {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                flex: 1;
+                min-width: 160px;
+            }
+            #input-name {
+                flex: 1;
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: var(--r);
+                color: var(--text-bright);
+                padding: 0.3rem 0.6rem;
+                font-size: 0.88rem;
+                font-family: var(--font-main);
+                transition: border-color var(--t);
+            }
+            #input-name:focus {
+                outline: none;
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.1);
+            }
+
+            .dice-group {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+            .dice-sep {
+                font-family: var(--font-mono);
+                font-weight: 700;
+                color: var(--cyan);
+                font-size: 1rem;
+            }
+            .dice-input {
+                width: 52px;
+                text-align: center;
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: var(--r);
+                color: var(--text-bright);
+                padding: 0.3rem 0.4rem;
+                font-family: var(--font-mono);
+                font-size: 0.9rem;
+                transition: border-color var(--t);
+                /* ネイティブスピナー非表示 */
+                -moz-appearance: textfield;
+            }
+            .dice-input::-webkit-inner-spin-button,
+            .dice-input::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            .dice-input:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+
+            /* ===============================================================
+           グラフエリア（折れ線 + 帯）
+        =============================================================== */
+            #card-graph {
+                overflow: hidden;
+            }
+            .graph-inner {
+                overflow-x: auto;
+                overflow-y: hidden;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+                padding: 10px 10px 6px;
+                position: relative;
+            }
+            #graph-wrap {
+                position: relative;
+                /* 幅はJSで動的に設定 */
+            }
+
+            /* 折れ線グラフキャンバス */
+            #line-canvas {
+                display: block;
+                width: 100%;
+            }
+
+            /* 帯グラフ */
+            #band-area {
+                position: relative;
+                height: 38px;
+                margin-top: 4px;
+                border-radius: 4px;
+                overflow: visible;
+                cursor: crosshair;
+                touch-action: none;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+            /* 未割り当て背景 */
+            #band-area::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 4px, transparent 4px, transparent 8px);
+                border-radius: 4px;
+                border: 1px solid var(--border);
+            }
+
+            .band-seg {
+                position: absolute;
+                top: 0;
+                height: 100%;
+                border-radius: 3px;
+                transition: filter 0.1s;
+                cursor: grab;
+                box-sizing: border-box;
+                border: 1px solid rgba(0, 0, 0, 0.2);
+            }
+            .band-seg:hover {
+                filter: brightness(1.2);
+            }
+            .band-seg.grabbing {
+                cursor: grabbing;
+            }
+
+            /* 端ハンドル */
+            .band-handle {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 10px;
+                cursor: ew-resize;
+                z-index: 5;
+            }
+            .band-handle-left {
+                left: -3px;
+            }
+            .band-handle-right {
+                right: -3px;
+            }
+            .band-handle::after {
+                content: '';
+                position: absolute;
+                top: 20%;
+                bottom: 20%;
+                left: 4px;
+                width: 2px;
+                background: rgba(255, 255, 255, 0.4);
+                border-radius: 1px;
+            }
+
+            /* 目盛りラベル */
+            #band-labels {
+                display: flex;
+                position: relative;
+                height: 16px;
+                margin-top: 2px;
+            }
+            .band-label {
+                position: absolute;
+                font-family: var(--font-mono);
+                font-size: 9px;
+                color: var(--text-dim);
+                transform: translateX(-50%);
+                white-space: nowrap;
+            }
+
+            /* ドラッグ中数字ツールチップ */
+            #drag-tip {
+                position: fixed;
+                background: var(--bg2);
+                border: 1px solid var(--cyan);
+                border-radius: 4px;
+                padding: 2px 7px;
+                font-family: var(--font-mono);
+                font-size: 0.75rem;
+                color: var(--cyan);
+                pointer-events: none;
+                z-index: 500;
+                display: none;
+                white-space: nowrap;
+                box-shadow: 0 2px 10px rgba(0, 229, 255, 0.25);
+            }
+
+            /* ===============================================================
+           ブロックリスト
+        =============================================================== */
+            #card-blocks {
+                overflow: hidden;
+            }
+            .blocks-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 10px;
+                border-bottom: 1px solid var(--border);
+                min-height: 36px;
+            }
+            .blocks-header-left {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .section-label {
+                font-family: var(--font-mono);
+                font-size: 0.67rem;
+                letter-spacing: 0.12em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+            }
+            .overlap-warn {
+                display: none;
+                align-items: center;
+                gap: 3px;
+                font-family: var(--font-mono);
+                font-size: 0.62rem;
+                color: var(--red);
+            }
+            .overlap-warn.on {
+                display: flex;
+            }
+            .overlap-warn .material-icons {
+                font-size: 0.85rem !important;
+            }
+
+            #btn-add {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+                padding: 0.28rem 0.65rem;
+                font-size: 0.73rem;
+            }
+            #btn-add .material-icons {
+                font-size: 0.88rem !important;
+            }
+            #btn-add:disabled {
+                opacity: 0.35;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+            #blocks-list {
+                padding: 5px 6px;
+            }
+
+            /* ブロック行 */
+            .block-item {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 3px;
+                border-radius: 5px;
+                position: relative;
+            }
+            .block-item.dragging {
+                opacity: 0.35;
+            }
+            .block-item.drag-top::before,
+            .block-item.drag-bottom::after {
+                content: '';
+                position: absolute;
+                left: 2px;
+                right: 2px;
+                height: 2px;
+                background: var(--cyan);
+                border-radius: 1px;
+                box-shadow: 0 0 6px var(--cyan);
+            }
+            .block-item.drag-top::before {
+                top: -1px;
+            }
+            .block-item.drag-bottom::after {
+                bottom: -1px;
+            }
+
+            .drag-handle {
+                color: var(--text-dim);
+                touch-action: none;
+                cursor: grab;
+                padding: 3px 1px;
+                flex-shrink: 0;
+                border-radius: 3px;
+                transition: color var(--t);
+            }
+            .drag-handle:hover {
+                color: var(--blue-light);
+            }
+            .drag-handle .material-icons {
+                font-size: 1rem !important;
+                line-height: 1;
+                display: block;
+            }
+
+            .color-swatch-btn {
+                width: 20px;
+                height: 20px;
+                border-radius: 4px;
+                flex-shrink: 0;
+                border: 2px solid rgba(255, 255, 255, 0.15);
+                cursor: pointer;
+                transition:
+                    transform 0.14s,
+                    border-color 0.14s;
+            }
+            .color-swatch-btn:hover {
+                transform: scale(1.18);
+                border-color: rgba(255, 255, 255, 0.5);
+            }
+
+            /* 範囲コントロール */
+            .range-ctrl {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                flex-shrink: 0;
+            }
+            .range-val {
+                display: flex;
+                align-items: center;
+                gap: 1px;
+            }
+            .range-num-wrap {
+                display: flex;
+                align-items: stretch;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .range-num-wrap:focus-within {
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.1);
+            }
+            .range-num-btn {
+                width: 18px;
+                background: var(--input-bg);
+                color: var(--text-dim);
+                font-size: 0.85rem;
+                font-family: var(--font-mono);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: none;
+                cursor: pointer;
+                padding: 0;
+                transition:
+                    background var(--t),
+                    color var(--t);
+                flex-shrink: 0;
+            }
+            .range-num-btn:hover {
+                background: rgba(0, 229, 255, 0.12);
+                color: var(--cyan);
+            }
+            .range-num-btn:active {
+                background: rgba(0, 229, 255, 0.25);
+            }
+            .range-num-inp {
+                width: 28px;
+                background: var(--input-bg);
+                border: none;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 0.75rem;
+                text-align: center;
+                padding: 0 1px;
+                -moz-appearance: textfield;
+            }
+            .range-num-inp::-webkit-inner-spin-button,
+            .range-num-inp::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+            }
+            .range-num-inp:focus {
+                outline: none;
+            }
+
+            .range-sep {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                color: var(--text-dim);
+                padding: 0 2px;
+            }
+
+            .block-text {
+                flex: 1;
+                min-width: 0;
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: var(--r);
+                color: var(--text-bright);
+                padding: 0.28rem 0.5rem;
+                font-size: 0.85rem;
+                font-family: var(--font-main);
+                transition: border-color var(--t);
+            }
+            .block-text:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+            .block-text::placeholder {
+                color: var(--text-dim);
+                opacity: 0.5;
+            }
+
+            .block-del {
+                color: var(--text-dim);
+                padding: 3px;
+                border-radius: 4px;
+                flex-shrink: 0;
+                transition:
+                    color var(--t),
+                    background var(--t);
+            }
+            .block-del:hover {
+                color: var(--red);
+                background: rgba(255, 23, 68, 0.1);
+            }
+            .block-del .material-icons {
+                font-size: 0.95rem !important;
+                line-height: 1;
+                display: block;
+            }
+
+            .blocks-empty {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 70px;
+                gap: 5px;
+                color: var(--text-dim);
+                font-size: 0.78rem;
+                opacity: 0.7;
+            }
+            .blocks-empty .material-icons {
+                font-size: 1.6rem !important;
+                opacity: 0.4;
+            }
+
+            /* ===============================================================
+           出力
+        =============================================================== */
+            #card-output {
+                display: flex;
+                flex-direction: column;
+            }
+            .output-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 10px;
+                border-bottom: 1px solid var(--border);
+                min-height: 36px;
+            }
+            #btn-copy {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+                padding: 0.28rem 0.65rem;
+                font-size: 0.73rem;
+            }
+            #btn-copy .material-icons {
+                font-size: 0.88rem !important;
+            }
+            #output-text {
+                width: 100%;
+                min-height: 180px;
+                resize: vertical;
+                background: transparent;
+                border: none;
+                color: var(--text-mono);
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                padding: 8px 12px;
+                line-height: 1.6;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+            #output-text:focus {
+                outline: none;
+            }
+
+            /* ===============================================================
+           カラーパレット
+        =============================================================== */
+            #color-palette {
+                position: fixed;
+                z-index: 300;
+                background: var(--bg2);
+                border: 1px solid var(--border-bright);
+                border-radius: 8px;
+                padding: 7px;
+                display: none;
+                grid-template-columns: repeat(6, 22px);
+                gap: 5px;
+                box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+            }
+            .pal-swatch {
+                width: 22px;
+                height: 22px;
+                border-radius: 4px;
+                border: 2px solid transparent;
+                cursor: pointer;
+                transition:
+                    transform 0.1s,
+                    border-color 0.1s;
+            }
+            .pal-swatch:hover {
+                transform: scale(1.2);
+            }
+            .pal-swatch.active {
+                border-color: #fff;
+            }
+
+            /* list dnd clone */
+            .list-clone {
+                position: fixed;
+                pointer-events: none;
+                z-index: 999;
+                opacity: 0.88;
+                box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+                border-radius: 5px;
+                background: var(--bg2);
+                border: 1px solid var(--border-bright);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 3px;
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
+
+        <main id="main">
+            <!-- セットアップ -->
+            <section class="rt-card" id="card-setup">
+                <div class="setup-row">
+                    <div class="setup-name-group">
+                        <span class="setup-label">表名</span>
+                        <input type="text" id="input-name" placeholder="例: 飲み物表" maxlength="100" />
+                    </div>
+                    <div class="dice-group">
+                        <span class="setup-label">ダイス</span>
+                        <input type="number" id="dice-n" class="dice-input" value="1" min="1" max="9" />
+                        <span class="dice-sep">D</span>
+                        <input type="number" id="dice-x" class="dice-input" value="6" min="2" max="100" />
+                    </div>
+                </div>
+            </section>
+
+            <!-- グラフ -->
+            <section class="rt-card" id="card-graph">
+                <div class="graph-inner" id="graph-scroll">
+                    <div id="graph-wrap">
+                        <canvas id="line-canvas"></canvas>
+                        <div id="band-area"></div>
+                        <div id="band-labels"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ブロックリスト -->
+            <section class="rt-card" id="card-blocks">
+                <div class="blocks-header">
+                    <div class="blocks-header-left">
+                        <span class="section-label">ブロック</span>
+                        <div class="overlap-warn" id="overlap-warn"><span class="material-icons">warning</span>重複あり</div>
+                    </div>
+                    <button class="btn-primary" id="btn-add"><span class="material-icons">add</span>追加</button>
+                </div>
+                <div id="blocks-list"></div>
+            </section>
+
+            <!-- 出力 -->
+            <section class="rt-card" id="card-output">
+                <div class="output-header">
+                    <span class="section-label">BCDice 出力</span>
+                    <button class="btn-primary" id="btn-copy">
+                        <span class="material-icons">content_copy</span>
+                        <span id="copy-label">コピー</span>
+                    </button>
+                </div>
+                <textarea id="output-text" readonly spellcheck="false"></textarea>
+            </section>
+        </main>
+
+        <!-- ツールチップ -->
+        <div id="drag-tip"></div>
+
+        <!-- カラーパレット -->
+        <div id="color-palette"></div>
+
+        <!-- 使い方モーダル -->
+        <div class="modal-overlay" id="guide-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title">使い方</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <h3>基本の流れ</h3>
+                        <ul>
+                            <li><span class="material-icons" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_one</span>表の名前とダイス種別（nDx）を入力。</li>
+                            <li>
+                                <span class="material-icons" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_two</span>「追加」でブロックを作成し、各ブロックに結果テキストを入力。
+                            </li>
+                            <li><span class="material-icons" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_3</span>「コピー」でBCDice形式のテキストをコピー。</li>
+                        </ul>
+                        <h3>帯グラフの操作</h3>
+                        <ul>
+                            <li>
+                                <span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">open_with</span
+                                ><b>帯の中央部をドラッグ</b>：ブロックを移動。隣のブロックへは進入不可。
+                            </li>
+                            <li>
+                                <span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">drag_handle</span
+                                ><b>帯の両端ハンドルをドラッグ</b>：範囲を広げ・縮め。ドラッグ中は現在値をツールチップ表示。
+                            </li>
+                        </ul>
+                        <h3>リストの操作</h3>
+                        <ul>
+                            <li>
+                                <span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">drag_handle</span
+                                ><b>≡ハンドルをドラッグ</b>：割り込み移動（以降ブロックが押し出されます）。
+                            </li>
+                            <li><span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">exposure_plus_1</span><b>±ボタン</b>：start/end を1ずつ変更。</li>
+                            <li><span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">circle</span><b>カラーボタン</b>：ブロック色を変更。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="common.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                /* ================================================================
+   定数
+================================================================ */
+                const COLORS = ['#e53935', '#fb8c00', '#fdd835', '#43a047', '#00acc1', '#1e88e5', '#7b1fa2', '#d81b60', '#00897b', '#ff7043', '#5e35b1', '#78909c'];
+                const MIN_COL_W = 20; // px per value column
+                const BAND_H = 38; // px
+                const LINE_H = 90; // px
+                const EDGE_PX = 8; // px エッジハンドル幅
+
+                /* ================================================================
+   状態
+================================================================ */
+                let tableName = '';
+                let diceN = 1,
+                    diceX = 6;
+                let blocks = [];
+                let nextColorIdx = 0;
+                let nextId = 1;
+
+                /* ================================================================
+   DOM
+================================================================ */
+                const inputName = document.getElementById('input-name');
+                const inputN = document.getElementById('dice-n');
+                const inputX = document.getElementById('dice-x');
+                const graphScroll = document.getElementById('graph-scroll');
+                const graphWrap = document.getElementById('graph-wrap');
+                const lineCanvas = document.getElementById('line-canvas');
+                const bandArea = document.getElementById('band-area');
+                const bandLabels = document.getElementById('band-labels');
+                const blocksList = document.getElementById('blocks-list');
+                const btnAdd = document.getElementById('btn-add');
+                const overlapWarn = document.getElementById('overlap-warn');
+                const outputText = document.getElementById('output-text');
+                const btnCopy = document.getElementById('btn-copy');
+                const copyLabel = document.getElementById('copy-label');
+                const palette = document.getElementById('color-palette');
+                const dragTip = document.getElementById('drag-tip');
+
+                /* ================================================================
+   ヘルパー
+================================================================ */
+                const getMin = () => diceN;
+                const getMax = () => diceN * diceX;
+                const count = () => getMax() - getMin() + 1;
+
+                function findBlockAt(k) {
+                    return blocks.find((b) => b.start <= k && b.end >= k) || null;
+                }
+                function hasOverlap() {
+                    const s = [...blocks].sort((a, b) => a.start - b.start);
+                    for (let i = 1; i < s.length; i++) if (s[i].start <= s[i - 1].end) return true;
+                    return false;
+                }
+                function isCovered(k) {
+                    return blocks.some((b) => b.start <= k && b.end >= k);
+                }
+                function allCovered() {
+                    for (let k = getMin(); k <= getMax(); k++) if (!isCovered(k)) return false;
+                    return true;
+                }
+
+                /* ================================================================
+   確率計算 (DP)
+================================================================ */
+                function calcProbs(n, x) {
+                    const mx = n * x;
+                    let dp = new Array(mx + 1).fill(0);
+                    dp[0] = 1;
+                    for (let i = 0; i < n; i++) {
+                        const nxt = new Array(mx + 1).fill(0);
+                        for (let s = 0; s <= mx; s++) {
+                            if (!dp[s]) continue;
+                            for (let d = 1; d <= x; d++) if (s + d <= mx) nxt[s + d] += dp[s];
+                        }
+                        dp = nxt;
+                    }
+                    const total = Math.pow(x, n);
+                    const res = {};
+                    for (let k = n; k <= mx; k++) res[k] = dp[k] / total;
+                    return res;
+                }
+
+                /* ================================================================
+   レイアウト計算
+================================================================ */
+                function colW() {
+                    const avail = graphScroll.clientWidth - 20;
+                    return Math.max(MIN_COL_W, avail / count());
+                }
+                function totalW() {
+                    return colW() * count();
+                }
+                function kToX(k) {
+                    return (k - getMin()) * colW();
+                }
+                function xToK(x) {
+                    return Math.floor(x / colW()) + getMin();
+                }
+
+                /* ================================================================
+   折れ線グラフ描画
+================================================================ */
+                function renderLine() {
+                    const dpr = window.devicePixelRatio || 1;
+                    const W = totalW();
+                    const H = LINE_H;
+                    const cw = colW();
+
+                    lineCanvas.style.width = W + 'px';
+                    lineCanvas.style.height = H + 'px';
+                    lineCanvas.width = Math.round(W * dpr);
+                    lineCanvas.height = Math.round(H * dpr);
+
+                    const ctx = lineCanvas.getContext('2d');
+                    ctx.scale(dpr, dpr);
+                    ctx.clearRect(0, 0, W, H);
+
+                    const probs = calcProbs(diceN, diceX);
+                    const min = getMin(),
+                        max = getMax();
+                    const maxP = Math.max(...Object.values(probs));
+                    const padT = 6,
+                        padB = 4;
+                    const drawH = H - padT - padB;
+                    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
+                    // --- ブロック色塗り ---
+                    blocks.forEach((b) => {
+                        const x1 = kToX(b.start);
+                        const x2 = kToX(b.end) + cw;
+                        // 塗り領域: 対応するProbsの折れ線の下
+                        ctx.beginPath();
+                        let started = false;
+                        for (let k = b.start; k <= b.end; k++) {
+                            const px = kToX(k) + cw / 2;
+                            const py = padT + drawH * (1 - (probs[k] || 0) / maxP);
+                            if (!started) {
+                                ctx.moveTo(px, H - padB);
+                                ctx.lineTo(px, py);
+                                started = true;
+                            } else ctx.lineTo(px, py);
+                        }
+                        const ex = kToX(b.end) + cw / 2;
+                        ctx.lineTo(ex, H - padB);
+                        ctx.closePath();
+                        ctx.fillStyle = b.color + '44';
+                        ctx.fill();
+                    });
+
+                    // --- 折れ線 ---
+                    ctx.beginPath();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = isDark ? '#64b5f6' : '#1976d2';
+                    ctx.lineJoin = 'round';
+                    for (let k = min; k <= max; k++) {
+                        const px = kToX(k) + cw / 2;
+                        const py = padT + drawH * (1 - (probs[k] || 0) / maxP);
+                        if (k === min) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                    ctx.stroke();
+
+                    // --- 点 ---
+                    for (let k = min; k <= max; k++) {
+                        const px = kToX(k) + cw / 2;
+                        const py = padT + drawH * (1 - (probs[k] || 0) / maxP);
+                        const blk = findBlockAt(k);
+                        ctx.beginPath();
+                        ctx.arc(px, py, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = blk ? blk.color : isDark ? '#64b5f6' : '#1976d2';
+                        ctx.fill();
+                        ctx.strokeStyle = isDark ? '#0c1830' : '#fff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+
+                /* ================================================================
+   帯グラフ描画
+================================================================ */
+                function renderBand() {
+                    const min = getMin(),
+                        max = getMax();
+                    const cw = colW();
+                    const W = totalW();
+
+                    bandArea.style.width = W + 'px';
+
+                    // セグメントを再構築
+                    [...bandArea.children].forEach((c) => {
+                        if (c.classList.contains('band-seg')) c.remove();
+                    });
+
+                    blocks.forEach((b) => {
+                        const x1 = kToX(b.start);
+                        const x2 = kToX(b.end) + cw;
+                        const w = x2 - x1;
+                        if (w <= 0) return;
+
+                        const seg = document.createElement('div');
+                        seg.className = 'band-seg';
+                        seg.dataset.bid = b.id;
+                        seg.style.left = x1 + 'px';
+                        seg.style.width = w + 'px';
+                        seg.style.background = b.color + 'cc';
+
+                        // 左ハンドル
+                        const hl = document.createElement('div');
+                        hl.className = 'band-handle band-handle-left';
+                        hl.dataset.bid = b.id;
+                        hl.dataset.side = 'left';
+                        // 右ハンドル
+                        const hr = document.createElement('div');
+                        hr.className = 'band-handle band-handle-right';
+                        hr.dataset.bid = b.id;
+                        hr.dataset.side = 'right';
+
+                        seg.appendChild(hl);
+                        seg.appendChild(hr);
+                        bandArea.appendChild(seg);
+                    });
+
+                    // ラベル
+                    renderBandLabels(W, cw);
+                }
+
+                function renderBandLabels(W, cw) {
+                    bandLabels.style.width = W + 'px';
+                    bandLabels.innerHTML = '';
+                    const min = getMin(),
+                        max = getMax();
+                    const n = count();
+                    const skip = Math.max(1, Math.ceil(n / Math.floor(W / 24)));
+                    for (let k = min; k <= max; k++) {
+                        if ((k - min) % skip !== 0 && k !== max) continue;
+                        const lbl = document.createElement('span');
+                        lbl.className = 'band-label';
+                        lbl.textContent = k;
+                        lbl.style.left = kToX(k) + cw / 2 + 'px';
+                        bandLabels.appendChild(lbl);
+                    }
+                }
+
+                /* ================================================================
+   グラフラッパー幅セット
+================================================================ */
+                function setWrapWidth() {
+                    const W = totalW();
+                    graphWrap.style.width = W + 'px';
+                }
+
+                /* ================================================================
+   帯ドラッグ
+================================================================ */
+                let bandDrag = null;
+
+                function bandPointerDown(e) {
+                    const seg = e.target.closest('.band-seg');
+                    const handle = e.target.closest('.band-handle');
+                    if (!seg && !handle) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const bid = (handle || seg).dataset.bid;
+                    const blk = blocks.find((b) => b.id === bid);
+                    if (!blk) return;
+
+                    const rect = bandArea.getBoundingClientRect();
+                    const startX = e.clientX;
+
+                    if (handle) {
+                        const side = handle.dataset.side;
+                        bandDrag = { type: 'resize', bid, side, startX, origS: blk.start, origE: blk.end, rect };
+                        bandArea.setPointerCapture(e.pointerId);
+                        showTip(e.clientX, e.clientY, side === 'left' ? blk.start : blk.end);
+                    } else {
+                        bandDrag = { type: 'move', bid, startX, origS: blk.start, origE: blk.end, rect };
+                        bandArea.setPointerCapture(e.pointerId);
+                        seg.classList.add('grabbing');
+                    }
+                }
+
+                function bandPointerMove(e) {
+                    if (!bandDrag) return;
+                    e.preventDefault();
+                    const dx = e.clientX - bandDrag.startX;
+                    const dcol = Math.round(dx / colW());
+                    const blk = blocks.find((b) => b.id === bandDrag.bid);
+                    if (!blk) return;
+                    const min = getMin(),
+                        max = getMax();
+
+                    if (bandDrag.type === 'move') {
+                        const ns = bandDrag.origS + dcol;
+                        const ne = bandDrag.origE + dcol;
+                        if (ns < min || ne > max) {
+                            blk.start = bandDrag.origS;
+                            blk.end = bandDrag.origE;
+                        } else {
+                            const ok = blocks.every((b) => b.id === bandDrag.bid || !(ns <= b.end && ne >= b.start));
+                            if (ok) {
+                                blk.start = ns;
+                                blk.end = ne;
+                            } else {
+                                blk.start = bandDrag.origS;
+                                blk.end = bandDrag.origE;
+                            }
+                        }
+                        renderBand();
+                        renderLine();
+                        renderList();
+                        renderOutput();
+                    } else if (bandDrag.type === 'resize') {
+                        if (bandDrag.side === 'left') {
+                            const ns = Math.max(min, Math.min(blk.end, bandDrag.origS + dcol));
+                            const ok = blocks.every((b) => b.id === bandDrag.bid || b.end < ns || b.start > blk.end);
+                            if (ok) blk.start = ns;
+                            showTip(e.clientX, e.clientY, blk.start);
+                        } else {
+                            const ne = Math.min(max, Math.max(blk.start, bandDrag.origE + dcol));
+                            const ok = blocks.every((b) => b.id === bandDrag.bid || b.start > ne || b.end < blk.start);
+                            if (ok) blk.end = ne;
+                            showTip(e.clientX, e.clientY, blk.end);
+                        }
+                        renderBand();
+                        renderLine();
+                        renderList();
+                        renderOutput();
+                    }
+                }
+
+                function bandPointerUp(e) {
+                    if (!bandDrag) return;
+                    hideTip();
+                    bandArea.querySelectorAll('.band-seg').forEach((s) => s.classList.remove('grabbing'));
+                    bandDrag = null;
+                }
+
+                bandArea.addEventListener('pointerdown', bandPointerDown);
+                bandArea.addEventListener('pointermove', bandPointerMove);
+                bandArea.addEventListener('pointerup', bandPointerUp);
+                bandArea.addEventListener('pointercancel', bandPointerUp);
+
+                /* ================================================================
+   ツールチップ
+================================================================ */
+                function showTip(cx, cy, val) {
+                    dragTip.textContent = String(val);
+                    dragTip.style.display = 'block';
+                    dragTip.style.left = cx + 10 + 'px';
+                    dragTip.style.top = cy - 24 + 'px';
+                }
+                function hideTip() {
+                    dragTip.style.display = 'none';
+                }
+
+                /* ================================================================
+   ブロック操作
+================================================================ */
+                function addBlock() {
+                    const min = getMin(),
+                        max = getMax();
+                    let pos = -1;
+                    for (let k = min; k <= max; k++)
+                        if (!isCovered(k)) {
+                            pos = k;
+                            break;
+                        }
+                    if (pos === -1) return;
+                    blocks.push({ id: 'b' + nextId++, start: pos, end: pos, text: '', color: COLORS[nextColorIdx++ % COLORS.length] });
+                    render();
+                }
+
+                function deleteBlock(id) {
+                    blocks = blocks.filter((b) => b.id !== id);
+                    render();
+                }
+
+                function setBlockText(id, text) {
+                    const b = blocks.find((b) => b.id === id);
+                    if (b) {
+                        b.text = text;
+                        renderOutput();
+                    }
+                }
+
+                function setBlockColor(id, color) {
+                    const b = blocks.find((b) => b.id === id);
+                    if (b) {
+                        b.color = color;
+                        renderBand();
+                        renderLine();
+                        renderList();
+                    }
+                }
+
+                /* start/end を ± 変更 */
+                function changeStart(id, delta) {
+                    const b = blocks.find((b) => b.id === id);
+                    if (!b) return;
+                    const ns = b.start + delta;
+                    const min = getMin(),
+                        max = getMax();
+                    if (ns < min || ns > b.end) return;
+                    // 衝突チェック
+                    const ok = blocks.every((bl) => bl.id === id || !(ns <= bl.end && b.end >= bl.start));
+                    if (!ok) return;
+                    b.start = ns;
+                    render();
+                }
+                function changeEnd(id, delta) {
+                    const b = blocks.find((b) => b.id === id);
+                    if (!b) return;
+                    const ne = b.end + delta;
+                    const min = getMin(),
+                        max = getMax();
+                    if (ne > max || ne < b.start) return;
+                    const ok = blocks.every((bl) => bl.id === id || !(b.start <= bl.end && ne >= bl.start));
+                    if (!ok) return;
+                    b.end = ne;
+                    render();
+                }
+
+                /* リストD&D移動 */
+                function moveBlockInList(dragId, afterId) {
+                    if (dragId === afterId) return;
+                    const dragged = blocks.find((b) => b.id === dragId);
+                    if (!dragged) return;
+                    const W = dragged.end - dragged.start + 1;
+                    const min = getMin(),
+                        max = getMax();
+                    const snap = blocks.map((b) => ({ ...b }));
+                    let P;
+                    if (afterId === null) P = min;
+                    else {
+                        const prev = blocks.find((b) => b.id === afterId);
+                        if (!prev) return;
+                        P = prev.end + 1;
+                    }
+                    if (P < min || P + W - 1 > max) return;
+                    if (P === dragged.start) return;
+                    dragged.start = P;
+                    dragged.end = P + W - 1;
+                    blocks.forEach((b) => {
+                        if (b.id !== dragId && b.start >= P) {
+                            b.start += W;
+                            b.end += W;
+                        }
+                    });
+                    if (blocks.some((b) => b.end > max || b.start < min)) {
+                        blocks.length = 0;
+                        snap.forEach((s) => blocks.push(s));
+                        return;
+                    }
+                    render();
+                }
+
+                /* ================================================================
+   リスト描画
+================================================================ */
+                function renderList() {
+                    const sorted = [...blocks].sort((a, b) => a.start - b.start);
+                    if (!sorted.length) {
+                        blocksList.innerHTML = '<div class="blocks-empty"><span class="material-icons">table_chart</span><span>ブロックがありません</span></div>';
+                        return;
+                    }
+                    blocksList.innerHTML = '';
+                    sorted.forEach((blk) => {
+                        const item = document.createElement('div');
+                        item.className = 'block-item';
+                        item.dataset.bid = blk.id;
+
+                        // drag handle
+                        const handle = document.createElement('span');
+                        handle.className = 'drag-handle';
+                        handle.innerHTML = '<span class="material-icons">drag_handle</span>';
+
+                        // color swatch
+                        const swatch = document.createElement('button');
+                        swatch.className = 'color-swatch-btn';
+                        swatch.style.background = blk.color;
+                        swatch.title = '色変更';
+
+                        // range control
+                        const rangeCtrl = document.createElement('div');
+                        rangeCtrl.className = 'range-ctrl';
+
+                        function makeNumCtrl(val, onDec, onInc, onInput) {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'range-num-wrap';
+                            const dec = document.createElement('button');
+                            dec.className = 'range-num-btn';
+                            dec.textContent = '−';
+                            dec.type = 'button';
+                            const inp = document.createElement('input');
+                            inp.type = 'number';
+                            inp.className = 'range-num-inp';
+                            inp.value = val;
+                            inp.min = getMin();
+                            inp.max = getMax();
+                            const inc = document.createElement('button');
+                            inc.className = 'range-num-btn';
+                            inc.textContent = '＋';
+                            inc.type = 'button';
+                            wrap.appendChild(dec);
+                            wrap.appendChild(inp);
+                            wrap.appendChild(inc);
+                            dec.addEventListener('click', onDec);
+                            inc.addEventListener('click', onInc);
+                            inp.addEventListener('change', () => onInput(parseInt(inp.value) || val));
+                            return wrap;
+                        }
+
+                        const startCtrl = makeNumCtrl(
+                            blk.start,
+                            () => changeStart(blk.id, -1),
+                            () => changeStart(blk.id, +1),
+                            (v) => {
+                                const b = blocks.find((b) => b.id === blk.id);
+                                if (!b) return;
+                                const min = getMin();
+                                const ns = Math.max(min, Math.min(b.end, v));
+                                b.start = ns;
+                                render();
+                            }
+                        );
+                        const sep = document.createElement('span');
+                        sep.className = 'range-sep';
+                        sep.textContent = '~';
+                        const endCtrl = makeNumCtrl(
+                            blk.end,
+                            () => changeEnd(blk.id, -1),
+                            () => changeEnd(blk.id, +1),
+                            (v) => {
+                                const b = blocks.find((b) => b.id === blk.id);
+                                if (!b) return;
+                                const max = getMax();
+                                const ne = Math.max(b.start, Math.min(max, v));
+                                b.end = ne;
+                                render();
+                            }
+                        );
+                        rangeCtrl.appendChild(startCtrl);
+                        rangeCtrl.appendChild(sep);
+                        rangeCtrl.appendChild(endCtrl);
+
+                        // text
+                        const textInput = document.createElement('input');
+                        textInput.type = 'text';
+                        textInput.className = 'block-text';
+                        textInput.value = blk.text;
+                        textInput.placeholder = '結果テキスト';
+                        textInput.maxLength = 200;
+
+                        // del
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'block-del';
+                        delBtn.title = '削除';
+                        delBtn.innerHTML = '<span class="material-icons">delete</span>';
+
+                        item.appendChild(handle);
+                        item.appendChild(swatch);
+                        item.appendChild(rangeCtrl);
+                        item.appendChild(textInput);
+                        item.appendChild(delBtn);
+                        blocksList.appendChild(item);
+
+                        textInput.addEventListener('input', () => setBlockText(blk.id, textInput.value));
+                        delBtn.addEventListener('click', () => deleteBlock(blk.id));
+                        swatch.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            showPalette(blk.id, swatch);
+                        });
+                        initHandleDrag(handle, blk.id);
+                    });
+                }
+
+                /* ================================================================
+   リストD&Dドラッグ
+================================================================ */
+                let listDrag = null;
+
+                function initHandleDrag(handle, blockId) {
+                    handle.addEventListener('pointerdown', (e) => {
+                        e.preventDefault();
+                        handle.setPointerCapture(e.pointerId);
+                        const item = handle.closest('.block-item');
+                        const rect = item.getBoundingClientRect();
+                        const clone = document.createElement('div');
+                        clone.className = 'list-clone';
+                        clone.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
+                        const blk = blocks.find((b) => b.id === blockId);
+                        if (blk) {
+                            clone.innerHTML = `
+                <span style="pointer-events:none;color:var(--text-dim)"><span class="material-icons" style="font-size:1rem">drag_handle</span></span>
+                <span style="width:18px;height:18px;border-radius:4px;background:${blk.color};display:inline-block;flex-shrink:0"></span>
+                <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim)">${blk.start}~${blk.end}</span>
+                <span style="font-size:0.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${blk.text || ''}</span>
+            `;
+                        }
+                        document.body.appendChild(clone);
+                        item.classList.add('dragging');
+                        listDrag = { blockId, clone, startY: e.clientY, cloneTop: rect.top, dropAfterId: null };
+                    });
+
+                    handle.addEventListener('pointermove', (e) => {
+                        if (!listDrag || listDrag.blockId !== blockId) return;
+                        const dy = e.clientY - listDrag.startY;
+                        listDrag.clone.style.top = listDrag.cloneTop + dy + 'px';
+
+                        const items = [...blocksList.querySelectorAll('.block-item:not(.dragging)')];
+                        items.forEach((it) => it.classList.remove('drag-top', 'drag-bottom'));
+
+                        let dropAfterId = null;
+                        let insertBeforeIdx = -1;
+                        for (let i = 0; i < items.length; i++) {
+                            const r = items[i].getBoundingClientRect();
+                            if (e.clientY < r.top + r.height / 2) {
+                                insertBeforeIdx = i;
+                                break;
+                            }
+                            dropAfterId = items[i].dataset.bid;
+                        }
+                        if (insertBeforeIdx === 0) {
+                            items[0].classList.add('drag-top');
+                            dropAfterId = null;
+                        } else if (insertBeforeIdx > 0) {
+                            items[insertBeforeIdx].classList.add('drag-top');
+                            dropAfterId = items[insertBeforeIdx - 1].dataset.bid;
+                        } else if (items.length) {
+                            items[items.length - 1].classList.add('drag-bottom');
+                        }
+                        listDrag.dropAfterId = dropAfterId;
+                    });
+
+                    const fin = (cancel) => {
+                        if (!listDrag || listDrag.blockId !== blockId) return;
+                        listDrag.clone.remove();
+                        blocksList.querySelectorAll('.block-item').forEach((it) => it.classList.remove('dragging', 'drag-top', 'drag-bottom'));
+                        if (!cancel) moveBlockInList(listDrag.blockId, listDrag.dropAfterId);
+                        listDrag = null;
+                    };
+                    handle.addEventListener('pointerup', () => fin(false));
+                    handle.addEventListener('pointercancel', () => fin(true));
+                }
+
+                /* ================================================================
+   カラーパレット
+================================================================ */
+                let palTarget = null;
+
+                function buildPalette() {
+                    palette.innerHTML = '';
+                    COLORS.forEach((c) => {
+                        const s = document.createElement('button');
+                        s.className = 'pal-swatch';
+                        s.style.background = c;
+                        s.dataset.color = c;
+                        palette.appendChild(s);
+                    });
+                    palette.addEventListener('click', (e) => {
+                        const sw = e.target.closest('.pal-swatch');
+                        if (sw && palTarget) {
+                            setBlockColor(palTarget, sw.dataset.color);
+                            hidePalette();
+                        }
+                    });
+                }
+                function showPalette(id, anchor) {
+                    palTarget = id;
+                    const blk = blocks.find((b) => b.id === id);
+                    palette.querySelectorAll('.pal-swatch').forEach((s) => s.classList.toggle('active', blk && s.dataset.color === blk.color));
+                    palette.style.display = 'grid';
+                    const ar = anchor.getBoundingClientRect();
+                    let left = ar.left,
+                        top = ar.bottom + 4;
+                    requestAnimationFrame(() => {
+                        const pr = palette.getBoundingClientRect();
+                        if (left + pr.width > window.innerWidth - 4) left = window.innerWidth - pr.width - 4;
+                        if (top + pr.height > window.innerHeight - 4) top = ar.top - pr.height - 4;
+                        palette.style.left = left + 'px';
+                        palette.style.top = top + 'px';
+                    });
+                }
+                function hidePalette() {
+                    palette.style.display = 'none';
+                    palTarget = null;
+                }
+                document.addEventListener('click', (e) => {
+                    if (!palette.contains(e.target) && !e.target.closest('.color-swatch-btn')) hidePalette();
+                });
+
+                /* ================================================================
+   出力
+================================================================ */
+                function renderOutput() {
+                    const min = getMin(),
+                        max = getMax();
+                    const lines = [tableName, `${diceN}D${diceX}`];
+                    for (let k = min; k <= max; k++) {
+                        const blk = findBlockAt(k);
+                        lines.push(`${k}:${blk ? blk.text : ''}`);
+                    }
+                    outputText.value = lines.join('\n');
+                    btnAdd.disabled = allCovered();
+                    overlapWarn.classList.toggle('on', hasOverlap());
+                }
+
+                /* ================================================================
+   統合レンダー
+================================================================ */
+                function render() {
+                    setWrapWidth();
+                    renderLine();
+                    renderBand();
+                    renderList();
+                    renderOutput();
+                }
+
+                /* ================================================================
+   ダイス変更
+================================================================ */
+                function onDiceChange() {
+                    const newN = Math.max(1, Math.min(9, parseInt(inputN.value) || 1));
+                    const newX = Math.max(2, Math.min(100, parseInt(inputX.value) || 6));
+                    if (newN === diceN && newX === diceX) return;
+                    diceN = newN;
+                    diceX = newX;
+                    const min = getMin(),
+                        max = getMax();
+                    blocks = blocks.filter((b) => !(b.end < min || b.start > max));
+                    blocks.forEach((b) => {
+                        b.start = Math.max(min, b.start);
+                        b.end = Math.min(max, b.end);
+                        if (b.start > b.end) b.end = b.start;
+                    });
+                    render();
+                }
+
+                /* ================================================================
+   コピー
+================================================================ */
+                btnCopy.addEventListener('click', () => {
+                    const text = outputText.value;
+                    if (!text.trim()) return;
+                    const ok = () => {
+                        copyLabel.textContent = 'コピー済み！';
+                        setTimeout(() => (copyLabel.textContent = 'コピー'), 1800);
+                    };
+                    if (navigator.clipboard)
+                        navigator.clipboard
+                            .writeText(text)
+                            .then(ok)
+                            .catch(() => {
+                                outputText.select();
+                                document.execCommand('copy');
+                                ok();
+                            });
+                    else {
+                        outputText.select();
+                        document.execCommand('copy');
+                        ok();
+                    }
+                });
+
+                /* ================================================================
+   ResizeObserver
+================================================================ */
+                if (window.ResizeObserver) {
+                    new ResizeObserver(() => render()).observe(graphScroll);
+                }
+
+                /* ================================================================
+   初期化
+================================================================ */
+                document.addEventListener('DOMContentLoaded', () => {
+                    buildPalette();
+                    inputName.addEventListener('input', (e) => {
+                        tableName = e.target.value;
+                        renderOutput();
+                    });
+                    inputN.addEventListener('change', onDiceChange);
+                    inputX.addEventListener('change', onDiceChange);
+                    btnAdd.addEventListener('click', addBlock);
+                    render();
+                });
+            })();
+        </script>
+    </body>
+</html>

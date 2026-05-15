@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Fabric.js: ベジェ曲線と画像配置</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                background-color: #f0f0f0;
+            }
+            canvas {
+                border: 1px solid #ccc;
+                background-color: none;
+            }
+            .controls {
+                margin-top: 20px;
+                display: flex;
+                gap: 10px;
+            }
+            input[type="file"] {
+                display: none;
+            }
+            label.button {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                border-radius: 5px;
+                cursor: pointer;
+                font-family: sans-serif;
+                font-size: 16px;
+            }
+            label.button:hover {
+                background-color: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="c" width="800" height="600"></canvas>
+        <div class="controls">
+            <input type="file" id="imageLoader" accept="image/*" />
+            <label for="imageLoader" class="button">画像をアップロード</label>
+            <input type="number" id="subdivisionCount" value="10" min="1" max="100" />
+            <label for="subdivisionCount">分割数</label>
+            <button id="applyButton">適用</button>
+        </div>
+
+        <script>
+            const canvas = new fabric.Canvas("c");
+            let uploadedImage = null;
+
+            // SVGパスデータ（Qコマンド）
+            const svgPathData = "M 100 250 Q 250 100 400 250 T 700 250"; // 例として2つの二次ベジェ曲線（Q, T）を含む
+
+            // SVGパスを解析し、二次ベジェ曲線の制御点と終点を抽出
+            function parseSvgQPath(pathData) {
+                const segments = [];
+                const commands = pathData.match(/[MQLT][^MQLT]*/g); // M, Q, L, T コマンドで分割
+                let currentPoint = { x: 0, y: 0 };
+                let lastControlPoint = null; // Tコマンドのための前回の制御点
+
+                commands.forEach((cmd) => {
+                    const type = cmd[0];
+                    const values = cmd
+                        .substring(1)
+                        .trim()
+                        .split(/[\s,]+/)
+                        .map(Number);
+
+                    switch (type) {
+                        case "M":
+                            currentPoint = { x: values[0], y: values[1] };
+                            break;
+                        case "Q":
+                            segments.push({
+                                type: "Q",
+                                start: { ...currentPoint },
+                                control: { x: values[0], y: values[1] },
+                                end: { x: values[2], y: values[3] },
+                            });
+                            currentPoint = { x: values[2], y: values[3] };
+                            lastControlPoint = { x: values[0], y: values[1] };
+                            break;
+                        case "T":
+                            // Tコマンドは前回のQコマンドの制御点を反映する
+                            if (lastControlPoint) {
+                                const reflectedControlX = currentPoint.x * 2 - lastControlPoint.x;
+                                const reflectedControlY = currentPoint.y * 2 - lastControlPoint.y;
+                                segments.push({
+                                    type: "Q",
+                                    start: { ...currentPoint },
+                                    control: { x: reflectedControlX, y: reflectedControlY },
+                                    end: { x: values[0], y: values[1] },
+                                });
+                                currentPoint = { x: values[0], y: values[1] };
+                                lastControlPoint = { x: reflectedControlX, y: reflectedControlY };
+                            }
+                            break;
+                        // Lなど他のコマンドも必要に応じて追加
+                    }
+                });
+                return segments;
+            }
+
+            // 二次ベジェ曲線を直線で近似
+            function subdivideQuadraticBezier(p0, p1, p2, count) {
+                const points = [];
+                for (let i = 0; i <= count; i++) {
+                    const t = i / count;
+                    const x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+                    const y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+                    points.push({ x, y });
+                }
+                return points;
+            }
+
+            // 2点間の角度を計算（ラジアン）
+            function getAngle(p1, p2) {
+                return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            }
+
+            // メイン処理
+            function processPath() {
+                canvas.clear(); // キャンバスをクリア
+                if (!uploadedImage) {
+                    alert("画像をアップロードしてください。");
+                    return;
+                }
+
+                const subdivisionCount = parseInt(document.getElementById("subdivisionCount").value);
+                const segments = parseSvgQPath(svgPathData);
+
+                segments.forEach((segment) => {
+                    if (segment.type === "Q") {
+                        const subdividedPoints = subdivideQuadraticBezier(segment.start, segment.control, segment.end, subdivisionCount);
+
+                        for (let i = 0; i < subdividedPoints.length - 1; i++) {
+                            const p1 = subdividedPoints[i];
+                            const p2 = subdividedPoints[i + 1];
+
+                            // 直線を描画（デバッグ用）
+                            const line = new fabric.Line([p1.x, p1.y, p2.x, p2.y], {
+                                stroke: "#aaa",
+                                strokeWidth: 1,
+                                selectable: false,
+                                evented: false,
+                            });
+                            canvas.add(line);
+
+                            // 各直線の中心座標
+                            const centerX = (p1.x + p2.x) / 2;
+                            const centerY = (p1.y + p2.y) / 2;
+
+                            // 各直線の角度（度数法）
+                            const angleRad = getAngle(p1, p2);
+                            const angleDeg = (angleRad * 180) / Math.PI;
+
+                            // 画像を複製して配置
+                            // Fabric.jsのImageオブジェクトを複製
+                            const img = new fabric.Image(uploadedImage.getElement(), {
+                                left: centerX,
+                                top: centerY,
+                                angle: angleDeg + 90,
+                                originX: "center", // 画像の中心を基準に回転・配置
+                                originY: "center",
+                                hasControls: false, // コントロール非表示
+                                hasBorders: false, // 枠線非表示
+                                selectable: false, // 選択不可
+                            });
+                            canvas.add(img);
+                        }
+                    }
+                });
+                canvas.renderAll();
+            }
+
+            // 画像アップロード処理
+            document.getElementById("imageLoader").addEventListener("change", function (e) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    fabric.Image.fromURL(event.target.result, function (img) {
+                        uploadedImage = img; // アップロードされた画像を保持
+                        // 画像がアップロードされたら、すぐに処理を実行するかは要件次第
+                        processPath(); // ここで自動実行する例
+                    });
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            });
+
+            // 適用ボタンクリックで処理を実行
+            document.getElementById("applyButton").addEventListener("click", processPath);
+
+            // 初期描画（SVGパスのみ表示）
+            // parseSvgQPath関数で解析したパスセグメントを使用して、Fabric.jsのパスオブジェクトを描画することも可能
+            // 現状では、画像がないと何も表示されないため、ここでは初期表示は省略
+            // 必要であれば、SVGパスを直接Fabric.jsのPathオブジェクトとして追加することもできます
+            // 例: const path = new fabric.Path(svgPathData, { stroke: 'blue', strokeWidth: 2, fill: '' }); canvas.add(path);
+            const pathVisualizer = new fabric.Path(svgPathData, {
+                stroke: "blue",
+                strokeWidth: 2,
+                fill: "rgba(0,0,0,0.1)", // 軽く塗りつぶしてパスの形状を確認しやすくする
+                selectable: false,
+                evented: false,
+                // パスの位置を調整する必要がある場合
+                // left: 0,
+                // top: 0
+            });
+            canvas.add(pathVisualizer);
+            canvas.renderAll();
+        </script>
+    </body>
+</html>
