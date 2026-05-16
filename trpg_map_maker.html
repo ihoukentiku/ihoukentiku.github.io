@@ -72,6 +72,15 @@
             }
             .header-ext .seg label:last-child { border-right: none; }
             .header-ext .seg input[type='radio']:checked + label { background: rgba(0,229,255,0.15); color: var(--cyan); }
+            .header-ext .header-icon-btn {
+                width: 28px; height: 26px; display: grid; place-items: center;
+                border: 1px solid var(--input-bd); border-radius: 4px;
+                color: var(--text); background: transparent; cursor: pointer;
+                transition: background var(--t), color var(--t), border-color var(--t), opacity var(--t);
+            }
+            .header-ext .header-icon-btn:hover:not(:disabled) { background: rgba(0,229,255,0.12); color: var(--cyan); border-color: var(--cyan); }
+            .header-ext .header-icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+            .header-ext .header-icon-btn .material-icons { font-size: 1rem; }
 
             /* ---- ツールバー ---- */
             #toolbar {
@@ -91,17 +100,19 @@
             .tb-btn .material-icons { font-size: 1.2rem; }
             .tb-btn .tb-label { font-size: 0.5rem; font-family: var(--font-main); letter-spacing: -0.02em; white-space: nowrap; }
             /* ツールタイル（高度モードのサブツール選択） */
-            .tool-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 0.6rem; }
+            .tool-tiles { display: grid; grid-template-columns: repeat(3, 56px); gap: 5px; margin-bottom: 0.6rem; }
             .tool-tile {
                 aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
                 border: 1px solid var(--border); border-radius: 4px; cursor: pointer;
-                color: var(--text-dim); font-size: 0.55rem; gap: 2px;
+                color: var(--text); font-size: 0.55rem; gap: 2px;
                 transition: background var(--t), border-color var(--t), color var(--t);
                 padding: 3px 2px; text-align: center; line-height: 1.2;
+                height: 56px; width: 56px;
             }
-            .tool-tile:hover { background: var(--bg3); color: var(--text); }
+            .tool-tile:hover { background: var(--cyan-muted); color: var(--text-bright); }
             .tool-tile.active { background: rgba(0,229,255,0.12); border-color: var(--cyan); color: var(--cyan); }
             .tool-tile .material-icons { font-size: 1.1rem; }
+            .tool-tile .fa-solid, .tool-tile .fa-regular { font-size: 1rem; line-height: 1.1rem; }
 
             /* ---- プロパティパネル ---- */
             #prop-panel {
@@ -188,12 +199,37 @@
                 background: var(--cyan); border: 2px solid var(--bg2); cursor: pointer;
             }
 
+            /* ---- Pickr (hex_maker と同じスタイル) ---- */
             .pickr { display: flex !important; align-items: center; }
             .pickr .pcr-button {
                 width: 50px !important; height: 20px !important; border-radius: 4px !important;
                 border: 1px solid var(--input-bd) !important; box-shadow: none !important;
+                transition: border-color var(--t) !important;
             }
             .pickr .pcr-button:hover { border-color: var(--cyan) !important; }
+            .pcr-app {
+                background: var(--bg3) !important;
+                border-color: var(--border) !important;
+            }
+            .pcr-app .pcr-interaction input {
+                background: var(--input-bg) !important;
+                border: 1px solid var(--input-bd) !important;
+                color: var(--text-bright) !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save {
+                background: var(--blue-mid) !important;
+                color: #fff !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save:hover {
+                background: var(--blue) !important;
+            }
+            [data-theme='light'] .pcr-app {
+                background: #f0f7ff !important;
+            }
+            [data-theme='light'] .pcr-app .pcr-interaction input {
+                background: white !important;
+                color: #1a3a5c !important;
+            }
 
             .prop-group { display: none; }
             .prop-group.active { display: flex; flex-direction: column; gap: 0; }
@@ -372,14 +408,12 @@
                 <div class="prop-group" data-prop="cell">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-icons">grid_on</span>セル塗り</div>
-                        <div class="f">
-                            <span class="fl">ツール</span>
-                            <div class="seg">
-                                <input type="radio" name="cell-tool" id="ct-pen" value="pen" checked /><label for="ct-pen">ペン</label>
-                                <input type="radio" name="cell-tool" id="ct-eraser" value="eraser" /><label for="ct-eraser">消しゴム</label>
-                            </div>
+                        <div class="tool-tiles" id="cell-tool-tiles">
+                            <div class="tool-tile active" data-cell-tool="pen" title="ペン"><span class="material-icons">edit</span><span>ペン</span></div>
+                            <div class="tool-tile" data-cell-tool="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
+                            <div class="tool-tile" data-cell-tool="fill" title="塗りつぶし"><span class="material-icons">format_color_fill</span><span>塗潰し</span></div>
                         </div>
-                        <button class="btn-action" id="add-cell-layer" style="margin-top:0.4rem">セルレイヤーを追加</button>
+                        <button class="btn-action" id="add-cell-layer">セルレイヤーを追加</button>
                     </div>
                 </div>
                 <!-- 矩形 -->
@@ -459,6 +493,7 @@
                 <span><span class="material-icons">search</span><span id="sb-zoom">100%</span></span>
                 <span><span class="material-icons">grid_4x4</span><span id="sb-grid">50px</span></span>
                 <span id="sb-selection"></span>
+                <span id="sb-last-action" style="margin-left:auto;opacity:0.8"></span>
             </div>
         </main>
 

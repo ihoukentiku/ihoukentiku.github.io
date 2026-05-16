@@ -10,7 +10,12 @@
         const ext = document.createElement('div');
         ext.className = 'header-ext';
         ext.innerHTML = `
+            <button id="undo-btn" class="header-icon-btn" disabled title="元に戻す (Ctrl+Z)"><span class="material-icons">undo</span></button>
+            <button id="redo-btn" class="header-icon-btn" disabled title="やり直し (Ctrl+Shift+Z)"><span class="material-icons">redo</span></button>
             <div class="seg"><input type="radio" name="grid-type" id="gt-square" value="square" checked><label for="gt-square">スクエア</label><input type="radio" name="grid-type" id="gt-hex" value="hex"><label for="gt-hex">ヘクス</label></div>`;
+        // Undo/Redo クリック (ボタン挿入後にハンドラ登録)
+        ext.querySelector('#undo-btn').addEventListener('click', () => undo());
+        ext.querySelector('#redo-btn').addEventListener('click', () => redo());
         nav.parentNode.insertBefore(ext, nav);
     };
     wait();
@@ -52,6 +57,15 @@ const App = {
     _exportRect: null,   // { x, y, w, h } キャンバス座標での出力範囲
     _exportDrag: null,   // 1クリック目の開始点
     _shiftHeld: false,   // Shift押下中はスナップ一時無効
+    // ---- Undo/Redo (A方式: スナップショット) ----
+    _history: [],            // [{ snapshot: string, name: string }, ...] 古い→新しい
+    _redoStack: [],          // Undoで取り出したものを積む
+    _lastAction: '',         // ステータスバー表示用
+    _isRestoring: false,     // restoreSnapshot 実行中フラグ (履歴ループ防止)
+    _historyDebounceTimer: null,
+    _historyDebouncePending: '',
+    _cellStrokeActive: false,   // セル塗りドラッグ中フラグ
+    _textEditBefore: null,      // テキスト編集前の文字列
 };
 
 /* ================================================================
@@ -365,36 +379,51 @@ let fillPickr, strokePickr, gridPickr;
  * 'save' イベントで App 状態と (選択ツール時は) 選択中オブジェクトの色も同期する。
  */
 function initPickr() {
+    // hex_maker と同じ構成: interaction は input + save のみ、i18n で「確定」表示
     const opts = (el, def) => ({
         el, theme: 'nano', default: def,
-        components: { preview: true, opacity: true, hue: true, interaction: { hex: true, rgba: true, input: true, save: true } },
+        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
+        i18n: { 'btn:save': '確定' },
     });
+    // change: ドラッグ中も即時反映 (履歴はデバウンス) + ピッカーボタンの色も同期 (applyColor(true))
+    // save: ピッカーを閉じるだけ
     fillPickr = Pickr.create(opts('#fill-color-picker', App.fillColor));
-    fillPickr.on('save', (c) => {
-        if (c) { App.fillColor = c.toHEXA().toString().slice(0,7); App.fillOpacity = c.toRGBA()[3]; }
-        fillPickr.hide();
+    fillPickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        App.fillColor = c.toHEXA().toString().slice(0,7);
+        App.fillOpacity = c.toRGBA()[3];
+        instance.applyColor(true); // ボタン色を即時更新 (save イベントは発火しない)
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
-                .forEach(o => o.set({ fill: rgba(App.fillColor, App.fillOpacity) }));
+            const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach(o => o.set({ fill: rgba(App.fillColor, App.fillOpacity) }));
             App.canvas.renderAll();
+            pushHistoryDebounced('フィル色を変更');
         }
-    });
+    }).on('save', (_, p) => p.hide());
+
     strokePickr = Pickr.create(opts('#stroke-color-picker', App.strokeColor));
-    strokePickr.on('save', (c) => {
-        if (c) { App.strokeColor = c.toHEXA().toString().slice(0,7); App.strokeOpacity = c.toRGBA()[3]; }
-        strokePickr.hide();
+    strokePickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        App.strokeColor = c.toHEXA().toString().slice(0,7);
+        App.strokeOpacity = c.toRGBA()[3];
+        instance.applyColor(true);
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
-                .forEach(o => o.set({ stroke: rgba(App.strokeColor, App.strokeOpacity) }));
+            const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach(o => o.set({ stroke: rgba(App.strokeColor, App.strokeOpacity) }));
             App.canvas.renderAll();
+            pushHistoryDebounced('ストローク色を変更');
         }
-    });
+    }).on('save', (_, p) => p.hide());
+
     gridPickr = Pickr.create(opts('#grid-color-picker', 'rgba(0,0,0,1)'));
-    gridPickr.on('save', (c) => {
-        if (c) App.gridColor = c.toRGBA().toString();
-        gridPickr.hide();
+    gridPickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        App.gridColor = c.toRGBA().toString();
+        instance.applyColor(true);
         drawGrid();
-    });
+    }).on('save', (_, p) => p.hide());
 }
 
 /* ================================================================
@@ -549,9 +578,20 @@ function initCanvas() {
             }
             case 'cell': {
                 const col = Math.floor(ptr.x / App.cellSize), row = Math.floor(ptr.y / App.cellSize);
-                const tool = document.querySelector('input[name="cell-tool"]:checked')?.value || 'pen';
-                handleCellPaint(col, row, tool);
-                App._drawing = { cellTool: tool };
+                const tool = document.querySelector('#cell-tool-tiles .tool-tile.active')?.dataset.cellTool || 'pen';
+                if (tool === 'fill') {
+                    // 単発操作: ドラッグ追随なし、履歴は fillCells 内で確定
+                    const layer = getOrCreateCellLayer();
+                    if (!App.selectedLayerIds.includes(layer._layerId)) {
+                        App.selectedLayerIds = [layer._layerId];
+                        renderLayerList();
+                    }
+                    fillCells(col, row, layer);
+                } else {
+                    App._cellStrokeActive = true;
+                    handleCellPaint(col, row, tool);
+                    App._drawing = { cellTool: tool };
+                }
                 break;
             }
             case 'text': {
@@ -696,17 +736,41 @@ function initCanvas() {
     App.canvas.on('mouse:up', function() {
         if (isPanning) { isPanning = false; App.canvas.selection = (App.activeTool === 'select'); App.canvas.defaultCursor = 'default'; return; }
         if (App._drawing && App.activeTool === 'cell') App._drawing = null;
+        if (App._cellStrokeActive) {
+            App._cellStrokeActive = false;
+            pushHistory('セル塗り');
+        }
     });
 
+    App.canvas.on('text:editing:entered', function(opt) {
+        App._textEditBefore = opt.target?.text ?? null;
+    });
     App.canvas.on('text:editing:exited', function(opt) {
-        if (opt.target?._isMapText && opt.target.text.trim() === '') { App.canvas.remove(opt.target); App.canvas.discardActiveObject(); }
+        const t = opt.target;
+        const before = App._textEditBefore;
+        App._textEditBefore = null;
+        if (t?._isMapText && t.text.trim() === '') {
+            App.canvas.remove(t); App.canvas.discardActiveObject();
+            renderLayerList(); App.canvas.renderAll();
+            if (before !== null && before !== '') pushHistory('テキストを削除');
+            return;
+        }
         renderLayerList(); App.canvas.renderAll();
+        if (before !== null && t && before !== t.text) pushHistory('テキスト編集');
     });
 
     App.canvas.on('selection:created', () => { syncLayerSelectionFromCanvas(); updateSelectionInfo(); });
     App.canvas.on('selection:updated', () => { syncLayerSelectionFromCanvas(); updateSelectionInfo(); });
     App.canvas.on('selection:cleared', () => { App.selectedLayerIds = []; renderLayerList(); updateSelectionInfo(); });
-    App.canvas.on('object:modified', updateSelectionInfo);
+    App.canvas.on('object:modified', function(opt) {
+        updateSelectionInfo();
+        // 移動・リサイズ・回転の確定で履歴を積む (テキスト編集による modified は無視)
+        if (App._isRestoring) return;
+        const t = opt.target;
+        if (!t || t._isMapText && t.isEditing) return;
+        const name = t?._layerName || 'オブジェクト';
+        pushHistory(`${name}を変更`);
+    });
     App.canvas.on('object:moving', function(opt) {
         if (!App.snapEnabled) return;
         const obj = opt.target;
@@ -842,6 +906,7 @@ function addLayerObject(typeName, obj) {
     App.selectedLayerIds = [id];
     renderLayerList();
     App.canvas.renderAll();
+    pushHistory(`${typeName}を追加`);
 }
 
 /**
@@ -874,7 +939,12 @@ function renderLayerList() {
         const vis = document.createElement('span');
         vis.className = 'material-icons';
         vis.textContent = obj.visible ? 'visibility' : 'visibility_off';
-        vis.addEventListener('click', e => { e.stopPropagation(); obj.set({ visible: !obj.visible }); App.canvas.renderAll(); renderLayerList(); });
+        vis.addEventListener('click', e => {
+            e.stopPropagation();
+            obj.set({ visible: !obj.visible });
+            App.canvas.renderAll(); renderLayerList();
+            pushHistory(obj.visible ? `${obj._layerName}を表示` : `${obj._layerName}を非表示`);
+        });
 
         // 名前
         const name = document.createElement('span');
@@ -919,7 +989,13 @@ function renderLayerList() {
             input.value = obj._layerName || '';
             name.replaceWith(input);
             input.focus(); input.select();
-            const commit = () => { obj._layerName = input.value || obj._layerName; renderLayerList(); };
+            const before = obj._layerName;
+            const commit = () => {
+                const newName = input.value || before;
+                obj._layerName = newName;
+                renderLayerList();
+                if (newName !== before) pushHistory(`${before} → ${newName} に改名`);
+            };
             input.addEventListener('blur', commit);
             input.addEventListener('keydown', ev => { if (ev.key === 'Enter') input.blur(); if (ev.key === 'Escape') { input.value = obj._layerName; input.blur(); } });
         });
@@ -974,6 +1050,7 @@ function renderLayerList() {
             remaining.forEach(o => App.canvas.add(o));
 
             renderLayerList(); App.canvas.renderAll();
+            pushHistory('レイヤーを並べ替え');
         });
 
         list.appendChild(item);
@@ -1027,8 +1104,14 @@ function updateSelectionInfo() {
             <div class="f"><span class="fl">高さ</span><span class="unit">${Math.round(o.height * (o.scaleY||1))}</span></div>
             <div class="f"><span class="fl">回転</span><span class="unit">${Math.round(o.angle||0)}°</span></div>`;
         // X/Y 編集
-        info.querySelector('#si-x')?.addEventListener('change', function() { o.set({ left: parseInt(this.value) }); o.setCoords(); App.canvas.renderAll(); });
-        info.querySelector('#si-y')?.addEventListener('change', function() { o.set({ top: parseInt(this.value) }); o.setCoords(); App.canvas.renderAll(); });
+        info.querySelector('#si-x')?.addEventListener('change', function() {
+            o.set({ left: parseInt(this.value) }); o.setCoords(); App.canvas.renderAll();
+            pushHistory(`${o._layerName}のXを変更`);
+        });
+        info.querySelector('#si-y')?.addEventListener('change', function() {
+            o.set({ top: parseInt(this.value) }); o.setCoords(); App.canvas.renderAll();
+            pushHistory(`${o._layerName}のYを変更`);
+        });
     } else {
         info.innerHTML = `<p class="fl" style="opacity:0.5">${active.length} 個のオブジェクトを選択中</p>`;
     }
@@ -1114,6 +1197,91 @@ function handleCellPaint(col, row, tool) {
     App.canvas.renderAll();
 }
 
+/** 塗りつぶしツールの上限セル数。超過時は中止して警告を出す。 */
+const FILL_MAX_CELLS = 10000;
+
+/**
+ * セルレイヤー上で塗りつぶし (バケツ) を実行する。
+ * - 範囲: 既に塗られたセルの外接矩形 (bbox) 内のみ。
+ * - 起点が空セル: 同じく空セルの 4近傍連結領域を現在色で塗る。
+ * - 起点が塗られたセル: 同じ fill を持つ 4近傍連結領域を現在色で塗り直す。
+ * - 起点が bbox 外: ステータスバーに「セルレイヤーの範囲外です」を表示して中止。
+ * - 拡散セル数が FILL_MAX_CELLS を超えたら中止 (部分塗りは行わない)。
+ * @param {number} col
+ * @param {number} row
+ * @param {fabric.Group} layer - 対象セルレイヤー
+ */
+function fillCells(col, row, layer) {
+    if (!layer._cellData || layer._cellData.size === 0) {
+        setTransientStatus('セルレイヤーが空です');
+        return;
+    }
+
+    // bbox: 塗られたセルの (col, row) の最小/最大
+    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+    for (const cell of layer._cellData.values()) {
+        if (cell._cellCol < minC) minC = cell._cellCol;
+        if (cell._cellCol > maxC) maxC = cell._cellCol;
+        if (cell._cellRow < minR) minR = cell._cellRow;
+        if (cell._cellRow > maxR) maxR = cell._cellRow;
+    }
+
+    if (col < minC || col > maxC || row < minR || row > maxR) {
+        setTransientStatus('セルレイヤーの範囲外です');
+        return;
+    }
+
+    const newColor = rgba(App.fillColor, App.fillOpacity);
+    const startCell = layer._cellData.get(`${col},${row}`);
+    const targetColor = startCell ? startCell.fill : null; // null=空セル
+    // 既に同じ色なら何もしない
+    if (targetColor === newColor) return;
+
+    // 4近傍 BFS — bbox 外は走査しない
+    const visited = new Set();
+    const queue = [[col, row]];
+    const toFill = [];
+    visited.add(`${col},${row}`);
+
+    while (queue.length > 0) {
+        const [c, r] = queue.shift();
+        if (c < minC || c > maxC || r < minR || r > maxR) continue;
+        const cell = layer._cellData.get(`${c},${r}`);
+        const cellColor = cell ? cell.fill : null;
+        if (cellColor !== targetColor) continue;
+        toFill.push([c, r]);
+        if (toFill.length > FILL_MAX_CELLS) {
+            setTransientStatus(`塗りつぶし上限 (${FILL_MAX_CELLS}セル) を超えました`);
+            return;
+        }
+        for (const [nc, nr] of [[c+1,r],[c-1,r],[c,r+1],[c,r-1]]) {
+            const key = `${nc},${nr}`;
+            if (!visited.has(key)) { visited.add(key); queue.push([nc, nr]); }
+        }
+    }
+
+    // 適用
+    const cs = App.cellSize;
+    for (const [c, r] of toFill) {
+        const key = `${c},${r}`;
+        const existing = layer._cellData.get(key);
+        if (existing) {
+            existing.set({ fill: newColor });
+        } else {
+            const rect = new fabric.Rect({
+                left: c * cs, top: r * cs, width: cs, height: cs,
+                fill: newColor, stroke: null, strokeWidth: 0,
+                selectable: false, evented: false, objectCaching: false,
+                _cellCol: c, _cellRow: r,
+            });
+            layer.addWithUpdate(rect);
+            layer._cellData.set(key, rect);
+        }
+    }
+    App.canvas.renderAll();
+    pushHistory(`塗りつぶし (${toFill.length}セル)`);
+}
+
 /* ================================================================
    地形パターン（データのみ保持 — 描画UIは別途実装）
 ================================================================ */
@@ -1185,24 +1353,29 @@ function handleContextAction(action) {
         case 'bring-front': {
             App.canvas.bringToFront(ctxTarget);
             renderLayerList(); App.canvas.renderAll();
+            pushHistory(`${ctxTarget._layerName}を最前面へ`);
             break;
         }
         case 'send-back': {
             App.canvas.sendToBack(ctxTarget);
             renderLayerList(); App.canvas.renderAll();
+            pushHistory(`${ctxTarget._layerName}を最背面へ`);
             break;
         }
         case 'lock': {
             const locked = !ctxTarget.lockMovementX;
             ctxTarget.set({ lockMovementX: locked, lockMovementY: locked, lockRotation: locked, lockScalingX: locked, lockScalingY: locked, hasControls: !locked });
             App.canvas.renderAll();
+            pushHistory(locked ? `${ctxTarget._layerName}をロック` : `${ctxTarget._layerName}をロック解除`);
             break;
         }
         case 'delete': {
+            const name = ctxTarget._layerName;
             App.canvas.remove(ctxTarget);
             App.canvas.discardActiveObject();
             App.selectedLayerIds = App.selectedLayerIds.filter(id => id !== ctxTarget._layerId);
             renderLayerList(); App.canvas.renderAll();
+            pushHistory(`${name}を削除`);
             break;
         }
     }
@@ -1584,6 +1757,7 @@ function restoreSaveData(data) {
         renderLayerList();
         App.canvas.renderAll();
         drawGrid();
+        clearHistory();
     });
 }
 
@@ -1764,12 +1938,191 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ================================================================
+   Undo / Redo  — A方式 (全状態スナップショット)
+
+   方針:
+     - 操作後の状態を JSON 文字列で _history に積む。
+     - Undo: 現在状態を _redoStack に退避し、_history から取り出して復元。
+     - 新規操作で _redoStack はクリア。
+     - 連続編集 (スライダー / スピナー / 不透明度等) は 500ms デバウンスで集約。
+     - 復元中は _isRestoring=true で再記録ループを防ぐ。
+     - 履歴は揮発: 起動時・読込時に clearHistory()。
+     - 上限 50 件、超過分は古い方から捨てる。
+================================================================ */
+const HISTORY_MAX = 50;
+const HISTORY_DEBOUNCE_MS = 500;
+
+/**
+ * 履歴に積むためのアプリ状態を JSON 文字列にシリアライズする。
+ * @returns {string}
+ */
+function serializeHistorySnapshot() {
+    return JSON.stringify({
+        canvas: App.canvas.toJSON(SAVE_CUSTOM_PROPS),
+        nextLayerId: App.nextLayerId,
+        layerCounters: { ...App.layerCounters },
+    });
+}
+
+/**
+ * 履歴 (undo) スタックに現状態スナップショットを積み、redo スタックをクリアする。
+ * 復元中 (_isRestoring) は何もしない。
+ * @param {string} actionName - ステータスバーに表示する操作名
+ */
+function pushHistory(actionName) {
+    if (App._isRestoring) return;
+    flushHistoryDebounce(); // 別系統の操作が来たら保留中のデバウンスを確定
+    App._history.push({ snapshot: serializeHistorySnapshot(), name: actionName });
+    if (App._history.length > HISTORY_MAX) App._history.shift();
+    App._redoStack = [];
+    App._lastAction = actionName;
+    updateHistoryUI();
+}
+
+/**
+ * 同じ操作名の連続変更を集約して 1 履歴にまとめる。
+ * 最終的に確定されるスナップショットは「デバウンス満了時点」の状態。
+ * @param {string} actionName
+ */
+function pushHistoryDebounced(actionName) {
+    if (App._isRestoring) return;
+    // 操作名が変わったら即フラッシュして新しい系統に切り替え
+    if (App._historyDebounceTimer && App._historyDebouncePending !== actionName) {
+        flushHistoryDebounce();
+    }
+    App._historyDebouncePending = actionName;
+    if (App._historyDebounceTimer) clearTimeout(App._historyDebounceTimer);
+    App._historyDebounceTimer = setTimeout(() => {
+        App._historyDebounceTimer = null;
+        pushHistory(App._historyDebouncePending);
+        App._historyDebouncePending = '';
+    }, HISTORY_DEBOUNCE_MS);
+}
+
+/** デバウンス中の履歴があれば即座に確定する。 */
+function flushHistoryDebounce() {
+    if (!App._historyDebounceTimer) return;
+    clearTimeout(App._historyDebounceTimer);
+    App._historyDebounceTimer = null;
+    const name = App._historyDebouncePending;
+    App._historyDebouncePending = '';
+    pushHistory(name);
+}
+
+/**
+ * 指定スナップショットでアプリ状態を復元する (Undo/Redo 共通)。
+ * loadFromJSON 後にセル/地形レイヤーの _cellData Map を再構築する。
+ * 選択状態は Q2(a) によりクリアする。
+ * @param {string} snapshot
+ * @param {string} displayName - ステータスバー表示用 (「元に戻す: ◯◯」等)
+ */
+function restoreHistorySnapshot(snapshot, displayName) {
+    App._isRestoring = true;
+    const data = JSON.parse(snapshot);
+    App.nextLayerId = data.nextLayerId;
+    App.layerCounters = data.layerCounters || {};
+    App.selectedLayerIds = [];
+    App._drawing = null;
+    App._lineStart = null;
+    App._pathPoints = [];
+    App._polygonPoints = [];
+    App._curvePoints = [];
+
+    App.canvas.loadFromJSON(data.canvas, () => {
+        App.canvas.getObjects().forEach(obj => {
+            if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
+                obj._cellData = new Map();
+                obj.getObjects().forEach(r => {
+                    if (r._cellCol !== undefined && r._cellRow !== undefined) {
+                        obj._cellData.set(`${r._cellCol},${r._cellRow}`, r);
+                    }
+                });
+            }
+        });
+        App.canvas.discardActiveObject();
+        // 現ツールに応じて selectable を再設定
+        const isSelect = App.activeTool === 'select' || App.activeTool === 'settings';
+        getMapLayers().forEach(o => o.set({ selectable: isSelect, evented: isSelect }));
+        renderLayerList();
+        updateSelectionInfo();
+        App.canvas.renderAll();
+        drawGrid();
+        App._isRestoring = false;
+    });
+
+    App._lastAction = displayName;
+    updateHistoryUI();
+}
+
+/** 1 ステップ Undo。履歴が無ければ何もしない。 */
+function undo() {
+    flushHistoryDebounce();
+    if (App._history.length === 0) return;
+    const current = serializeHistorySnapshot();
+    const entry = App._history.pop();
+    App._redoStack.push({ snapshot: current, name: entry.name });
+    restoreHistorySnapshot(entry.snapshot, `元に戻す: ${entry.name}`);
+}
+
+/** 1 ステップ Redo。redo スタックが空なら何もしない。 */
+function redo() {
+    flushHistoryDebounce();
+    if (App._redoStack.length === 0) return;
+    const current = serializeHistorySnapshot();
+    const entry = App._redoStack.pop();
+    App._history.push({ snapshot: current, name: entry.name });
+    restoreHistorySnapshot(entry.snapshot, `やり直し: ${entry.name}`);
+}
+
+/** 履歴・redo スタックを全クリアする。マップ読込時等に呼ぶ。 */
+function clearHistory() {
+    flushHistoryDebounce();
+    App._history = [];
+    App._redoStack = [];
+    App._lastAction = '';
+    updateHistoryUI();
+}
+
+/** Undo/Redo ボタンの disabled 状態と、ステータスバーの最後の操作名を更新する。 */
+function updateHistoryUI() {
+    const u = document.getElementById('undo-btn');
+    const r = document.getElementById('redo-btn');
+    if (u) u.disabled = App._history.length === 0;
+    if (r) r.disabled = App._redoStack.length === 0;
+    const sb = document.getElementById('sb-last-action');
+    if (sb && !_transientStatusTimer) sb.textContent = App._lastAction;
+}
+
+let _transientStatusTimer = null;
+
+/**
+ * ステータスバーの「最後の操作」エリアに一時メッセージを表示する。
+ * 2.5 秒後に App._lastAction の表示に戻る。塗りつぶしの範囲外通知などに使う。
+ * @param {string} msg
+ */
+function setTransientStatus(msg) {
+    const el = document.getElementById('sb-last-action');
+    if (!el) return;
+    if (_transientStatusTimer) clearTimeout(_transientStatusTimer);
+    el.textContent = msg;
+    _transientStatusTimer = setTimeout(() => {
+        _transientStatusTimer = null;
+        el.textContent = App._lastAction;
+    }, 2500);
+}
+
+/* ================================================================
    キーボードショートカット
 ================================================================ */
 document.addEventListener('keydown', e => {
     if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
     const key = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey;
-    if (ctrl && key === 'z') { e.preventDefault(); return; }
+    if (ctrl && key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+    }
+    if (ctrl && key === 'y') { e.preventDefault(); redo(); return; }
     if (ctrl && key === 's') { e.preventDefault(); openSaveModal(); return; }
     if (ctrl && key === 'g') { e.preventDefault(); return; }
 
@@ -1814,10 +2167,13 @@ document.addEventListener('keydown', e => {
     const shortcuts = { v:'select', b:'cell', r:'rect', e:'ellipse', l:'line', p:'path', g:'polygon', d:'freehand', t:'text', i:'image', c:'curve' };
     if (shortcuts[key]) { setActiveTool(shortcuts[key]); return; }
     if ((e.key === 'Delete' || e.key === 'Backspace') && App.activeTool === 'select') {
-        App.canvas.getActiveObjects().forEach(o => App.canvas.remove(o));
+        const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer);
+        if (targets.length === 0) return;
+        targets.forEach(o => App.canvas.remove(o));
         App.canvas.discardActiveObject();
         App.selectedLayerIds = [];
         renderLayerList(); App.canvas.renderAll(); updateSelectionInfo();
+        pushHistory(targets.length === 1 ? `${targets[0]._layerName}を削除` : `${targets.length}個のオブジェクトを削除`);
     }
 });
 
@@ -1856,9 +2212,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const style = document.querySelector('input[name="stroke-style"]:checked')?.value || 'solid';
         App.strokeDashArray = getDashArray(style, App.strokeWidth);
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
-                .forEach(o => o.set({ strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray }));
+            const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach(o => o.set({ strokeWidth: App.strokeWidth, strokeDashArray: App.strokeDashArray }));
             App.canvas.renderAll();
+            pushHistoryDebounced('線幅を変更');
         }
     });
 
@@ -1866,9 +2224,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="stroke-style"]').forEach(r => r.addEventListener('change', () => {
         App.strokeDashArray = getDashArray(r.value, App.strokeWidth);
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer)
-                .forEach(o => o.set({ strokeDashArray: App.strokeDashArray }));
+            const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach(o => o.set({ strokeDashArray: App.strokeDashArray }));
             App.canvas.renderAll();
+            pushHistory('線種を変更');
         }
     }));
 
@@ -1876,9 +2236,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('corner-radius').addEventListener('input', function() {
         App.cornerRadius = parseInt(this.value) || 0;
         if (App.activeTool === 'select') {
-            App.canvas.getActiveObjects().filter(o => o._isMapLayer && o.type === 'rect')
-                .forEach(o => o.set({ rx: App.cornerRadius, ry: App.cornerRadius }));
+            const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer && o.type === 'rect');
+            if (targets.length === 0) return;
+            targets.forEach(o => o.set({ rx: App.cornerRadius, ry: App.cornerRadius }));
             App.canvas.renderAll();
+            pushHistoryDebounced('角丸を変更');
         }
     });
 
@@ -1894,12 +2256,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('layer-opacity').addEventListener('input', function() {
         const val = parseFloat(this.value);
         document.getElementById('layer-opacity-val').textContent = Math.round(val * 100) + '%';
-        App.canvas.getActiveObjects().forEach(o => o.set({ opacity: val }));
+        const targets = App.canvas.getActiveObjects();
+        if (targets.length === 0) return;
+        targets.forEach(o => o.set({ opacity: val }));
         App.canvas.renderAll();
+        pushHistoryDebounced('不透明度を変更');
     });
     document.getElementById('layer-blend').addEventListener('change', function() {
-        App.canvas.getActiveObjects().forEach(o => o.set({ globalCompositeOperation: this.value }));
+        const targets = App.canvas.getActiveObjects();
+        if (targets.length === 0) return;
+        targets.forEach(o => o.set({ globalCompositeOperation: this.value }));
         App.canvas.renderAll();
+        pushHistory('ブレンドモードを変更');
     });
 
     // フリーハンド線幅
@@ -1929,12 +2297,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // セルレイヤー追加
     document.getElementById('add-cell-layer')?.addEventListener('click', createCellLayer);
 
+    // セル塗りツール (ペン/消しゴム/塗りつぶし) のタイル切替
+    document.querySelectorAll('#cell-tool-tiles .tool-tile').forEach(tile => {
+        tile.addEventListener('click', () => {
+            document.querySelectorAll('#cell-tool-tiles .tool-tile').forEach(t => t.classList.remove('active'));
+            tile.classList.add('active');
+        });
+    });
+
     // レイヤー削除
     document.getElementById('layer-delete')?.addEventListener('click', () => {
-        App.canvas.getActiveObjects().forEach(o => App.canvas.remove(o));
+        const targets = App.canvas.getActiveObjects().filter(o => o._isMapLayer);
+        if (targets.length === 0) return;
+        targets.forEach(o => App.canvas.remove(o));
         App.canvas.discardActiveObject();
         App.selectedLayerIds = [];
         renderLayerList(); App.canvas.renderAll(); updateSelectionInfo();
+        pushHistory(targets.length === 1 ? `${targets[0]._layerName}を削除` : `${targets.length}個のオブジェクトを削除`);
     });
 
     // レイヤーリスト空白クリック → 選択解除
@@ -1957,4 +2336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 初期ツール適用
     setActiveTool('select');
+
+    // Undo/Redo ボタン初期状態
+    updateHistoryUI();
 });
