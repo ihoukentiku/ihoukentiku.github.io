@@ -47,6 +47,12 @@
 const App = {
     gridType: 'square',
     editMode: 'simple', // 'simple' | 'map' — シンプル/地図モードの切替 (per-map で保存)
+    // ---- 地図モード: 地面/壁タブの状態 (Phase B) ----
+    groundTool: 'cell', // 'cell' | 'rect'
+    groundPattern: { mode: 'pattern', id: 'stone_floor', genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
+    wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
+    wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
+    wallStrokeWidth: 8,
     activeTool: 'select',
     cellSize: 72,
     canvas: null,
@@ -132,14 +138,13 @@ const TERRAIN_PRESETS = {
 };
 
 /**
- * 地形プリセットからセル1枚分のテクスチャを生成し、繰り返しタイル可能な fabric.Pattern として返す。
+ * 地形プリセットからセル1枚分のテクスチャを描いた canvas を返す。
  * @param {string} baseColor - ベース色 (#RRGGBB)
  * @param {'stripe'|'grid'|'brick'|'hatch'|'dot'|'speckle'|'wave'|'none'} patternType
- * @param {number} cellSize - 1セルの一辺 (px)
- * @returns {fabric.Pattern}
+ * @param {number} sz - 一辺 (px)
+ * @returns {HTMLCanvasElement}
  */
-function generateTerrainPattern(baseColor, patternType, cellSize) {
-    const sz = cellSize;
+function renderTerrainCanvas(baseColor, patternType, sz) {
     const c = document.createElement('canvas');
     c.width = sz;
     c.height = sz;
@@ -286,7 +291,64 @@ function generateTerrainPattern(baseColor, patternType, cellSize) {
         }
         // 'none': ベース色のみ
     }
-    return new fabric.Pattern({ source: c, repeat: 'repeat' });
+    return c;
+}
+
+/**
+ * 地形プリセットからセル1枚分のテクスチャを生成し、繰り返しタイル可能な fabric.Pattern として返す。
+ * @param {string} baseColor - ベース色 (#RRGGBB)
+ * @param {'stripe'|'grid'|'brick'|'hatch'|'dot'|'speckle'|'wave'|'none'} patternType
+ * @param {number} cellSize - 1セルの一辺 (px)
+ * @returns {fabric.Pattern}
+ */
+function generateTerrainPattern(baseColor, patternType, cellSize) {
+    return new fabric.Pattern({ source: renderTerrainCanvas(baseColor, patternType, cellSize), repeat: 'repeat' });
+}
+
+/* ================================================================
+   地面 / 壁パターン (Phase B-1)
+   既存の renderTerrainCanvas 描画ルーチンを共用。各エントリは
+   { id, name, genre, color, pattern } の形を取る。
+================================================================ */
+const GROUND_GENRES = [
+    { id: 'all', name: '全て' },
+    { id: 'stone', name: '石' },
+    { id: 'wood', name: '木' },
+    { id: 'grass', name: '草' },
+    { id: 'sand', name: '砂' },
+    { id: 'water', name: '水' },
+];
+const GROUND_PATTERNS = [
+    { id: 'stone_floor', name: '石床', genre: 'stone', color: '#8a8a8a', pattern: 'speckle' },
+    { id: 'cave_stone', name: '洞窟石', genre: 'stone', color: '#6b6b6b', pattern: 'speckle' },
+    { id: 'gravel', name: '砂利', genre: 'stone', color: '#7a7568', pattern: 'dot' },
+    { id: 'wood_floor', name: '木床', genre: 'wood', color: '#a0724e', pattern: 'stripe' },
+    { id: 'tile_floor', name: 'タイル', genre: 'wood', color: '#c4b9a0', pattern: 'grid' },
+    { id: 'grass', name: '草', genre: 'grass', color: '#4a8c3f', pattern: 'speckle' },
+    { id: 'moss', name: '苔', genre: 'grass', color: '#4e6e3a', pattern: 'speckle' },
+    { id: 'sand', name: '砂', genre: 'sand', color: '#d4c07a', pattern: 'dot' },
+    { id: 'dirt', name: '土', genre: 'sand', color: '#8b6e4e', pattern: 'speckle' },
+    { id: 'water_s', name: '水(浅)', genre: 'water', color: '#5ba3cf', pattern: 'wave' },
+    { id: 'water_d', name: '水(深)', genre: 'water', color: '#2a6496', pattern: 'wave' },
+];
+
+const WALL_GENRES = [
+    { id: 'all', name: '全て' },
+    { id: 'stone', name: '石壁' },
+    { id: 'wood', name: '木壁' },
+    { id: 'brick', name: 'レンガ' },
+    { id: 'natural', name: '自然' },
+];
+const WALL_PATTERNS = [
+    { id: 'stone_wall', name: '石壁', genre: 'stone', color: '#7a7a7a', pattern: 'brick' },
+    { id: 'wood_wall', name: '木壁', genre: 'wood', color: '#6e4a30', pattern: 'stripe' },
+    { id: 'brick_wall', name: 'レンガ', genre: 'brick', color: '#a85d3e', pattern: 'brick' },
+    { id: 'cliff', name: '崖', genre: 'natural', color: '#5a4838', pattern: 'hatch' },
+];
+
+/** id から地面/壁パターン定義を取得する (どちらにも無ければ null)。 */
+function getPatternDef(id) {
+    return GROUND_PATTERNS.find((p) => p.id === id) || WALL_PATTERNS.find((p) => p.id === id) || null;
 }
 
 /**
@@ -1898,6 +1960,166 @@ function setGridType(type) {
     drawGrid();
 }
 
+/* ================================================================
+   パターン選択 UI (Phase B-1)
+   横にジャンルタブが並び、選択ジャンルでフィルタしたパターンを 4 列タイルグリッドで表示。
+   左上は「単色」タイル (App.fillColor を使う)。Solid と Pattern のどちらでも選択可能。
+================================================================ */
+const PP_THUMB_SIZE = 96; // パターンタイル内に描くテクスチャの一辺 (px) — 高解像度で 1 タイル分を見せる
+
+/**
+ * パターン定義から data URL のサムネを生成する。
+ * @param {{color:string, pattern:string}} def
+ * @returns {string}
+ */
+function makePatternThumbDataUrl(def) {
+    const c = renderTerrainCanvas(def.color, def.pattern, PP_THUMB_SIZE);
+    return c.toDataURL();
+}
+
+/**
+ * パターン選択 UI の「ジャンルタブ + タイルグリッド」部分のみを再描画する。
+ * 単色行 (.pp-solid-row) は別管理 (Pickr インスタンスを保持するため innerHTML クリアしない)。
+ * @param {HTMLElement} root - マウント先 (.pattern-picker)
+ * @param {object} opts - renderPatternPicker と同等
+ */
+function renderPatternPickerContent(root, opts) {
+    const state = opts.getState();
+    const genreId = state.genreId || 'all';
+    const content = root.querySelector('.pp-content');
+    content.innerHTML = '';
+    // ジャンルタブ
+    const genresEl = document.createElement('div');
+    genresEl.className = 'pp-genres';
+    opts.genres.forEach((g) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pp-genre' + (g.id === genreId ? ' active' : '');
+        btn.textContent = g.name;
+        btn.addEventListener('click', () => {
+            opts.setState({ ...opts.getState(), genreId: g.id });
+            renderPatternPickerContent(root, opts);
+        });
+        genresEl.appendChild(btn);
+    });
+    content.appendChild(genresEl);
+
+    // タイルグリッド
+    const tilesEl = document.createElement('div');
+    tilesEl.className = 'pp-tiles';
+    // 単色タイル (常に左上、state.solidColor をスウォッチに反映)
+    const solid = document.createElement('div');
+    solid.className = 'pp-tile pp-tile-solid' + (state.mode === 'solid' ? ' active' : '');
+    solid.title = '単色';
+    const swatch = document.createElement('div');
+    swatch.className = 'pp-solid-swatch';
+    swatch.style.background = state.solidColor || '#888888';
+    solid.appendChild(swatch);
+    const solidLabel = document.createElement('div');
+    solidLabel.className = 'pp-label';
+    solidLabel.textContent = '単色';
+    solid.appendChild(solidLabel);
+    solid.addEventListener('click', () => {
+        opts.setState({ ...opts.getState(), mode: 'solid' });
+        renderPatternPickerContent(root, opts);
+        updatePatternSolidRow(root, opts);
+    });
+    tilesEl.appendChild(solid);
+
+    // パターンタイル (フィルタ済み)
+    const filtered = genreId === 'all' ? opts.patterns : opts.patterns.filter((p) => p.genre === genreId);
+    filtered.forEach((p) => {
+        const tile = document.createElement('div');
+        tile.className = 'pp-tile' + (state.mode === 'pattern' && state.id === p.id ? ' active' : '');
+        tile.title = p.name;
+        tile.style.backgroundImage = `url(${makePatternThumbDataUrl(p)})`;
+        const lbl = document.createElement('div');
+        lbl.className = 'pp-label';
+        lbl.textContent = p.name;
+        tile.appendChild(lbl);
+        tile.addEventListener('click', () => {
+            opts.setState({ ...opts.getState(), mode: 'pattern', id: p.id });
+            renderPatternPickerContent(root, opts);
+            updatePatternSolidRow(root, opts);
+        });
+        tilesEl.appendChild(tile);
+    });
+    content.appendChild(tilesEl);
+}
+
+/** 単色行 (.pp-solid-row) の表示/非表示を state.mode に合わせて更新する。 */
+function updatePatternSolidRow(root, opts) {
+    const row = root.querySelector('.pp-solid-row');
+    if (!row) return;
+    row.classList.toggle('hidden', opts.getState().mode !== 'solid');
+}
+
+/**
+ * パターン選択 UI を root にマウントする (初回のみ DOM 構築 + Pickr 作成)。
+ * 以後の表示更新は renderPatternPickerContent / updatePatternSolidRow を経由する。
+ */
+function mountPatternPicker(root, opts) {
+    if (root._mounted) {
+        renderPatternPickerContent(root, opts);
+        updatePatternSolidRow(root, opts);
+        return;
+    }
+    root.innerHTML = '<div class="pp-content"></div><div class="pp-solid-row hidden"><span>色</span><div class="pp-solid-trigger"></div></div>';
+    const triggerEl = root.querySelector('.pp-solid-trigger');
+    const state0 = opts.getState();
+    const pickr = Pickr.create({
+        el: triggerEl,
+        theme: 'nano',
+        default: state0.solidColor || '#888888',
+        components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: true } },
+        i18n: { 'btn:save': '確定' },
+    });
+    pickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        const hex = c.toHEXA().toString().slice(0, 7);
+        opts.setState({ ...opts.getState(), mode: 'solid', solidColor: hex });
+        instance.applyColor(true);
+        // 単色タイルのスウォッチも同期
+        const sw = root.querySelector('.pp-tile-solid .pp-solid-swatch');
+        if (sw) sw.style.background = hex;
+    });
+    pickr.on('save', (_, p) => p.hide());
+    root._pickr = pickr;
+    root._mounted = true;
+    renderPatternPickerContent(root, opts);
+    updatePatternSolidRow(root, opts);
+}
+
+/** 地面/壁の両ピッカーをマウント or 更新する (初期化、復元時に呼ぶ)。 */
+function refreshPatternPickers() {
+    const groundRoot = document.getElementById('ground-pattern-picker');
+    if (groundRoot) {
+        mountPatternPicker(groundRoot, {
+            patterns: GROUND_PATTERNS,
+            genres: GROUND_GENRES,
+            getState: () => App.groundPattern,
+            setState: (s) => {
+                App.groundPattern = s;
+                pushHistoryDebounced('地面パターンを変更');
+            },
+        });
+        if (groundRoot._pickr) groundRoot._pickr.setColor(App.groundPattern.solidColor || '#888888', true);
+    }
+    const wallRoot = document.getElementById('wall-pattern-picker');
+    if (wallRoot) {
+        mountPatternPicker(wallRoot, {
+            patterns: WALL_PATTERNS,
+            genres: WALL_GENRES,
+            getState: () => App.wallPattern,
+            setState: (s) => {
+                App.wallPattern = s;
+                pushHistoryDebounced('壁パターンを変更');
+            },
+        });
+        if (wallRoot._pickr) wallRoot._pickr.setColor(App.wallPattern.solidColor || '#888888', true);
+    }
+}
+
 /**
  * 編集モード (シンプル/地図) を切替える。
  * body[data-edit-mode] を更新して CSS でツールバー/プロパティパネルの表示切替を行い、
@@ -2223,6 +2445,11 @@ function buildSaveData() {
         cellSize: App.cellSize,
         gridType: App.gridType,
         editMode: App.editMode,
+        groundTool: App.groundTool,
+        groundPattern: App.groundPattern,
+        wallTool: App.wallTool,
+        wallPattern: App.wallPattern,
+        wallStrokeWidth: App.wallStrokeWidth,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
         gridDashArray: App.gridDashArray,
@@ -2243,6 +2470,11 @@ function restoreSaveData(data) {
     App.cellSize = data.cellSize || 60;
     App.gridType = data.gridType || 'square';
     setEditMode(data.editMode === 'map' ? 'map' : 'simple');
+    if (data.groundTool) App.groundTool = data.groundTool;
+    if (data.groundPattern) App.groundPattern = data.groundPattern;
+    if (data.wallTool) App.wallTool = data.wallTool;
+    if (data.wallPattern) App.wallPattern = data.wallPattern;
+    if (typeof data.wallStrokeWidth === 'number') App.wallStrokeWidth = data.wallStrokeWidth;
     App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
     App.gridLineWidth = data.gridLineWidth || 1;
     App.gridDashArray = data.gridDashArray || null;
@@ -2269,6 +2501,12 @@ function restoreSaveData(data) {
             }
         });
         renderLayerList();
+        // 地面/壁ツールタイル + パターンピッカーを App 状態に同期
+        document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.groundTool === App.groundTool));
+        document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.wallTool === App.wallTool));
+        const wsw = document.getElementById('wall-stroke-width');
+        if (wsw) wsw.value = App.wallStrokeWidth;
+        refreshPatternPickers();
         App.canvas.renderAll();
         drawGrid();
         clearHistory();
@@ -2901,6 +3139,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // セルレイヤー追加
     document.getElementById('add-cell-layer')?.addEventListener('click', createCellLayer);
+
+    // 地面ツールタイル (Phase B-1: 状態保持のみ。描画は B-2)
+    document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((tile) => {
+        tile.classList.toggle('active', tile.dataset.groundTool === App.groundTool);
+        tile.addEventListener('click', () => {
+            App.groundTool = tile.dataset.groundTool;
+            document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t === tile));
+        });
+    });
+    // 壁ツールタイル
+    document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((tile) => {
+        tile.classList.toggle('active', tile.dataset.wallTool === App.wallTool);
+        tile.addEventListener('click', () => {
+            App.wallTool = tile.dataset.wallTool;
+            document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t === tile));
+        });
+    });
+    // 壁の太さ
+    const wallSwEl = document.getElementById('wall-stroke-width');
+    if (wallSwEl) {
+        wallSwEl.value = App.wallStrokeWidth;
+        wallSwEl.addEventListener('input', function () {
+            const v = parseInt(this.value) || 8;
+            App.wallStrokeWidth = v;
+            pushHistoryDebounced('壁の太さを変更');
+        });
+    }
+    // パターン選択 UI 初期描画
+    refreshPatternPickers();
 
     // セル塗りツール (ペン/消しゴム/塗りつぶし) のタイル切替
     document.querySelectorAll('#cell-tool-tiles .tool-tile').forEach((tile) => {

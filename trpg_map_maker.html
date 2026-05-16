@@ -307,7 +307,7 @@
             /* ツールタイル（高度モードのサブツール選択） */
             .tool-tiles {
                 display: grid;
-                grid-template-columns: repeat(3, 56px);
+                grid-template-columns: repeat(4, 56px);
                 gap: 5px;
                 margin-bottom: 0.6rem;
             }
@@ -349,6 +349,113 @@
             .tool-tile .fa-regular {
                 font-size: 1rem;
                 line-height: 1.1rem;
+            }
+
+            /* ---- パターン選択 UI (Phase B) ---- */
+            .pattern-picker {
+                margin-top: 0.4rem;
+            }
+            .pp-genres {
+                display: flex;
+                gap: 4px;
+                overflow-x: auto;
+                scrollbar-width: thin;
+                padding-bottom: 4px;
+                margin-bottom: 6px;
+                border-bottom: 1px solid var(--border);
+            }
+            .pp-genres::-webkit-scrollbar {
+                height: 4px;
+            }
+            .pp-genre {
+                flex: 0 0 auto;
+                padding: 3px 8px;
+                font-size: 0.62rem;
+                font-family: var(--font-mono);
+                color: var(--text-dim);
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                cursor: pointer;
+                white-space: nowrap;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    border-color var(--t);
+            }
+            .pp-genre:hover {
+                color: var(--text-bright);
+                background: var(--cyan-muted);
+            }
+            .pp-genre.active {
+                color: var(--cyan);
+                border-color: var(--cyan);
+                background: rgba(0, 229, 255, 0.1);
+            }
+            .pp-tiles {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 4px;
+                max-height: 200px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                padding-right: 2px;
+            }
+            .pp-tile {
+                aspect-ratio: 1;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+                background-repeat: repeat;
+                background-size: 100% 100%;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t);
+            }
+            .pp-tile:hover {
+                border-color: var(--cyan);
+            }
+            .pp-tile.active {
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 1px var(--cyan), var(--glow-cyan);
+            }
+            .pp-tile .pp-label {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                font-size: 0.5rem;
+                color: white;
+                text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+                text-align: center;
+                padding: 1px 0;
+                background: rgba(0, 0, 0, 0.35);
+                line-height: 1.1;
+            }
+            .pp-tile-solid {
+                background: repeating-conic-gradient(rgba(255, 255, 255, 0.15) 0% 25%, rgba(0, 0, 0, 0.15) 0% 50%) 0 0 / 12px 12px;
+            }
+            .pp-tile-solid .pp-solid-swatch {
+                position: absolute;
+                inset: 0;
+            }
+
+            /* 単色モード時に出る色選択行 */
+            .pp-solid-row {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                margin-top: 6px;
+                font-size: 0.65rem;
+                color: var(--text-dim);
+            }
+            .pp-solid-row.hidden {
+                display: none;
+            }
+            .pp-solid-trigger .pickr {
+                width: 100%;
             }
 
             /* ---- プロパティパネル ---- */
@@ -990,14 +1097,36 @@
                 <div class="prop-group" data-prop="ground">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">texture</span>地面</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase B で追加予定 (セル/矩形 + パターン選択)</p>
+                        <div class="tool-tiles" id="ground-tool-tiles">
+                            <div class="tool-tile" data-ground-tool="cell" title="セル塗り"><span class="material-symbols-outlined">grid_on</span><span>セル</span></div>
+                            <div class="tool-tile" data-ground-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
+                            <div class="tool-tile" data-ground-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
+                            <div class="tool-tile" data-ground-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
+                            <div class="tool-tile" data-ground-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">bubble_chart</span><span>閉曲線</span></div>
+                        </div>
+                        <div class="pattern-picker" id="ground-pattern-picker"></div>
+                        <p class="fl" style="opacity: 0.4; font-size: 0.6rem; margin-top: 0.4rem">※ Phase B-2 で描画機能を実装予定</p>
                     </div>
                 </div>
                 <!-- 地図モード: 壁 -->
                 <div class="prop-group" data-prop="wall">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">grid_4x4</span>壁</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase B で追加予定 (矩形/楕円/直線/折線/多角形/曲線 + 壁パターン)</p>
+                        <div class="tool-tiles" id="wall-tool-tiles">
+                            <div class="tool-tile" data-wall-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
+                            <div class="tool-tile" data-wall-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
+                            <div class="tool-tile" data-wall-tool="line" title="直線"><span class="material-symbols-outlined">horizontal_rule</span><span>直線</span></div>
+                            <div class="tool-tile" data-wall-tool="path" title="折線"><span class="material-symbols-outlined">polyline</span><span>折線</span></div>
+                            <div class="tool-tile" data-wall-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
+                            <div class="tool-tile" data-wall-tool="curve" title="曲線"><span class="material-symbols-outlined">gesture</span><span>曲線</span></div>
+                            <div class="tool-tile" data-wall-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">bubble_chart</span><span>閉曲線</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">太さ</span>
+                            <div class="row"><input type="number" id="wall-stroke-width" value="8" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="pattern-picker" id="wall-pattern-picker"></div>
+                        <p class="fl" style="opacity: 0.4; font-size: 0.6rem; margin-top: 0.4rem">※ Phase B-3 で描画機能を実装予定</p>
                     </div>
                 </div>
                 <!-- 地図モード: 部屋 -->
