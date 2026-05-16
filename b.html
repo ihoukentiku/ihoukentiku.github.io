@@ -29,7 +29,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -318,7 +318,7 @@
             .overlap-warn.on {
                 display: flex;
             }
-            .overlap-warn .material-icons {
+            .overlap-warn .material-symbols-outlined {
                 font-size: 0.85rem !important;
             }
 
@@ -329,7 +329,7 @@
                 padding: 0.28rem 0.65rem;
                 font-size: 0.73rem;
             }
-            #btn-add .material-icons {
+            #btn-add .material-symbols-outlined {
                 font-size: 0.88rem !important;
             }
             #btn-add:disabled {
@@ -384,7 +384,7 @@
             .drag-handle:hover {
                 color: var(--blue-light);
             }
-            .drag-handle .material-icons {
+            .drag-handle .material-symbols-outlined {
                 font-size: 1rem !important;
                 line-height: 1;
                 display: block;
@@ -513,7 +513,7 @@
                 color: var(--red);
                 background: rgba(255, 23, 68, 0.1);
             }
-            .block-del .material-icons {
+            .block-del .material-symbols-outlined {
                 font-size: 0.95rem !important;
                 line-height: 1;
                 display: block;
@@ -530,7 +530,7 @@
                 font-size: 0.78rem;
                 opacity: 0.7;
             }
-            .blocks-empty .material-icons {
+            .blocks-empty .material-symbols-outlined {
                 font-size: 1.6rem !important;
                 opacity: 0.4;
             }
@@ -557,7 +557,7 @@
                 padding: 0.28rem 0.65rem;
                 font-size: 0.73rem;
             }
-            #btn-copy .material-icons {
+            #btn-copy .material-symbols-outlined {
                 font-size: 0.88rem !important;
             }
             #output-text {
@@ -663,9 +663,9 @@
                 <div class="blocks-header">
                     <div class="blocks-header-left">
                         <span class="section-label">ブロック</span>
-                        <div class="overlap-warn" id="overlap-warn"><span class="material-icons">warning</span>重複あり</div>
+                        <div class="overlap-warn" id="overlap-warn"><span class="material-symbols-outlined">warning</span>重複あり</div>
                     </div>
-                    <button class="btn-primary" id="btn-add"><span class="material-icons">add</span>追加</button>
+                    <button class="btn-primary" id="btn-add"><span class="material-symbols-outlined">add</span>追加</button>
                 </div>
                 <div id="blocks-list"></div>
             </section>
@@ -675,7 +675,7 @@
                 <div class="output-header">
                     <span class="section-label">BCDice 出力</span>
                     <button class="btn-primary" id="btn-copy">
-                        <span class="material-icons">content_copy</span>
+                        <span class="material-symbols-outlined">content_copy</span>
                         <span id="copy-label">コピー</span>
                     </button>
                 </div>
@@ -694,37 +694,37 @@
             <div class="modal">
                 <div class="modal-header">
                     <span class="modal-title">使い方</span>
-                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body">
                     <div class="guide-body" id="guide-content">
                         <h3>基本の流れ</h3>
                         <ul>
-                            <li><span class="material-icons" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_one</span>表の名前とダイス種別（nDx）を入力。</li>
+                            <li><span class="material-symbols-outlined" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_one</span>表の名前とダイス種別（nDx）を入力。</li>
                             <li>
-                                <span class="material-icons" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_two</span>「追加」でブロックを作成し、各ブロックに結果テキストを入力。
+                                <span class="material-symbols-outlined" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_two</span>「追加」でブロックを作成し、各ブロックに結果テキストを入力。
                             </li>
-                            <li><span class="material-icons" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_3</span>「コピー」でBCDice形式のテキストをコピー。</li>
+                            <li><span class="material-symbols-outlined" style="color: var(--cyan); font-size: 1rem; margin-top: 2px">looks_3</span>「コピー」でBCDice形式のテキストをコピー。</li>
                         </ul>
                         <h3>帯グラフの操作</h3>
                         <ul>
                             <li>
-                                <span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">open_with</span
+                                <span class="material-symbols-outlined" style="color: var(--blue); font-size: 1rem; margin-top: 2px">open_with</span
                                 ><b>帯の中央部をドラッグ</b>：ブロックを移動。隣のブロックへは進入不可。
                             </li>
                             <li>
-                                <span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">drag_handle</span
+                                <span class="material-symbols-outlined" style="color: var(--blue); font-size: 1rem; margin-top: 2px">drag_handle</span
                                 ><b>帯の両端ハンドルをドラッグ</b>：範囲を広げ・縮め。ドラッグ中は現在値をツールチップ表示。
                             </li>
                         </ul>
                         <h3>リストの操作</h3>
                         <ul>
                             <li>
-                                <span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">drag_handle</span
+                                <span class="material-symbols-outlined" style="color: var(--blue); font-size: 1rem; margin-top: 2px">drag_handle</span
                                 ><b>≡ハンドルをドラッグ</b>：割り込み移動（以降ブロックが押し出されます）。
                             </li>
-                            <li><span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">exposure_plus_1</span><b>±ボタン</b>：start/end を1ずつ変更。</li>
-                            <li><span class="material-icons" style="color: var(--blue); font-size: 1rem; margin-top: 2px">circle</span><b>カラーボタン</b>：ブロック色を変更。</li>
+                            <li><span class="material-symbols-outlined" style="color: var(--blue); font-size: 1rem; margin-top: 2px">exposure_plus_1</span><b>±ボタン</b>：start/end を1ずつ変更。</li>
+                            <li><span class="material-symbols-outlined" style="color: var(--blue); font-size: 1rem; margin-top: 2px">circle</span><b>カラーボタン</b>：ブロック色を変更。</li>
                         </ul>
                     </div>
                 </div>
@@ -1200,7 +1200,7 @@
                 function renderList() {
                     const sorted = [...blocks].sort((a, b) => a.start - b.start);
                     if (!sorted.length) {
-                        blocksList.innerHTML = '<div class="blocks-empty"><span class="material-icons">table_chart</span><span>ブロックがありません</span></div>';
+                        blocksList.innerHTML = '<div class="blocks-empty"><span class="material-symbols-outlined">table_chart</span><span>ブロックがありません</span></div>';
                         return;
                     }
                     blocksList.innerHTML = '';
@@ -1212,7 +1212,7 @@
                         // drag handle
                         const handle = document.createElement('span');
                         handle.className = 'drag-handle';
-                        handle.innerHTML = '<span class="material-icons">drag_handle</span>';
+                        handle.innerHTML = '<span class="material-symbols-outlined">drag_handle</span>';
 
                         // color swatch
                         const swatch = document.createElement('button');
@@ -1295,7 +1295,7 @@
                         const delBtn = document.createElement('button');
                         delBtn.className = 'block-del';
                         delBtn.title = '削除';
-                        delBtn.innerHTML = '<span class="material-icons">delete</span>';
+                        delBtn.innerHTML = '<span class="material-symbols-outlined">delete</span>';
 
                         item.appendChild(handle);
                         item.appendChild(swatch);
@@ -1331,7 +1331,7 @@
                         const blk = blocks.find((b) => b.id === blockId);
                         if (blk) {
                             clone.innerHTML = `
-                <span style="pointer-events:none;color:var(--text-dim)"><span class="material-icons" style="font-size:1rem">drag_handle</span></span>
+                <span style="pointer-events:none;color:var(--text-dim)"><span class="material-symbols-outlined" style="font-size:1rem">drag_handle</span></span>
                 <span style="width:18px;height:18px;border-radius:4px;background:${blk.color};display:inline-block;flex-shrink:0"></span>
                 <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim)">${blk.start}~${blk.end}</span>
                 <span style="font-size:0.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${blk.text || ''}</span>

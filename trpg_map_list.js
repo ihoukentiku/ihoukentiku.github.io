@@ -50,10 +50,10 @@ async function renderList() {
                 <div class="date">更新: ${fmtMapDate(rec.updatedAt)}</div>
             </div>
             <div class="actions">
-                <button title="複製" data-act="dup"><span class="material-icons">content_copy</span></button>
-                <button title="名前変更" data-act="rename"><span class="material-icons">edit</span></button>
-                <button title="JSON出力" data-act="export"><span class="material-icons">file_download</span></button>
-                <button title="削除" data-act="delete"><span class="material-icons">delete</span></button>
+                <button title="複製" data-act="dup"><span class="material-symbols-outlined">content_copy</span></button>
+                <button title="名前変更" data-act="rename"><span class="material-symbols-outlined">edit</span></button>
+                <button title="JSON出力" data-act="export"><span class="material-symbols-outlined">file_download</span></button>
+                <button title="削除" data-act="delete"><span class="material-symbols-outlined">delete</span></button>
             </div>`;
 
         // サムネクリック / info クリックで編集画面へ

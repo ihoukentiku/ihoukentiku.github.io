@@ -15,7 +15,7 @@
         // CSS Grid (auto 1fr auto) で 左=戻る / 中=名前+ステータス / 右=Undo/Redo
         ext.innerHTML = `
             <a href="trpg_map_list.html" class="map-back-btn" title="マイマップ一覧へ戻る">
-                <span class="material-icons">grid_view</span>
+                <span class="material-symbols-outlined">map</span>
                 <span>マップ一覧へ戻る</span>
             </a>
             <div class="map-center">
@@ -23,8 +23,8 @@
                 <span class="save-status saved" id="save-status">保存済み</span>
             </div>
             <div class="map-actions">
-                <button id="undo-btn" class="header-icon-btn" disabled title="元に戻す (Ctrl+Z)"><span class="material-icons">undo</span></button>
-                <button id="redo-btn" class="header-icon-btn" disabled title="やり直し (Ctrl+Shift+Z)"><span class="material-icons">redo</span></button>
+                <button id="undo-btn" class="header-icon-btn" disabled title="元に戻す (Ctrl+Z)"><span class="material-symbols-outlined">undo</span></button>
+                <button id="redo-btn" class="header-icon-btn" disabled title="やり直し (Ctrl+Shift+Z)"><span class="material-symbols-outlined">redo</span></button>
             </div>
         `;
         ext.querySelector('#undo-btn').addEventListener('click', () => undo());
@@ -401,6 +401,29 @@ function buildBezierPath(pts) {
     return d;
 }
 /**
+ * 制御点を循環させた滑らかな閉じたベジェパスを SVG d 属性として組み立てる。
+ * 始点は pts[0] と pts[1] の中点、各制御点を pts[i]、次のセグメント終点を midpoint(pts[i], pts[i+1 mod n]) として Q コマンドで繋ぎ、末尾を Z で閉じる。
+ * @param {{x:number, y:number}[]} pts - 制御点列 (3 点以上)。点数 2 以下は直線フォールバック
+ * @returns {string}
+ */
+function buildClosedBezierPath(pts) {
+    const n = pts.length;
+    if (n < 2) return '';
+    if (n === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y} Z`;
+    const m0x = (pts[0].x + pts[1].x) / 2,
+        m0y = (pts[0].y + pts[1].y) / 2;
+    let d = `M ${m0x} ${m0y}`;
+    for (let i = 1; i <= n; i++) {
+        const p = pts[i % n];
+        const next = pts[(i + 1) % n];
+        const mx = (p.x + next.x) / 2,
+            my = (p.y + next.y) / 2;
+        d += ` Q ${p.x} ${p.y}, ${mx} ${my}`;
+    }
+    d += ' Z';
+    return d;
+}
+/**
  * キャンバス上のオブジェクトのうち「ユーザー編集対象のレイヤー」だけを z 順 (低→高) で返す。
  * プレビューやスナップマーカーなどの一時オブジェクトは除外される。
  * @returns {fabric.Object[]}
@@ -414,7 +437,7 @@ function getMapLayers() {
  * 表示/非表示を更新する。プロパティパネルの状態を一元管理する司令塔。
  */
 function updateFillStrokeVisibility() {
-    const drawTools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'wall', 'room', 'curve'];
+    const drawTools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'wall', 'room', 'curve', 'curve-closed'];
     let show = drawTools.includes(App.activeTool);
     if (App.activeTool === 'select') {
         show = App.canvas.getActiveObjects().some((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
@@ -427,7 +450,7 @@ function updateFillStrokeVisibility() {
     }
     document.getElementById('corner-radius-row').style.display = showRadius ? '' : 'none';
     // スナップ設定: 描画系ツールで表示
-    const snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'wall', 'room', 'door', 'object', 'label'];
+    const snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed', 'wall', 'room', 'door', 'object', 'label'];
     document.getElementById('snap-sec').style.display = snapTools.includes(App.activeTool) ? '' : 'none';
 }
 
@@ -689,7 +712,8 @@ function initCanvas() {
                 App._polygonPoints.push({ x: pt.x, y: pt.y });
                 break;
             }
-            case 'curve': {
+            case 'curve':
+            case 'curve-closed': {
                 const raw = snapToGrid(ptr.x, ptr.y) || ptr;
                 const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
                 App._curvePoints.push({ x: pt.x, y: pt.y });
@@ -763,10 +787,17 @@ function initCanvas() {
 
         // スナップ先を計算（水色マーカー用 — スナップ対応ツールのみ）
         {
-            const _snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'wall', 'room', 'door', 'object', 'label'];
+            const _snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed', 'wall', 'room', 'door', 'object', 'label'];
             const _needSnap = _snapTools.includes(App.activeTool) || App._exportMode;
             if (_needSnap) {
-                const _editPts = App.activeTool === 'path' ? App._pathPoints : App.activeTool === 'polygon' ? App._polygonPoints : App.activeTool === 'curve' ? App._curvePoints : [];
+                const _editPts =
+                    App.activeTool === 'path'
+                        ? App._pathPoints
+                        : App.activeTool === 'polygon'
+                          ? App._polygonPoints
+                          : App.activeTool === 'curve' || App.activeTool === 'curve-closed'
+                            ? App._curvePoints
+                            : [];
                 const _raw = snapToGrid(ptr.x, ptr.y);
                 App._snapPt = snapToEditPoints(ptr.x, ptr.y, _editPts) || _raw || null;
             } else {
@@ -850,7 +881,7 @@ function initCanvas() {
                 new fabric.Polyline([...App._pathPoints, pt], {
                     stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
                     strokeWidth: App.strokeWidth,
-                    fill: rgba(App.fillColor, App.fillOpacity * 0.3),
+                    fill: '',
                     selectable: false,
                     evented: false,
                     isPreview: true,
@@ -879,19 +910,20 @@ function initCanvas() {
             App.canvas.renderAll();
         }
 
-        // 曲線プレビュー
-        if (App.activeTool === 'curve' && App._curvePoints.length > 0) {
+        // 曲線プレビュー (開/閉共通)
+        if ((App.activeTool === 'curve' || App.activeTool === 'curve-closed') && App._curvePoints.length > 0) {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
             removePreview();
             const previewPts = [...App._curvePoints, pt];
-            const d = buildBezierPath(previewPts);
+            const closed = App.activeTool === 'curve-closed';
+            const d = closed ? buildClosedBezierPath(previewPts) : buildBezierPath(previewPts);
             if (d) {
                 App.canvas.add(
                     new fabric.Path(d, {
                         stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
                         strokeWidth: App.strokeWidth,
-                        fill: '',
+                        fill: closed ? rgba(App.fillColor, App.fillOpacity * 0.3) : '',
                         selectable: false,
                         evented: false,
                         isPreview: true,
@@ -1140,6 +1172,202 @@ function addLayerObject(typeName, obj) {
 }
 
 /**
+ * 選択中の複数レイヤーを fabric.Group に集約する。
+ * activeSelection (2 個以上の選択) のみ対象。セル/地形レイヤーが含まれていれば中止。
+ * 子の _isMapLayer 等は保持されるが、レイヤーパネル上は親グループのみ表示される (renderLayerList は canvas 直下のみ走査するため)。
+ */
+function groupSelected() {
+    const active = App.canvas.getActiveObject();
+    if (!active || active.type !== 'activeSelection') {
+        setTransientStatus('2個以上選択してください');
+        return;
+    }
+    const items = active.getObjects();
+    if (items.some((o) => o._isCellLayer || o._isTerrainLayer)) {
+        setTransientStatus('セル/地形レイヤーはグループ化できません');
+        return;
+    }
+    const group = active.toGroup();
+    const id = App.nextLayerId++;
+    App.layerCounters['グループ'] = (App.layerCounters['グループ'] || 0) + 1;
+    group.set({
+        _layerId: id,
+        _isMapLayer: true,
+        _layerName: `グループ${App.layerCounters['グループ']}`,
+        borderColor: '#40b7fc',
+        cornerColor: 'white',
+        cornerStrokeColor: '#40b7fc',
+        cornerSize: 10,
+        transparentCorners: false,
+        borderScaleFactor: 2,
+        selectable: true,
+        evented: true,
+        objectCaching: false,
+    });
+    App.canvas.setActiveObject(group);
+    App.selectedLayerIds = [id];
+    renderLayerList();
+    App.canvas.renderAll();
+    pushHistory('グループ化');
+}
+
+/**
+ * 選択中のグループを解体し、子要素を canvas 直下に戻す。
+ * セル/地形レイヤーは対象外。子は元の _isMapLayer / _layerId / _layerName を保持しているため、そのままレイヤーパネルに復帰する。
+ */
+function ungroupSelected() {
+    const active = App.canvas.getActiveObject();
+    if (!active || active.type !== 'group') {
+        setTransientStatus('グループを選択してください');
+        return;
+    }
+    if (active._isCellLayer || active._isTerrainLayer) {
+        setTransientStatus('セル/地形レイヤーは解除できません');
+        return;
+    }
+    const items = active.getObjects().slice();
+    active.toActiveSelection();
+    // 子要素が _layerId を持たないケース (旧データ等) には新規付与
+    items.forEach((o) => {
+        if (!o._layerId) {
+            const id = App.nextLayerId++;
+            App.layerCounters['解除'] = (App.layerCounters['解除'] || 0) + 1;
+            o.set({
+                _layerId: id,
+                _isMapLayer: true,
+                _layerName: `解除${App.layerCounters['解除']}`,
+            });
+        }
+        o.set({
+            borderColor: '#40b7fc',
+            cornerColor: 'white',
+            cornerStrokeColor: '#40b7fc',
+            cornerSize: 10,
+            transparentCorners: false,
+            borderScaleFactor: 2,
+            selectable: true,
+            evented: true,
+        });
+    });
+    App.selectedLayerIds = items.map((o) => o._layerId);
+    renderLayerList();
+    App.canvas.renderAll();
+    pushHistory('グループ化を解除');
+}
+
+/* ================================================================
+   選択オブジェクト上のカスタムコントロール (Fabric.Control)
+   選択枠の上中央に角丸正方形ボタンを描画する。
+   - activeSelection (複数選択) → グループ化ボタン
+   - fabric.Group 単一選択 → グループ解除ボタン
+   - セル/地形レイヤーは除外
+   今後ボタンを増やす場合は addToolbarControl() を再利用する。
+================================================================ */
+const TOOLBAR_BTN_SIZE = 26;
+const TOOLBAR_BTN_OFFSET_Y = -34;
+
+/**
+ * 角丸正方形ボタン (背景 + ボーダー + 中央のシンボルアイコン) を canvas に描画する。
+ * Material Symbols Outlined フォントの ligature で `iconName` をそのまま描く。
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx - 中心 X
+ * @param {number} cy - 中心 Y
+ * @param {string} iconName - Material Symbols のアイコン名 (ligature)
+ * @param {string} accent - アクセントカラー (ボーダー/アイコン色)
+ */
+function drawToolbarButton(ctx, cx, cy, iconName, accent) {
+    const size = TOOLBAR_BTN_SIZE;
+    const r = 6;
+    const half = size / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = 'rgba(10, 18, 26, 0.92)';
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-half + r, -half);
+    ctx.lineTo(half - r, -half);
+    ctx.quadraticCurveTo(half, -half, half, -half + r);
+    ctx.lineTo(half, half - r);
+    ctx.quadraticCurveTo(half, half, half - r, half);
+    ctx.lineTo(-half + r, half);
+    ctx.quadraticCurveTo(-half, half, -half, half - r);
+    ctx.lineTo(-half, -half + r);
+    ctx.quadraticCurveTo(-half, -half, -half + r, -half);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.font = '18px "Material Symbols Outlined"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(iconName, 0, 1);
+    ctx.restore();
+}
+
+/**
+ * 指定プロトタイプ (fabric.Group / fabric.ActiveSelection) の controls に
+ * 上中央ツールバーボタンを追加する。slot を変えると左へ並ぶ。
+ * @param {object} proto - fabric.Group.prototype もしくは fabric.ActiveSelection.prototype
+ * @param {{key:string, icon:string, accent:string, slot?:number, isVisible:(t:fabric.Object)=>boolean, onClick:(t:fabric.Object)=>void}} opts
+ */
+function addToolbarControl(proto, opts) {
+    const slot = opts.slot || 0;
+    const offsetX = -slot * (TOOLBAR_BTN_SIZE + 4);
+    proto.controls[opts.key] = new fabric.Control({
+        x: 0,
+        y: -0.5,
+        offsetX,
+        offsetY: TOOLBAR_BTN_OFFSET_Y,
+        cursorStyle: 'pointer',
+        sizeX: TOOLBAR_BTN_SIZE,
+        sizeY: TOOLBAR_BTN_SIZE,
+        touchSizeX: TOOLBAR_BTN_SIZE + 4,
+        touchSizeY: TOOLBAR_BTN_SIZE + 4,
+        mouseUpHandler: (eventData, transform) => {
+            const target = transform.target;
+            if (!opts.isVisible(target)) return false;
+            opts.onClick(target);
+            return true;
+        },
+        render: function (ctx, left, top, styleOverride, fabricObject) {
+            if (!opts.isVisible(fabricObject)) return;
+            drawToolbarButton(ctx, left, top, opts.icon, opts.accent);
+        },
+    });
+}
+
+(function setupSelectionControls() {
+    if (typeof fabric === 'undefined') return;
+    const CYAN = '#00e5ff';
+    addToolbarControl(fabric.Group.prototype, {
+        key: 'actionUngroup',
+        icon: 'folder_open',
+        accent: CYAN,
+        slot: 0,
+        isVisible: (t) => !t._isCellLayer && !t._isTerrainLayer,
+        onClick: (t) => {
+            App.canvas.setActiveObject(t);
+            ungroupSelected();
+        },
+    });
+    addToolbarControl(fabric.ActiveSelection.prototype, {
+        key: 'actionGroup',
+        icon: 'create_new_folder',
+        accent: CYAN,
+        slot: 0,
+        isVisible: (t) => !t.getObjects().some((o) => o._isCellLayer || o._isTerrainLayer),
+        onClick: () => groupSelected(),
+    });
+    // Material Symbols フォントのロード完了後に canvas を再描画 (初回選択時にアイコンが ligature として描けるように)
+    if (document.fonts?.load) {
+        document.fonts.load('18px "Material Symbols Outlined"').then(() => {
+            if (App.canvas) App.canvas.requestRenderAll();
+        });
+    }
+})();
+
+/**
  * canvas のアクティブ選択 → App.selectedLayerIds への片方向同期。
  * selection:created / selection:updated イベントから呼ばれる。
  */
@@ -1170,7 +1398,7 @@ function renderLayerList() {
 
         // 可視アイコン
         const vis = document.createElement('span');
-        vis.className = 'material-icons';
+        vis.className = 'material-symbols-outlined';
         vis.textContent = obj.visible ? 'visibility' : 'visibility_off';
         vis.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1475,7 +1703,10 @@ function fillCells(col, row, layer) {
     const adapter = ga();
 
     // bbox: 塗られたセルの (col, row) の最小/最大
-    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+    let minC = Infinity,
+        maxC = -Infinity,
+        minR = Infinity,
+        maxR = -Infinity;
     for (const cell of layer._cellData.values()) {
         if (cell._cellCol < minC) minC = cell._cellCol;
         if (cell._cellCol > maxC) maxC = cell._cellCol;
@@ -1581,7 +1812,7 @@ function showContextMenu(x, y, target) {
     // ロック表示更新
     const lockItem = menu.querySelector('[data-action="lock"]');
     if (lockItem) {
-        const icon = lockItem.querySelector('.material-icons');
+        const icon = lockItem.querySelector('.material-symbols-outlined');
         icon.textContent = target.lockMovementX ? 'lock_open' : 'lock';
         lockItem.childNodes[1].textContent = target.lockMovementX ? 'ロック解除' : 'ロック';
     }
@@ -2387,6 +2618,8 @@ document.addEventListener('keydown', (e) => {
     }
     if (ctrl && key === 'g') {
         e.preventDefault();
+        if (e.shiftKey) ungroupSelected();
+        else groupSelected();
         return;
     }
 
@@ -2398,7 +2631,7 @@ document.addEventListener('keydown', (e) => {
                 stroke: rgba(App.strokeColor, App.strokeOpacity),
                 strokeWidth: App.strokeWidth,
                 strokeDashArray: App.strokeDashArray,
-                fill: rgba(App.fillColor, App.fillOpacity),
+                fill: '',
                 selectable: false,
                 evented: false,
                 objectCaching: false,
@@ -2445,6 +2678,25 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         return;
     }
+    if (e.key === 'Enter' && App._curvePoints.length >= 3 && App.activeTool === 'curve-closed') {
+        removePreview();
+        const d = buildClosedBezierPath(App._curvePoints);
+        if (d) {
+            addLayerObject(
+                '閉曲線',
+                new fabric.Path(d, {
+                    stroke: rgba(App.strokeColor, App.strokeOpacity),
+                    strokeWidth: App.strokeWidth,
+                    strokeDashArray: App.strokeDashArray,
+                    fill: rgba(App.fillColor, App.fillOpacity),
+                    objectCaching: false,
+                })
+            );
+        }
+        App._curvePoints = [];
+        e.preventDefault();
+        return;
+    }
     if (e.key === 'Escape') {
         if (App._exportMode) {
             App._exportMode = false;
@@ -2463,8 +2715,12 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
+    if (e.shiftKey && key === 'c') {
+        setActiveTool('curve-closed');
+        return;
+    }
     const shortcuts = { v: 'select', b: 'cell', r: 'rect', e: 'ellipse', l: 'line', p: 'path', g: 'polygon', d: 'freehand', t: 'text', i: 'image', c: 'curve' };
-    if (shortcuts[key]) {
+    if (shortcuts[key] && !e.shiftKey) {
         setActiveTool(shortcuts[key]);
         return;
     }
@@ -2603,6 +2859,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('layer-add')?.addEventListener('click', () => {
         const group = new fabric.Group([], { selectable: true, evented: true, objectCaching: false });
         addLayerObject('レイヤー', group);
+    });
+
+    // グループ化 / 解除 (folder ボタン: 選択がグループならば解除、そうでなければグループ化)
+    document.getElementById('layer-group')?.addEventListener('click', () => {
+        const active = App.canvas.getActiveObject();
+        if (active && active.type === 'group' && !active._isCellLayer && !active._isTerrainLayer) {
+            ungroupSelected();
+        } else {
+            groupSelected();
+        }
     });
 
     // セルレイヤー追加

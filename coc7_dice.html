@@ -43,8 +43,8 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 
-        <!-- Material Icons -->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <!-- Material Symbols -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
 
         <!-- Font Awesome -->
         <link
@@ -199,7 +199,7 @@
                     color var(--t),
                     border-color var(--t);
             }
-            .dice-btn .material-icons {
+            .dice-btn .material-symbols-outlined {
                 font-size: 1em;
             }
             .dice-btn:hover {
@@ -320,7 +320,7 @@
                     background var(--t),
                     transform var(--t);
             }
-            .log-button .material-icons {
+            .log-button .material-symbols-outlined {
                 font-size: clamp(16px, 7vw, 38px);
             }
             .log-button:hover {
@@ -512,7 +512,7 @@
                     background var(--t),
                     transform var(--t);
             }
-            .log-footer-btn .material-icons {
+            .log-footer-btn .material-symbols-outlined {
                 font-size: clamp(16px, 7vw, 36px);
             }
             .log-footer-btn:hover {
@@ -581,7 +581,7 @@
                     color var(--t),
                     background var(--t);
             }
-            .custom-clear-btn .material-icons {
+            .custom-clear-btn .material-symbols-outlined {
                 font-size: 1em;
             }
             .custom-clear-btn:hover {
@@ -668,20 +668,20 @@
                 <div class="top-inputs">
                     <div class="dice-input-group" aria-label="ボーナス・ペナルティダイス">
                         <button id="bd-minus-btn" class="dice-btn" aria-label="BD/PD を減らす">
-                            <span class="material-icons">remove</span>
+                            <span class="material-symbols-outlined">remove</span>
                         </button>
                         <input type="text" id="bd-input" class="bd-input" value="0" readonly aria-label="BD/PD 値" />
                         <button id="bd-plus-btn" class="dice-btn" aria-label="BD/PD を増やす">
-                            <span class="material-icons">add</span>
+                            <span class="material-symbols-outlined">add</span>
                         </button>
                     </div>
                     <div class="skill-input-group" aria-label="技能値入力">
                         <button id="skill-minus-btn" class="dice-btn" aria-label="技能値を減らす">
-                            <span class="material-icons">remove</span>
+                            <span class="material-symbols-outlined">remove</span>
                         </button>
                         <input type="number" id="skill-input" class="skill-input" placeholder="技能値" aria-label="技能値" />
                         <button id="skill-plus-btn" class="dice-btn" aria-label="技能値を増やす">
-                            <span class="material-icons">add</span>
+                            <span class="material-symbols-outlined">add</span>
                         </button>
                     </div>
                     <button id="roll-btn" class="roll-button" aria-label="技能ロールを実行">
@@ -693,7 +693,7 @@
             <!-- 中央：結果表示 -->
             <div class="dice-card section-middle" role="region" aria-label="ロール結果">
                 <button id="log-button" class="log-button" title="ログを開く" aria-label="ログを開く">
-                    <span class="material-icons">history</span>
+                    <span class="material-symbols-outlined">history</span>
                 </button>
                 <div id="result-container" class="result-container" aria-live="polite">
                     <div id="dice-display" class="dice-display"></div>
@@ -705,10 +705,10 @@
                     <ul id="log-list"></ul>
                     <div class="log-footer">
                         <button id="log-clear-btn" class="log-footer-btn" title="ログをすべて削除" aria-label="ログを削除">
-                            <span class="material-icons">delete_outline</span>
+                            <span class="material-symbols-outlined">delete_outline</span>
                         </button>
                         <button id="log-close-btn" class="log-footer-btn" title="ログを閉じる" aria-label="ログを閉じる">
-                            <span class="material-icons">close</span>
+                            <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
                 </div>
@@ -720,7 +720,7 @@
                     <div class="custom-roll-input">
                         <input type="text" id="custom-roll-input" placeholder="例: 1D6+1D4+2" aria-label="ダイスコマンド入力" />
                         <button id="custom-clear-btn" class="custom-clear-btn" aria-label="入力をクリア">
-                            <span class="material-icons">close</span>
+                            <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
                     <button id="custom-roll-btn" class="custom-roll-button" aria-label="カスタムロールを実行">
@@ -746,7 +746,7 @@
             <div class="modal">
                 <div class="modal-header">
                     <span class="modal-title" id="guide-modal-title">使い方ガイド</span>
-                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body" id="guide-content">
                     <div class="guide-body">
@@ -758,15 +758,15 @@
                         <h3>技能ロール（画面上部）</h3>
                         <ul>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">tune</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">tune</span>
                                 <span>左側の <strong>BD/PD</strong> 欄で、ボーナスダイス（正の値）とペナルティダイス（負の値）の数を設定します。±ボタンで −2 〜 +2 の範囲で調整できます。</span>
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">edit</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">edit</span>
                                 <span>中央の <strong>技能値</strong> 欄に判定したい技能値を入力します。±ボタンのほか、直接数値を入力することもできます。</span>
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">casino</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">casino</span>
                                 <span
                                     >右側の
                                     <strong>ロールボタン</strong>
@@ -778,11 +778,11 @@
                         <h3>カスタムロール（画面下部）</h3>
                         <ul>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">keyboard</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">keyboard</span>
                                 <span>入力欄にダイスコマンド（例: <code>2D6+1D4+3</code>）を入力し、ロールボタンを押すと結果が表示されます。全角文字・全角数字にも対応しています。</span>
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">add_circle_outline</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">add_circle_outline</span>
                                 <span
                                     >入力欄の下に並ぶ <strong>ダイス追加ボタン</strong>（+1D6
                                     など）を押すと、そのダイスがコマンドに自動で追記されます。同じ面数のダイスは合算されるため、素早くコマンドを組み立てられます。</span
@@ -793,11 +793,11 @@
                         <h3>ログ（画面中央 右下ボタン）</h3>
                         <ul>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">history</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">history</span>
                                 <span>右下の <strong>履歴ボタン</strong> を押すと、これまでのロール結果をまとめて確認できます。ログは新しいものが上に追加されます。</span>
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">delete_outline</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--blue-light); flex-shrink: 0">delete_outline</span>
                                 <span>ログ表示中に左下の <strong>削除ボタン</strong> を押すと、確認ダイアログの後にすべてのログを消去できます。</span>
                             </li>
                         </ul>

@@ -34,7 +34,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="common.css" />
 
@@ -199,7 +199,7 @@
                 align-items: center;
                 gap: 0.3rem;
             }
-            .s-ttl .material-icons {
+            .s-ttl .material-symbols-outlined {
                 font-size: 0.88rem;
             }
 
@@ -321,7 +321,7 @@
             .ab-roll:hover {
                 background: rgba(0, 229, 255, 0.18);
             }
-            .ab-roll .material-icons {
+            .ab-roll .material-symbols-outlined {
                 font-size: 0.9rem;
             }
 
@@ -419,7 +419,7 @@
                 color: var(--cyan);
                 border-color: rgba(0, 229, 255, 0.4);
             }
-            .dyn-add .material-icons {
+            .dyn-add .material-symbols-outlined {
                 font-size: 0.9rem;
             }
 
@@ -592,7 +592,7 @@
             .btn-roll-all:hover {
                 background: rgba(0, 229, 255, 0.18);
             }
-            .btn-roll-all .material-icons {
+            .btn-roll-all .material-symbols-outlined {
                 font-size: 0.95rem;
             }
 
@@ -615,7 +615,7 @@
             #toggleListBtn:hover {
                 color: var(--cyan);
             }
-            #toggleListBtn .material-icons {
+            #toggleListBtn .material-symbols-outlined {
                 font-size: 1.1rem;
             }
 
@@ -676,7 +676,7 @@
                 line-height: 1.6;
             }
             .guide-dl .mi {
-                font-family: 'Material Icons';
+                font-family: 'Material Symbols';
                 font-size: 1.05rem;
                 color: var(--cyan);
                 margin-top: 0.1rem;
@@ -718,10 +718,10 @@
             <!-- ── NPC リスト ── -->
             <div class="panel" id="listPanel" data-tab="list">
                 <div class="ph">
-                    <span class="material-icons" style="font-size: 1rem; color: var(--cyan)">groups</span>
+                    <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--cyan)">groups</span>
                     <span class="ph-title">NPC LIST</span>
                     <button id="addNpcBtn">＋ 新規</button>
-                    <button id="toggleListBtn" title="折り畳む"><span class="material-icons">expand_less</span></button>
+                    <button id="toggleListBtn" title="折り畳む"><span class="material-symbols-outlined">expand_less</span></button>
                 </div>
                 <div class="pb" id="npcListBody"></div>
             </div>
@@ -729,7 +729,7 @@
             <!-- ── 編集フォーム ── -->
             <div class="panel" id="editPanel" data-tab="edit">
                 <div class="ph">
-                    <span class="material-icons" style="font-size: 1rem; color: var(--cyan)">edit</span>
+                    <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--cyan)">edit</span>
                     <span class="ph-title">EDIT</span>
                     <div style="margin-left: auto">
                         <div class="seg">
@@ -742,7 +742,7 @@
                 <div class="pb" id="editBody">
                     <!-- 基本情報 -->
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">person</span>基本情報</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">person</span>基本情報</div>
                         <div class="f-row">
                             <label class="f-label" for="npcName">名前</label>
                             <input id="npcName" type="text" class="inp" placeholder="NPC名" />
@@ -751,74 +751,74 @@
 
                     <!-- 能力値 -->
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">fitness_center</span>能力値</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">fitness_center</span>能力値</div>
                         <div class="ab-grid" id="abGrid">
                             <!-- STR -->
                             <div class="ab-row">
                                 <span class="ab-label">STR</span>
                                 <input type="text" id="dice-STR" class="ab-dice" value="" placeholder="3D6" />
-                                <button class="ab-roll" id="roll-STR" title="STRロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-STR" title="STRロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-STR" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- CON -->
                             <div class="ab-row">
                                 <span class="ab-label">CON</span>
                                 <input type="text" id="dice-CON" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-CON" title="CONロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-CON" title="CONロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-CON" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- POW -->
                             <div class="ab-row">
                                 <span class="ab-label">POW</span>
                                 <input type="text" id="dice-POW" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-POW" title="POWロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-POW" title="POWロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-POW" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- DEX -->
                             <div class="ab-row">
                                 <span class="ab-label">DEX</span>
                                 <input type="text" id="dice-DEX" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-DEX" title="DEXロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-DEX" title="DEXロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-DEX" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- APP -->
                             <div class="ab-row">
                                 <span class="ab-label">APP</span>
                                 <input type="text" id="dice-APP" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-APP" title="APPロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-APP" title="APPロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-APP" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- SIZ -->
                             <div class="ab-row">
                                 <span class="ab-label">SIZ</span>
                                 <input type="text" id="dice-SIZ" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-SIZ" title="SIZロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-SIZ" title="SIZロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-SIZ" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- INT -->
                             <div class="ab-row">
                                 <span class="ab-label">INT</span>
                                 <input type="text" id="dice-INT" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-INT" title="INTロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-INT" title="INTロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-INT" class="ab-val" value="0" min="0" max="999" />
                             </div>
                             <!-- EDU -->
                             <div class="ab-row">
                                 <span class="ab-label">EDU</span>
                                 <input type="text" id="dice-EDU" class="ab-dice" value="" />
-                                <button class="ab-roll" id="roll-EDU" title="EDUロール"><span class="material-icons">casino</span></button>
+                                <button class="ab-roll" id="roll-EDU" title="EDUロール"><span class="material-symbols-outlined">casino</span></button>
                                 <input type="number" id="val-EDU" class="ab-val" value="0" min="0" max="999" />
                             </div>
                         </div>
                         <div class="ab-footer">
-                            <button class="btn-roll-all" id="rollAllBtn"><span class="material-icons">casino</span>全ロール</button>
+                            <button class="btn-roll-all" id="rollAllBtn"><span class="material-symbols-outlined">casino</span>全ロール</button>
                         </div>
                     </div>
 
                     <!-- 派生値 -->
                     <div class="s-sec">
                         <div class="s-ttl">
-                            <span class="material-icons">monitor_heart</span>派生値
+                            <span class="material-symbols-outlined">monitor_heart</span>派生値
                             <label class="tog" style="margin-left: 0.6rem">
                                 <input type="checkbox" id="sanToggle" checked />
                                 <span class="tl">SAN</span>
@@ -854,7 +854,7 @@
 
                     <!-- 技能 -->
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">psychology</span>技能</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">psychology</span>技能</div>
                         <!-- CoC6のみ: コマンド種別 -->
                         <div class="f-row" id="cmdTypeRow" style="display: none; margin-bottom: 0.5rem">
                             <label class="f-label">判定</label>
@@ -866,19 +866,19 @@
                             </div>
                         </div>
                         <div class="dyn-list" id="skillsBody"></div>
-                        <button class="dyn-add" id="addSkillBtn"><span class="material-icons">add</span>技能を追加</button>
+                        <button class="dyn-add" id="addSkillBtn"><span class="material-symbols-outlined">add</span>技能を追加</button>
                     </div>
 
                     <!-- コマンド -->
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">code</span>コマンド / ダメージ</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">code</span>コマンド / ダメージ</div>
                         <div class="dyn-list" id="cmdsBody"></div>
-                        <button class="dyn-add" id="addCmdBtn"><span class="material-icons">add</span>コマンドを追加</button>
+                        <button class="dyn-add" id="addCmdBtn"><span class="material-symbols-outlined">add</span>コマンドを追加</button>
                     </div>
 
                     <!-- メモ -->
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">notes</span>メモ</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">notes</span>メモ</div>
                         <textarea id="npcMemo" class="inp" rows="4" placeholder="自由記入欄"></textarea>
                     </div>
                 </div>
@@ -887,7 +887,7 @@
             <!-- ── 出力プレビュー ── -->
             <div class="panel" id="prevPanel" data-tab="preview">
                 <div class="ph">
-                    <span class="material-icons" style="font-size: 1rem; color: var(--cyan)">code</span>
+                    <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--cyan)">code</span>
                     <span class="ph-title">OUTPUT</span>
                 </div>
                 <div class="pv-tabs">
@@ -909,7 +909,7 @@
             <div class="modal">
                 <div class="modal-header">
                     <span class="modal-title" id="guide-title">使い方ガイド</span>
-                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body">
                     <div class="guide-body" id="guide-content">
@@ -930,7 +930,7 @@
                                 <dt>能力値を入力 / ロールする</dt>
                                 <dd>
                                     ダイス欄に式（例：3D6）を入力して各
-                                    <span class="material-icons" style="font-size: 0.9rem; vertical-align: middle">casino</span> ボタンで個別ロール、または「全ロール」で一括ロールできます。CoC7
+                                    <span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle">casino</span> ボタンで個別ロール、または「全ロール」で一括ロールできます。CoC7
                                     では結果が自動的に×5されます。
                                 </dd>
                             </div>
@@ -1620,7 +1620,7 @@
                     const panel = document.getElementById('listPanel');
                     if (!btn || !panel) return;
                     function updateIcon() {
-                        btn.querySelector('.material-icons').textContent = panel.classList.contains('list-collapsed') ? 'expand_more' : 'expand_less';
+                        btn.querySelector('.material-symbols-outlined').textContent = panel.classList.contains('list-collapsed') ? 'expand_more' : 'expand_less';
                     }
                     btn.addEventListener('click', () => {
                         panel.classList.toggle('list-collapsed');

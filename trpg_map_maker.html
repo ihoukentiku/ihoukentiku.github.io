@@ -29,7 +29,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
         <link rel="stylesheet" href="common.css" />
@@ -77,8 +77,8 @@
                 align-items: center;
                 gap: 0.8rem;
                 margin: 0 0.6rem 0 0.8rem;
-                flex: 1 1 auto;       /* header-inner の中で余白を占有 */
-                min-width: 0;         /* マップ名の省略 (text-overflow) を有効化 */
+                flex: 1 1 auto; /* header-inner の中で余白を占有 */
+                min-width: 0; /* マップ名の省略 (text-overflow) を有効化 */
             }
 
             /* --- 左: マイマップへ戻る (アクセントカラーで主要ナビとして目立たせる) --- */
@@ -105,7 +105,7 @@
                 color: #02232a;
                 box-shadow: var(--glow-cyan);
             }
-            .header-ext .map-back-btn .material-icons {
+            .header-ext .map-back-btn .material-symbols-outlined {
                 font-size: 1.1rem;
             }
 
@@ -191,7 +191,7 @@
                 opacity: 0.35;
                 cursor: not-allowed;
             }
-            .header-ext .header-icon-btn .material-icons {
+            .header-ext .header-icon-btn .material-symbols-outlined {
                 font-size: 1.2rem;
             }
 
@@ -240,7 +240,7 @@
                 background: rgba(0, 229, 255, 0.12);
                 border-left: 2px solid var(--cyan);
             }
-            .tb-btn .material-icons {
+            .tb-btn .material-symbols-outlined {
                 font-size: 1.2rem;
             }
             .tb-btn .tb-label {
@@ -287,7 +287,7 @@
                 border-color: var(--cyan);
                 color: var(--cyan);
             }
-            .tool-tile .material-icons {
+            .tool-tile .material-symbols-outlined {
                 font-size: 1.1rem;
             }
             .tool-tile .fa-solid,
@@ -354,7 +354,7 @@
                 align-items: center;
                 gap: 0.35rem;
             }
-            .s-ttl .material-icons {
+            .s-ttl .material-symbols-outlined {
                 font-size: 0.88rem;
             }
             .f {
@@ -665,7 +665,7 @@
                 color: var(--cyan);
                 background: var(--cyan-muted);
             }
-            .lp-btn .material-icons {
+            .lp-btn .material-symbols-outlined {
                 font-size: 1rem;
             }
             #layer-list {
@@ -701,7 +701,7 @@
             .layer-item.drag-over-bottom {
                 border-bottom: 2px solid var(--cyan);
             }
-            .layer-item .material-icons {
+            .layer-item .material-symbols-outlined {
                 font-size: 0.9rem;
                 color: var(--text-dim);
                 cursor: pointer;
@@ -765,7 +765,7 @@
                 background: var(--cyan-muted);
                 color: var(--cyan);
             }
-            .ctx-item .material-icons {
+            .ctx-item .material-symbols-outlined {
                 font-size: 0.9rem;
             }
             .ctx-sep {
@@ -795,7 +795,7 @@
                 align-items: center;
                 gap: 0.25rem;
             }
-            #statusbar .material-icons {
+            #statusbar .material-symbols-outlined {
                 font-size: 0.8rem;
             }
 
@@ -813,22 +813,23 @@
         <main id="main">
             <!-- ツールバー -->
             <div id="toolbar">
-                <button class="tb-btn" data-tool="settings" title="設定"><span class="material-icons">settings</span><span class="tb-label">設定</span></button>
+                <button class="tb-btn" data-tool="settings" title="設定"><span class="material-symbols-outlined">settings</span><span class="tb-label">設定</span></button>
                 <div class="tb-sep"></div>
-                <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-icons">near_me</span><span class="tb-label">選択</span></button>
-                <button class="tb-btn" data-tool="cell" title="セル塗り (B)"><span class="material-icons">grid_on</span><span class="tb-label">セル</span></button>
-                <button class="tb-btn" data-tool="rect" title="矩形 (R)"><span class="material-icons">crop_square</span><span class="tb-label">矩形</span></button>
-                <button class="tb-btn" data-tool="ellipse" title="楕円 (E)"><span class="material-icons">circle</span><span class="tb-label">楕円</span></button>
-                <button class="tb-btn" data-tool="line" title="直線 (L)"><span class="material-icons">horizontal_rule</span><span class="tb-label">直線</span></button>
-                <button class="tb-btn" data-tool="path" title="折線 (P)"><span class="material-icons">polyline</span><span class="tb-label">折線</span></button>
-                <button class="tb-btn" data-tool="polygon" title="多角形 (G)"><span class="material-icons">pentagon</span><span class="tb-label">多角形</span></button>
-                <button class="tb-btn" data-tool="curve" title="曲線 (C)"><span class="material-icons">gesture</span><span class="tb-label">曲線</span></button>
-                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-icons">draw</span><span class="tb-label">自由線</span></button>
+                <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined">near_me</span><span class="tb-label">選択</span></button>
+                <button class="tb-btn" data-tool="cell" title="セル塗り (B)"><span class="material-symbols-outlined">grid_on</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn" data-tool="rect" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
+                <button class="tb-btn" data-tool="ellipse" title="楕円 (E)"><span class="material-symbols-outlined">circle</span><span class="tb-label">楕円</span></button>
+                <button class="tb-btn" data-tool="line" title="直線 (L)"><span class="material-symbols-outlined">horizontal_rule</span><span class="tb-label">直線</span></button>
+                <button class="tb-btn" data-tool="path" title="折線 (P)"><span class="material-symbols-outlined">polyline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn" data-tool="polygon" title="多角形 (G)"><span class="material-symbols-outlined">pentagon</span><span class="tb-label">多角形</span></button>
+                <button class="tb-btn" data-tool="curve" title="曲線 (C)"><span class="material-symbols-outlined">gesture</span><span class="tb-label">曲線</span></button>
+                <button class="tb-btn" data-tool="curve-closed" title="閉曲線 (Shift+C)"><span class="material-symbols-outlined">bubble_chart</span><span class="tb-label">閉曲線</span></button>
+                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
                 <div class="tb-sep"></div>
-                <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-icons">title</span><span class="tb-label">文字</span></button>
-                <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-icons">image</span><span class="tb-label">画像</span></button>
+                <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-symbols-outlined">title</span><span class="tb-label">文字</span></button>
+                <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-symbols-outlined">image</span><span class="tb-label">画像</span></button>
                 <div class="tb-sep"></div>
-                <button class="tb-btn" id="tb-export" title="画像出力"><span class="material-icons">download</span><span class="tb-label">出力</span></button>
+                <button class="tb-btn" id="tb-export" title="画像出力"><span class="material-symbols-outlined">download</span><span class="tb-label">出力</span></button>
             </div>
 
             <!-- プロパティパネル -->
@@ -836,7 +837,7 @@
                 <!-- 設定 -->
                 <div class="prop-group" data-prop="settings">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">grid_4x4</span>グリッド</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">grid_4x4</span>グリッド</div>
                         <div class="f">
                             <span class="fl">色</span>
                             <div id="grid-color-picker"></div>
@@ -858,7 +859,7 @@
                 <!-- 選択ツール -->
                 <div class="prop-group active" data-prop="select">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">near_me</span>選択ツール</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">near_me</span>選択ツール</div>
                         <div id="sel-info">
                             <p class="fl" style="opacity: 0.5" id="sel-none">オブジェクトを選択してください</p>
                         </div>
@@ -867,11 +868,11 @@
                 <!-- セル塗り -->
                 <div class="prop-group" data-prop="cell">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">grid_on</span>セル塗り</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">grid_on</span>セル塗り</div>
                         <div class="tool-tiles" id="cell-tool-tiles">
-                            <div class="tool-tile active" data-cell-tool="pen" title="ペン"><span class="material-icons">edit</span><span>ペン</span></div>
+                            <div class="tool-tile active" data-cell-tool="pen" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
                             <div class="tool-tile" data-cell-tool="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
-                            <div class="tool-tile" data-cell-tool="fill" title="塗りつぶし"><span class="material-icons">format_color_fill</span><span>塗潰し</span></div>
+                            <div class="tool-tile" data-cell-tool="fill" title="塗りつぶし"><span class="material-symbols-outlined">format_color_fill</span><span>塗潰し</span></div>
                         </div>
                         <button class="btn-action" id="add-cell-layer">セルレイヤーを追加</button>
                     </div>
@@ -879,46 +880,53 @@
                 <!-- 矩形 -->
                 <div class="prop-group" data-prop="rect">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">crop_square</span>矩形</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">crop_square</span>矩形</div>
                     </div>
                 </div>
                 <!-- 楕円 -->
                 <div class="prop-group" data-prop="ellipse">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">circle</span>楕円</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">circle</span>楕円</div>
                     </div>
                 </div>
                 <!-- 直線 -->
                 <div class="prop-group" data-prop="line">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">horizontal_rule</span>直線</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">horizontal_rule</span>直線</div>
                     </div>
                 </div>
                 <!-- 折線 -->
                 <div class="prop-group" data-prop="path">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">polyline</span>折線 (ポリライン)</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">polyline</span>折線 (ポリライン)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 頂点追加 / Enter: 確定 / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 多角形 -->
                 <div class="prop-group" data-prop="polygon">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">pentagon</span>多角形 (ポリゴン)</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">pentagon</span>多角形 (ポリゴン)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 頂点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 曲線 -->
                 <div class="prop-group" data-prop="curve">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">gesture</span>曲線 (ベジェ)</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">gesture</span>曲線 (ベジェ)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定 / Esc: キャンセル</p>
+                    </div>
+                </div>
+                <!-- 閉曲線 -->
+                <div class="prop-group" data-prop="curve-closed">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">bubble_chart</span>閉曲線 (ベジェ・閉)</div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- フリーハンド -->
                 <div class="prop-group" data-prop="freehand">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">draw</span>フリーハンド</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">draw</span>フリーハンド</div>
                         <div class="f">
                             <span class="fl">線幅</span>
                             <div class="row"><input type="number" id="freehand-width" value="3" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div>
@@ -928,7 +936,7 @@
                 <!-- テキスト -->
                 <div class="prop-group" data-prop="text">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">title</span>テキスト</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">title</span>テキスト</div>
                         <div class="f">
                             <span class="fl">フォント</span
                             ><select id="text-font">
@@ -946,13 +954,13 @@
                 <!-- 画像 -->
                 <div class="prop-group" data-prop="image">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-icons">image</span>画像挿入</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">image</span>画像挿入</div>
                         <input type="file" id="image-upload" accept="image/*" style="display: none" /><button class="btn-action" id="image-upload-btn">画像を選択</button>
                     </div>
                 </div>
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display: none">
-                    <div class="s-ttl"><span class="material-icons">palette</span>フィル / ストローク</div>
+                    <div class="s-ttl"><span class="material-symbols-outlined">palette</span>フィル / ストローク</div>
                     <div class="f">
                         <span class="fl">フィル</span>
                         <div id="fill-color-picker"></div>
@@ -983,7 +991,7 @@
 
                 <!-- 共通スナップ設定（一番下） -->
                 <div id="snap-sec" class="s-sec" style="display: none">
-                    <div class="s-ttl"><span class="material-icons">grid_goldenratio</span>スナップ</div>
+                    <div class="s-ttl"><span class="material-symbols-outlined">grid_goldenratio</span>スナップ</div>
                     <div class="f">
                         <label class="tog"
                             ><input type="checkbox" id="snap-enabled" checked /><span class="tl"
@@ -1013,9 +1021,9 @@
                 <div class="lp-header">
                     <span class="lp-title">Layers</span>
                     <div class="lp-actions">
-                        <button class="lp-btn" id="layer-add" title="レイヤー追加"><span class="material-icons">add</span></button>
-                        <button class="lp-btn" id="layer-group" title="グループ化"><span class="material-icons">folder</span></button>
-                        <button class="lp-btn" id="layer-delete" title="削除"><span class="material-icons">delete_outline</span></button>
+                        <button class="lp-btn" id="layer-add" title="レイヤー追加"><span class="material-symbols-outlined">add</span></button>
+                        <button class="lp-btn" id="layer-group" title="グループ化 / 解除 (Ctrl+G / Ctrl+Shift+G)"><span class="material-symbols-outlined">folder</span></button>
+                        <button class="lp-btn" id="layer-delete" title="削除"><span class="material-symbols-outlined">delete_outline</span></button>
                     </div>
                 </div>
                 <div id="layer-list"></div>
@@ -1038,9 +1046,9 @@
 
             <!-- ステータスバー -->
             <div id="statusbar">
-                <span><span class="material-icons">mouse</span><span id="sb-coord">0, 0</span></span>
-                <span><span class="material-icons">search</span><span id="sb-zoom">100%</span></span>
-                <span><span class="material-icons">grid_4x4</span><span id="sb-grid">50px</span></span>
+                <span><span class="material-symbols-outlined">mouse</span><span id="sb-coord">0, 0</span></span>
+                <span><span class="material-symbols-outlined">search</span><span id="sb-zoom">100%</span></span>
+                <span><span class="material-symbols-outlined">grid_4x4</span><span id="sb-grid">50px</span></span>
                 <span id="sb-selection"></span>
                 <span id="sb-last-action" style="margin-left: auto; opacity: 0.8"></span>
             </div>
@@ -1048,21 +1056,21 @@
 
         <!-- 右クリックメニュー -->
         <div id="ctx-menu">
-            <div class="ctx-item" data-action="rename"><span class="material-icons">edit</span>名前を変更</div>
-            <div class="ctx-item" data-action="duplicate"><span class="material-icons">content_copy</span>複製</div>
+            <div class="ctx-item" data-action="rename"><span class="material-symbols-outlined">edit</span>名前を変更</div>
+            <div class="ctx-item" data-action="duplicate"><span class="material-symbols-outlined">content_copy</span>複製</div>
             <div class="ctx-sep"></div>
-            <div class="ctx-item" data-action="bring-front"><span class="material-icons">flip_to_front</span>最前面へ</div>
-            <div class="ctx-item" data-action="send-back"><span class="material-icons">flip_to_back</span>最背面へ</div>
+            <div class="ctx-item" data-action="bring-front"><span class="material-symbols-outlined">flip_to_front</span>最前面へ</div>
+            <div class="ctx-item" data-action="send-back"><span class="material-symbols-outlined">flip_to_back</span>最背面へ</div>
             <div class="ctx-sep"></div>
-            <div class="ctx-item" data-action="lock"><span class="material-icons">lock</span>ロック</div>
-            <div class="ctx-item" data-action="delete"><span class="material-icons">delete</span>削除</div>
+            <div class="ctx-item" data-action="lock"><span class="material-symbols-outlined">lock</span>ロック</div>
+            <div class="ctx-item" data-action="delete"><span class="material-symbols-outlined">delete</span>削除</div>
         </div>
 
         <!-- モーダル -->
         <div class="modal-overlay" id="guide-modal">
             <div class="modal">
                 <div class="modal-header">
-                    <span class="modal-title">使い方ガイド</span><button class="modal-close" onclick="IKLab.closeModal('guide-modal')"><span class="material-icons">close</span></button>
+                    <span class="modal-title">使い方ガイド</span><button class="modal-close" onclick="IKLab.closeModal('guide-modal')"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body"><p>準備中です。</p></div>
             </div>
@@ -1072,7 +1080,7 @@
         <div class="modal-overlay" id="export-modal">
             <div class="modal" style="max-width: 960px; width: 92vw">
                 <div class="modal-header">
-                    <span class="modal-title">画像出力</span><button class="modal-close" onclick="IKLab.closeModal('export-modal')"><span class="material-icons">close</span></button>
+                    <span class="modal-title">画像出力</span><button class="modal-close" onclick="IKLab.closeModal('export-modal')"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body" style="padding: 1rem">
                     <div style="text-align: center; margin-bottom: 0.6rem">
@@ -1115,7 +1123,7 @@
                         <span id="export-output-size" style="font-size: 0.65rem; color: var(--text-dim); margin-left: auto"></span>
                     </div>
                     <button class="btn-action" id="export-btn" style="width: 100%; padding: 0.5rem">
-                        <span class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 0.3rem">download</span>ダウンロード
+                        <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 0.3rem">download</span>ダウンロード
                     </button>
                 </div>
             </div>

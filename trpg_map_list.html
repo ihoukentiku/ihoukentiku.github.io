@@ -29,7 +29,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="common.css" />
         <style>
@@ -97,7 +97,7 @@
                 color: var(--cyan);
                 border-color: var(--cyan);
             }
-            .action-btn .material-icons {
+            .action-btn .material-symbols-outlined {
                 font-size: 1rem;
             }
 
@@ -190,7 +190,7 @@
                 background: var(--cyan-muted);
                 color: var(--cyan);
             }
-            .map-card .actions .material-icons {
+            .map-card .actions .material-symbols-outlined {
                 font-size: 1rem;
             }
 
@@ -246,7 +246,7 @@
                 opacity: 0.4;
                 cursor: not-allowed;
             }
-            .wizard-tile .material-icons,
+            .wizard-tile .material-symbols-outlined,
             .wizard-tile .fa-solid {
                 font-size: 2rem;
             }
@@ -380,7 +380,7 @@
                 padding: 4rem 1rem;
                 color: var(--text-dim);
             }
-            .empty-state .material-icons {
+            .empty-state .material-symbols-outlined {
                 font-size: 4rem;
                 opacity: 0.4;
                 margin-bottom: 1rem;
@@ -394,14 +394,14 @@
             <p class="page-subtitle">TRPG MAP MAKER</p>
 
             <div class="action-bar">
-                <button class="action-btn" id="btn-new"><span class="material-icons">add</span>新規マップ</button>
-                <button class="action-btn secondary" id="btn-import"><span class="material-icons">file_upload</span>JSONから読込</button>
+                <button class="action-btn" id="btn-new"><span class="material-symbols-outlined">add</span>新規マップ</button>
+                <button class="action-btn secondary" id="btn-import"><span class="material-symbols-outlined">file_upload</span>JSONから読込</button>
                 <input type="file" id="import-file" accept=".json" style="display: none" />
             </div>
 
             <div id="map-grid" class="map-grid"></div>
             <div id="empty-state" class="empty-state" style="display: none">
-                <span class="material-icons">map</span>
+                <span class="material-symbols-outlined">map</span>
                 <div>保存されたマップはまだありません</div>
             </div>
         </main>
@@ -412,7 +412,7 @@
             <div class="modal" style="max-width: 520px">
                 <div class="modal-header">
                     <span class="modal-title" id="wizard-title">新規マップ作成</span>
-                    <button class="modal-close" onclick="closeCreateModal()"><span class="material-icons">close</span></button>
+                    <button class="modal-close" onclick="closeCreateModal()"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body wizard-body">
                     <!-- Step 1: スクエア / ヘクス -->
@@ -420,12 +420,12 @@
                         <p class="wizard-prompt">マップの種類を選択してください</p>
                         <div class="wizard-tiles">
                             <button class="wizard-tile" data-grid-type="square">
-                                <span class="material-icons">grid_on</span>
+                                <span class="material-symbols-outlined">grid_on</span>
                                 <span class="tile-label">スクエア</span>
                                 <span class="tile-sub">正方形マス</span>
                             </button>
                             <button class="wizard-tile" data-grid-type="hex">
-                                <span class="material-icons">hexagon</span>
+                                <span class="material-symbols-outlined">hexagon</span>
                                 <span class="tile-label">ヘクス</span>
                                 <span class="tile-sub">六角形マス</span>
                             </button>
@@ -437,12 +437,12 @@
                         <p class="wizard-prompt">ヘクスの向きを選択してください</p>
                         <div class="wizard-tiles">
                             <button class="wizard-tile" data-orientation="flat">
-                                <span class="material-icons">hexagon</span>
+                                <span class="material-symbols-outlined">hexagon</span>
                                 <span class="tile-label">フラットトップ</span>
                                 <span class="tile-sub">上下が平らな辺</span>
                             </button>
                             <button class="wizard-tile" data-orientation="pointy">
-                                <span class="material-icons" style="transform: rotate(30deg)">hexagon</span>
+                                <span class="material-symbols-outlined" style="transform: rotate(30deg)">hexagon</span>
                                 <span class="tile-label">ポインティトップ</span>
                                 <span class="tile-sub">上下が頂点</span>
                             </button>
@@ -467,7 +467,7 @@
                     </div>
 
                     <div class="wizard-nav">
-                        <button class="wizard-back-btn" id="wizard-back-btn" disabled><span class="material-icons" style="font-size: 0.9rem; vertical-align: middle">arrow_back</span> 戻る</button>
+                        <button class="wizard-back-btn" id="wizard-back-btn" disabled><span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle">arrow_back</span> 戻る</button>
                         <span class="wizard-summary" id="wizard-summary"></span>
                     </div>
                 </div>
