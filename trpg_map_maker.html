@@ -160,6 +160,61 @@
                 border-color: rgba(244, 67, 54, 0.4);
             }
 
+            /* --- モード切替トグル (シンプル / 地図) — Undo/Redo の左 --- */
+            .mode-toggle {
+                display: inline-flex;
+                align-items: center;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+                margin-right: 0.4rem;
+            }
+            .mode-toggle button {
+                padding: 0.35rem 0.65rem;
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.05em;
+                color: var(--text-dim);
+                background: transparent;
+                cursor: pointer;
+                border: 0;
+                transition:
+                    background var(--t),
+                    color var(--t);
+            }
+            .mode-toggle button + button {
+                border-left: 1px solid var(--input-bd);
+            }
+            .mode-toggle button:hover {
+                color: var(--text-bright);
+                background: rgba(0, 229, 255, 0.08);
+            }
+            .mode-toggle button.active {
+                color: var(--cyan);
+                background: rgba(0, 229, 255, 0.14);
+            }
+
+            /* モードによるツールバー/プロパティパネルの表示切替 */
+            body[data-edit-mode='simple'] .tb-btn[data-mode='map'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='ground'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='wall'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='room'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='decor'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='vector'] {
+                display: none;
+            }
+            body[data-edit-mode='map'] .tb-btn[data-mode='simple'],
+            body[data-edit-mode='map'] .prop-group[data-prop='cell'],
+            body[data-edit-mode='map'] .prop-group[data-prop='rect'],
+            body[data-edit-mode='map'] .prop-group[data-prop='ellipse'],
+            body[data-edit-mode='map'] .prop-group[data-prop='line'],
+            body[data-edit-mode='map'] .prop-group[data-prop='path'],
+            body[data-edit-mode='map'] .prop-group[data-prop='polygon'],
+            body[data-edit-mode='map'] .prop-group[data-prop='curve'],
+            body[data-edit-mode='map'] .prop-group[data-prop='curve-closed'] {
+                display: none;
+            }
+
             /* --- 右: Undo / Redo --- */
             .header-ext .map-actions {
                 display: flex;
@@ -816,14 +871,22 @@
                 <button class="tb-btn" data-tool="settings" title="設定"><span class="material-symbols-outlined">settings</span><span class="tb-label">設定</span></button>
                 <div class="tb-sep"></div>
                 <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined">near_me</span><span class="tb-label">選択</span></button>
-                <button class="tb-btn" data-tool="cell" title="セル塗り (B)"><span class="material-symbols-outlined">grid_on</span><span class="tb-label">セル</span></button>
-                <button class="tb-btn" data-tool="rect" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
-                <button class="tb-btn" data-tool="ellipse" title="楕円 (E)"><span class="material-symbols-outlined">circle</span><span class="tb-label">楕円</span></button>
-                <button class="tb-btn" data-tool="line" title="直線 (L)"><span class="material-symbols-outlined">horizontal_rule</span><span class="tb-label">直線</span></button>
-                <button class="tb-btn" data-tool="path" title="折線 (P)"><span class="material-symbols-outlined">polyline</span><span class="tb-label">折線</span></button>
-                <button class="tb-btn" data-tool="polygon" title="多角形 (G)"><span class="material-symbols-outlined">pentagon</span><span class="tb-label">多角形</span></button>
-                <button class="tb-btn" data-tool="curve" title="曲線 (C)"><span class="material-symbols-outlined">gesture</span><span class="tb-label">曲線</span></button>
-                <button class="tb-btn" data-tool="curve-closed" title="閉曲線 (Shift+C)"><span class="material-symbols-outlined">bubble_chart</span><span class="tb-label">閉曲線</span></button>
+                <!-- シンプルモード専用 -->
+                <button class="tb-btn" data-tool="cell" data-mode="simple" title="セル塗り (B)"><span class="material-symbols-outlined">grid_on</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn" data-tool="rect" data-mode="simple" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
+                <button class="tb-btn" data-tool="ellipse" data-mode="simple" title="楕円 (E)"><span class="material-symbols-outlined">circle</span><span class="tb-label">楕円</span></button>
+                <button class="tb-btn" data-tool="line" data-mode="simple" title="直線 (L)"><span class="material-symbols-outlined">horizontal_rule</span><span class="tb-label">直線</span></button>
+                <button class="tb-btn" data-tool="path" data-mode="simple" title="折線 (P)"><span class="material-symbols-outlined">polyline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn" data-tool="polygon" data-mode="simple" title="多角形 (G)"><span class="material-symbols-outlined">pentagon</span><span class="tb-label">多角形</span></button>
+                <button class="tb-btn" data-tool="curve" data-mode="simple" title="曲線 (C)"><span class="material-symbols-outlined">gesture</span><span class="tb-label">曲線</span></button>
+                <button class="tb-btn" data-tool="curve-closed" data-mode="simple" title="閉曲線 (Shift+C)"><span class="material-symbols-outlined">bubble_chart</span><span class="tb-label">閉曲線</span></button>
+                <!-- 地図モード専用 -->
+                <button class="tb-btn" data-tool="ground" data-mode="map" title="地面"><span class="material-symbols-outlined">texture</span><span class="tb-label">地面</span></button>
+                <button class="tb-btn" data-tool="wall" data-mode="map" title="壁"><span class="material-symbols-outlined">grid_4x4</span><span class="tb-label">壁</span></button>
+                <button class="tb-btn" data-tool="room" data-mode="map" title="部屋"><span class="material-symbols-outlined">meeting_room</span><span class="tb-label">部屋</span></button>
+                <button class="tb-btn" data-tool="decor" data-mode="map" title="装飾"><span class="material-symbols-outlined">forest</span><span class="tb-label">装飾</span></button>
+                <button class="tb-btn" data-tool="vector" data-mode="map" title="ベクター"><span class="material-symbols-outlined">timeline</span><span class="tb-label">ベクター</span></button>
+                <!-- 両モード共通 -->
                 <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
                 <div class="tb-sep"></div>
                 <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-symbols-outlined">title</span><span class="tb-label">文字</span></button>
@@ -921,6 +984,41 @@
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">bubble_chart</span>閉曲線 (ベジェ・閉)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p>
+                    </div>
+                </div>
+                <!-- 地図モード: 地面 -->
+                <div class="prop-group" data-prop="ground">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">texture</span>地面</div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase B で追加予定 (セル/矩形 + パターン選択)</p>
+                    </div>
+                </div>
+                <!-- 地図モード: 壁 -->
+                <div class="prop-group" data-prop="wall">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">grid_4x4</span>壁</div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase B で追加予定 (矩形/楕円/直線/折線/多角形/曲線 + 壁パターン)</p>
+                    </div>
+                </div>
+                <!-- 地図モード: 部屋 -->
+                <div class="prop-group" data-prop="room">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">meeting_room</span>部屋</div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (地面+外周壁+部屋名の一括生成)</p>
+                    </div>
+                </div>
+                <!-- 地図モード: 装飾 -->
+                <div class="prop-group" data-prop="decor">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">forest</span>装飾</div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (ドア/家具/木/岩などのSVGスタンプ)</p>
+                    </div>
+                </div>
+                <!-- 地図モード: ベクター -->
+                <div class="prop-group" data-prop="vector">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">timeline</span>ベクター</div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase B で追加予定 (従来の矩形/楕円/直線/折線/多角形/曲線/閉曲線を内包)</p>
                     </div>
                 </div>
                 <!-- フリーハンド -->

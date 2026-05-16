@@ -23,12 +23,19 @@
                 <span class="save-status saved" id="save-status">保存済み</span>
             </div>
             <div class="map-actions">
+                <div class="mode-toggle" role="group" aria-label="編集モード切替">
+                    <button type="button" data-mode="simple" class="active" title="シンプルモード">シンプル</button>
+                    <button type="button" data-mode="map" title="地図モード">地図</button>
+                </div>
                 <button id="undo-btn" class="header-icon-btn" disabled title="元に戻す (Ctrl+Z)"><span class="material-symbols-outlined">undo</span></button>
                 <button id="redo-btn" class="header-icon-btn" disabled title="やり直し (Ctrl+Shift+Z)"><span class="material-symbols-outlined">redo</span></button>
             </div>
         `;
         ext.querySelector('#undo-btn').addEventListener('click', () => undo());
         ext.querySelector('#redo-btn').addEventListener('click', () => redo());
+        ext.querySelectorAll('.mode-toggle button').forEach((btn) => {
+            btn.addEventListener('click', () => setEditMode(btn.dataset.mode));
+        });
         nav.parentNode.insertBefore(ext, nav);
     };
     wait();
@@ -39,6 +46,7 @@
 ================================================================ */
 const App = {
     gridType: 'square',
+    editMode: 'simple', // 'simple' | 'map' — シンプル/地図モードの切替 (per-map で保存)
     activeTool: 'select',
     cellSize: 72,
     canvas: null,
@@ -437,7 +445,7 @@ function getMapLayers() {
  * 表示/非表示を更新する。プロパティパネルの状態を一元管理する司令塔。
  */
 function updateFillStrokeVisibility() {
-    const drawTools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'wall', 'room', 'curve', 'curve-closed'];
+    const drawTools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'curve', 'curve-closed'];
     let show = drawTools.includes(App.activeTool);
     if (App.activeTool === 'select') {
         show = App.canvas.getActiveObjects().some((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
@@ -450,7 +458,7 @@ function updateFillStrokeVisibility() {
     }
     document.getElementById('corner-radius-row').style.display = showRadius ? '' : 'none';
     // スナップ設定: 描画系ツールで表示
-    const snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed', 'wall', 'room', 'door', 'object', 'label'];
+    const snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
     document.getElementById('snap-sec').style.display = snapTools.includes(App.activeTool) ? '' : 'none';
 }
 
@@ -787,7 +795,7 @@ function initCanvas() {
 
         // スナップ先を計算（水色マーカー用 — スナップ対応ツールのみ）
         {
-            const _snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed', 'wall', 'room', 'door', 'object', 'label'];
+            const _snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
             const _needSnap = _snapTools.includes(App.activeTool) || App._exportMode;
             if (_needSnap) {
                 const _editPts =
@@ -1891,6 +1899,22 @@ function setGridType(type) {
 }
 
 /**
+ * 編集モード (シンプル/地図) を切替える。
+ * body[data-edit-mode] を更新して CSS でツールバー/プロパティパネルの表示切替を行い、
+ * activeTool を 'select' にリセットする (新モードで非表示のツールが選択された状態を防ぐため)。
+ * トグル UI の active 状態も同期する。
+ * @param {'simple'|'map'} mode
+ */
+function setEditMode(mode) {
+    if (mode !== 'simple' && mode !== 'map') return;
+    App.editMode = mode;
+    document.body.setAttribute('data-edit-mode', mode);
+    document.querySelectorAll('.mode-toggle [data-mode]').forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+    setActiveTool('select');
+    pushHistory(mode === 'simple' ? 'シンプルモードへ切替' : '地図モードへ切替');
+}
+
+/**
  * アクティブツールを切替える。描画途中の状態 (_drawing, _pathPoints 等) を全てリセットし、
  * ツールバー / プロパティパネル / canvas の selectable・evented・isDrawingMode を更新する。
  * セルツール選択時は最上位セルレイヤーを自動選択、フリーハンド時はブラシ設定を反映。
@@ -1915,7 +1939,9 @@ function setActiveTool(toolName) {
     // プロパティパネル: data-prop グループを切替
     document.querySelectorAll('#prop-panel .prop-group').forEach((pg) => pg.classList.toggle('active', pg.dataset.prop === toolName));
 
-    const isSelect = toolName === 'select' || toolName === 'settings';
+    // 地図モードのタブ (Phase A は未実装プレースホルダ): 描画機能を持たず、canvas は選択可能なままにする
+    const mapModeTabs = ['ground', 'wall', 'room', 'decor', 'vector'];
+    const isSelect = toolName === 'select' || toolName === 'settings' || mapModeTabs.includes(toolName);
     App.canvas.selection = isSelect;
     getMapLayers().forEach((obj) => {
         obj.set({ selectable: isSelect, evented: isSelect });
@@ -2196,6 +2222,7 @@ function buildSaveData() {
         version: 1,
         cellSize: App.cellSize,
         gridType: App.gridType,
+        editMode: App.editMode,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
         gridDashArray: App.gridDashArray,
@@ -2215,6 +2242,7 @@ function restoreSaveData(data) {
     App._isRestoring = true;
     App.cellSize = data.cellSize || 60;
     App.gridType = data.gridType || 'square';
+    setEditMode(data.editMode === 'map' ? 'map' : 'simple');
     App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
     App.gridLineWidth = data.gridLineWidth || 1;
     App.gridDashArray = data.gridDashArray || null;
@@ -2917,7 +2945,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!e.target.closest('#layer-list') && !e.target.closest('.canvas-container')) hideContextMenu();
     });
 
-    // 初期ツール適用
+    // 初期モード/ツール適用
+    document.body.setAttribute('data-edit-mode', App.editMode);
     setActiveTool('select');
 
     // Undo/Redo ボタン初期状態
