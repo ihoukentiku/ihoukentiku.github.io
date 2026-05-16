@@ -1410,12 +1410,17 @@ function addToolbarControl(proto, opts) {
 (function setupSelectionControls() {
     if (typeof fabric === 'undefined') return;
     const CYAN = '#00e5ff';
+    // 注意: fabric.Group.prototype.controls と fabric.ActiveSelection.prototype.controls は
+    // どちらも fabric.Object.prototype.controls と同一オブジェクトを参照しているため (継承)、
+    // ここで追加したコントロールは Rect/Ellipse などすべての選択にも紐づく。
+    // isVisible で型を厳密にチェックしないと、非対象型の選択時に getObjects() 呼出で
+    // TypeError → renderAll 中断 → after:render 未発火 → グリッド消失 となるので注意。
     addToolbarControl(fabric.Group.prototype, {
         key: 'actionUngroup',
         icon: 'folder_open',
         accent: CYAN,
         slot: 0,
-        isVisible: (t) => !t._isCellLayer && !t._isTerrainLayer,
+        isVisible: (t) => t && t.type === 'group' && !t._isCellLayer && !t._isTerrainLayer,
         onClick: (t) => {
             App.canvas.setActiveObject(t);
             ungroupSelected();
@@ -1426,7 +1431,8 @@ function addToolbarControl(proto, opts) {
         icon: 'create_new_folder',
         accent: CYAN,
         slot: 0,
-        isVisible: (t) => !t.getObjects().some((o) => o._isCellLayer || o._isTerrainLayer),
+        isVisible: (t) => t && t.type === 'activeSelection' && typeof t.getObjects === 'function'
+            && !t.getObjects().some((o) => o._isCellLayer || o._isTerrainLayer),
         onClick: () => groupSelected(),
     });
     // Material Symbols フォントのロード完了後に canvas を再描画 (初回選択時にアイコンが ligature として描けるように)
@@ -2161,9 +2167,8 @@ function setActiveTool(toolName) {
     // プロパティパネル: data-prop グループを切替
     document.querySelectorAll('#prop-panel .prop-group').forEach((pg) => pg.classList.toggle('active', pg.dataset.prop === toolName));
 
-    // 地図モードのタブ (Phase A は未実装プレースホルダ): 描画機能を持たず、canvas は選択可能なままにする
-    const mapModeTabs = ['ground', 'wall', 'room', 'decor', 'vector'];
-    const isSelect = toolName === 'select' || toolName === 'settings' || mapModeTabs.includes(toolName);
+    // シンプルモードの描画ツールと同様、地図モードのタブも canvas オブジェクト選択は無効
+    const isSelect = toolName === 'select' || toolName === 'settings';
     App.canvas.selection = isSelect;
     getMapLayers().forEach((obj) => {
         obj.set({ selectable: isSelect, evented: isSelect });
