@@ -40,7 +40,7 @@
 const App = {
     gridType: 'square',
     activeTool: 'select',
-    cellSize: 60,
+    cellSize: 72,
     canvas: null,
     fillColor: '#4a90c4',
     fillOpacity: 1,
@@ -324,26 +324,19 @@ function rgba(hex, a) {
  */
 function snapToGrid(x, y) {
     if (!App.snapEnabled || App._shiftHeld) return null;
-    const cs = App.cellSize;
     const thresh = 18 / App.canvas.getZoom();
+    const candidates = ga().snapPoints(x, y);
     let best = null,
         bestD = Infinity;
-    const tryPt = (sx, sy) => {
-        const d = Math.hypot(sx - x, sy - y);
+    for (const cand of candidates) {
+        if (cand.type === 'intersection' && !App.snapIntersection) continue;
+        if (cand.type === 'center' && !App.snapCenter) continue;
+        if (cand.type === 'midpoint' && !App.snapMidpoint) continue;
+        const d = Math.hypot(cand.x - x, cand.y - y);
         if (d < thresh && d < bestD) {
             bestD = d;
-            best = { x: sx, y: sy };
+            best = { x: cand.x, y: cand.y };
         }
-    };
-    if (App.snapIntersection) {
-        tryPt(Math.round(x / cs) * cs, Math.round(y / cs) * cs);
-    }
-    if (App.snapCenter) {
-        tryPt((Math.floor(x / cs) + 0.5) * cs, (Math.floor(y / cs) + 0.5) * cs);
-    }
-    if (App.snapMidpoint) {
-        tryPt((Math.floor(x / cs) + 0.5) * cs, Math.round(y / cs) * cs);
-        tryPt(Math.round(x / cs) * cs, (Math.floor(y / cs) + 0.5) * cs);
     }
     return best;
 }
@@ -703,8 +696,7 @@ function initCanvas() {
                 break;
             }
             case 'cell': {
-                const col = Math.floor(ptr.x / App.cellSize),
-                    row = Math.floor(ptr.y / App.cellSize);
+                const cellAddr = ga().pxToCell(ptr.x, ptr.y);
                 const tool = document.querySelector('#cell-tool-tiles .tool-tile.active')?.dataset.cellTool || 'pen';
                 if (tool === 'fill') {
                     // 単発操作: ドラッグ追随なし、履歴は fillCells 内で確定
@@ -713,10 +705,10 @@ function initCanvas() {
                         App.selectedLayerIds = [layer._layerId];
                         renderLayerList();
                     }
-                    fillCells(col, row, layer);
+                    fillCells(cellAddr.col, cellAddr.row, layer);
                 } else {
                     App._cellStrokeActive = true;
-                    handleCellPaint(col, row, tool);
+                    handleCellPaint(cellAddr.col, cellAddr.row, tool);
                     App._drawing = { cellTool: tool };
                 }
                 break;
@@ -752,7 +744,10 @@ function initCanvas() {
 
     App.canvas.on('mouse:move', function (opt) {
         const ptr = App.canvas.getPointer(opt.e);
-        document.getElementById('sb-coord').textContent = `${Math.floor(ptr.x / App.cellSize)}, ${Math.floor(ptr.y / App.cellSize)}`;
+        {
+            const ca = ga().pxToCell(ptr.x, ptr.y);
+            document.getElementById('sb-coord').textContent = ga().formatCoord(ca.col, ca.row);
+        }
 
         if (isPanning) {
             App._snapPt = null;
@@ -922,7 +917,8 @@ function initCanvas() {
 
         // セル塗り（ドラッグ）
         if (App._drawing && App.activeTool === 'cell') {
-            handleCellPaint(Math.floor(ptr.x / App.cellSize), Math.floor(ptr.y / App.cellSize), App._drawing.cellTool);
+            const ca = ga().pxToCell(ptr.x, ptr.y);
+            handleCellPaint(ca.col, ca.row, App._drawing.cellTool);
         }
     });
 
@@ -1056,10 +1052,6 @@ function _initGridRenderer() {
             wt = -vpt[5] / zoom,
             wr = wl + cw / zoom,
             wb = wt + ch / zoom;
-        const sc = Math.floor(wl / cs) - 1,
-            ec = Math.ceil(wr / cs) + 1;
-        const sr = Math.floor(wt / cs) - 1,
-            er = Math.ceil(wb / cs) + 1;
 
         const ctx = App.canvas.getContext();
         ctx.save();
@@ -1067,16 +1059,8 @@ function _initGridRenderer() {
         ctx.strokeStyle = App.gridColor;
         ctx.lineWidth = App.gridLineWidth;
         ctx.setLineDash(App.gridDashArray || []);
-        ctx.beginPath();
-        for (let c = sc; c <= ec; c++) {
-            ctx.moveTo(c * cs, sr * cs);
-            ctx.lineTo(c * cs, er * cs);
-        }
-        for (let r = sr; r <= er; r++) {
-            ctx.moveTo(sc * cs, r * cs);
-            ctx.lineTo(ec * cs, r * cs);
-        }
-        ctx.stroke();
+        // グリッド線描画は gridType ごとに差し替え可能 — GridAdapter に委譲
+        ga().drawGridLines(ctx, { wl, wt, wr, wb });
         ctx.restore();
 
         // 出力モード: キャンバス全体を暗く、選択範囲だけ明るく
@@ -1434,43 +1418,30 @@ function createCellLayer() {
 
 /**
  * セルレイヤー上の1セルをペン塗り / 消しゴム消去する。ドラッグ中も毎フレーム呼ばれる。
- * @param {number} col - セル列 (0始まり, 負値可)
- * @param {number} row - セル行
+ * セル形状とキーは GridAdapter に委ねる (スクエア: 矩形 / ヘクス: 六角形)。
+ * @param {number} col
+ * @param {number} row
  * @param {'pen'|'eraser'} tool
  */
 function handleCellPaint(col, row, tool) {
     const layer = getOrCreateCellLayer();
-    // 使用するセルレイヤーを選択状態にする（描き始め時の自動選択）
     if (!App.selectedLayerIds.includes(layer._layerId)) {
         App.selectedLayerIds = [layer._layerId];
         renderLayerList();
     }
-    const key = `${col},${row}`;
-    const cs = App.cellSize;
-
+    const adapter = ga();
+    const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
-        // 既存セルを探す
         const existing = layer._cellData?.get(key);
         if (existing) {
-            existing.set({ fill: rgba(App.fillColor, App.fillOpacity) });
+            const c2 = rgba(App.fillColor, App.fillOpacity);
+            existing.set({ fill: c2, stroke: c2 });
         } else {
-            const rect = new fabric.Rect({
-                left: col * cs,
-                top: row * cs,
-                width: cs,
-                height: cs,
-                fill: rgba(App.fillColor, App.fillOpacity),
-                stroke: null,
-                strokeWidth: 0,
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-                _cellCol: col,
-                _cellRow: row,
-            });
-            layer.addWithUpdate(rect);
+            const shape = adapter.createCellShape(col, row, rgba(App.fillColor, App.fillOpacity));
+            if (!shape) return;
+            layer.addWithUpdate(shape);
             if (!layer._cellData) layer._cellData = new Map();
-            layer._cellData.set(key, rect);
+            layer._cellData.set(key, shape);
         }
     } else if (tool === 'eraser') {
         const existing = layer._cellData?.get(key);
@@ -1501,40 +1472,37 @@ function fillCells(col, row, layer) {
         setTransientStatus('セルレイヤーが空です');
         return;
     }
+    const adapter = ga();
 
     // bbox: 塗られたセルの (col, row) の最小/最大
-    let minC = Infinity,
-        maxC = -Infinity,
-        minR = Infinity,
-        maxR = -Infinity;
+    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
     for (const cell of layer._cellData.values()) {
         if (cell._cellCol < minC) minC = cell._cellCol;
         if (cell._cellCol > maxC) maxC = cell._cellCol;
         if (cell._cellRow < minR) minR = cell._cellRow;
         if (cell._cellRow > maxR) maxR = cell._cellRow;
     }
-
     if (col < minC || col > maxC || row < minR || row > maxR) {
         setTransientStatus('セルレイヤーの範囲外です');
         return;
     }
 
     const newColor = rgba(App.fillColor, App.fillOpacity);
-    const startCell = layer._cellData.get(`${col},${row}`);
-    const targetColor = startCell ? startCell.fill : null; // null=空セル
-    // 既に同じ色なら何もしない
+    const startKey = adapter.cellKey(col, row);
+    const startCell = layer._cellData.get(startKey);
+    const targetColor = startCell ? startCell.fill : null;
     if (targetColor === newColor) return;
 
-    // 4近傍 BFS — bbox 外は走査しない
-    const visited = new Set();
+    // BFS — 隣接は adapter に委譲 (スクエア: 4近傍 / ヘクス: 6近傍)
+    const visited = new Set([startKey]);
     const queue = [[col, row]];
     const toFill = [];
-    visited.add(`${col},${row}`);
 
     while (queue.length > 0) {
         const [c, r] = queue.shift();
         if (c < minC || c > maxC || r < minR || r > maxR) continue;
-        const cell = layer._cellData.get(`${c},${r}`);
+        if (!adapter.cellExists(c, r)) continue;
+        const cell = layer._cellData.get(adapter.cellKey(c, r));
         const cellColor = cell ? cell.fill : null;
         if (cellColor !== targetColor) continue;
         toFill.push([c, r]);
@@ -1542,48 +1510,34 @@ function fillCells(col, row, layer) {
             setTransientStatus(`塗りつぶし上限 (${FILL_MAX_CELLS}セル) を超えました`);
             return;
         }
-        for (const [nc, nr] of [
-            [c + 1, r],
-            [c - 1, r],
-            [c, r + 1],
-            [c, r - 1],
-        ]) {
-            const key = `${nc},${nr}`;
-            if (!visited.has(key)) {
-                visited.add(key);
+        for (const [nc, nr] of adapter.cellNeighbors(c, r)) {
+            const k = adapter.cellKey(nc, nr);
+            if (!visited.has(k)) {
+                visited.add(k);
                 queue.push([nc, nr]);
             }
         }
     }
 
-    // 適用
-    const cs = App.cellSize;
-    for (const [c, r] of toFill) {
-        const key = `${c},${r}`;
+    applyFill(layer, adapter, toFill, newColor);
+    pushHistory(`塗りつぶし (${toFill.length}セル)`);
+}
+
+/** fillCells から呼ばれる適用ヘルパ。 */
+function applyFill(layer, adapter, cells, newColor) {
+    for (const [c, r] of cells) {
+        const key = adapter.cellKey(c, r);
         const existing = layer._cellData.get(key);
         if (existing) {
-            existing.set({ fill: newColor });
+            existing.set({ fill: newColor, stroke: newColor });
         } else {
-            const rect = new fabric.Rect({
-                left: c * cs,
-                top: r * cs,
-                width: cs,
-                height: cs,
-                fill: newColor,
-                stroke: null,
-                strokeWidth: 0,
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-                _cellCol: c,
-                _cellRow: r,
-            });
-            layer.addWithUpdate(rect);
-            layer._cellData.set(key, rect);
+            const shape = adapter.createCellShape(c, r, newColor);
+            if (!shape) continue;
+            layer.addWithUpdate(shape);
+            layer._cellData.set(key, shape);
         }
     }
     App.canvas.renderAll();
-    pushHistory(`塗りつぶし (${toFill.length}セル)`);
 }
 
 /* ================================================================
@@ -2044,12 +1998,13 @@ function restoreSaveData(data) {
 
     App.canvas.loadFromJSON(data.canvas, function () {
         if (data.viewportTransform) App.canvas.setViewportTransform(data.viewportTransform);
+        const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
                 obj._cellData = new Map();
                 obj.getObjects().forEach((r) => {
                     if (r._cellCol !== undefined && r._cellRow !== undefined) {
-                        obj._cellData.set(`${r._cellCol},${r._cellRow}`, r);
+                        obj._cellData.set(adapter.cellKey(r._cellCol, r._cellRow), r);
                     }
                 });
             }
@@ -2303,12 +2258,13 @@ function restoreHistorySnapshot(snapshot, displayName) {
     App._curvePoints = [];
 
     App.canvas.loadFromJSON(data.canvas, () => {
+        const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
                 obj._cellData = new Map();
                 obj.getObjects().forEach((r) => {
                     if (r._cellCol !== undefined && r._cellRow !== undefined) {
-                        obj._cellData.set(`${r._cellCol},${r._cellRow}`, r);
+                        obj._cellData.set(adapter.cellKey(r._cellCol, r._cellRow), r);
                     }
                 });
             }
@@ -2343,9 +2299,7 @@ function undo() {
     if (App._history.length === 0) return;
     const top = App._history.pop();
     App._redoStack.push(top);
-    const target = App._history.length > 0
-        ? App._history[App._history.length - 1]
-        : { snapshot: App._historyInitial, name: '初期状態' };
+    const target = App._history.length > 0 ? App._history[App._history.length - 1] : { snapshot: App._historyInitial, name: '初期状態' };
     if (!target.snapshot) {
         // セーフティ: 初期スナップショット未取得時は何もしない
         App._history.push(top);
