@@ -191,8 +191,7 @@
             body[data-edit-mode='simple'] .prop-group[data-prop='ground'],
             body[data-edit-mode='simple'] .prop-group[data-prop='wall'],
             body[data-edit-mode='simple'] .prop-group[data-prop='room'],
-            body[data-edit-mode='simple'] .prop-group[data-prop='decor'],
-            body[data-edit-mode='simple'] .prop-group[data-prop='vector'] {
+            body[data-edit-mode='simple'] .prop-group[data-prop='decor'] {
                 display: none;
             }
             body[data-edit-mode='map'] .tb-btn[data-mode='simple'],
@@ -205,6 +204,11 @@
             body[data-edit-mode='map'] .prop-group[data-prop='curve'],
             body[data-edit-mode='map'] .prop-group[data-prop='curve-closed'] {
                 display: none;
+            }
+            /* 地面ツール時にセルサブツールを選ぶと、cell prop-group も同時に active になる (refreshPropGroupVisibility)。
+               ↑ の "map モードで cell prop-group を非表示" を上書きして表示する。 */
+            body[data-edit-mode='map'] .prop-group[data-prop='cell'].active {
+                display: flex;
             }
 
             /* --- 右: Undo / Redo --- */
@@ -384,14 +388,18 @@
                 border-color: var(--cyan);
                 background: rgba(0, 229, 255, 0.1);
             }
-            .pp-tiles {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 4px;
+            /* スクロール用ラッパ — aspect-ratio タイルが max-height 制約で潰れる問題を避けるため
+               スクロールはラッパ側、グリッドは高さ制約なしで自然に積む */
+            .pp-tiles-scroll {
                 max-height: 200px;
                 overflow-y: auto;
                 scrollbar-width: thin;
                 padding-right: 2px;
+            }
+            .pp-tiles {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 4px;
             }
             .pp-tile {
                 aspect-ratio: 1;
@@ -996,7 +1004,6 @@
                 <button class="tb-btn" data-tool="wall" data-mode="map" title="壁"><span class="material-symbols-outlined">outdoor_garden</span><span class="tb-label">壁</span></button>
                 <button class="tb-btn" data-tool="room" data-mode="map" title="部屋"><span class="material-symbols-outlined">home</span><span class="tb-label">部屋</span></button>
                 <button class="tb-btn" data-tool="decor" data-mode="map" title="装飾"><span class="material-symbols-outlined">chair</span><span class="tb-label">装飾</span></button>
-                <button class="tb-btn" data-tool="vector" data-mode="map" title="ベクター"><span class="material-symbols-outlined">timeline</span><span class="tb-label">ベクター</span></button>
                 <!-- 両モード共通 -->
                 <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
                 <div class="tb-sep"></div>
@@ -1125,12 +1132,7 @@
                             <div class="tool-tile" data-wall-tool="curve" title="曲線"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
                             <div class="tool-tile" data-wall-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
                         </div>
-                        <div class="f">
-                            <span class="fl">太さ</span>
-                            <div class="row"><input type="number" id="wall-stroke-width" value="8" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div>
-                        </div>
                         <div class="pattern-picker" id="wall-pattern-picker"></div>
-                        <p class="fl" style="opacity: 0.4; font-size: 0.6rem; margin-top: 0.4rem">※ Phase B-3 で描画機能を実装予定</p>
                     </div>
                 </div>
                 <!-- 地図モード: 部屋 -->
@@ -1145,13 +1147,6 @@
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">chair</span>装飾</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (ドア/家具/木/岩などのSVGスタンプ)</p>
-                    </div>
-                </div>
-                <!-- 地図モード: ベクター -->
-                <div class="prop-group" data-prop="vector">
-                    <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">timeline</span>ベクター</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase B で追加予定 (従来の矩形/楕円/直線/折線/多角形/曲線/閉曲線を内包)</p>
                     </div>
                 </div>
                 <!-- フリーハンド -->
@@ -1189,22 +1184,30 @@
                         <input type="file" id="image-upload" accept="image/*" style="display: none" /><button class="btn-action" id="image-upload-btn">画像を選択</button>
                     </div>
                 </div>
+                <!-- パターン共通設定 (地面/壁モードで表示) — fill-stroke-sec より先に -->
+                <div id="pattern-transform-sec" class="s-sec" style="display: none">
+                    <div class="s-ttl"><span class="material-symbols-outlined">tune</span>パターン</div>
+                    <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
+                    <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
+                    <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
+                </div>
+
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display: none">
-                    <div class="s-ttl"><span class="material-symbols-outlined">palette</span>フィル / ストローク</div>
-                    <div class="f">
+                    <div class="s-ttl" id="fill-stroke-title"><span class="material-symbols-outlined">palette</span>フィル / ストローク</div>
+                    <div class="f" id="fill-color-row">
                         <span class="fl">フィル</span>
                         <div id="fill-color-picker"></div>
                     </div>
-                    <div class="f">
+                    <div class="f" id="stroke-color-row">
                         <span class="fl">ストローク</span>
                         <div id="stroke-color-picker"></div>
                     </div>
-                    <div class="f">
+                    <div class="f" id="stroke-width-row">
                         <span class="fl">線幅</span>
                         <div class="row"><input type="number" id="stroke-width" value="2" min="0" max="100" class="custom-spinner" /><span class="unit">px</span></div>
                     </div>
-                    <div class="f">
+                    <div class="f" id="stroke-style-row">
                         <span class="fl">線種</span>
                         <div class="seg">
                             <input type="radio" name="stroke-style" id="ss-solid" value="solid" checked /><label for="ss-solid">実線</label>

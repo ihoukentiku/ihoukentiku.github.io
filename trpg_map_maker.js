@@ -52,7 +52,10 @@ const App = {
     groundPattern: { mode: 'pattern', id: 'stone_floor', genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
     wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
-    wallStrokeWidth: 8,
+    // ---- パターン共通設定 (地面/壁の Pattern fill/stroke に適用) ----
+    patternOffsetX: 0, // 全パターン共通の追加オフセット (px)
+    patternOffsetY: 0,
+    patternRotation: 0, // 度
     activeTool: 'select',
     cellSize: 72,
     canvas: null,
@@ -311,25 +314,35 @@ function generateTerrainPattern(baseColor, patternType, cellSize) {
    { id, name, genre, color, pattern } の形を取る。
 ================================================================ */
 const GROUND_GENRES = [
-    { id: 'all', name: '全て' },
-    { id: 'stone', name: '石' },
-    { id: 'wood', name: '木' },
-    { id: 'grass', name: '草' },
-    { id: 'sand', name: '砂' },
-    { id: 'water', name: '水' },
+    { id: 'all',     name: '全て' },
+    { id: 'indoor',  name: '屋内' },
+    { id: 'outdoor', name: '屋外' },
+    { id: 'cave',    name: '洞窟' },
 ];
 const GROUND_PATTERNS = [
-    { id: 'stone_floor', name: '石床', genre: 'stone', color: '#8a8a8a', pattern: 'speckle' },
-    { id: 'cave_stone', name: '洞窟石', genre: 'stone', color: '#6b6b6b', pattern: 'speckle' },
-    { id: 'gravel', name: '砂利', genre: 'stone', color: '#7a7568', pattern: 'dot' },
-    { id: 'wood_floor', name: '木床', genre: 'wood', color: '#a0724e', pattern: 'stripe' },
-    { id: 'tile_floor', name: 'タイル', genre: 'wood', color: '#c4b9a0', pattern: 'grid' },
-    { id: 'grass', name: '草', genre: 'grass', color: '#4a8c3f', pattern: 'speckle' },
-    { id: 'moss', name: '苔', genre: 'grass', color: '#4e6e3a', pattern: 'speckle' },
-    { id: 'sand', name: '砂', genre: 'sand', color: '#d4c07a', pattern: 'dot' },
-    { id: 'dirt', name: '土', genre: 'sand', color: '#8b6e4e', pattern: 'speckle' },
-    { id: 'water_s', name: '水(浅)', genre: 'water', color: '#5ba3cf', pattern: 'wave' },
-    { id: 'water_d', name: '水(深)', genre: 'water', color: '#2a6496', pattern: 'wave' },
+    // 屋内
+    { id: 'stone_floor', name: '石床',       genre: 'indoor',  color: '#8a8a8a', pattern: 'speckle' },
+    { id: 'wood_floor',  name: '木床',       genre: 'indoor',  color: '#a0724e', pattern: 'stripe'  },
+    { id: 'tile_floor',  name: 'タイル',     genre: 'indoor',  color: '#c4b9a0', pattern: 'grid'    },
+    { id: 'brick_floor', name: 'レンガ',     genre: 'indoor',  color: '#a85d3e', pattern: 'brick'   },
+    { id: 'carpet',      name: 'カーペット', genre: 'indoor',  color: '#7b3344', pattern: 'none'    },
+    { id: 'marble',      name: '大理石',     genre: 'indoor',  color: '#d4cfc8', pattern: 'speckle' },
+    // 屋外
+    { id: 'grass',       name: '草',         genre: 'outdoor', color: '#4a8c3f', pattern: 'speckle' },
+    { id: 'dirt',        name: '土',         genre: 'outdoor', color: '#8b6e4e', pattern: 'speckle' },
+    { id: 'sand',        name: '砂',         genre: 'outdoor', color: '#d4c07a', pattern: 'dot'     },
+    { id: 'water_s',     name: '水(浅)',     genre: 'outdoor', color: '#5ba3cf', pattern: 'wave'    },
+    { id: 'water_d',     name: '水(深)',     genre: 'outdoor', color: '#2a6496', pattern: 'wave'    },
+    { id: 'swamp',       name: '沼',         genre: 'outdoor', color: '#5e7a4a', pattern: 'wave'    },
+    { id: 'road',        name: '道',         genre: 'outdoor', color: '#9e9078', pattern: 'none'    },
+    { id: 'snow',        name: '雪',         genre: 'outdoor', color: '#e8e8ee', pattern: 'dot'     },
+    // 洞窟
+    { id: 'cave_stone',  name: '石床',       genre: 'cave',    color: '#6b6b6b', pattern: 'speckle' },
+    { id: 'gravel',      name: '砂利',       genre: 'cave',    color: '#7a7568', pattern: 'dot'     },
+    { id: 'cave_water',  name: '水',         genre: 'cave',    color: '#3a7aaa', pattern: 'wave'    },
+    { id: 'lava',        name: '溶岩',       genre: 'cave',    color: '#c43e1a', pattern: 'wave'    },
+    { id: 'ice',         name: '氷',         genre: 'cave',    color: '#aad4e6', pattern: 'hatch'   },
+    { id: 'moss',        name: '苔',         genre: 'cave',    color: '#4e6e3a', pattern: 'speckle' },
 ];
 
 const WALL_GENRES = [
@@ -507,21 +520,48 @@ function getMapLayers() {
  * 表示/非表示を更新する。プロパティパネルの状態を一元管理する司令塔。
  */
 function updateFillStrokeVisibility() {
-    const drawTools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'curve', 'curve-closed'];
-    let show = drawTools.includes(App.activeTool);
-    if (App.activeTool === 'select') {
-        show = App.canvas.getActiveObjects().some((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+    const sub = activeSubtool();
+    const drawSubtools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'curve', 'curve-closed'];
+    const isGround = App.activeTool === 'ground';
+    const isWall = App.activeTool === 'wall';
+    const isSimpleDraw = !isGround && !isWall && drawSubtools.includes(sub);
+    const isSelect = App.activeTool === 'select';
+
+    // 各行の表示判定
+    // - フィル色 / ストローク色 / 線種: シンプル描画 (色を指定するもの) のみ
+    // - 線幅: シンプル描画 + 壁モード描画 (地面は fill のみで stroke 不要)
+    // - 角丸: 矩形サブツール (モード問わず)
+    let showFillColor = isSimpleDraw;
+    let showStrokeColor = isSimpleDraw;
+    let showStrokeStyle = isSimpleDraw;
+    let showStrokeWidth = isSimpleDraw || (isWall && drawSubtools.includes(sub));
+    let showRadius = sub === 'rect';
+    if (isSelect) {
+        const activeObjs = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+        showFillColor = showStrokeColor = showStrokeStyle = showStrokeWidth = activeObjs.length > 0;
+        showRadius = activeObjs.some((o) => o.type === 'rect');
     }
-    document.getElementById('fill-stroke-sec').style.display = show ? '' : 'none';
-    // 角丸は矩形ツール or 選択中の矩形にのみ表示
-    let showRadius = App.activeTool === 'rect';
-    if (App.activeTool === 'select') {
-        showRadius = App.canvas.getActiveObjects().some((o) => o._isMapLayer && o.type === 'rect');
-    }
-    document.getElementById('corner-radius-row').style.display = showRadius ? '' : 'none';
-    // スナップ設定: 描画系ツールで表示
-    const snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
-    document.getElementById('snap-sec').style.display = snapTools.includes(App.activeTool) ? '' : 'none';
+
+    const setDisp = (id, show) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? '' : 'none';
+    };
+    setDisp('fill-color-row', showFillColor);
+    setDisp('stroke-color-row', showStrokeColor);
+    setDisp('stroke-width-row', showStrokeWidth);
+    setDisp('stroke-style-row', showStrokeStyle);
+    setDisp('corner-radius-row', showRadius);
+    // セクション全体は中に何か出てれば表示
+    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showStrokeStyle || showRadius;
+    setDisp('fill-stroke-sec', anyRow);
+    // タイトル「フィル / ストローク」は色行が出てる時だけ意味があるので隠す/出す
+    setDisp('fill-stroke-title', showFillColor || showStrokeColor);
+
+    // スナップ設定: 描画系サブツール (シンプル/地面/壁) で表示。セルは grid 単位なので不要
+    const snapSubtools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
+    setDisp('snap-sec', snapSubtools.includes(sub));
+    // パターン共通設定: 地面/壁モードでのみ表示
+    setDisp('pattern-transform-sec', isGround || isWall);
 }
 
 /* ================================================================
@@ -710,8 +750,8 @@ function initCanvas() {
             return;
         }
 
-        // ツール別
-        switch (App.activeTool) {
+        // ツール別 — activeSubtool() で「シンプル/地面/壁」共通のサブツール名にディスパッチ
+        switch (activeSubtool()) {
             case 'rect':
             case 'ellipse': {
                 const pt = snapToGrid(ptr.x, ptr.y) || ptr;
@@ -725,11 +765,13 @@ function initCanvas() {
                         h = Math.abs(pt.y - d.startY);
                     if (w > 2 && h > 2) {
                         removePreview();
+                        const style = getCurrentDrawStyle();
                         const left = Math.min(d.startX, pt.x),
                             top = Math.min(d.startY, pt.y);
-                        const hsw = App.strokeWidth / 2;
+                        const hsw = style.strokeWidth / 2;
+                        const subtool = activeSubtool();
                         const obj =
-                            App.activeTool === 'rect'
+                            subtool === 'rect'
                                 ? new fabric.Rect({
                                       left: left - hsw,
                                       top: top - hsw,
@@ -737,10 +779,10 @@ function initCanvas() {
                                       height: h,
                                       rx: App.cornerRadius,
                                       ry: App.cornerRadius,
-                                      fill: rgba(App.fillColor, App.fillOpacity),
-                                      stroke: rgba(App.strokeColor, App.strokeOpacity),
-                                      strokeWidth: App.strokeWidth,
-                                      strokeDashArray: App.strokeDashArray,
+                                      fill: style.fill,
+                                      stroke: style.stroke,
+                                      strokeWidth: style.strokeWidth,
+                                      strokeDashArray: style.strokeDashArray,
                                       objectCaching: false,
                                   })
                                 : new fabric.Ellipse({
@@ -748,13 +790,13 @@ function initCanvas() {
                                       top: top - hsw,
                                       rx: w / 2,
                                       ry: h / 2,
-                                      fill: rgba(App.fillColor, App.fillOpacity),
-                                      stroke: rgba(App.strokeColor, App.strokeOpacity),
-                                      strokeWidth: App.strokeWidth,
-                                      strokeDashArray: App.strokeDashArray,
+                                      fill: style.fill,
+                                      stroke: style.stroke,
+                                      strokeWidth: style.strokeWidth,
+                                      strokeDashArray: style.strokeDashArray,
                                       objectCaching: false,
                                   });
-                        addLayerObject(App.activeTool === 'rect' ? '矩形' : '楕円', obj);
+                        addCategoryLayer(style.namePrefix + (subtool === 'rect' ? '矩形' : '楕円'), obj, style.flag);
                     }
                     App._drawing = null;
                 }
@@ -765,17 +807,18 @@ function initCanvas() {
                 if (!App._lineStart) {
                     App._lineStart = pt;
                 } else {
-                    const hsw = App.strokeWidth / 2;
+                    const style = getCurrentDrawStyle();
+                    const hsw = style.strokeWidth / 2;
                     const line = new fabric.Line([App._lineStart.x - hsw, App._lineStart.y - hsw, pt.x - hsw, pt.y - hsw], {
-                        stroke: rgba(App.strokeColor, App.strokeOpacity),
-                        strokeWidth: App.strokeWidth,
-                        strokeDashArray: App.strokeDashArray,
+                        stroke: style.stroke,
+                        strokeWidth: style.strokeWidth,
+                        strokeDashArray: style.strokeDashArray,
                         fill: null,
                         selectable: false,
                         evented: false,
                         objectCaching: false,
                     });
-                    addLayerObject('直線', line);
+                    addCategoryLayer(style.namePrefix + '直線', line, style.flag);
                     removePreview();
                     App._lineStart = null;
                 }
@@ -803,18 +846,34 @@ function initCanvas() {
             case 'cell': {
                 const cellAddr = ga().pxToCell(ptr.x, ptr.y);
                 const tool = document.querySelector('#cell-tool-tiles .tool-tile.active')?.dataset.cellTool || 'pen';
-                if (tool === 'fill') {
-                    // 単発操作: ドラッグ追随なし、履歴は fillCells 内で確定
-                    const layer = getOrCreateCellLayer();
-                    if (!App.selectedLayerIds.includes(layer._layerId)) {
-                        App.selectedLayerIds = [layer._layerId];
-                        renderLayerList();
+                if (App.activeTool === 'ground') {
+                    if (tool === 'fill') {
+                        const layer = getOrCreateGroundCellLayer();
+                        if (!App.selectedLayerIds.includes(layer._layerId)) {
+                            App.selectedLayerIds = [layer._layerId];
+                            renderLayerList();
+                        }
+                        fillCells(cellAddr.col, cellAddr.row, layer, getGroundFill());
+                    } else {
+                        App._cellStrokeActive = true;
+                        App._cellStrokeCategory = 'ground';
+                        handleGroundCellPaint(cellAddr.col, cellAddr.row, tool);
+                        App._drawing = { cellTool: 'ground-' + tool };
                     }
-                    fillCells(cellAddr.col, cellAddr.row, layer);
                 } else {
-                    App._cellStrokeActive = true;
-                    handleCellPaint(cellAddr.col, cellAddr.row, tool);
-                    App._drawing = { cellTool: tool };
+                    if (tool === 'fill') {
+                        const layer = getOrCreateCellLayer();
+                        if (!App.selectedLayerIds.includes(layer._layerId)) {
+                            App.selectedLayerIds = [layer._layerId];
+                            renderLayerList();
+                        }
+                        fillCells(cellAddr.col, cellAddr.row, layer);
+                    } else {
+                        App._cellStrokeActive = true;
+                        App._cellStrokeCategory = 'simple';
+                        handleCellPaint(cellAddr.col, cellAddr.row, tool);
+                        App._drawing = { cellTool: tool };
+                    }
                 }
                 break;
             }
@@ -868,15 +927,17 @@ function initCanvas() {
 
         // スナップ先を計算（水色マーカー用 — スナップ対応ツールのみ）
         {
-            const _snapTools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
-            const _needSnap = _snapTools.includes(App.activeTool) || App._exportMode;
+            // セルツールは grid 単位の塗りなのでスナップマーカーは不要
+            const _snapSubtools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
+            const _needSnap = _snapSubtools.includes(activeSubtool()) || App._exportMode;
             if (_needSnap) {
+                const _sub = activeSubtool();
                 const _editPts =
-                    App.activeTool === 'path'
+                    _sub === 'path'
                         ? App._pathPoints
-                        : App.activeTool === 'polygon'
+                        : _sub === 'polygon'
                           ? App._polygonPoints
-                          : App.activeTool === 'curve' || App.activeTool === 'curve-closed'
+                          : _sub === 'curve' || _sub === 'curve-closed'
                             ? App._curvePoints
                             : [];
                 const _raw = snapToGrid(ptr.x, ptr.y);
@@ -887,8 +948,22 @@ function initCanvas() {
             App.canvas.requestRenderAll();
         }
 
+        // プレビュー用のスタイル — ground/wall は pattern fill のため opacity を弄らず style そのまま、
+        // simple モードは従来通り半透明にする
+        const _previewStyle = (() => {
+            const s = getCurrentDrawStyle();
+            if (App.activeTool === 'ground' || App.activeTool === 'wall') return s;
+            return {
+                ...s,
+                fill: rgba(App.fillColor, App.fillOpacity * 0.5),
+                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
+                fillSoft: rgba(App.fillColor, App.fillOpacity * 0.3),
+            };
+        })();
+
         // 矩形/楕円プレビュー（1クリック後、マウス追従）
-        if (App._drawing && (App.activeTool === 'rect' || App.activeTool === 'ellipse')) {
+        const _sub = activeSubtool();
+        if (App._drawing && (_sub === 'rect' || _sub === 'ellipse')) {
             const pt = snapToGrid(ptr.x, ptr.y) || ptr;
             const d = App._drawing;
             const left = Math.min(d.startX, pt.x),
@@ -897,38 +972,23 @@ function initCanvas() {
                 h = Math.abs(pt.y - d.startY);
             removePreview();
             if (w > 0 || h > 0) {
-                const hsw = App.strokeWidth / 2;
+                const hsw = _previewStyle.strokeWidth / 2;
                 const preview =
-                    App.activeTool === 'rect'
+                    _sub === 'rect'
                         ? new fabric.Rect({
-                              left: left - hsw,
-                              top: top - hsw,
-                              width: w,
-                              height: h,
-                              rx: App.cornerRadius,
-                              ry: App.cornerRadius,
-                              fill: rgba(App.fillColor, App.fillOpacity * 0.5),
-                              stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                              strokeWidth: App.strokeWidth,
-                              strokeDashArray: App.strokeDashArray,
-                              selectable: false,
-                              evented: false,
-                              objectCaching: false,
-                              isPreview: true,
+                              left: left - hsw, top: top - hsw, width: w, height: h,
+                              rx: App.cornerRadius, ry: App.cornerRadius,
+                              fill: _previewStyle.fill, stroke: _previewStyle.stroke,
+                              strokeWidth: _previewStyle.strokeWidth,
+                              strokeDashArray: _previewStyle.strokeDashArray,
+                              selectable: false, evented: false, objectCaching: false, isPreview: true,
                           })
                         : new fabric.Ellipse({
-                              left: left - hsw,
-                              top: top - hsw,
-                              rx: w / 2,
-                              ry: h / 2,
-                              fill: rgba(App.fillColor, App.fillOpacity * 0.5),
-                              stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                              strokeWidth: App.strokeWidth,
-                              strokeDashArray: App.strokeDashArray,
-                              selectable: false,
-                              evented: false,
-                              objectCaching: false,
-                              isPreview: true,
+                              left: left - hsw, top: top - hsw, rx: w / 2, ry: h / 2,
+                              fill: _previewStyle.fill, stroke: _previewStyle.stroke,
+                              strokeWidth: _previewStyle.strokeWidth,
+                              strokeDashArray: _previewStyle.strokeDashArray,
+                              selectable: false, evented: false, objectCaching: false, isPreview: true,
                           });
                 App.canvas.add(preview);
             }
@@ -936,79 +996,67 @@ function initCanvas() {
         }
 
         // 直線プレビュー
-        if (App.activeTool === 'line' && App._lineStart) {
+        if (_sub === 'line' && App._lineStart) {
             const pt = snapToGrid(ptr.x, ptr.y) || ptr;
-            const hsw = App.strokeWidth / 2;
+            const hsw = _previewStyle.strokeWidth / 2;
             removePreview();
             App.canvas.add(
                 new fabric.Line([App._lineStart.x - hsw, App._lineStart.y - hsw, pt.x - hsw, pt.y - hsw], {
-                    stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                    strokeWidth: App.strokeWidth,
-                    selectable: false,
-                    evented: false,
-                    isPreview: true,
-                    objectCaching: false,
+                    stroke: _previewStyle.stroke,
+                    strokeWidth: _previewStyle.strokeWidth,
+                    selectable: false, evented: false, isPreview: true, objectCaching: false,
                 })
             );
             App.canvas.renderAll();
         }
 
         // 折線プレビュー
-        if (App.activeTool === 'path' && App._pathPoints.length > 0) {
+        if (_sub === 'path' && App._pathPoints.length > 0) {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
             removePreview();
             App.canvas.add(
                 new fabric.Polyline([...App._pathPoints, pt], {
-                    stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                    strokeWidth: App.strokeWidth,
+                    stroke: _previewStyle.stroke,
+                    strokeWidth: _previewStyle.strokeWidth,
                     fill: '',
-                    selectable: false,
-                    evented: false,
-                    isPreview: true,
-                    objectCaching: false,
+                    selectable: false, evented: false, isPreview: true, objectCaching: false,
                 })
             );
             App.canvas.renderAll();
         }
 
         // 多角形プレビュー
-        if (App.activeTool === 'polygon' && App._polygonPoints.length > 0) {
+        if (_sub === 'polygon' && App._polygonPoints.length > 0) {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
             removePreview();
             App.canvas.add(
                 new fabric.Polygon([...App._polygonPoints, pt], {
-                    stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                    strokeWidth: App.strokeWidth,
-                    fill: rgba(App.fillColor, App.fillOpacity * 0.3),
-                    selectable: false,
-                    evented: false,
-                    isPreview: true,
-                    objectCaching: false,
+                    stroke: _previewStyle.stroke,
+                    strokeWidth: _previewStyle.strokeWidth,
+                    fill: _previewStyle.fillSoft || _previewStyle.fill,
+                    selectable: false, evented: false, isPreview: true, objectCaching: false,
                 })
             );
             App.canvas.renderAll();
         }
 
         // 曲線プレビュー (開/閉共通)
-        if ((App.activeTool === 'curve' || App.activeTool === 'curve-closed') && App._curvePoints.length > 0) {
+        if ((_sub === 'curve' || _sub === 'curve-closed') && App._curvePoints.length > 0) {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
             removePreview();
             const previewPts = [...App._curvePoints, pt];
-            const closed = App.activeTool === 'curve-closed';
+            const closed = _sub === 'curve-closed';
             const d = closed ? buildClosedBezierPath(previewPts) : buildBezierPath(previewPts);
             if (d) {
                 App.canvas.add(
                     new fabric.Path(d, {
-                        stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                        strokeWidth: App.strokeWidth,
-                        fill: closed ? rgba(App.fillColor, App.fillOpacity * 0.3) : '',
-                        selectable: false,
-                        evented: false,
-                        isPreview: true,
-                        objectCaching: false,
+                        stroke: _previewStyle.stroke,
+                        strokeWidth: _previewStyle.strokeWidth,
+                        fill: closed ? (_previewStyle.fillSoft || _previewStyle.fill) : '',
+                        selectable: false, evented: false, isPreview: true, objectCaching: false,
                     })
                 );
             }
@@ -1028,10 +1076,16 @@ function initCanvas() {
             App.canvas.requestRenderAll();
         }
 
-        // セル塗り（ドラッグ）
-        if (App._drawing && App.activeTool === 'cell') {
+        // セル塗り（ドラッグ） — シンプル/地面で塗り先レイヤーが異なる
+        if (App._drawing && (App.activeTool === 'cell' || (App.activeTool === 'ground' && (App._drawing.cellTool === 'ground-pen' || App._drawing.cellTool === 'ground-eraser')))) {
             const ca = ga().pxToCell(ptr.x, ptr.y);
-            handleCellPaint(ca.col, ca.row, App._drawing.cellTool);
+            if (App._drawing.cellTool === 'ground-pen') {
+                handleGroundCellPaint(ca.col, ca.row, 'pen');
+            } else if (App._drawing.cellTool === 'ground-eraser') {
+                handleGroundCellPaint(ca.col, ca.row, 'eraser');
+            } else {
+                handleCellPaint(ca.col, ca.row, App._drawing.cellTool);
+            }
         }
     });
 
@@ -1042,10 +1096,14 @@ function initCanvas() {
             App.canvas.defaultCursor = defaultCursorForTool(App.activeTool);
             return;
         }
-        if (App._drawing && App.activeTool === 'cell') App._drawing = null;
+        if (App._drawing && (App.activeTool === 'cell' || (App.activeTool === 'ground' && (App._drawing.cellTool === 'ground-pen' || App._drawing.cellTool === 'ground-eraser')))) {
+            App._drawing = null;
+        }
         if (App._cellStrokeActive) {
+            const cat = App._cellStrokeCategory === 'ground' ? '地面_セル' : 'セル';
             App._cellStrokeActive = false;
-            pushHistory('セル塗り');
+            App._cellStrokeCategory = null;
+            pushHistory(`${cat}塗り`);
         }
     });
 
@@ -1084,6 +1142,7 @@ function initCanvas() {
     });
     App.canvas.on('object:modified', function (opt) {
         updateSelectionInfo();
+        if (opt.target) applyPatternOrigin(opt.target);
         // 移動・リサイズ・回転の確定で履歴を積む (テキスト編集による modified は無視)
         if (App._isRestoring) return;
         const t = opt.target;
@@ -1092,10 +1151,13 @@ function initCanvas() {
         pushHistory(`${name}を変更`);
     });
     App.canvas.on('object:moving', function (opt) {
-        if (!App.snapEnabled) return;
         const obj = opt.target;
-        const snapped = snapToGrid(obj.left, obj.top);
-        if (snapped) obj.set({ left: snapped.x, top: snapped.y });
+        if (App.snapEnabled) {
+            const snapped = snapToGrid(obj.left, obj.top);
+            if (snapped) obj.set({ left: snapped.x, top: snapped.y });
+        }
+        // 移動中もパターン原点を維持 (世界 (0,0) アンカー)
+        applyPatternOrigin(obj);
     });
     App.canvas.on('path:created', (opt) => {
         if (opt.path) {
@@ -1787,6 +1849,68 @@ function handleCellPaint(col, row, tool) {
     App.canvas.renderAll();
 }
 
+/**
+ * 地面モードのセルレイヤー (現存最上位 or 新規) を取得する。
+ * シンプル用 cellLayer とは別系統 (_isGroundLayer フラグで区別)。
+ */
+function getOrCreateGroundCellLayer() {
+    const existing = getMapLayers()
+        .reverse()
+        .find((o) => o._isCellLayer && o._isGroundLayer);
+    if (existing) return existing;
+    const group = new fabric.Group([], {
+        selectable: false, evented: false, objectCaching: false,
+        _isCellLayer: true, _isGroundLayer: true, _cellData: new Map(),
+    });
+    addCategoryLayer('地面_セル', group, '_isGroundLayer');
+    App.selectedLayerIds = [group._layerId];
+    renderLayerList();
+    return group;
+}
+
+/**
+ * 地面モードのセル塗り (ペン / 消しゴム)。ドラッグ中も毎フレーム呼ばれる。
+ * ペン時: 現在の groundPattern (solid / pattern) を fill / stroke として適用
+ * 消しゴム時: そのセルを削除
+ * @param {number} col
+ * @param {number} row
+ * @param {'pen'|'eraser'} tool
+ */
+function handleGroundCellPaint(col, row, tool = 'pen') {
+    const layer = getOrCreateGroundCellLayer();
+    if (!App.selectedLayerIds.includes(layer._layerId)) {
+        App.selectedLayerIds = [layer._layerId];
+        renderLayerList();
+    }
+    const adapter = ga();
+    const key = adapter.cellKey(col, row);
+    if (tool === 'pen') {
+        const fill = getGroundFill();
+        const existing = layer._cellData?.get(key);
+        if (existing) {
+            // 既存セルの再塗り (色を上書き) — pattern オフセットも今の設定で再スナップショット
+            existing.set({ fill, stroke: fill });
+            snapshotPatternSettings(existing);
+            applyPatternOrigin(existing);
+        } else {
+            const shape = adapter.createCellShape(col, row, fill);
+            if (!shape) return;
+            snapshotPatternSettings(shape);
+            applyPatternOrigin(shape);
+            layer.addWithUpdate(shape);
+            if (!layer._cellData) layer._cellData = new Map();
+            layer._cellData.set(key, shape);
+        }
+    } else if (tool === 'eraser') {
+        const existing = layer._cellData?.get(key);
+        if (existing) {
+            layer.removeWithUpdate(existing);
+            layer._cellData.delete(key);
+        }
+    }
+    App.canvas.renderAll();
+}
+
 /** 塗りつぶしツールの上限セル数。超過時は中止して警告を出す。 */
 const FILL_MAX_CELLS = 10000;
 
@@ -1801,7 +1925,7 @@ const FILL_MAX_CELLS = 10000;
  * @param {number} row
  * @param {fabric.Group} layer - 対象セルレイヤー
  */
-function fillCells(col, row, layer) {
+function fillCells(col, row, layer, newColorOverride) {
     if (!layer._cellData || layer._cellData.size === 0) {
         setTransientStatus('セルレイヤーが空です');
         return;
@@ -1824,7 +1948,9 @@ function fillCells(col, row, layer) {
         return;
     }
 
-    const newColor = rgba(App.fillColor, App.fillOpacity);
+    // newColorOverride が指定されればそれを使う (地面塗りつぶし時など)。
+    // 未指定ならシンプルモードの App.fillColor/fillOpacity を使用。
+    const newColor = newColorOverride !== undefined ? newColorOverride : rgba(App.fillColor, App.fillOpacity);
     const startKey = adapter.cellKey(col, row);
     const startCell = layer._cellData.get(startKey);
     const targetColor = startCell ? startCell.fill : null;
@@ -1862,14 +1988,23 @@ function fillCells(col, row, layer) {
 
 /** fillCells から呼ばれる適用ヘルパ。 */
 function applyFill(layer, adapter, cells, newColor) {
+    const isGround = layer._isGroundLayer;
     for (const [c, r] of cells) {
         const key = adapter.cellKey(c, r);
         const existing = layer._cellData.get(key);
         if (existing) {
             existing.set({ fill: newColor, stroke: newColor });
+            if (isGround) {
+                snapshotPatternSettings(existing);
+                applyPatternOrigin(existing);
+            }
         } else {
             const shape = adapter.createCellShape(c, r, newColor);
             if (!shape) continue;
+            if (isGround) {
+                snapshotPatternSettings(shape);
+                applyPatternOrigin(shape);
+            }
             layer.addWithUpdate(shape);
             layer._cellData.set(key, shape);
         }
@@ -1880,7 +2015,9 @@ function applyFill(layer, adapter, cells, newColor) {
 /* ================================================================
    地形パターン（データのみ保持 — 描画UIは別途実装）
 ================================================================ */
-let _terrainPatternCache = new Map(); // key: `${id}_${cellSize}` → fabric.Pattern
+// パターン用ソースキャンバスをキャッシュ (描画は重いので使い回す)。
+// fabric.Pattern インスタンス自体は shape ごとに独立 (offsetX/Y/transform を per-shape で持つため)。
+let _terrainCanvasCache = new Map(); // key: `${id}_${cellSize}` → HTMLCanvasElement
 
 /**
  * 地形プリセットから fill 値を返す。pattern='none' は色文字列、それ以外は
@@ -1891,10 +2028,176 @@ let _terrainPatternCache = new Map(); // key: `${id}_${cellSize}` → fabric.Pat
 function getTerrainFill(preset) {
     if (preset.pattern === 'none') return preset.color;
     const key = `${preset.id}_${App.cellSize}`;
-    if (!_terrainPatternCache.has(key)) {
-        _terrainPatternCache.set(key, generateTerrainPattern(preset.color, preset.pattern, App.cellSize));
+    let src = _terrainCanvasCache.get(key);
+    if (!src) {
+        src = renderTerrainCanvas(preset.color, preset.pattern, App.cellSize);
+        _terrainCanvasCache.set(key, src);
     }
-    return _terrainPatternCache.get(key);
+    // 毎回新しい Pattern インスタンスを返す — shape ごとに offsetX/Y/transform を独立管理するため
+    return new fabric.Pattern({ source: src, repeat: 'repeat' });
+}
+
+/**
+ * App.groundPattern の状態 (solid / pattern) から実際の fill 値を返す。
+ * @returns {string|fabric.Pattern}
+ */
+function getGroundFill() {
+    const s = App.groundPattern;
+    if (s.mode === 'solid') return s.solidColor || '#888888';
+    const def = getPatternDef(s.id);
+    if (!def) return s.solidColor || '#888888';
+    return getTerrainFill(def);
+}
+
+/**
+ * App.wallPattern の状態から stroke 値を返す。
+ * @returns {string|fabric.Pattern}
+ */
+function getWallStroke() {
+    const s = App.wallPattern;
+    if (s.mode === 'solid') return s.solidColor || '#333333';
+    const def = getPatternDef(s.id);
+    if (!def) return s.solidColor || '#333333';
+    return getTerrainFill(def);
+}
+
+/**
+ * activeTool=='ground'|'wall' のとき、選択中のサブツールを返す。
+ * シンプルモード時は App.activeTool をそのまま返す (= 統一ディスパッチ用)。
+ * @returns {string}
+ */
+function activeSubtool() {
+    if (App.activeTool === 'ground') {
+        return document.querySelector('#ground-tool-tiles .tool-tile.active')?.dataset.groundTool || 'cell';
+    }
+    if (App.activeTool === 'wall') {
+        return document.querySelector('#wall-tool-tiles .tool-tile.active')?.dataset.wallTool || 'rect';
+    }
+    return App.activeTool;
+}
+
+/**
+ * 現在の描画スタイル (fill / stroke / strokeWidth / 線種 / 名称プレフィクス / カテゴリフラグ) を返す。
+ * シンプルモード: App.fillColor / strokeColor 等を反映
+ * 地面: getGroundFill(), stroke なし
+ * 壁:   fill 透明, getWallStroke(), strokeWidth = App.strokeWidth (共通)
+ * @returns {{fill, stroke, strokeWidth:number, strokeDashArray, namePrefix:string, flag:string|null}}
+ */
+function getCurrentDrawStyle() {
+    if (App.activeTool === 'ground') {
+        return {
+            fill: getGroundFill(),
+            stroke: null,
+            strokeWidth: 0,
+            strokeDashArray: null,
+            namePrefix: '地面_',
+            flag: '_isGroundLayer',
+        };
+    }
+    if (App.activeTool === 'wall') {
+        return {
+            fill: '',                            // 閉じた形状でも内側は透過
+            stroke: getWallStroke(),
+            strokeWidth: App.strokeWidth || 8,
+            strokeDashArray: null,
+            namePrefix: '壁_',
+            flag: '_isWallLayer',
+        };
+    }
+    // シンプルモード (既存挙動)
+    return {
+        fill: rgba(App.fillColor, App.fillOpacity),
+        stroke: rgba(App.strokeColor, App.strokeOpacity),
+        strokeWidth: App.strokeWidth,
+        strokeDashArray: App.strokeDashArray,
+        namePrefix: '',
+        flag: null,
+    };
+}
+
+/**
+ * カテゴリ (地面/壁) を考慮してレイヤーを canvas に追加する。
+ * 追加後、フラグ付きの場合は「同カテゴリの一番上の一個上」へ z 順を移動する。
+ * @param {string} typeName - addLayerObject に渡す型名 (例 '矩形' / 'セル')。プレフィクス込みで '地面_矩形' 等
+ * @param {fabric.Object} obj
+ * @param {string|null} flag - '_isGroundLayer' | '_isWallLayer' | null (シンプル時)
+ */
+function addCategoryLayer(typeName, obj, flag) {
+    if (flag) obj.set({ [flag]: true });
+    snapshotPatternSettings(obj); // 現在のグローバル offset/rotation を obj にコピー
+    applyPatternOrigin(obj); // 上記スナップショット + 世界 (0,0) アンカーを反映
+    addLayerObject(typeName, obj);
+    if (!flag) return;
+    repositionByCategory(obj, flag);
+}
+
+/**
+ * オブジェクトに「パターン適用時のグローバル設定」をスナップショットして保存する。
+ * 後で move 等でパターン再適用が必要になっても、これらの値を使うことで既存オブジェクトの
+ * 見た目を維持できる (App グローバルが変わっても影響しない)。
+ */
+function snapshotPatternSettings(obj) {
+    if (!obj) return;
+    obj.set({
+        _patternOffsetX: App.patternOffsetX || 0,
+        _patternOffsetY: App.patternOffsetY || 0,
+        _patternRotation: App.patternRotation || 0,
+    });
+}
+
+/**
+ * オブジェクトの fill / stroke に Pattern がついていれば、その offsetX/Y/transform を
+ * 「世界 (0,0) アンカー (top-level shape のみ) + obj に保存されたオフセット/回転」で更新する。
+ * グローバル App.patternOffsetX/Y/Rotation は新規作成時に snapshotPatternSettings で
+ * obj にコピーされるため、既存オブジェクトはここを通っても見た目が変わらない。
+ *
+ * セル (group の子) は obj.left が group 内相対座標なので world アンカー計算をスキップし、
+ * obj._patternOffsetX/Y だけ適用する (タイルサイズ = cellSize なら隣接セルが自然に揃う)。
+ */
+function applyPatternOrigin(obj) {
+    if (!obj) return;
+    const baseOffX = obj._patternOffsetX || 0;
+    const baseOffY = obj._patternOffsetY || 0;
+    const deg = obj._patternRotation || 0;
+    // セル子要素は world 計算をスキップ (cells naturally align at multiples of cellSize)
+    const isCellChild = obj._cellCol !== undefined && obj.group;
+    const worldOffX = isCellChild ? 0 : -(obj.left || 0);
+    const worldOffY = isCellChild ? 0 : -(obj.top || 0);
+    const offX = worldOffX + baseOffX;
+    const offY = worldOffY + baseOffY;
+    let transform = null;
+    if (deg !== 0) {
+        const r = (deg * Math.PI) / 180;
+        transform = [Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0];
+    }
+    let changed = false;
+    if (obj.fill && typeof fabric !== 'undefined' && obj.fill instanceof fabric.Pattern) {
+        obj.fill.offsetX = offX;
+        obj.fill.offsetY = offY;
+        obj.fill.patternTransform = transform;
+        changed = true;
+    }
+    if (obj.stroke && typeof fabric !== 'undefined' && obj.stroke instanceof fabric.Pattern) {
+        obj.stroke.offsetX = offX;
+        obj.stroke.offsetY = offY;
+        obj.stroke.patternTransform = transform;
+        changed = true;
+    }
+    if (changed) obj.dirty = true;
+}
+
+/**
+ * 指定オブジェクトを「同カテゴリ (flag が立っている) の現存最上位の一個上」に移動する。
+ * 同カテゴリが他に無い場合は移動しない (= addLayerObject 直後の最前面のまま)。
+ */
+function repositionByCategory(obj, flag) {
+    const all = App.canvas.getObjects();
+    const sameCategory = all.filter((o) => o[flag] && o !== obj);
+    if (sameCategory.length === 0) return;
+    const topExisting = sameCategory[sameCategory.length - 1];
+    const targetIdx = all.indexOf(topExisting) + 1;
+    App.canvas.moveTo(obj, targetIdx);
+    renderLayerList();
 }
 
 /* ================================================================
@@ -2041,27 +2344,32 @@ function renderPatternPickerContent(root, opts) {
     });
     content.appendChild(genresEl);
 
-    // タイルグリッド
+    // タイルグリッド (スクロール対応のためラッパで包む)
+    const tilesScroll = document.createElement('div');
+    tilesScroll.className = 'pp-tiles-scroll';
     const tilesEl = document.createElement('div');
     tilesEl.className = 'pp-tiles';
-    // 単色タイル (常に左上、state.solidColor をスウォッチに反映)
-    const solid = document.createElement('div');
-    solid.className = 'pp-tile pp-tile-solid' + (state.mode === 'solid' ? ' active' : '');
-    solid.title = '単色';
-    const swatch = document.createElement('div');
-    swatch.className = 'pp-solid-swatch';
-    swatch.style.background = state.solidColor || '#888888';
-    solid.appendChild(swatch);
-    const solidLabel = document.createElement('div');
-    solidLabel.className = 'pp-label';
-    solidLabel.textContent = '単色';
-    solid.appendChild(solidLabel);
-    solid.addEventListener('click', () => {
-        opts.setState({ ...opts.getState(), mode: 'solid' });
-        renderPatternPickerContent(root, opts);
-        updatePatternSolidRow(root, opts);
-    });
-    tilesEl.appendChild(solid);
+    tilesScroll.appendChild(tilesEl);
+    // 単色タイル — 「全て」タブのときのみ左上に表示する
+    if (genreId === 'all') {
+        const solid = document.createElement('div');
+        solid.className = 'pp-tile pp-tile-solid' + (state.mode === 'solid' ? ' active' : '');
+        solid.title = '単色';
+        const swatch = document.createElement('div');
+        swatch.className = 'pp-solid-swatch';
+        swatch.style.background = state.solidColor || '#888888';
+        solid.appendChild(swatch);
+        const solidLabel = document.createElement('div');
+        solidLabel.className = 'pp-label';
+        solidLabel.textContent = '単色';
+        solid.appendChild(solidLabel);
+        solid.addEventListener('click', () => {
+            opts.setState({ ...opts.getState(), mode: 'solid' });
+            renderPatternPickerContent(root, opts);
+            updatePatternSolidRow(root, opts);
+        });
+        tilesEl.appendChild(solid);
+    }
 
     // パターンタイル (フィルタ済み)
     const filtered = genreId === 'all' ? opts.patterns : opts.patterns.filter((p) => p.genre === genreId);
@@ -2081,7 +2389,7 @@ function renderPatternPickerContent(root, opts) {
         });
         tilesEl.appendChild(tile);
     });
-    content.appendChild(tilesEl);
+    content.appendChild(tilesScroll);
 }
 
 /** 単色行 (.pp-solid-row) の表示/非表示を state.mode に合わせて更新する。 */
@@ -2179,6 +2487,31 @@ function setEditMode(mode) {
  * セルツール選択時は最上位セルレイヤーを自動選択、フリーハンド時はブラシ設定を反映。
  * @param {string} toolName
  */
+/**
+ * プロパティパネルのグループ表示を activeTool + activeSubtool に基づいて更新する。
+ * 通常は activeTool に対応する .prop-group だけが .active になるが、
+ * 地面モードでセルサブツール選択時は cell prop-group も追加で .active にして
+ * 「ペン/消しゴム/塗りつぶし切替 + セルレイヤー追加ボタン」を再利用する。
+ */
+function refreshPropGroupVisibility() {
+    document.querySelectorAll('#prop-panel .prop-group').forEach((pg) => pg.classList.toggle('active', pg.dataset.prop === App.activeTool));
+    const sub = activeSubtool();
+    if (App.activeTool === 'ground' && sub === 'cell') {
+        document.querySelector('#prop-panel .prop-group[data-prop="cell"]')?.classList.add('active');
+    }
+}
+
+/** 進行中の描画状態 (プレビュー / 1クリック目記録 / 折線・多角形・曲線の点列) をすべてリセットする。 */
+function resetDrawingState() {
+    removePreview();
+    App._drawing = null;
+    App._lineStart = null;
+    App._pathPoints = [];
+    App._polygonPoints = [];
+    App._curvePoints = [];
+    App.canvas?.requestRenderAll();
+}
+
 function setActiveTool(toolName) {
     removePreview();
     App._drawing = null;
@@ -2196,7 +2529,7 @@ function setActiveTool(toolName) {
     document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach((btn) => btn.classList.toggle('active', btn.dataset.tool === toolName));
 
     // プロパティパネル: data-prop グループを切替
-    document.querySelectorAll('#prop-panel .prop-group').forEach((pg) => pg.classList.toggle('active', pg.dataset.prop === toolName));
+    refreshPropGroupVisibility();
 
     // シンプルモードの描画ツールと同様、地図モードのタブも canvas オブジェクト選択は無効
     const isSelect = toolName === 'select' || toolName === 'settings';
@@ -2498,7 +2831,6 @@ function buildSaveData() {
         groundPattern: App.groundPattern,
         wallTool: App.wallTool,
         wallPattern: App.wallPattern,
-        wallStrokeWidth: App.wallStrokeWidth,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
         gridDashArray: App.gridDashArray,
@@ -2523,7 +2855,6 @@ function restoreSaveData(data) {
     if (data.groundPattern) App.groundPattern = data.groundPattern;
     if (data.wallTool) App.wallTool = data.wallTool;
     if (data.wallPattern) App.wallPattern = data.wallPattern;
-    if (typeof data.wallStrokeWidth === 'number') App.wallStrokeWidth = data.wallStrokeWidth;
     App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
     App.gridLineWidth = data.gridLineWidth || 1;
     App.gridDashArray = data.gridDashArray || null;
@@ -2553,8 +2884,6 @@ function restoreSaveData(data) {
         // 地面/壁ツールタイル + パターンピッカーを App 状態に同期
         document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.groundTool === App.groundTool));
         document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.wallTool === App.wallTool));
-        const wsw = document.getElementById('wall-stroke-width');
-        if (wsw) wsw.value = App.wallStrokeWidth;
         refreshPatternPickers();
         App.canvas.renderAll();
         drawGrid();
@@ -2938,74 +3267,78 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    if (e.key === 'Enter' && App.activeTool === 'path' && App._pathPoints.length >= 2) {
+    if (e.key === 'Enter' && activeSubtool() === 'path' && App._pathPoints.length >= 2) {
         removePreview();
-        addLayerObject(
-            '折線',
+        const style = getCurrentDrawStyle();
+        addCategoryLayer(
+            style.namePrefix + '折線',
             new fabric.Polyline(App._pathPoints, {
-                stroke: rgba(App.strokeColor, App.strokeOpacity),
-                strokeWidth: App.strokeWidth,
-                strokeDashArray: App.strokeDashArray,
+                stroke: style.stroke,
+                strokeWidth: style.strokeWidth,
+                strokeDashArray: style.strokeDashArray,
                 fill: '',
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-            })
+                selectable: false, evented: false, objectCaching: false,
+            }),
+            style.flag
         );
         App._pathPoints = [];
         e.preventDefault();
         return;
     }
-    if (e.key === 'Enter' && App._polygonPoints.length >= 3 && App.activeTool === 'polygon') {
+    if (e.key === 'Enter' && App._polygonPoints.length >= 3 && activeSubtool() === 'polygon') {
         removePreview();
-        addLayerObject(
-            '多角形',
+        const style = getCurrentDrawStyle();
+        addCategoryLayer(
+            style.namePrefix + '多角形',
             new fabric.Polygon(App._polygonPoints, {
-                stroke: rgba(App.strokeColor, App.strokeOpacity),
-                strokeWidth: App.strokeWidth,
-                strokeDashArray: App.strokeDashArray,
-                fill: rgba(App.fillColor, App.fillOpacity),
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-            })
+                stroke: style.stroke,
+                strokeWidth: style.strokeWidth,
+                strokeDashArray: style.strokeDashArray,
+                fill: style.fill,
+                selectable: false, evented: false, objectCaching: false,
+            }),
+            style.flag
         );
         App._polygonPoints = [];
         e.preventDefault();
         return;
     }
-    if (e.key === 'Enter' && App._curvePoints.length >= 2 && App.activeTool === 'curve') {
+    if (e.key === 'Enter' && App._curvePoints.length >= 2 && activeSubtool() === 'curve') {
         removePreview();
         const d = buildBezierPath(App._curvePoints);
         if (d) {
-            addLayerObject(
-                '曲線',
+            const style = getCurrentDrawStyle();
+            addCategoryLayer(
+                style.namePrefix + '曲線',
                 new fabric.Path(d, {
-                    stroke: rgba(App.strokeColor, App.strokeOpacity),
-                    strokeWidth: App.strokeWidth,
-                    strokeDashArray: App.strokeDashArray,
+                    stroke: style.stroke,
+                    strokeWidth: style.strokeWidth,
+                    strokeDashArray: style.strokeDashArray,
                     fill: '',
                     objectCaching: false,
-                })
+                }),
+                style.flag
             );
         }
         App._curvePoints = [];
         e.preventDefault();
         return;
     }
-    if (e.key === 'Enter' && App._curvePoints.length >= 3 && App.activeTool === 'curve-closed') {
+    if (e.key === 'Enter' && App._curvePoints.length >= 3 && activeSubtool() === 'curve-closed') {
         removePreview();
         const d = buildClosedBezierPath(App._curvePoints);
         if (d) {
-            addLayerObject(
-                '閉曲線',
+            const style = getCurrentDrawStyle();
+            addCategoryLayer(
+                style.namePrefix + '閉曲線',
                 new fabric.Path(d, {
-                    stroke: rgba(App.strokeColor, App.strokeOpacity),
-                    strokeWidth: App.strokeWidth,
-                    strokeDashArray: App.strokeDashArray,
-                    fill: rgba(App.fillColor, App.fillOpacity),
+                    stroke: style.stroke,
+                    strokeWidth: style.strokeWidth,
+                    strokeDashArray: style.strokeDashArray,
+                    fill: style.fill,
                     objectCaching: false,
-                })
+                }),
+                style.flag
             );
         }
         App._curvePoints = [];
@@ -3206,15 +3539,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     // 壁の太さ
-    const wallSwEl = document.getElementById('wall-stroke-width');
-    if (wallSwEl) {
-        wallSwEl.value = App.wallStrokeWidth;
-        wallSwEl.addEventListener('input', function () {
-            const v = parseInt(this.value) || 8;
-            App.wallStrokeWidth = v;
-            pushHistoryDebounced('壁の太さを変更');
-        });
-    }
     // パターン選択 UI 初期描画
     refreshPatternPickers();
 
@@ -3224,6 +3548,43 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#cell-tool-tiles .tool-tile').forEach((t) => t.classList.remove('active'));
             tile.classList.add('active');
         });
+    });
+
+    // 地面ツール (セル/矩形/楕円/多角形/閉曲線) のタイル切替 — 描画途中の状態をリセット
+    document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((tile) => {
+        tile.addEventListener('click', () => {
+            document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((t) => t.classList.remove('active'));
+            tile.classList.add('active');
+            App.groundTool = tile.dataset.groundTool;
+            resetDrawingState();
+            refreshPropGroupVisibility();
+            updateFillStrokeVisibility();
+        });
+    });
+    // 初期 active タイル (App.groundTool に対応)
+    document.querySelector(`#ground-tool-tiles .tool-tile[data-ground-tool="${App.groundTool}"]`)?.classList.add('active');
+
+    // 壁ツール (矩形/楕円/直線/折線/多角形/曲線/閉曲線) のタイル切替
+    document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((tile) => {
+        tile.addEventListener('click', () => {
+            document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.remove('active'));
+            tile.classList.add('active');
+            App.wallTool = tile.dataset.wallTool;
+            resetDrawingState();
+            updateFillStrokeVisibility();
+        });
+    });
+    document.querySelector(`#wall-tool-tiles .tool-tile[data-wall-tool="${App.wallTool}"]`)?.classList.add('active');
+
+    // パターン共通設定 (オフセット/回転) — 値を更新するのみ。新規描画時に snapshot されて適用される
+    document.getElementById('pattern-offset-x')?.addEventListener('input', function () {
+        App.patternOffsetX = parseInt(this.value) || 0;
+    });
+    document.getElementById('pattern-offset-y')?.addEventListener('input', function () {
+        App.patternOffsetY = parseInt(this.value) || 0;
+    });
+    document.getElementById('pattern-rotation')?.addEventListener('input', function () {
+        App.patternRotation = parseInt(this.value) || 0;
     });
 
     // レイヤー削除

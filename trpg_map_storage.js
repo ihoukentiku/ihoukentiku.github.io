@@ -14,7 +14,9 @@ const STORE_NAME = 'maps';
 const SAVE_CUSTOM_PROPS = [
     '_layerId', '_isMapLayer', '_layerName',
     '_isCellLayer', '_isTerrainLayer', '_isMapText',
+    '_isGroundLayer', '_isWallLayer',
     '_cellCol', '_cellRow', '_terrainId',
+    '_patternOffsetX', '_patternOffsetY', '_patternRotation',
 ];
 
 /**
