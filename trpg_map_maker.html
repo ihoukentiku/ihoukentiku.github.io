@@ -17,15 +17,7 @@
         <meta name="twitter:site" content="@ihoukentiku" />
         <meta name="twitter:creator" content="@ihoukentiku" />
         <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag('js', new Date());
-            gtag('config', 'G-T4SJ8S23EC');
-        </script>
+        <script src="analytics.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
@@ -419,7 +411,9 @@
             }
             .pp-tile.active {
                 border-color: var(--cyan);
-                box-shadow: 0 0 0 1px var(--cyan), var(--glow-cyan);
+                box-shadow:
+                    0 0 0 1px var(--cyan),
+                    var(--glow-cyan);
             }
             .pp-tile .pp-label {
                 position: absolute;
@@ -774,7 +768,7 @@
                 grid-row: 1;
                 position: relative;
                 overflow: hidden;
-                cursor: crosshair;
+                /* カーソルは Fabric の defaultCursor (setActiveTool で設定) に任せる */
                 background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
                 background-size: 12px 12px;
                 background-position: 0 0;
@@ -873,6 +867,14 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+            /* ロックアイコン (ロック中のレイヤーにのみ表示) */
+            .layer-item .layer-lock-icon {
+                color: #ffb74d;
+                font-size: 0.85rem;
+            }
+            .layer-item .layer-lock-icon:hover {
+                color: var(--cyan);
             }
             .layer-item .layer-name-input {
                 flex: 1;
@@ -979,19 +981,21 @@
                 <div class="tb-sep"></div>
                 <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined">near_me</span><span class="tb-label">選択</span></button>
                 <!-- シンプルモード専用 -->
-                <button class="tb-btn" data-tool="cell" data-mode="simple" title="セル塗り (B)"><span class="material-symbols-outlined">grid_on</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn" data-tool="cell" data-mode="simple" title="セル塗り (B)"><span class="material-symbols-outlined">crossword</span><span class="tb-label">セル</span></button>
                 <button class="tb-btn" data-tool="rect" data-mode="simple" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
                 <button class="tb-btn" data-tool="ellipse" data-mode="simple" title="楕円 (E)"><span class="material-symbols-outlined">circle</span><span class="tb-label">楕円</span></button>
                 <button class="tb-btn" data-tool="line" data-mode="simple" title="直線 (L)"><span class="material-symbols-outlined">horizontal_rule</span><span class="tb-label">直線</span></button>
-                <button class="tb-btn" data-tool="path" data-mode="simple" title="折線 (P)"><span class="material-symbols-outlined">polyline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn" data-tool="path" data-mode="simple" title="折線 (P)"><span class="material-symbols-outlined">timeline</span><span class="tb-label">折線</span></button>
                 <button class="tb-btn" data-tool="polygon" data-mode="simple" title="多角形 (G)"><span class="material-symbols-outlined">pentagon</span><span class="tb-label">多角形</span></button>
-                <button class="tb-btn" data-tool="curve" data-mode="simple" title="曲線 (C)"><span class="material-symbols-outlined">gesture</span><span class="tb-label">曲線</span></button>
-                <button class="tb-btn" data-tool="curve-closed" data-mode="simple" title="閉曲線 (Shift+C)"><span class="material-symbols-outlined">bubble_chart</span><span class="tb-label">閉曲線</span></button>
+                <button class="tb-btn" data-tool="curve" data-mode="simple" title="曲線 (C)"><span class="material-symbols-outlined">conversion_path</span><span class="tb-label">曲線</span></button>
+                <button class="tb-btn" data-tool="curve-closed" data-mode="simple" title="閉曲線 (Shift+C)">
+                    <span class="material-symbols-outlined">all_inclusive</span><span class="tb-label">閉曲線</span>
+                </button>
                 <!-- 地図モード専用 -->
-                <button class="tb-btn" data-tool="ground" data-mode="map" title="地面"><span class="material-symbols-outlined">texture</span><span class="tb-label">地面</span></button>
-                <button class="tb-btn" data-tool="wall" data-mode="map" title="壁"><span class="material-symbols-outlined">grid_4x4</span><span class="tb-label">壁</span></button>
-                <button class="tb-btn" data-tool="room" data-mode="map" title="部屋"><span class="material-symbols-outlined">meeting_room</span><span class="tb-label">部屋</span></button>
-                <button class="tb-btn" data-tool="decor" data-mode="map" title="装飾"><span class="material-symbols-outlined">forest</span><span class="tb-label">装飾</span></button>
+                <button class="tb-btn" data-tool="ground" data-mode="map" title="地面"><span class="material-symbols-outlined">landscape</span><span class="tb-label">地面</span></button>
+                <button class="tb-btn" data-tool="wall" data-mode="map" title="壁"><span class="material-symbols-outlined">outdoor_garden</span><span class="tb-label">壁</span></button>
+                <button class="tb-btn" data-tool="room" data-mode="map" title="部屋"><span class="material-symbols-outlined">home</span><span class="tb-label">部屋</span></button>
+                <button class="tb-btn" data-tool="decor" data-mode="map" title="装飾"><span class="material-symbols-outlined">chair</span><span class="tb-label">装飾</span></button>
                 <button class="tb-btn" data-tool="vector" data-mode="map" title="ベクター"><span class="material-symbols-outlined">timeline</span><span class="tb-label">ベクター</span></button>
                 <!-- 両モード共通 -->
                 <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
@@ -1038,7 +1042,7 @@
                 <!-- セル塗り -->
                 <div class="prop-group" data-prop="cell">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">grid_on</span>セル塗り</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">crossword</span>セル塗り</div>
                         <div class="tool-tiles" id="cell-tool-tiles">
                             <div class="tool-tile active" data-cell-tool="pen" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
                             <div class="tool-tile" data-cell-tool="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
@@ -1068,7 +1072,7 @@
                 <!-- 折線 -->
                 <div class="prop-group" data-prop="path">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">polyline</span>折線 (ポリライン)</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">timeline</span>折線 (ポリライン)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 頂点追加 / Enter: 確定 / Esc: キャンセル</p>
                     </div>
                 </div>
@@ -1082,27 +1086,27 @@
                 <!-- 曲線 -->
                 <div class="prop-group" data-prop="curve">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">gesture</span>曲線 (ベジェ)</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">conversion_path</span>曲線 (ベジェ)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定 / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 閉曲線 -->
                 <div class="prop-group" data-prop="curve-closed">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">bubble_chart</span>閉曲線 (ベジェ・閉)</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">all_inclusive</span>閉曲線 (ベジェ・閉)</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 地図モード: 地面 -->
                 <div class="prop-group" data-prop="ground">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">texture</span>地面</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面</div>
                         <div class="tool-tiles" id="ground-tool-tiles">
-                            <div class="tool-tile" data-ground-tool="cell" title="セル塗り"><span class="material-symbols-outlined">grid_on</span><span>セル</span></div>
+                            <div class="tool-tile" data-ground-tool="cell" title="セル塗り"><span class="material-symbols-outlined">crossword</span><span>セル</span></div>
                             <div class="tool-tile" data-ground-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
                             <div class="tool-tile" data-ground-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
                             <div class="tool-tile" data-ground-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
-                            <div class="tool-tile" data-ground-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">bubble_chart</span><span>閉曲線</span></div>
+                            <div class="tool-tile" data-ground-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
                         </div>
                         <div class="pattern-picker" id="ground-pattern-picker"></div>
                         <p class="fl" style="opacity: 0.4; font-size: 0.6rem; margin-top: 0.4rem">※ Phase B-2 で描画機能を実装予定</p>
@@ -1111,15 +1115,15 @@
                 <!-- 地図モード: 壁 -->
                 <div class="prop-group" data-prop="wall">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">grid_4x4</span>壁</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁</div>
                         <div class="tool-tiles" id="wall-tool-tiles">
                             <div class="tool-tile" data-wall-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
                             <div class="tool-tile" data-wall-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
                             <div class="tool-tile" data-wall-tool="line" title="直線"><span class="material-symbols-outlined">horizontal_rule</span><span>直線</span></div>
-                            <div class="tool-tile" data-wall-tool="path" title="折線"><span class="material-symbols-outlined">polyline</span><span>折線</span></div>
+                            <div class="tool-tile" data-wall-tool="path" title="折線"><span class="material-symbols-outlined">timeline</span><span>折線</span></div>
                             <div class="tool-tile" data-wall-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
-                            <div class="tool-tile" data-wall-tool="curve" title="曲線"><span class="material-symbols-outlined">gesture</span><span>曲線</span></div>
-                            <div class="tool-tile" data-wall-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">bubble_chart</span><span>閉曲線</span></div>
+                            <div class="tool-tile" data-wall-tool="curve" title="曲線"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
+                            <div class="tool-tile" data-wall-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
                         </div>
                         <div class="f">
                             <span class="fl">太さ</span>
@@ -1132,14 +1136,14 @@
                 <!-- 地図モード: 部屋 -->
                 <div class="prop-group" data-prop="room">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">meeting_room</span>部屋</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">home</span>部屋</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (地面+外周壁+部屋名の一括生成)</p>
                     </div>
                 </div>
                 <!-- 地図モード: 装飾 -->
                 <div class="prop-group" data-prop="decor">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">forest</span>装飾</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined">chair</span>装飾</div>
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (ドア/家具/木/岩などのSVGスタンプ)</p>
                     </div>
                 </div>

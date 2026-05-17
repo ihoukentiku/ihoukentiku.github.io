@@ -17,15 +17,7 @@
         <meta name="twitter:site" content="@ihoukentiku" />
         <meta name="twitter:creator" content="@ihoukentiku" />
         <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag('js', new Date());
-            gtag('config', 'G-T4SJ8S23EC');
-        </script>
+        <script src="analytics.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
@@ -467,7 +459,9 @@
                     </div>
 
                     <div class="wizard-nav">
-                        <button class="wizard-back-btn" id="wizard-back-btn" disabled><span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle">arrow_back</span> 戻る</button>
+                        <button class="wizard-back-btn" id="wizard-back-btn" disabled>
+                            <span class="material-symbols-outlined" style="font-size: 0.9rem; vertical-align: middle">arrow_back</span> 戻る
+                        </button>
                         <span class="wizard-summary" id="wizard-summary"></span>
                     </div>
                 </div>

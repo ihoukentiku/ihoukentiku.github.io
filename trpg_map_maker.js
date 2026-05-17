@@ -608,6 +608,11 @@ function initCanvas() {
         preserveObjectStacking: true,
         stopContextMenu: true,
         fireRightClick: true,
+        fireMiddleClick: true, // マウスホイールクリックのパン用
+        // 選択ツール時にオブジェクト上ホバー=grab、ドラッグ中=grabbing
+        // (オブジェクトが selectable=false の他ツール時は hoverCursor は発火しないので defaultCursor が見える)
+        hoverCursor: 'grab',
+        moveCursor: 'grabbing',
     });
     App.canvas.setWidth(area.clientWidth);
     App.canvas.setHeight(area.clientHeight);
@@ -633,6 +638,11 @@ function initCanvas() {
         panX = 0,
         panY = 0,
         spaceHeld = false;
+    // 中クリック (マウスホイールクリック) でブラウザのオートスクロールが発動しないよう
+    // canvas-area の mousedown で preventDefault しておく。
+    document.getElementById('canvas-area').addEventListener('mousedown', (e) => {
+        if (e.button === 1) e.preventDefault();
+    });
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && !e.repeat) {
             spaceHeld = true;
@@ -663,13 +673,14 @@ function initCanvas() {
 
         hideContextMenu();
 
-        // パン
-        if (e.altKey || spaceHeld) {
+        // パン (Alt / Space / マウスホイールクリック=middle button)
+        if (e.altKey || spaceHeld || e.button === 1) {
             isPanning = true;
             panX = e.clientX;
             panY = e.clientY;
             App.canvas.selection = false;
-            App.canvas.defaultCursor = 'grab';
+            App.canvas.defaultCursor = 'move';
+            App.canvas.setCursor('move');
             return;
         }
 
@@ -689,7 +700,7 @@ function initCanvas() {
                 };
                 App._exportDrag = null;
                 App._exportMode = false;
-                App.canvas.defaultCursor = 'default';
+                App.canvas.defaultCursor = defaultCursorForTool(App.activeTool);
                 if (App._exportRect.w < 5 || App._exportRect.h < 5) {
                     App._exportRect = null;
                 }
@@ -1028,7 +1039,7 @@ function initCanvas() {
         if (isPanning) {
             isPanning = false;
             App.canvas.selection = App.activeTool === 'select';
-            App.canvas.defaultCursor = 'default';
+            App.canvas.defaultCursor = defaultCursorForTool(App.activeTool);
             return;
         }
         if (App._drawing && App.activeTool === 'cell') App._drawing = null;
@@ -1492,6 +1503,25 @@ function renderLayerList() {
         item.appendChild(vis);
         item.appendChild(name);
 
+        // ロックアイコン (ロック中のみ表示) — クリックで解除可能
+        if (obj.lockMovementX) {
+            const lockIcon = document.createElement('span');
+            lockIcon.className = 'material-symbols-outlined layer-lock-icon';
+            lockIcon.textContent = 'lock';
+            lockIcon.title = 'ロック中 (クリックで解除)';
+            lockIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                obj.set({
+                    lockMovementX: false, lockMovementY: false, lockRotation: false,
+                    lockScalingX: false, lockScalingY: false, hasControls: true,
+                });
+                App.canvas.renderAll();
+                renderLayerList();
+                pushHistory(`${obj._layerName}をロック解除`);
+            });
+            item.appendChild(lockIcon);
+        }
+
         // クリック（Ctrl/Shift対応 + ツール切替）
         item.addEventListener('click', (e) => {
             const id = obj._layerId;
@@ -1937,6 +1967,7 @@ function handleContextAction(action) {
             const locked = !ctxTarget.lockMovementX;
             ctxTarget.set({ lockMovementX: locked, lockMovementY: locked, lockRotation: locked, lockScalingX: locked, lockScalingY: locked, hasControls: !locked });
             App.canvas.renderAll();
+            renderLayerList();
             pushHistory(locked ? `${ctxTarget._layerName}をロック` : `${ctxTarget._layerName}をロック解除`);
             break;
         }
@@ -2191,10 +2222,23 @@ function setActiveTool(toolName) {
         App.canvas.freeDrawingBrush.width = parseInt(document.getElementById('freehand-width')?.value) || 3;
         App.canvas.freeDrawingBrush.color = rgba(App.strokeColor, App.strokeOpacity);
     }
-    App.canvas.defaultCursor = 'default';
+    App.canvas.defaultCursor = defaultCursorForTool(toolName);
     App.canvas.renderAll();
     updateFillStrokeVisibility();
     updateSelectionInfo();
+}
+
+/**
+ * 現在ツールに対するキャンバスのデフォルトカーソルを返す。
+ * パン中は別途 'move' に切替えるので、ここではツール本来の見た目を返す。
+ *   - text: text カーソル
+ *   - freehand: crosshair
+ *   - その他全て: default (selectツールのオブジェクト上ホバーは hoverCursor='grab' で別途設定)
+ */
+function defaultCursorForTool(toolName) {
+    if (toolName === 'text') return 'text';
+    if (toolName === 'freehand') return 'crosshair';
+    return 'default';
 }
 
 /* ================================================================
