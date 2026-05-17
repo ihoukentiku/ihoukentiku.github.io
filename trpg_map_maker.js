@@ -833,9 +833,19 @@ function initCanvas() {
                     App._lineStart = pt;
                 } else {
                     const style = getCurrentDrawStyle();
-                    // 線はストロークだけなので endpoint = クリック/スナップ位置そのまま
-                    // (rect/ellipse 系で使う `- hsw` シフトは線では不要 — 入れると水平/垂直で stroke 太さ分ズレるバグになる)
-                    const line = new fabric.Line([App._lineStart.x, App._lineStart.y, pt.x, pt.y], {
+                    // fabric.Line は strokeLineCap='butt' (default) のとき、軸方向に揃った線では
+                    // 片側の dimension から stroke を引く特別処理がある (内部 _getNonTransformedDimensions)。
+                    //   水平線 (height==0): dim.x から stroke を引く → left 補正不要、top のみ補正
+                    //   垂直線 (width==0):  dim.y から stroke を引く → top 補正不要、left のみ補正
+                    //   斜め線: 両方 dim に stroke 含む → 両軸とも補正
+                    // よって補正は「dim にストロークを含む側」だけ、つまり「直交軸が non-zero の側」だけ。
+                    const x1 = App._lineStart.x, y1 = App._lineStart.y, x2 = pt.x, y2 = pt.y;
+                    const hsw = (style.strokeWidth || 0) / 2;
+                    const lcorr = y1 === y2 ? 0 : hsw; // 水平線なら left 補正なし
+                    const tcorr = x1 === x2 ? 0 : hsw; // 垂直線なら top 補正なし
+                    const line = new fabric.Line([x1, y1, x2, y2], {
+                        left: Math.min(x1, x2) - lcorr,
+                        top: Math.min(y1, y2) - tcorr,
                         stroke: style.stroke,
                         strokeWidth: style.strokeWidth,
                         strokeDashArray: style.strokeDashArray,
@@ -1044,12 +1054,18 @@ function initCanvas() {
             App.canvas.renderAll();
         }
 
-        // 直線プレビュー
+        // 直線プレビュー (本体と同じ left/top 補正ロジック)
         if (_sub === 'line' && App._lineStart) {
             const pt = snapToGrid(ptr.x, ptr.y) || ptr;
             removePreview();
+            const x1 = App._lineStart.x, y1 = App._lineStart.y, x2 = pt.x, y2 = pt.y;
+            const phsw = (_previewStyle.strokeWidth || 0) / 2;
+            const plcorr = y1 === y2 ? 0 : phsw;
+            const ptcorr = x1 === x2 ? 0 : phsw;
             App.canvas.add(
-                new fabric.Line([App._lineStart.x, App._lineStart.y, pt.x, pt.y], {
+                new fabric.Line([x1, y1, x2, y2], {
+                    left: Math.min(x1, x2) - plcorr,
+                    top: Math.min(y1, y2) - ptcorr,
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
                     selectable: false,
