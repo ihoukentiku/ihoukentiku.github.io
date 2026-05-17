@@ -52,6 +52,12 @@ const App = {
     groundPattern: { mode: 'pattern', id: 'stone_floor', genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
     wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
+    // ---- 壁の影 (新規描画時に適用、既存壁は obj.shadow としてそのまま保持) ----
+    wallShadowEnabled: false,
+    wallShadowColor: 'rgba(0,0,0,0.55)',
+    wallShadowBlur: 6,
+    wallShadowOffsetX: 2,
+    wallShadowOffsetY: 2,
     // ---- パターン共通設定 (地面/壁の Pattern fill/stroke に適用) ----
     patternOffsetX: 0, // 全パターン共通の追加オフセット (px)
     patternOffsetY: 0,
@@ -591,10 +597,18 @@ function initPickr() {
             App.fillColor = c.toHEXA().toString().slice(0, 7);
             App.fillOpacity = c.toRGBA()[3];
             instance.applyColor(true); // ボタン色を即時更新 (save イベントは発火しない)
+            const fillStr = rgba(App.fillColor, App.fillOpacity);
+            // 編集中テキストで選択範囲があれば、選択部分のみに適用 (テキストツール時)
+            const textTarget = getTextStyleTarget();
+            if (textTarget && textTarget.selStart !== undefined) {
+                applyTextStyle({ fill: fillStr });
+                pushHistoryDebounced('テキスト色を変更');
+                return;
+            }
             if (App.activeTool === 'select') {
                 const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
                 if (targets.length === 0) return;
-                targets.forEach((o) => o.set({ fill: rgba(App.fillColor, App.fillOpacity) }));
+                targets.forEach((o) => o.set({ fill: fillStr }));
                 App.canvas.renderAll();
                 pushHistoryDebounced('フィル色を変更');
             }
@@ -627,6 +641,17 @@ function initPickr() {
             drawGrid();
         })
         .on('save', (_, p) => p.hide());
+
+    // 壁の影 色ピッカー — App.wallShadowColor を更新するだけ (新規壁描画時に反映)
+    const wallShadowEl = document.getElementById('wall-shadow-color');
+    if (wallShadowEl) {
+        const wsp = Pickr.create(opts('#wall-shadow-color', App.wallShadowColor));
+        wsp.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.wallShadowColor = c.toRGBA().toString();
+            instance.applyColor(true);
+        }).on('save', (_, p) => p.hide());
+    }
 }
 
 /* ================================================================
@@ -808,8 +833,9 @@ function initCanvas() {
                     App._lineStart = pt;
                 } else {
                     const style = getCurrentDrawStyle();
-                    const hsw = style.strokeWidth / 2;
-                    const line = new fabric.Line([App._lineStart.x - hsw, App._lineStart.y - hsw, pt.x - hsw, pt.y - hsw], {
+                    // 線はストロークだけなので endpoint = クリック/スナップ位置そのまま
+                    // (rect/ellipse 系で使う `- hsw` シフトは線では不要 — 入れると水平/垂直で stroke 太さ分ズレるバグになる)
+                    const line = new fabric.Line([App._lineStart.x, App._lineStart.y, pt.x, pt.y], {
                         stroke: style.stroke,
                         strokeWidth: style.strokeWidth,
                         strokeDashArray: style.strokeDashArray,
@@ -878,16 +904,24 @@ function initCanvas() {
                 break;
             }
             case 'text': {
+                // 既存テキストをクリックしたらそれを編集 (新規作成しない)
+                // ※ setActiveTool で _isMapText だけは evented を残してある
                 if (opt.target && opt.target._isMapText) {
+                    App.canvas.setActiveObject(opt.target);
                     opt.target.enterEditing();
                     App.canvas.renderAll();
                     return;
                 }
-                const font = document.getElementById('text-font')?.value || 'Noto Sans JP';
-                const size = parseInt(document.getElementById('text-size')?.value) || 20;
-                const tb = new fabric.Textbox('テキスト', {
+                const font = document.getElementById('text-font')?.value || 'Zen Kaku Gothic New';
+                const size = parseInt(document.getElementById('text-size')?.value) || 48;
+                // 空の Textbox を作成、originY='center' でクリック点を左辺中央に
+                // 編集モードに入った瞬間からユーザーが直接タイプ可能
+                const tb = new fabric.Textbox('', {
                     left: ptr.x,
                     top: ptr.y,
+                    originX: 'left',
+                    originY: 'center',
+                    width: size * 4, // ある程度の編集領域を確保
                     fontFamily: font,
                     fontSize: size,
                     fill: rgba(App.fillColor, App.fillOpacity),
@@ -896,10 +930,17 @@ function initCanvas() {
                     editable: true,
                     objectCaching: false,
                     _isMapText: true,
+                    // 編集中の枠・カーソル・選択ハイライトを視認性の高い配色に
+                    borderColor: '#00e5ff',
+                    cornerColor: '#00e5ff',
+                    cornerStrokeColor: '#00e5ff',
+                    cursorColor: '#00e5ff',
+                    cursorWidth: 2,
+                    selectionColor: 'rgba(0,229,255,0.35)',
                 });
                 addLayerObject('テキスト', tb);
+                App.canvas.setActiveObject(tb);
                 tb.enterEditing();
-                tb.selectAll();
                 App.canvas.renderAll();
                 break;
             }
@@ -1006,10 +1047,9 @@ function initCanvas() {
         // 直線プレビュー
         if (_sub === 'line' && App._lineStart) {
             const pt = snapToGrid(ptr.x, ptr.y) || ptr;
-            const hsw = _previewStyle.strokeWidth / 2;
             removePreview();
             App.canvas.add(
-                new fabric.Line([App._lineStart.x - hsw, App._lineStart.y - hsw, pt.x - hsw, pt.y - hsw], {
+                new fabric.Line([App._lineStart.x, App._lineStart.y, pt.x, pt.y], {
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
                     selectable: false,
@@ -1129,6 +1169,8 @@ function initCanvas() {
 
     App.canvas.on('text:editing:entered', function (opt) {
         App._textEditBefore = opt.target?.text ?? null;
+        refreshTextStyleButtons();
+        syncTextInputsFromTarget();
     });
     App.canvas.on('text:editing:exited', function (opt) {
         const t = opt.target;
@@ -1140,11 +1182,18 @@ function initCanvas() {
             renderLayerList();
             App.canvas.renderAll();
             if (before !== null && before !== '') pushHistory('テキストを削除');
+            refreshTextStyleButtons();
             return;
         }
         renderLayerList();
         App.canvas.renderAll();
         if (before !== null && t && before !== t.text) pushHistory('テキスト編集');
+        refreshTextStyleButtons();
+    });
+    // テキスト編集中の選択範囲が変わったらスタイルボタンの active 表示を更新
+    App.canvas.on('text:selection:changed', function () {
+        refreshTextStyleButtons();
+        syncTextInputsFromTarget();
     });
 
     App.canvas.on('selection:created', () => {
@@ -1235,7 +1284,7 @@ function _initGridRenderer() {
         const zoom = App.canvas.getZoom();
 
         // チェッカーボード背景をビューポートに追従させる
-        const S = 12 * zoom;
+        const S = 18 * zoom;
         const ox = ((vpt[4] % S) + S) % S;
         const oy = ((vpt[5] % S) + S) % S;
         area.style.backgroundSize = `${S}px ${S}px`;
@@ -1322,8 +1371,9 @@ function addLayerObject(typeName, obj) {
         cornerSize: 10,
         transparentCorners: false,
         borderScaleFactor: 2,
-        selectable: App.activeTool === 'select', // ← 追加
-        evented: App.activeTool === 'select',
+        // テキストツール時はテキストオブジェクトのみ selectable/evented を許可 (クリックで編集可)
+        selectable: App.activeTool === 'select' || (App.activeTool === 'text' && obj._isMapText),
+        evented: App.activeTool === 'select' || (App.activeTool === 'text' && obj._isMapText),
     });
     // フリーハンド等、既にcanvas上にある場合はadd不要
     if (!App.canvas.getObjects().includes(obj)) App.canvas.add(obj);
@@ -2153,6 +2203,19 @@ function addCategoryLayer(typeName, obj, flag) {
     if (flag) obj.set({ [flag]: true });
     snapshotPatternSettings(obj); // 現在のグローバル offset/rotation を obj にコピー
     applyPatternOrigin(obj); // 上記スナップショット + 世界 (0,0) アンカーを反映
+    if (flag === '_isWallLayer' && App.wallShadowEnabled) {
+        // 影が ON のときだけ新規壁に Shadow を貼る (既存壁は変えない)
+        // 壁は fill 透明で stroke のみなので affectStroke=true でないと影が見えない
+        obj.set({
+            shadow: new fabric.Shadow({
+                color: App.wallShadowColor,
+                blur: App.wallShadowBlur,
+                offsetX: App.wallShadowOffsetX,
+                offsetY: App.wallShadowOffsetY,
+                affectStroke: true,
+            }),
+        });
+    }
     addLayerObject(typeName, obj);
     if (!flag) return;
     repositionByCategory(obj, flag);
@@ -2564,7 +2627,9 @@ function setActiveTool(toolName) {
     const isSelect = toolName === 'select' || toolName === 'settings';
     App.canvas.selection = isSelect;
     getMapLayers().forEach((obj) => {
-        obj.set({ selectable: isSelect, evented: isSelect });
+        // テキストツール時は既存テキストをクリックで編集できるよう、selectable + evented を残す
+        const keepActive = isSelect || (toolName === 'text' && obj._isMapText);
+        obj.set({ selectable: keepActive, evented: keepActive });
     });
     if (!isSelect) App.canvas.discardActiveObject();
 
@@ -2601,6 +2666,99 @@ function defaultCursorForTool(toolName) {
     if (toolName === 'text') return 'text';
     if (toolName === 'freehand') return 'crosshair';
     return 'default';
+}
+
+/* ================================================================
+   テキストスタイル操作 (ボールド/イタリック/下線/取消線 + 部分選択対応)
+================================================================ */
+/**
+ * 現在「テキストスタイルを適用すべき対象」を返す。
+ * - 編集中のテキスト + 選択範囲あり → { obj, selStart, selEnd }
+ * - 選択中のテキスト (編集なし or 編集中で選択なし) → { obj }
+ * - 該当なし → null
+ */
+function getTextStyleTarget() {
+    const active = App.canvas?.getActiveObject();
+    if (active && active._isMapText) {
+        if (active.isEditing && active.selectionStart !== active.selectionEnd) {
+            return { obj: active, selStart: active.selectionStart, selEnd: active.selectionEnd };
+        }
+        return { obj: active };
+    }
+    return null;
+}
+
+/** スタイル名 → Fabric Textbox プロパティ名 */
+function textStyleKey(s) {
+    if (s === 'bold') return 'fontWeight';
+    if (s === 'italic') return 'fontStyle';
+    if (s === 'underline') return 'underline';
+    if (s === 'linethrough') return 'linethrough';
+    return null;
+}
+
+/** 現在のスタイル値から、トグル後に適用すべきプロパティ集合を返す。 */
+function computeToggleProps(s, current) {
+    if (s === 'bold') {
+        const isBold = current === 'bold' || current === 700 || current === '700';
+        return { fontWeight: isBold ? 'normal' : 'bold' };
+    }
+    if (s === 'italic') return { fontStyle: current === 'italic' ? 'normal' : 'italic' };
+    if (s === 'underline') return { underline: !current };
+    if (s === 'linethrough') return { linethrough: !current };
+    return {};
+}
+
+/** テキストにスタイルを適用 — 選択範囲があれば setSelectionStyles、なければ obj 全体に。 */
+function applyTextStyle(styleObj) {
+    const t = getTextStyleTarget();
+    if (!t) return false;
+    if (t.selStart !== undefined) {
+        t.obj.setSelectionStyles(styleObj, t.selStart, t.selEnd);
+    } else {
+        t.obj.set(styleObj);
+    }
+    t.obj.dirty = true;
+    App.canvas.requestRenderAll();
+    return true;
+}
+
+/** 選択範囲または全体の代表スタイル値を取得する。 */
+function readTextStyle(propKey) {
+    const t = getTextStyleTarget();
+    if (!t) return null;
+    if (t.selStart !== undefined) {
+        const styles = t.obj.getSelectionStyles(t.selStart, t.selEnd);
+        return styles[0]?.[propKey] ?? t.obj[propKey];
+    }
+    return t.obj[propKey];
+}
+
+/** スタイルトグルボタンの active 状態を、対象テキスト/選択範囲のスタイルに合わせる。 */
+function refreshTextStyleButtons() {
+    document.querySelectorAll('#text-style-tiles .tool-tile').forEach((tile) => {
+        const s = tile.dataset.textStyle;
+        const key = textStyleKey(s);
+        if (!key) return;
+        const val = readTextStyle(key);
+        let active = false;
+        if (s === 'bold') active = val === 'bold' || val === 700 || val === '700';
+        else if (s === 'italic') active = val === 'italic';
+        else active = !!val;
+        tile.classList.toggle('active', active);
+    });
+}
+
+/** 対象テキストのフォント/サイズを props 入力欄に反映する。 */
+function syncTextInputsFromTarget() {
+    const t = getTextStyleTarget();
+    if (!t) return;
+    const fontKey = t.selStart !== undefined ? (t.obj.getSelectionStyles(t.selStart, t.selEnd)[0]?.fontFamily ?? t.obj.fontFamily) : t.obj.fontFamily;
+    const sizeKey = t.selStart !== undefined ? (t.obj.getSelectionStyles(t.selStart, t.selEnd)[0]?.fontSize ?? t.obj.fontSize) : t.obj.fontSize;
+    const fontSel = document.getElementById('text-font');
+    if (fontSel && fontKey) fontSel.value = fontKey;
+    const sizeInp = document.getElementById('text-size');
+    if (sizeInp && sizeKey) sizeInp.value = Math.round(sizeKey);
 }
 
 /* ================================================================
@@ -3618,6 +3776,65 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('pattern-rotation')?.addEventListener('input', function () {
         App.patternRotation = parseInt(this.value) || 0;
+    });
+
+    // テキストスタイル切替 (ボールド/イタリック/下線/取消線) — 編集中で選択範囲があれば部分適用
+    document.querySelectorAll('#text-style-tiles .tool-tile').forEach((tile) => {
+        tile.addEventListener('click', () => {
+            const s = tile.dataset.textStyle;
+            const key = textStyleKey(s);
+            if (!key) return;
+            const current = readTextStyle(key);
+            const props = computeToggleProps(s, current);
+            if (applyTextStyle(props)) {
+                refreshTextStyleButtons();
+                pushHistoryDebounced(`テキストスタイル変更`);
+            }
+        });
+    });
+    // フォント/サイズ変更も対象テキストに即時適用
+    document.getElementById('text-font')?.addEventListener('change', function () {
+        if (applyTextStyle({ fontFamily: this.value })) {
+            pushHistoryDebounced('フォント変更');
+        }
+    });
+    document.getElementById('text-size')?.addEventListener('input', function () {
+        const sz = parseInt(this.value) || 48;
+        if (applyTextStyle({ fontSize: sz })) {
+            pushHistoryDebounced('文字サイズ変更');
+        }
+    });
+    // キーボードショートカット (Ctrl+B / Ctrl+I / Ctrl+U)
+    document.addEventListener('keydown', (e) => {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        const target = getTextStyleTarget();
+        if (!target) return;
+        let s = null;
+        if (e.key === 'b' || e.key === 'B') s = 'bold';
+        else if (e.key === 'i' || e.key === 'I') s = 'italic';
+        else if (e.key === 'u' || e.key === 'U') s = 'underline';
+        if (!s) return;
+        e.preventDefault();
+        const key = textStyleKey(s);
+        const props = computeToggleProps(s, readTextStyle(key));
+        if (applyTextStyle(props)) {
+            refreshTextStyleButtons();
+            pushHistoryDebounced('テキストスタイル変更');
+        }
+    });
+
+    // 壁の影 — 新規壁描画時に適用 (既存壁は変えない)
+    document.getElementById('wall-shadow-enabled')?.addEventListener('change', function () {
+        App.wallShadowEnabled = this.checked;
+    });
+    document.getElementById('wall-shadow-blur')?.addEventListener('input', function () {
+        App.wallShadowBlur = parseInt(this.value) || 0;
+    });
+    document.getElementById('wall-shadow-offset-x')?.addEventListener('input', function () {
+        App.wallShadowOffsetX = parseInt(this.value) || 0;
+    });
+    document.getElementById('wall-shadow-offset-y')?.addEventListener('input', function () {
+        App.wallShadowOffsetY = parseInt(this.value) || 0;
     });
 
     // レイヤー削除

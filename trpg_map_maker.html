@@ -21,6 +21,8 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <!-- TRPGマップ用拡張フォント (テキストツールで選択可能) -->
+        <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;700&family=Yusei+Magic&family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@400;700&family=DotGothic16&family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
@@ -346,6 +348,16 @@
                 font-size: 1rem;
                 line-height: 1.1rem;
             }
+            /* テキストスタイル用ミニタイル — 24x24px、アイコンも小さく */
+            .tool-tile.text-style-mini {
+                width: 24px;
+                height: 24px;
+                padding: 0;
+                aspect-ratio: auto;
+            }
+            .tool-tile.text-style-mini .material-symbols-outlined {
+                font-size: 0.95rem;
+            }
 
             /* ---- パターン選択 UI (Phase B) ---- */
             .pattern-picker {
@@ -577,12 +589,17 @@
                 background: var(--input-bg);
                 border: 1px solid var(--input-bd);
                 border-radius: 4px;
-                color: var(--text-bright);
+                /* セレクトの文字色は黒固定 (ドロップダウン項目もテーマに依存せず読めるように) */
+                color: #000;
                 font-family: var(--font-mono);
                 font-size: 0.76rem;
                 padding: 0.15rem 0.35rem;
                 height: 26px;
                 cursor: pointer;
+            }
+            select option {
+                color: #000;
+                background: #fff;
             }
             select:focus {
                 outline: none;
@@ -778,7 +795,7 @@
                 overflow: hidden;
                 /* カーソルは Fabric の defaultCursor (setActiveTool で設定) に任せる */
                 background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
-                background-size: 12px 12px;
+                background-size: 18px 18px;
                 background-position: 0 0;
             }
             #canvas-area canvas {
@@ -1134,6 +1151,16 @@
                         </div>
                         <div class="pattern-picker" id="wall-pattern-picker"></div>
                     </div>
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影</div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="wall-shadow-enabled" /><span class="tl">影を付ける</span></label>
+                        </div>
+                        <div class="f"><span class="fl">色</span><div id="wall-shadow-color"></div></div>
+                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="wall-shadow-blur" value="6" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="wall-shadow-offset-x" value="2" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="wall-shadow-offset-y" value="2" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                    </div>
                 </div>
                 <!-- 地図モード: 部屋 -->
                 <div class="prop-group" data-prop="room">
@@ -1166,15 +1193,35 @@
                         <div class="f">
                             <span class="fl">フォント</span
                             ><select id="text-font">
+                                <option value="Zen Kaku Gothic New">Zen Kaku ゴシック (現代)</option>
                                 <option value="Noto Sans JP">Noto Sans JP</option>
-                                <option value="Noto Serif JP">Noto Serif JP</option>
+                                <option value="M PLUS Rounded 1c">M PLUS 丸ゴシック</option>
+                                <option value="Klee One">Klee One (楷書)</option>
+                                <option value="Noto Serif JP">Noto Serif JP (明朝)</option>
+                                <option value="Shippori Mincho B1">しっぽり明朝</option>
+                                <option value="Yusei Magic">Yusei Magic (手書き)</option>
+                                <option value="Dela Gothic One">Dela Gothic (装飾太字)</option>
+                                <option value="DotGothic16">DotGothic16 (ドット)</option>
                                 <option value="Share Tech Mono">Share Tech Mono</option>
+                                <option value="Cinzel">Cinzel (欧文)</option>
+                                <option value="MedievalSharp">MedievalSharp (欧文中世)</option>
                             </select>
                         </div>
                         <div class="f">
                             <span class="fl">サイズ</span>
-                            <div class="row"><input type="number" id="text-size" value="20" min="6" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+                            <div class="row"><input type="number" id="text-size" value="48" min="6" max="500" class="custom-spinner" /><span class="unit">px</span></div>
                         </div>
+                        <!-- スタイルトグル (ボールド/イタリック/下線/取消線) — コンパクトサイズ -->
+                        <div class="f" id="text-style-row">
+                            <span class="fl">スタイル</span>
+                            <div id="text-style-tiles" style="display: grid; grid-template-columns: repeat(4, 24px); gap: 3px;">
+                                <div class="tool-tile text-style-mini" data-text-style="bold" title="太字 (Ctrl+B)"><span class="material-symbols-outlined">format_bold</span></div>
+                                <div class="tool-tile text-style-mini" data-text-style="italic" title="斜体 (Ctrl+I)"><span class="material-symbols-outlined">format_italic</span></div>
+                                <div class="tool-tile text-style-mini" data-text-style="underline" title="下線 (Ctrl+U)"><span class="material-symbols-outlined">format_underlined</span></div>
+                                <div class="tool-tile text-style-mini" data-text-style="linethrough" title="取り消し線"><span class="material-symbols-outlined">format_strikethrough</span></div>
+                            </div>
+                        </div>
+                        <p class="fl" id="text-style-hint" style="opacity: 0.5; font-size: 0.65rem; margin: 0.2rem 0 0">編集中に文字を選択すると、選択部分のみに適用されます</p>
                     </div>
                 </div>
                 <!-- 画像 -->
