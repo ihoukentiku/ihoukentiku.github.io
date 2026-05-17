@@ -231,7 +231,7 @@ async function handleCreate() {
         // 空マップの初期 data。エディタ側で完全な空のキャンバスをロードする想定。
         data: {
             version: 1,
-            cellSize: 60,
+            cellSize: 72,
             gridType,
             gridColor: 'rgba(0,0,0,1)',
             gridLineWidth: 1,

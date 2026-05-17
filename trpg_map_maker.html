@@ -774,6 +774,27 @@
             .pcr-app .pcr-interaction .pcr-save:hover {
                 background: var(--blue) !important;
             }
+            /* スポイト (EyeDropper API) — 確定ボタンと同じ並びに差し込む */
+            .pcr-app .pcr-interaction .pcr-eyedropper {
+                background: var(--blue-mid);
+                color: #fff;
+                border: 0;
+                border-radius: 3px;
+                padding: 0 0.5rem;
+                margin-left: 0.25rem;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                height: 1.6em;
+                transition: background var(--t);
+            }
+            .pcr-app .pcr-interaction .pcr-eyedropper:hover {
+                background: var(--blue);
+            }
+            .pcr-app .pcr-interaction .pcr-eyedropper .material-symbols-outlined {
+                font-size: 1rem;
+            }
             [data-theme='light'] .pcr-app {
                 background: #f0f7ff !important;
             }
@@ -1260,20 +1281,6 @@
                         <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
                     </div>
                 </div>
-                <!-- 影 (地面/壁モードで表示) — 色/ぼかし/オフセットは地面と壁で共通、on/off だけ別状態。折りたたみ可。 -->
-                <div id="shadow-sec" class="s-sec collapsible collapsed" style="display: none">
-                    <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                    <div class="s-body">
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="shadow-enabled" /><span class="tl">影を付ける</span></label>
-                        </div>
-                        <div class="f"><span class="fl">色</span><div id="shadow-color"></div></div>
-                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                    </div>
-                </div>
-
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display: none">
                     <div class="s-ttl" id="fill-stroke-title"><span class="material-symbols-outlined">palette</span>フィル / ストローク</div>
@@ -1288,6 +1295,10 @@
                     <div class="f" id="stroke-width-row">
                         <span class="fl">線幅</span>
                         <div class="row"><input type="number" id="stroke-width" value="2" min="0" max="100" class="custom-spinner" /><span class="unit">px</span></div>
+                    </div>
+                    <div class="f" id="wall-thickness-row" style="display: none">
+                        <span class="fl">壁の厚み</span>
+                        <div class="row"><input type="number" id="wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
                     </div>
                     <div class="f" id="stroke-style-row">
                         <span class="fl">線種</span>
@@ -1318,6 +1329,20 @@
                     <div class="f" id="corner-radius-row">
                         <span class="fl">角丸</span>
                         <div class="row"><input type="number" id="corner-radius" value="0" min="0" max="500" class="custom-spinner" /><span class="unit">px</span></div>
+                    </div>
+                </div>
+
+                <!-- 影 — フィル/ストロークの直下。色/ぼかし/オフセットはカテゴリ共通、on/off だけ別状態。折りたたみ可。 -->
+                <div id="shadow-sec" class="s-sec collapsible collapsed" style="display: none">
+                    <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                    <div class="s-body">
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="shadow-enabled" /><span class="tl">影を付ける</span></label>
+                        </div>
+                        <div class="f"><span class="fl">色</span><div id="shadow-color"></div></div>
+                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
                     </div>
                 </div>
 

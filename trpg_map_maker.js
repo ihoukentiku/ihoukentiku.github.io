@@ -52,10 +52,12 @@ const App = {
     groundPattern: { mode: 'pattern', id: 'stone_floor', genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
     wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
+    wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
     // ---- 影 (新規描画時に適用、既存オブジェクトは obj.shadow としてそのまま保持)
     //     色/ぼかし/オフセットは地面と壁で共通。on/off だけ別状態。 ----
     groundShadowEnabled: false,
     wallShadowEnabled: true,
+    simpleShadowEnabled: false, // シンプルモード (矩形/楕円/線/折線/多角形/曲線/フリーハンド/テキスト/画像/セル) 共通
     shadowColor: 'rgba(0,0,0,0.55)',
     shadowBlur: 8,
     shadowOffsetX: 0,
@@ -544,7 +546,9 @@ function updateFillStrokeVisibility() {
     let showFillColor = isSimpleDraw;
     let showStrokeColor = isSimpleDraw;
     let showStrokeStyle = isSimpleDraw;
-    let showStrokeWidth = isSimpleDraw || (isWall && drawSubtools.includes(sub));
+    // 壁モードでは線幅 (strokeWidth) ではなく「壁の厚み」(wallThickness) を出す。
+    const showWallThickness = isWall && drawSubtools.includes(sub);
+    let showStrokeWidth = isSimpleDraw;
     let showRadius = sub === 'rect';
     if (isSelect) {
         const activeObjs = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
@@ -559,10 +563,11 @@ function updateFillStrokeVisibility() {
     setDisp('fill-color-row', showFillColor);
     setDisp('stroke-color-row', showStrokeColor);
     setDisp('stroke-width-row', showStrokeWidth);
+    setDisp('wall-thickness-row', showWallThickness);
     setDisp('stroke-style-row', showStrokeStyle);
     setDisp('corner-radius-row', showRadius);
     // セクション全体は中に何か出てれば表示
-    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showStrokeStyle || showRadius;
+    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showWallThickness || showStrokeStyle || showRadius;
     setDisp('fill-stroke-sec', anyRow);
     // タイトル「フィル / ストローク」は色行が出てる時だけ意味があるので隠す/出す
     setDisp('fill-stroke-title', showFillColor || showStrokeColor);
@@ -572,19 +577,19 @@ function updateFillStrokeVisibility() {
     setDisp('snap-sec', snapSubtools.includes(sub));
     // パターン共通設定: 地面/壁モードでのみ表示
     setDisp('pattern-transform-sec', isGround || isWall);
-    // 影セクション: 地面/壁モードでのみ表示
-    setDisp('shadow-sec', isGround || isWall);
+    // 影セクション: 何かしらの描画 (シンプル/地面/壁) で表示
+    setDisp('shadow-sec', isSimpleDraw || isGround || isWall);
     refreshShadowUI();
     // 線継ぎ目 / 線端: ストロークがあるサブツール (= strokeWidth 行が出るとき) と同じ条件で出す
     setDisp('stroke-line-join-row', showStrokeWidth);
     setDisp('stroke-line-cap-row', showStrokeWidth);
 }
 
-/** 影セクションの on/off トグルを現在の activeTool (地面 or 壁) に合わせて反映する。 */
+/** 影セクションの on/off トグルを現在の activeTool カテゴリ (シンプル/地面/壁) に合わせて反映する。 */
 function refreshShadowUI() {
     const cb = document.getElementById('shadow-enabled');
     if (!cb) return;
-    cb.checked = App.activeTool === 'ground' ? !!App.groundShadowEnabled : !!App.wallShadowEnabled;
+    cb.checked = App.activeTool === 'ground' ? !!App.groundShadowEnabled : App.activeTool === 'wall' ? !!App.wallShadowEnabled : !!App.simpleShadowEnabled;
 }
 
 /* ================================================================
@@ -597,67 +602,61 @@ let fillPickr, strokePickr, gridPickr;
  * 'save' イベントで App 状態と (選択ツール時は) 選択中オブジェクトの色も同期する。
  */
 function initPickr() {
-    // hex_maker と同じ構成: interaction は input + save のみ、i18n で「確定」表示
+    // interaction は input のみ。確定ボタンは廃止 (外側クリックで閉じる) し、
+    // 代わりにスポイトボタンを attachEyedropper で末尾に差し込む。
     const opts = (el, def) => ({
         el,
         theme: 'nano',
         default: def,
-        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: true } },
-        i18n: { 'btn:save': '確定' },
+        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
     });
     // change: ドラッグ中も即時反映 (履歴はデバウンス) + ピッカーボタンの色も同期 (applyColor(true))
     // save: ピッカーを閉じるだけ
     fillPickr = Pickr.create(opts('#fill-color-picker', App.fillColor));
-    fillPickr
-        .on('change', (c, _src, instance) => {
-            if (!c) return;
-            App.fillColor = c.toHEXA().toString().slice(0, 7);
-            App.fillOpacity = c.toRGBA()[3];
-            instance.applyColor(true); // ボタン色を即時更新 (save イベントは発火しない)
-            const fillStr = rgba(App.fillColor, App.fillOpacity);
-            // 編集中テキストで選択範囲があれば、選択部分のみに適用 (テキストツール時)
-            const textTarget = getTextStyleTarget();
-            if (textTarget && textTarget.selStart !== undefined) {
-                applyTextStyle({ fill: fillStr });
-                pushHistoryDebounced('テキスト色を変更');
-                return;
-            }
-            if (App.activeTool === 'select') {
-                const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
-                if (targets.length === 0) return;
-                targets.forEach((o) => o.set({ fill: fillStr }));
-                App.canvas.renderAll();
-                pushHistoryDebounced('フィル色を変更');
-            }
-        })
-        .on('save', (_, p) => p.hide());
+    fillPickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        App.fillColor = c.toHEXA().toString().slice(0, 7);
+        App.fillOpacity = c.toRGBA()[3];
+        instance.applyColor(true); // ボタン色を即時更新 (save イベントは発火しない)
+        const fillStr = rgba(App.fillColor, App.fillOpacity);
+        // 編集中テキストで選択範囲があれば、選択部分のみに適用 (テキストツール時)
+        const textTarget = getTextStyleTarget();
+        if (textTarget && textTarget.selStart !== undefined) {
+            applyTextStyle({ fill: fillStr });
+            pushHistoryDebounced('テキスト色を変更');
+            return;
+        }
+        if (App.activeTool === 'select') {
+            const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach((o) => o.set({ fill: fillStr }));
+            App.canvas.renderAll();
+            pushHistoryDebounced('フィル色を変更');
+        }
+    });
 
     strokePickr = Pickr.create(opts('#stroke-color-picker', App.strokeColor));
-    strokePickr
-        .on('change', (c, _src, instance) => {
-            if (!c) return;
-            App.strokeColor = c.toHEXA().toString().slice(0, 7);
-            App.strokeOpacity = c.toRGBA()[3];
-            instance.applyColor(true);
-            if (App.activeTool === 'select') {
-                const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
-                if (targets.length === 0) return;
-                targets.forEach((o) => o.set({ stroke: rgba(App.strokeColor, App.strokeOpacity) }));
-                App.canvas.renderAll();
-                pushHistoryDebounced('ストローク色を変更');
-            }
-        })
-        .on('save', (_, p) => p.hide());
+    strokePickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        App.strokeColor = c.toHEXA().toString().slice(0, 7);
+        App.strokeOpacity = c.toRGBA()[3];
+        instance.applyColor(true);
+        if (App.activeTool === 'select') {
+            const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach((o) => o.set({ stroke: rgba(App.strokeColor, App.strokeOpacity) }));
+            App.canvas.renderAll();
+            pushHistoryDebounced('ストローク色を変更');
+        }
+    });
 
     gridPickr = Pickr.create(opts('#grid-color-picker', 'rgba(0,0,0,1)'));
-    gridPickr
-        .on('change', (c, _src, instance) => {
-            if (!c) return;
-            App.gridColor = c.toRGBA().toString();
-            instance.applyColor(true);
-            drawGrid();
-        })
-        .on('save', (_, p) => p.hide());
+    gridPickr.on('change', (c, _src, instance) => {
+        if (!c) return;
+        App.gridColor = c.toRGBA().toString();
+        instance.applyColor(true);
+        drawGrid();
+    });
 
     // 影 色ピッカー — App.shadowColor を更新するだけ (新規描画時に反映、地面/壁共通)
     const wallShadowEl = document.getElementById('shadow-color');
@@ -667,8 +666,44 @@ function initPickr() {
             if (!c) return;
             App.shadowColor = c.toRGBA().toString();
             instance.applyColor(true);
-        }).on('save', (_, p) => p.hide());
+        });
+        attachEyedropper(wsp);
     }
+    // 既存ピッカーにスポイトボタンを追加 (fill / stroke / grid)
+    attachEyedropper(fillPickr);
+    attachEyedropper(strokePickr);
+    attachEyedropper(gridPickr);
+}
+
+/**
+ * Pickr の interaction 行 (確定ボタンがあった場所) にスポイトボタンを差し込む。
+ * クリックでブラウザ標準の EyeDropper API を起動し、画面上から色をピックして反映する。
+ * 非対応ブラウザ (Firefox / Safari) では何もしない。
+ * @param {Pickr} pickr
+ */
+function attachEyedropper(pickr) {
+    if (!pickr || typeof window.EyeDropper === 'undefined') return;
+    // Pickr の root.interaction はネスト構造のオブジェクトで HTMLElement ではない。
+    // 確実なのは root.app (= .pcr-app) を起点に .pcr-interaction を querySelector する方法。
+    const root = pickr.getRoot();
+    const interaction = root?.app?.querySelector?.('.pcr-interaction') || root?.interaction?.input?.parentElement;
+    if (!interaction || interaction.querySelector('.pcr-eyedropper')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pcr-eyedropper';
+    btn.title = '画面から色を抽出 (スポイト)';
+    btn.innerHTML = '<span class="material-symbols-outlined">colorize</span>';
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            const result = await new window.EyeDropper().open();
+            // setColor は silent=false で 'change' イベントを発火 → 既存ハンドラで App 状態に反映される
+            pickr.setColor(result.sRGBHex, false);
+        } catch (_) {
+            // ユーザー Esc キャンセル等 — 何もしない
+        }
+    });
+    interaction.appendChild(btn);
 }
 
 /* ================================================================
@@ -726,7 +761,11 @@ function initCanvas() {
         if (e.button === 1) e.preventDefault();
     });
     document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && !e.repeat) {
+        // 入力フィールド (input/textarea/contenteditable) や Fabric テキスト編集中はパン用 Space を無効化
+        const t = e.target;
+        const inField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+        const editingText = App.canvas?.getActiveObject?.()?.isEditing;
+        if (e.code === 'Space' && !e.repeat && !inField && !editingText) {
             spaceHeld = true;
             e.preventDefault();
         }
@@ -855,7 +894,10 @@ function initCanvas() {
                     //   butt + 水平線 (height==0): dim.x から stroke 減 → left 補正不要、top のみ補正
                     //   butt + 垂直線 (width==0):  dim.y から stroke 減 → top 補正不要、left のみ補正
                     //   butt + 斜め線 / round / square: 両軸とも dim にストローク含む → 両軸補正
-                    const x1 = App._lineStart.x, y1 = App._lineStart.y, x2 = pt.x, y2 = pt.y;
+                    const x1 = App._lineStart.x,
+                        y1 = App._lineStart.y,
+                        x2 = pt.x,
+                        y2 = pt.y;
                     const hsw = (style.strokeWidth || 0) / 2;
                     const cap = App.strokeLineCap || 'butt';
                     const isButt = cap === 'butt';
@@ -950,7 +992,11 @@ function initCanvas() {
                     top: ptr.y,
                     originX: 'left',
                     originY: 'center',
-                    width: size * 4, // ある程度の編集領域を確保
+                    // 入力された文字幅にぴったり追従させたいので最小幅から始める。
+                    // fabric.Textbox は内部的に minWidth まで自動で広がる。
+                    width: 1,
+                    minWidth: 1,
+                    splitByGrapheme: false,
                     fontFamily: font,
                     fontSize: size,
                     fill: rgba(App.fillColor, App.fillOpacity),
@@ -959,12 +1005,8 @@ function initCanvas() {
                     editable: true,
                     objectCaching: false,
                     _isMapText: true,
-                    // 編集中の枠・カーソル・選択ハイライトを視認性の高い配色に
-                    borderColor: '#00e5ff',
-                    cornerColor: '#00e5ff',
-                    cornerStrokeColor: '#00e5ff',
-                    cursorColor: '#00e5ff',
-                    cursorWidth: 2,
+                    cursorColor: 'black',
+                    cursorWidth: 3,
                     selectionColor: 'rgba(0,229,255,0.35)',
                 });
                 addLayerObject('テキスト', tb);
@@ -1015,12 +1057,15 @@ function initCanvas() {
         // simple モードは従来通り半透明にする
         const _previewStyle = (() => {
             const s = getCurrentDrawStyle();
-            const base = (App.activeTool === 'ground' || App.activeTool === 'wall') ? s : {
-                ...s,
-                fill: rgba(App.fillColor, App.fillOpacity * 0.5),
-                stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
-                fillSoft: rgba(App.fillColor, App.fillOpacity * 0.3),
-            };
+            const base =
+                App.activeTool === 'ground' || App.activeTool === 'wall'
+                    ? s
+                    : {
+                          ...s,
+                          fill: rgba(App.fillColor, App.fillOpacity * 0.5),
+                          stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
+                          fillSoft: rgba(App.fillColor, App.fillOpacity * 0.3),
+                      };
             // 線継ぎ目 / 線端 もプレビューに反映 (本体と同じ挙動を見せる)
             base.strokeLineJoin = App.strokeLineJoin || 'miter';
             base.strokeLineCap = App.strokeLineCap || 'butt';
@@ -1086,7 +1131,10 @@ function initCanvas() {
         if (_sub === 'line' && App._lineStart) {
             const pt = snapToGrid(ptr.x, ptr.y) || ptr;
             removePreview();
-            const x1 = App._lineStart.x, y1 = App._lineStart.y, x2 = pt.x, y2 = pt.y;
+            const x1 = App._lineStart.x,
+                y1 = App._lineStart.y,
+                x2 = pt.x,
+                y2 = pt.y;
             const phsw = (_previewStyle.strokeWidth || 0) / 2;
             const pIsButt = _previewStrokeMod.strokeLineCap === 'butt';
             const plcorr = pIsButt && y1 === y2 ? 0 : phsw;
@@ -1418,10 +1466,10 @@ function addLayerObject(typeName, obj) {
         _layerId: id,
         _isMapLayer: true,
         _layerName: `${typeName}${App.layerCounters[typeName]}`,
-        borderColor: '#40b7fc',
+        borderColor: '#0099ff',
         cornerColor: 'white',
-        cornerStrokeColor: '#40b7fc',
-        cornerSize: 10,
+        cornerStrokeColor: '#0099ff',
+        cornerSize: 15,
         transparentCorners: false,
         borderScaleFactor: 2,
         strokeLineJoin: App.strokeLineJoin || 'miter',
@@ -1430,6 +1478,7 @@ function addLayerObject(typeName, obj) {
         selectable: App.activeTool === 'select' || (App.activeTool === 'text' && obj._isMapText),
         evented: App.activeTool === 'select' || (App.activeTool === 'text' && obj._isMapText),
     });
+    applyShadowAtCreate(obj);
     // フリーハンド等、既にcanvas上にある場合はadd不要
     if (!App.canvas.getObjects().includes(obj)) App.canvas.add(obj);
     // 新規レイヤーをパネル上でハイライト（canvasのactive化はしない — 現ツールの操作性を維持）
@@ -1608,6 +1657,18 @@ function addToolbarControl(proto, opts) {
 (function setupSelectionControls() {
     if (typeof fabric === 'undefined') return;
     const CYAN = '#00e5ff';
+    // 個別オブジェクト (addLayerObject) と同じ枠/コーナースタイルを Group / ActiveSelection
+    // (複数選択時に自動生成される一時オブジェクト) にも適用して見た目を統一する。
+    const selectionStyle = {
+        borderColor: '#0099ff',
+        cornerColor: 'white',
+        cornerStrokeColor: '#0099ff',
+        cornerSize: 15,
+        transparentCorners: false,
+        borderScaleFactor: 2,
+    };
+    Object.assign(fabric.Group.prototype, selectionStyle);
+    Object.assign(fabric.ActiveSelection.prototype, selectionStyle);
     // 注意: fabric.Group.prototype.controls と fabric.ActiveSelection.prototype.controls は
     // どちらも fabric.Object.prototype.controls と同一オブジェクトを参照しているため (継承)、
     // ここで追加したコントロールは Rect/Ellipse などすべての選択にも紐づく。
@@ -1929,7 +1990,8 @@ function createCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        objectCaching: false,
+        // objectCaching: true でないとグループ全体にひとつの影が落ちず、各セルにバラバラの影が描かれる
+        objectCaching: true,
         _isCellLayer: true,
         _cellData: new Map(),
     });
@@ -1994,7 +2056,8 @@ function createGroundCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        objectCaching: false,
+        // objectCaching: true でないとグループ全体にひとつの影が落ちず、各セルにバラバラの影が描かれる
+        objectCaching: true,
         _isCellLayer: true,
         _isGroundLayer: true,
         _cellData: new Map(),
@@ -2235,7 +2298,7 @@ function getCurrentDrawStyle() {
         return {
             fill: '', // 閉じた形状でも内側は透過
             stroke: getWallStroke(),
-            strokeWidth: App.strokeWidth || 8,
+            strokeWidth: App.wallThickness || 12,
             strokeDashArray: null,
             namePrefix: '壁_',
             flag: '_isWallLayer',
@@ -2263,22 +2326,29 @@ function addCategoryLayer(typeName, obj, flag) {
     if (flag) obj.set({ [flag]: true });
     snapshotPatternSettings(obj); // 現在のグローバル offset/rotation を obj にコピー
     applyPatternOrigin(obj); // 上記スナップショット + 世界 (0,0) アンカーを反映
-    const shadowEnabled = (flag === '_isWallLayer' && App.wallShadowEnabled) || (flag === '_isGroundLayer' && App.groundShadowEnabled);
-    if (shadowEnabled) {
-        // 壁は fill 透明で stroke のみなので affectStroke=true (地面にも害なし) でないと影が見えない
-        obj.set({
-            shadow: new fabric.Shadow({
-                color: App.shadowColor,
-                blur: App.shadowBlur,
-                offsetX: App.shadowOffsetX,
-                offsetY: App.shadowOffsetY,
-                affectStroke: true,
-            }),
-        });
-    }
     addLayerObject(typeName, obj);
     if (!flag) return;
     repositionByCategory(obj, flag);
+}
+
+/**
+ * 新規追加されるレイヤーに、現在の影設定 (カテゴリ別 on/off + 共有 color/blur/offset)
+ * を貼る。シンプル/地面/壁いずれも対応。既存オブジェクトには触らない。
+ * affectStroke=true は fill 透明 (壁) でも影を効かせるため。
+ */
+function applyShadowAtCreate(obj) {
+    if (!obj) return;
+    const enabled = obj._isWallLayer ? App.wallShadowEnabled : obj._isGroundLayer ? App.groundShadowEnabled : App.simpleShadowEnabled;
+    if (!enabled) return;
+    obj.set({
+        shadow: new fabric.Shadow({
+            color: App.shadowColor,
+            blur: App.shadowBlur,
+            offsetX: App.shadowOffsetX,
+            offsetY: App.shadowOffsetY,
+            affectStroke: true,
+        }),
+    });
 }
 
 /**
@@ -2568,8 +2638,7 @@ function mountPatternPicker(root, opts) {
         el: triggerEl,
         theme: 'nano',
         default: state0.solidColor || '#888888',
-        components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: true } },
-        i18n: { 'btn:save': '確定' },
+        components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: false } },
     });
     pickr.on('change', (c, _src, instance) => {
         if (!c) return;
@@ -2580,7 +2649,7 @@ function mountPatternPicker(root, opts) {
         const sw = root.querySelector('.pp-tile-solid .pp-solid-swatch');
         if (sw) sw.style.background = hex;
     });
-    pickr.on('save', (_, p) => p.hide());
+    attachEyedropper(pickr);
     root._pickr = pickr;
     root._mounted = true;
     renderPatternPickerContent(root, opts);
@@ -3089,6 +3158,7 @@ function buildSaveData() {
         groundPattern: App.groundPattern,
         wallTool: App.wallTool,
         wallPattern: App.wallPattern,
+        wallThickness: App.wallThickness,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
         gridDashArray: App.gridDashArray,
@@ -3106,13 +3176,16 @@ function buildSaveData() {
  */
 function restoreSaveData(data) {
     App._isRestoring = true;
-    App.cellSize = data.cellSize || 60;
+    App.cellSize = data.cellSize || 72;
     App.gridType = data.gridType || 'square';
     setEditMode(data.editMode === 'map' ? 'map' : 'simple');
     if (data.groundTool) App.groundTool = data.groundTool;
     if (data.groundPattern) App.groundPattern = data.groundPattern;
     if (data.wallTool) App.wallTool = data.wallTool;
     if (data.wallPattern) App.wallPattern = data.wallPattern;
+    if (typeof data.wallThickness === 'number') App.wallThickness = data.wallThickness;
+    const wt = document.getElementById('wall-thickness');
+    if (wt) wt.value = App.wallThickness;
     App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
     App.gridLineWidth = data.gridLineWidth || 1;
     App.gridDashArray = data.gridDashArray || null;
@@ -3662,6 +3735,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // gridType の切替UIは廃止 (新規作成時に baked されるため)
 
+    // 壁の厚み (wallThickness) — シンプル線幅とは別系統。選択中オブジェクトに即適用 (壁のみ対象)
+    document.getElementById('wall-thickness')?.addEventListener('input', function () {
+        App.wallThickness = parseInt(this.value) || 12;
+        if (App.activeTool === 'select') {
+            const targets = App.canvas.getActiveObjects().filter((o) => o._isWallLayer);
+            if (targets.length === 0) return;
+            targets.forEach((o) => o.set({ strokeWidth: App.wallThickness }));
+            App.canvas.renderAll();
+            pushHistoryDebounced('壁の厚みを変更');
+        }
+    });
+
     // 線幅 — ダッシュ配列も現在のスタイルに合わせて再計算 + 選択中オブジェクトに即適用
     document.getElementById('stroke-width').addEventListener('input', function () {
         App.strokeWidth = parseInt(this.value) || 0;
@@ -3891,7 +3976,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 影 — 新規描画時に適用 (既存は変えない)。on/off だけ地面/壁で別状態。
     document.getElementById('shadow-enabled')?.addEventListener('change', function () {
         if (App.activeTool === 'ground') App.groundShadowEnabled = this.checked;
-        else App.wallShadowEnabled = this.checked;
+        else if (App.activeTool === 'wall') App.wallShadowEnabled = this.checked;
+        else App.simpleShadowEnabled = this.checked;
     });
     document.getElementById('shadow-blur')?.addEventListener('input', function () {
         App.shadowBlur = parseInt(this.value) || 0;
