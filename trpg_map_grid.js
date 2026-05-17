@@ -282,7 +282,6 @@ function createHexAdapter(orientation, fit) {
             const verts = hexVertices(c.x, c.y);
             return new fabric.Polygon(verts, {
                 fill: fillStyle,
-                // 隣接ヘクス間のアンチエイリアス由来の隙間を埋めるため同色の極細ストロークを引く
                 selectable: false,
                 evented: false,
                 objectCaching: false,

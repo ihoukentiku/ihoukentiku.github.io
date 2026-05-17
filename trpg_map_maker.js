@@ -168,7 +168,7 @@ function renderTerrainCanvas(baseColor, patternType, sz) {
             const line = adjustBrightness(baseColor, -30);
             ctx.strokeStyle = line;
             ctx.lineWidth = Math.max(1, sz / 40);
-            for (let r = 1; r < rows; r++) {
+            for (let r = 0; r <= rows; r++) {
                 const y = r * bh;
                 ctx.beginPath();
                 ctx.moveTo(0, y);
@@ -314,35 +314,35 @@ function generateTerrainPattern(baseColor, patternType, cellSize) {
    { id, name, genre, color, pattern } の形を取る。
 ================================================================ */
 const GROUND_GENRES = [
-    { id: 'all',     name: '全て' },
-    { id: 'indoor',  name: '屋内' },
+    { id: 'all', name: '全て' },
+    { id: 'indoor', name: '屋内' },
     { id: 'outdoor', name: '屋外' },
-    { id: 'cave',    name: '洞窟' },
+    { id: 'cave', name: '洞窟' },
 ];
 const GROUND_PATTERNS = [
     // 屋内
-    { id: 'stone_floor', name: '石床',       genre: 'indoor',  color: '#8a8a8a', pattern: 'speckle' },
-    { id: 'wood_floor',  name: '木床',       genre: 'indoor',  color: '#a0724e', pattern: 'stripe'  },
-    { id: 'tile_floor',  name: 'タイル',     genre: 'indoor',  color: '#c4b9a0', pattern: 'grid'    },
-    { id: 'brick_floor', name: 'レンガ',     genre: 'indoor',  color: '#a85d3e', pattern: 'brick'   },
-    { id: 'carpet',      name: 'カーペット', genre: 'indoor',  color: '#7b3344', pattern: 'none'    },
-    { id: 'marble',      name: '大理石',     genre: 'indoor',  color: '#d4cfc8', pattern: 'speckle' },
+    { id: 'stone_floor', name: '石床', genre: 'indoor', color: '#8a8a8a', pattern: 'speckle' },
+    { id: 'wood_floor', name: '木床', genre: 'indoor', color: '#a0724e', pattern: 'stripe' },
+    { id: 'tile_floor', name: 'タイル', genre: 'indoor', color: '#c4b9a0', pattern: 'grid' },
+    { id: 'brick_floor', name: 'レンガ', genre: 'indoor', color: '#a85d3e', pattern: 'brick' },
+    { id: 'carpet', name: 'カーペット', genre: 'indoor', color: '#7b3344', pattern: 'none' },
+    { id: 'marble', name: '大理石', genre: 'indoor', color: '#d4cfc8', pattern: 'speckle' },
     // 屋外
-    { id: 'grass',       name: '草',         genre: 'outdoor', color: '#4a8c3f', pattern: 'speckle' },
-    { id: 'dirt',        name: '土',         genre: 'outdoor', color: '#8b6e4e', pattern: 'speckle' },
-    { id: 'sand',        name: '砂',         genre: 'outdoor', color: '#d4c07a', pattern: 'dot'     },
-    { id: 'water_s',     name: '水(浅)',     genre: 'outdoor', color: '#5ba3cf', pattern: 'wave'    },
-    { id: 'water_d',     name: '水(深)',     genre: 'outdoor', color: '#2a6496', pattern: 'wave'    },
-    { id: 'swamp',       name: '沼',         genre: 'outdoor', color: '#5e7a4a', pattern: 'wave'    },
-    { id: 'road',        name: '道',         genre: 'outdoor', color: '#9e9078', pattern: 'none'    },
-    { id: 'snow',        name: '雪',         genre: 'outdoor', color: '#e8e8ee', pattern: 'dot'     },
+    { id: 'grass', name: '草', genre: 'outdoor', color: '#4a8c3f', pattern: 'speckle' },
+    { id: 'dirt', name: '土', genre: 'outdoor', color: '#8b6e4e', pattern: 'speckle' },
+    { id: 'sand', name: '砂', genre: 'outdoor', color: '#d4c07a', pattern: 'dot' },
+    { id: 'water_s', name: '水(浅)', genre: 'outdoor', color: '#5ba3cf', pattern: 'wave' },
+    { id: 'water_d', name: '水(深)', genre: 'outdoor', color: '#2a6496', pattern: 'wave' },
+    { id: 'swamp', name: '沼', genre: 'outdoor', color: '#5e7a4a', pattern: 'wave' },
+    { id: 'road', name: '道', genre: 'outdoor', color: '#9e9078', pattern: 'none' },
+    { id: 'snow', name: '雪', genre: 'outdoor', color: '#e8e8ee', pattern: 'dot' },
     // 洞窟
-    { id: 'cave_stone',  name: '石床',       genre: 'cave',    color: '#6b6b6b', pattern: 'speckle' },
-    { id: 'gravel',      name: '砂利',       genre: 'cave',    color: '#7a7568', pattern: 'dot'     },
-    { id: 'cave_water',  name: '水',         genre: 'cave',    color: '#3a7aaa', pattern: 'wave'    },
-    { id: 'lava',        name: '溶岩',       genre: 'cave',    color: '#c43e1a', pattern: 'wave'    },
-    { id: 'ice',         name: '氷',         genre: 'cave',    color: '#aad4e6', pattern: 'hatch'   },
-    { id: 'moss',        name: '苔',         genre: 'cave',    color: '#4e6e3a', pattern: 'speckle' },
+    { id: 'cave_stone', name: '石床', genre: 'cave', color: '#6b6b6b', pattern: 'speckle' },
+    { id: 'gravel', name: '砂利', genre: 'cave', color: '#7a7568', pattern: 'dot' },
+    { id: 'cave_water', name: '水', genre: 'cave', color: '#3a7aaa', pattern: 'wave' },
+    { id: 'lava', name: '溶岩', genre: 'cave', color: '#c43e1a', pattern: 'wave' },
+    { id: 'ice', name: '氷', genre: 'cave', color: '#aad4e6', pattern: 'hatch' },
+    { id: 'moss', name: '苔', genre: 'cave', color: '#4e6e3a', pattern: 'speckle' },
 ];
 
 const WALL_GENRES = [
@@ -932,14 +932,7 @@ function initCanvas() {
             const _needSnap = _snapSubtools.includes(activeSubtool()) || App._exportMode;
             if (_needSnap) {
                 const _sub = activeSubtool();
-                const _editPts =
-                    _sub === 'path'
-                        ? App._pathPoints
-                        : _sub === 'polygon'
-                          ? App._polygonPoints
-                          : _sub === 'curve' || _sub === 'curve-closed'
-                            ? App._curvePoints
-                            : [];
+                const _editPts = _sub === 'path' ? App._pathPoints : _sub === 'polygon' ? App._polygonPoints : _sub === 'curve' || _sub === 'curve-closed' ? App._curvePoints : [];
                 const _raw = snapToGrid(ptr.x, ptr.y);
                 App._snapPt = snapToEditPoints(ptr.x, ptr.y, _editPts) || _raw || null;
             } else {
@@ -976,19 +969,34 @@ function initCanvas() {
                 const preview =
                     _sub === 'rect'
                         ? new fabric.Rect({
-                              left: left - hsw, top: top - hsw, width: w, height: h,
-                              rx: App.cornerRadius, ry: App.cornerRadius,
-                              fill: _previewStyle.fill, stroke: _previewStyle.stroke,
+                              left: left - hsw,
+                              top: top - hsw,
+                              width: w,
+                              height: h,
+                              rx: App.cornerRadius,
+                              ry: App.cornerRadius,
+                              fill: _previewStyle.fill,
+                              stroke: _previewStyle.stroke,
                               strokeWidth: _previewStyle.strokeWidth,
                               strokeDashArray: _previewStyle.strokeDashArray,
-                              selectable: false, evented: false, objectCaching: false, isPreview: true,
+                              selectable: false,
+                              evented: false,
+                              objectCaching: false,
+                              isPreview: true,
                           })
                         : new fabric.Ellipse({
-                              left: left - hsw, top: top - hsw, rx: w / 2, ry: h / 2,
-                              fill: _previewStyle.fill, stroke: _previewStyle.stroke,
+                              left: left - hsw,
+                              top: top - hsw,
+                              rx: w / 2,
+                              ry: h / 2,
+                              fill: _previewStyle.fill,
+                              stroke: _previewStyle.stroke,
                               strokeWidth: _previewStyle.strokeWidth,
                               strokeDashArray: _previewStyle.strokeDashArray,
-                              selectable: false, evented: false, objectCaching: false, isPreview: true,
+                              selectable: false,
+                              evented: false,
+                              objectCaching: false,
+                              isPreview: true,
                           });
                 App.canvas.add(preview);
             }
@@ -1004,7 +1012,10 @@ function initCanvas() {
                 new fabric.Line([App._lineStart.x - hsw, App._lineStart.y - hsw, pt.x - hsw, pt.y - hsw], {
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
-                    selectable: false, evented: false, isPreview: true, objectCaching: false,
+                    selectable: false,
+                    evented: false,
+                    isPreview: true,
+                    objectCaching: false,
                 })
             );
             App.canvas.renderAll();
@@ -1020,7 +1031,10 @@ function initCanvas() {
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
                     fill: '',
-                    selectable: false, evented: false, isPreview: true, objectCaching: false,
+                    selectable: false,
+                    evented: false,
+                    isPreview: true,
+                    objectCaching: false,
                 })
             );
             App.canvas.renderAll();
@@ -1036,7 +1050,10 @@ function initCanvas() {
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
                     fill: _previewStyle.fillSoft || _previewStyle.fill,
-                    selectable: false, evented: false, isPreview: true, objectCaching: false,
+                    selectable: false,
+                    evented: false,
+                    isPreview: true,
+                    objectCaching: false,
                 })
             );
             App.canvas.renderAll();
@@ -1055,8 +1072,11 @@ function initCanvas() {
                     new fabric.Path(d, {
                         stroke: _previewStyle.stroke,
                         strokeWidth: _previewStyle.strokeWidth,
-                        fill: closed ? (_previewStyle.fillSoft || _previewStyle.fill) : '',
-                        selectable: false, evented: false, isPreview: true, objectCaching: false,
+                        fill: closed ? _previewStyle.fillSoft || _previewStyle.fill : '',
+                        selectable: false,
+                        evented: false,
+                        isPreview: true,
+                        objectCaching: false,
                     })
                 );
             }
@@ -1504,8 +1524,7 @@ function addToolbarControl(proto, opts) {
         icon: 'create_new_folder',
         accent: CYAN,
         slot: 0,
-        isVisible: (t) => t && t.type === 'activeSelection' && typeof t.getObjects === 'function'
-            && !t.getObjects().some((o) => o._isCellLayer || o._isTerrainLayer),
+        isVisible: (t) => t && t.type === 'activeSelection' && typeof t.getObjects === 'function' && !t.getObjects().some((o) => o._isCellLayer || o._isTerrainLayer),
         onClick: () => groupSelected(),
     });
     // Material Symbols フォントのロード完了後に canvas を再描画 (初回選択時にアイコンが ligature として描けるように)
@@ -1574,8 +1593,12 @@ function renderLayerList() {
             lockIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 obj.set({
-                    lockMovementX: false, lockMovementY: false, lockRotation: false,
-                    lockScalingX: false, lockScalingY: false, hasControls: true,
+                    lockMovementX: false,
+                    lockMovementY: false,
+                    lockRotation: false,
+                    lockScalingX: false,
+                    lockScalingY: false,
+                    hasControls: true,
                 });
                 App.canvas.renderAll();
                 renderLayerList();
@@ -1859,8 +1882,12 @@ function getOrCreateGroundCellLayer() {
         .find((o) => o._isCellLayer && o._isGroundLayer);
     if (existing) return existing;
     const group = new fabric.Group([], {
-        selectable: false, evented: false, objectCaching: false,
-        _isCellLayer: true, _isGroundLayer: true, _cellData: new Map(),
+        selectable: false,
+        evented: false,
+        objectCaching: false,
+        _isCellLayer: true,
+        _isGroundLayer: true,
+        _cellData: new Map(),
     });
     addCategoryLayer('地面_セル', group, '_isGroundLayer');
     App.selectedLayerIds = [group._layerId];
@@ -2096,7 +2123,7 @@ function getCurrentDrawStyle() {
     }
     if (App.activeTool === 'wall') {
         return {
-            fill: '',                            // 閉じた形状でも内側は透過
+            fill: '', // 閉じた形状でも内側は透過
             stroke: getWallStroke(),
             strokeWidth: App.strokeWidth || 8,
             strokeDashArray: null,
@@ -2160,9 +2187,11 @@ function applyPatternOrigin(obj) {
     const baseOffY = obj._patternOffsetY || 0;
     const deg = obj._patternRotation || 0;
     // セル子要素は world 計算をスキップ (cells naturally align at multiples of cellSize)
-    const isCellChild = obj._cellCol !== undefined && obj.group;
-    const worldOffX = isCellChild ? 0 : -(obj.left || 0);
-    const worldOffY = isCellChild ? 0 : -(obj.top || 0);
+    // const isCellChild = obj._cellCol !== undefined && obj.group;
+    // const worldOffX = isCellChild ? 0 : -(obj.left || 0);
+    // const worldOffY = isCellChild ? 0 : -(obj.top || 0);
+    const worldOffX = -(obj.left || 0);
+    const worldOffY = -(obj.top || 0);
     const offX = worldOffX + baseOffX;
     const offY = worldOffY + baseOffY;
     let transform = null;
@@ -3277,7 +3306,9 @@ document.addEventListener('keydown', (e) => {
                 strokeWidth: style.strokeWidth,
                 strokeDashArray: style.strokeDashArray,
                 fill: '',
-                selectable: false, evented: false, objectCaching: false,
+                selectable: false,
+                evented: false,
+                objectCaching: false,
             }),
             style.flag
         );
@@ -3295,7 +3326,9 @@ document.addEventListener('keydown', (e) => {
                 strokeWidth: style.strokeWidth,
                 strokeDashArray: style.strokeDashArray,
                 fill: style.fill,
-                selectable: false, evented: false, objectCaching: false,
+                selectable: false,
+                evented: false,
+                objectCaching: false,
             }),
             style.flag
         );
