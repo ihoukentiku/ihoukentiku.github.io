@@ -52,12 +52,16 @@ const App = {
     groundPattern: { mode: 'pattern', id: 'stone_floor', genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
     wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
-    // ---- 壁の影 (新規描画時に適用、既存壁は obj.shadow としてそのまま保持) ----
-    wallShadowEnabled: false,
-    wallShadowColor: 'rgba(0,0,0,0.55)',
-    wallShadowBlur: 6,
-    wallShadowOffsetX: 2,
-    wallShadowOffsetY: 2,
+    // ---- 影 (新規描画時に適用、既存オブジェクトは obj.shadow としてそのまま保持)
+    //     色/ぼかし/オフセットは地面と壁で共通。on/off だけ別状態。 ----
+    groundShadowEnabled: false,
+    wallShadowEnabled: true,
+    shadowColor: 'rgba(0,0,0,0.55)',
+    shadowBlur: 8,
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
+    strokeLineJoin: 'miter', // 'miter' | 'round' | 'bevel' — 折線/多角形/線継ぎ目
+    strokeLineCap: 'butt', // 'butt' | 'round' | 'square' — 線の端
     // ---- パターン共通設定 (地面/壁の Pattern fill/stroke に適用) ----
     patternOffsetX: 0, // 全パターン共通の追加オフセット (px)
     patternOffsetY: 0,
@@ -568,6 +572,19 @@ function updateFillStrokeVisibility() {
     setDisp('snap-sec', snapSubtools.includes(sub));
     // パターン共通設定: 地面/壁モードでのみ表示
     setDisp('pattern-transform-sec', isGround || isWall);
+    // 影セクション: 地面/壁モードでのみ表示
+    setDisp('shadow-sec', isGround || isWall);
+    refreshShadowUI();
+    // 線継ぎ目 / 線端: ストロークがあるサブツール (= strokeWidth 行が出るとき) と同じ条件で出す
+    setDisp('stroke-line-join-row', showStrokeWidth);
+    setDisp('stroke-line-cap-row', showStrokeWidth);
+}
+
+/** 影セクションの on/off トグルを現在の activeTool (地面 or 壁) に合わせて反映する。 */
+function refreshShadowUI() {
+    const cb = document.getElementById('shadow-enabled');
+    if (!cb) return;
+    cb.checked = App.activeTool === 'ground' ? !!App.groundShadowEnabled : !!App.wallShadowEnabled;
 }
 
 /* ================================================================
@@ -642,13 +659,13 @@ function initPickr() {
         })
         .on('save', (_, p) => p.hide());
 
-    // 壁の影 色ピッカー — App.wallShadowColor を更新するだけ (新規壁描画時に反映)
-    const wallShadowEl = document.getElementById('wall-shadow-color');
+    // 影 色ピッカー — App.shadowColor を更新するだけ (新規描画時に反映、地面/壁共通)
+    const wallShadowEl = document.getElementById('shadow-color');
     if (wallShadowEl) {
-        const wsp = Pickr.create(opts('#wall-shadow-color', App.wallShadowColor));
+        const wsp = Pickr.create(opts('#shadow-color', App.shadowColor));
         wsp.on('change', (c, _src, instance) => {
             if (!c) return;
-            App.wallShadowColor = c.toRGBA().toString();
+            App.shadowColor = c.toRGBA().toString();
             instance.applyColor(true);
         }).on('save', (_, p) => p.hide());
     }
@@ -833,21 +850,23 @@ function initCanvas() {
                     App._lineStart = pt;
                 } else {
                     const style = getCurrentDrawStyle();
-                    // fabric.Line は strokeLineCap='butt' (default) のとき、軸方向に揃った線では
-                    // 片側の dimension から stroke を引く特別処理がある (内部 _getNonTransformedDimensions)。
-                    //   水平線 (height==0): dim.x から stroke を引く → left 補正不要、top のみ補正
-                    //   垂直線 (width==0):  dim.y から stroke を引く → top 補正不要、left のみ補正
-                    //   斜め線: 両方 dim に stroke 含む → 両軸とも補正
-                    // よって補正は「dim にストロークを含む側」だけ、つまり「直交軸が non-zero の側」だけ。
+                    // fabric.Line の _getNonTransformedDimensions は strokeLineCap='butt' のときだけ、
+                    // 軸方向に揃った線の「平行軸」の dim からストロークを差し引く特別処理がある。
+                    //   butt + 水平線 (height==0): dim.x から stroke 減 → left 補正不要、top のみ補正
+                    //   butt + 垂直線 (width==0):  dim.y から stroke 減 → top 補正不要、left のみ補正
+                    //   butt + 斜め線 / round / square: 両軸とも dim にストローク含む → 両軸補正
                     const x1 = App._lineStart.x, y1 = App._lineStart.y, x2 = pt.x, y2 = pt.y;
                     const hsw = (style.strokeWidth || 0) / 2;
-                    const lcorr = y1 === y2 ? 0 : hsw; // 水平線なら left 補正なし
-                    const tcorr = x1 === x2 ? 0 : hsw; // 垂直線なら top 補正なし
+                    const cap = App.strokeLineCap || 'butt';
+                    const isButt = cap === 'butt';
+                    const lcorr = isButt && y1 === y2 ? 0 : hsw; // butt の水平線のみ left 補正不要
+                    const tcorr = isButt && x1 === x2 ? 0 : hsw; // butt の垂直線のみ top 補正不要
                     const line = new fabric.Line([x1, y1, x2, y2], {
                         left: Math.min(x1, x2) - lcorr,
                         top: Math.min(y1, y2) - tcorr,
                         stroke: style.stroke,
                         strokeWidth: style.strokeWidth,
+                        strokeLineCap: cap,
                         strokeDashArray: style.strokeDashArray,
                         fill: null,
                         selectable: false,
@@ -996,14 +1015,21 @@ function initCanvas() {
         // simple モードは従来通り半透明にする
         const _previewStyle = (() => {
             const s = getCurrentDrawStyle();
-            if (App.activeTool === 'ground' || App.activeTool === 'wall') return s;
-            return {
+            const base = (App.activeTool === 'ground' || App.activeTool === 'wall') ? s : {
                 ...s,
                 fill: rgba(App.fillColor, App.fillOpacity * 0.5),
                 stroke: rgba(App.strokeColor, App.strokeOpacity * 0.5),
                 fillSoft: rgba(App.fillColor, App.fillOpacity * 0.3),
             };
+            // 線継ぎ目 / 線端 もプレビューに反映 (本体と同じ挙動を見せる)
+            base.strokeLineJoin = App.strokeLineJoin || 'miter';
+            base.strokeLineCap = App.strokeLineCap || 'butt';
+            return base;
         })();
+        const _previewStrokeMod = {
+            strokeLineJoin: _previewStyle.strokeLineJoin,
+            strokeLineCap: _previewStyle.strokeLineCap,
+        };
 
         // 矩形/楕円プレビュー（1クリック後、マウス追従）
         const _sub = activeSubtool();
@@ -1030,6 +1056,7 @@ function initCanvas() {
                               stroke: _previewStyle.stroke,
                               strokeWidth: _previewStyle.strokeWidth,
                               strokeDashArray: _previewStyle.strokeDashArray,
+                              ..._previewStrokeMod,
                               selectable: false,
                               evented: false,
                               objectCaching: false,
@@ -1044,6 +1071,7 @@ function initCanvas() {
                               stroke: _previewStyle.stroke,
                               strokeWidth: _previewStyle.strokeWidth,
                               strokeDashArray: _previewStyle.strokeDashArray,
+                              ..._previewStrokeMod,
                               selectable: false,
                               evented: false,
                               objectCaching: false,
@@ -1060,14 +1088,17 @@ function initCanvas() {
             removePreview();
             const x1 = App._lineStart.x, y1 = App._lineStart.y, x2 = pt.x, y2 = pt.y;
             const phsw = (_previewStyle.strokeWidth || 0) / 2;
-            const plcorr = y1 === y2 ? 0 : phsw;
-            const ptcorr = x1 === x2 ? 0 : phsw;
+            const pIsButt = _previewStrokeMod.strokeLineCap === 'butt';
+            const plcorr = pIsButt && y1 === y2 ? 0 : phsw;
+            const ptcorr = pIsButt && x1 === x2 ? 0 : phsw;
             App.canvas.add(
                 new fabric.Line([x1, y1, x2, y2], {
                     left: Math.min(x1, x2) - plcorr,
                     top: Math.min(y1, y2) - ptcorr,
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
+                    strokeDashArray: _previewStyle.strokeDashArray,
+                    ..._previewStrokeMod,
                     selectable: false,
                     evented: false,
                     isPreview: true,
@@ -1086,6 +1117,8 @@ function initCanvas() {
                 new fabric.Polyline([...App._pathPoints, pt], {
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
+                    strokeDashArray: _previewStyle.strokeDashArray,
+                    ..._previewStrokeMod,
                     fill: '',
                     selectable: false,
                     evented: false,
@@ -1105,6 +1138,8 @@ function initCanvas() {
                 new fabric.Polygon([...App._polygonPoints, pt], {
                     stroke: _previewStyle.stroke,
                     strokeWidth: _previewStyle.strokeWidth,
+                    strokeDashArray: _previewStyle.strokeDashArray,
+                    ..._previewStrokeMod,
                     fill: _previewStyle.fillSoft || _previewStyle.fill,
                     selectable: false,
                     evented: false,
@@ -1128,6 +1163,8 @@ function initCanvas() {
                     new fabric.Path(d, {
                         stroke: _previewStyle.stroke,
                         strokeWidth: _previewStyle.strokeWidth,
+                        strokeDashArray: _previewStyle.strokeDashArray,
+                        ..._previewStrokeMod,
                         fill: closed ? _previewStyle.fillSoft || _previewStyle.fill : '',
                         selectable: false,
                         evented: false,
@@ -1387,6 +1424,8 @@ function addLayerObject(typeName, obj) {
         cornerSize: 10,
         transparentCorners: false,
         borderScaleFactor: 2,
+        strokeLineJoin: App.strokeLineJoin || 'miter',
+        strokeLineCap: App.strokeLineCap || 'butt',
         // テキストツール時はテキストオブジェクトのみ selectable/evented を許可 (クリックで編集可)
         selectable: App.activeTool === 'select' || (App.activeTool === 'text' && obj._isMapText),
         evented: App.activeTool === 'select' || (App.activeTool === 'text' && obj._isMapText),
@@ -1947,6 +1986,11 @@ function getOrCreateGroundCellLayer() {
         .reverse()
         .find((o) => o._isCellLayer && o._isGroundLayer);
     if (existing) return existing;
+    return createGroundCellLayer();
+}
+
+/** 地面モード用の空セルレイヤーを新規作成する (add-layer タイル経由)。 */
+function createGroundCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
@@ -2219,15 +2263,15 @@ function addCategoryLayer(typeName, obj, flag) {
     if (flag) obj.set({ [flag]: true });
     snapshotPatternSettings(obj); // 現在のグローバル offset/rotation を obj にコピー
     applyPatternOrigin(obj); // 上記スナップショット + 世界 (0,0) アンカーを反映
-    if (flag === '_isWallLayer' && App.wallShadowEnabled) {
-        // 影が ON のときだけ新規壁に Shadow を貼る (既存壁は変えない)
-        // 壁は fill 透明で stroke のみなので affectStroke=true でないと影が見えない
+    const shadowEnabled = (flag === '_isWallLayer' && App.wallShadowEnabled) || (flag === '_isGroundLayer' && App.groundShadowEnabled);
+    if (shadowEnabled) {
+        // 壁は fill 透明で stroke のみなので affectStroke=true (地面にも害なし) でないと影が見えない
         obj.set({
             shadow: new fabric.Shadow({
-                color: App.wallShadowColor,
-                blur: App.wallShadowBlur,
-                offsetX: App.wallShadowOffsetX,
-                offsetY: App.wallShadowOffsetY,
+                color: App.shadowColor,
+                blur: App.shadowBlur,
+                offsetX: App.shadowOffsetX,
+                offsetY: App.shadowOffsetY,
                 affectStroke: true,
             }),
         });
@@ -2604,8 +2648,19 @@ function setEditMode(mode) {
 function refreshPropGroupVisibility() {
     document.querySelectorAll('#prop-panel .prop-group').forEach((pg) => pg.classList.toggle('active', pg.dataset.prop === App.activeTool));
     const sub = activeSubtool();
+    // 地形(地面)+セルのとき: セルツールタイル群を地面パネルの「ツール選択」直下へ動的に移動。
+    // それ以外のとき: cell prop-group の中 (本来の位置) に戻す。
+    const cellBlock = document.getElementById('cell-tools-block');
+    const cellHome = document.querySelector('.prop-group[data-prop="cell"] .s-sec');
     if (App.activeTool === 'ground' && sub === 'cell') {
-        document.querySelector('#prop-panel .prop-group[data-prop="cell"]')?.classList.add('active');
+        const groundTiles = document.getElementById('ground-tool-tiles');
+        if (cellBlock && groundTiles && cellBlock.previousElementSibling !== groundTiles) {
+            groundTiles.parentElement.insertBefore(cellBlock, groundTiles.nextSibling);
+        }
+    } else {
+        if (cellBlock && cellHome && cellBlock.parentElement !== cellHome) {
+            cellHome.appendChild(cellBlock);
+        }
     }
 }
 
@@ -3101,25 +3156,20 @@ function restoreSaveData(data) {
  * @returns {string|null} レイヤーが無ければ null
  */
 function generateThumbnail() {
-    const rect = calcAutoExportRect();
-    if (!rect) return null;
-    const savedVpt = App.canvas.viewportTransform.slice();
-    const savedW = App.canvas.width,
-        savedH = App.canvas.height;
+    // 現在のビューポート (ユーザーが見ている状態) をそのままサムネとして使う。
+    // 編集 UI (出力範囲枠 / スナップマーカー) は一時的に隠して再描画してから DOM canvas
+    // の生ピクセルを取得し、終了時に元へ戻す。サイズは縮小なし (一覧側 CSS で縮小表示)。
     const savedRect = App._exportRect;
+    const savedMode = App._exportMode;
+    const savedSnap = App._snapPt;
     App._exportRect = null;
-
-    const thumbW = 160,
-        thumbH = 120;
-    const scale = Math.min(thumbW / rect.w, thumbH / rect.h, 1);
-    App.canvas.setDimensions({ width: Math.round(rect.w * scale), height: Math.round(rect.h * scale) });
-    App.canvas.setViewportTransform([scale, 0, 0, scale, -rect.x * scale, -rect.y * scale]);
+    App._exportMode = false;
+    App._snapPt = null;
     App.canvas.renderAll();
-    const url = App.canvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 1 });
-
+    const url = App.canvas.getElement().toDataURL('image/png');
     App._exportRect = savedRect;
-    App.canvas.setDimensions({ width: savedW, height: savedH });
-    App.canvas.setViewportTransform(savedVpt);
+    App._exportMode = savedMode;
+    App._snapPt = savedSnap;
     App.canvas.renderAll();
     return url;
 }
@@ -3180,13 +3230,9 @@ async function persistCurrentMap(withThumbnail) {
             updatedAt: new Date().toISOString(),
             data: buildSaveData(),
         };
-        if (withThumbnail) {
-            record.thumbnail = generateThumbnail();
-        } else {
-            // 自動保存: 既存サムネを維持して書き込みコストを抑える
-            const existing = await dbGet(App.mapId);
-            record.thumbnail = existing?.thumbnail ?? null;
-        }
+        // サムネは毎回再生成する (beforeunload の非同期書き込みは多くのブラウザで間に合わず、
+        // 一覧側で常に空表示になっていたため)。160x120 程度なら自動保存のコストは無視できる。
+        record.thumbnail = generateThumbnail();
         await dbPut(record);
         setSaveStatus('saved');
     } catch (e) {
@@ -3726,8 +3772,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // セルレイヤー追加
-    document.getElementById('add-cell-layer')?.addEventListener('click', createCellLayer);
+    // セルレイヤー追加タイル — 現在のモードに応じて simple/ground のレイヤーを作成
+    document.querySelector('#cell-tool-tiles [data-cell-action="add-layer"]')?.addEventListener('click', () => {
+        if (App.activeTool === 'ground') createGroundCellLayer();
+        else createCellLayer();
+    });
 
     // 地面ツールタイル (Phase B-1: 状態保持のみ。描画は B-2)
     document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((tile) => {
@@ -3749,10 +3798,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // パターン選択 UI 初期描画
     refreshPatternPickers();
 
-    // セル塗りツール (ペン/消しゴム/塗りつぶし) のタイル切替
-    document.querySelectorAll('#cell-tool-tiles .tool-tile').forEach((tile) => {
+    // セル塗りツール (ペン/消しゴム/塗りつぶし) のタイル切替 — レイヤー追加タイルは active 対象外
+    document.querySelectorAll('#cell-tool-tiles .tool-tile[data-cell-tool]').forEach((tile) => {
         tile.addEventListener('click', () => {
-            document.querySelectorAll('#cell-tool-tiles .tool-tile').forEach((t) => t.classList.remove('active'));
+            document.querySelectorAll('#cell-tool-tiles .tool-tile[data-cell-tool]').forEach((t) => t.classList.remove('active'));
             tile.classList.add('active');
         });
     });
@@ -3839,19 +3888,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 壁の影 — 新規壁描画時に適用 (既存壁は変えない)
-    document.getElementById('wall-shadow-enabled')?.addEventListener('change', function () {
-        App.wallShadowEnabled = this.checked;
+    // 影 — 新規描画時に適用 (既存は変えない)。on/off だけ地面/壁で別状態。
+    document.getElementById('shadow-enabled')?.addEventListener('change', function () {
+        if (App.activeTool === 'ground') App.groundShadowEnabled = this.checked;
+        else App.wallShadowEnabled = this.checked;
     });
-    document.getElementById('wall-shadow-blur')?.addEventListener('input', function () {
-        App.wallShadowBlur = parseInt(this.value) || 0;
+    document.getElementById('shadow-blur')?.addEventListener('input', function () {
+        App.shadowBlur = parseInt(this.value) || 0;
     });
-    document.getElementById('wall-shadow-offset-x')?.addEventListener('input', function () {
-        App.wallShadowOffsetX = parseInt(this.value) || 0;
+    document.getElementById('shadow-offset-x')?.addEventListener('input', function () {
+        App.shadowOffsetX = parseInt(this.value) || 0;
     });
-    document.getElementById('wall-shadow-offset-y')?.addEventListener('input', function () {
-        App.wallShadowOffsetY = parseInt(this.value) || 0;
+    document.getElementById('shadow-offset-y')?.addEventListener('input', function () {
+        App.shadowOffsetY = parseInt(this.value) || 0;
     });
+
+    // strokeLineJoin (線の継ぎ目) / strokeLineCap (線の端) — 全描画ストロークに適用
+    const applyStrokeMod = (prop, value, label) => {
+        App[prop] = value;
+        if (App.activeTool === 'select') {
+            const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
+            if (targets.length === 0) return;
+            targets.forEach((o) => o.set({ [prop]: value }));
+            App.canvas.renderAll();
+            pushHistoryDebounced(label);
+        }
+    };
+    document.getElementById('stroke-line-join')?.addEventListener('change', function () {
+        applyStrokeMod('strokeLineJoin', this.value, '線継ぎ目を変更');
+    });
+    document.getElementById('stroke-line-cap')?.addEventListener('change', function () {
+        applyStrokeMod('strokeLineCap', this.value, '線端を変更');
+    });
+
+    // 折りたたみセクション (パターン / 影) — クリックで s-sec.collapsed を切替
+    document.querySelectorAll('.s-sec.collapsible > .s-ttl').forEach((ttl) => {
+        ttl.addEventListener('click', () => {
+            ttl.parentElement.classList.toggle('collapsed');
+        });
+    });
+
+    // 影トグルの初期状態を activeTool に追随させる
+    refreshShadowUI();
 
     // レイヤー削除
     document.getElementById('layer-delete')?.addEventListener('click', () => {
