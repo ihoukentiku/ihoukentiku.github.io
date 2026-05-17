@@ -1511,12 +1511,6 @@ function groupSelected() {
         _layerId: id,
         _isMapLayer: true,
         _layerName: `グループ${App.layerCounters['グループ']}`,
-        borderColor: '#40b7fc',
-        cornerColor: 'white',
-        cornerStrokeColor: '#40b7fc',
-        cornerSize: 10,
-        transparentCorners: false,
-        borderScaleFactor: 2,
         selectable: true,
         evented: true,
         objectCaching: false,
@@ -1555,16 +1549,7 @@ function ungroupSelected() {
                 _layerName: `解除${App.layerCounters['解除']}`,
             });
         }
-        o.set({
-            borderColor: '#40b7fc',
-            cornerColor: 'white',
-            cornerStrokeColor: '#40b7fc',
-            cornerSize: 10,
-            transparentCorners: false,
-            borderScaleFactor: 2,
-            selectable: true,
-            evented: true,
-        });
+        o.set({ selectable: true, evented: true });
     });
     App.selectedLayerIds = items.map((o) => o._layerId);
     renderLayerList();
@@ -1573,125 +1558,201 @@ function ungroupSelected() {
 }
 
 /* ================================================================
-   選択オブジェクト上のカスタムコントロール (Fabric.Control)
-   選択枠の上中央に角丸正方形ボタンを描画する。
-   - activeSelection (複数選択) → グループ化ボタン
-   - fabric.Group 単一選択 → グループ解除ボタン
-   - セル/地形レイヤーは除外
-   今後ボタンを増やす場合は addToolbarControl() を再利用する。
+   選択オブジェクト上のアクションバー (Fabric.Control)
+   選択枠の上中央に角丸の横長バーを描画。中に複数のアイコンを並べ、
+   クリック位置からアイコンを判定して dispatch する。
+   表示するアクションは getActionsForTarget() が target に応じて返す。
 ================================================================ */
-const TOOLBAR_BTN_SIZE = 26;
-const TOOLBAR_BTN_OFFSET_Y = -34;
+const ACTION_ICON_SIZE = 24;
+const ACTION_ICON_GAP = 6;
+const ACTION_PAD = 8;
+const ACTION_BAR_HEIGHT = 32;
+const ACTION_BAR_OFFSET_Y = -42;
 
-/**
- * 角丸正方形ボタン (背景 + ボーダー + 中央のシンボルアイコン) を canvas に描画する。
- * Material Symbols Outlined フォントの ligature で `iconName` をそのまま描く。
- * @param {CanvasRenderingContext2D} ctx
- * @param {number} cx - 中心 X
- * @param {number} cy - 中心 Y
- * @param {string} iconName - Material Symbols のアイコン名 (ligature)
- * @param {string} accent - アクセントカラー (ボーダー/アイコン色)
- */
-function drawToolbarButton(ctx, cx, cy, iconName, accent) {
-    const size = TOOLBAR_BTN_SIZE;
-    const r = 6;
-    const half = size / 2;
+/** CSS 変数 --text の値を取得 (canvas 描画用)。フォールバックあり。 */
+function getCssVarColor(name, fallback) {
+    try {
+        const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return v || fallback;
+    } catch (_) { return fallback; }
+}
+
+/** target に応じて表示するアクション一覧を返す。 */
+function getActionsForTarget(t) {
+    if (!t) return [];
+    const isCellOrTerrain = t._isCellLayer || t._isTerrainLayer;
+    const isGroup = t.type === 'group' && !isCellOrTerrain;
+    const isActiveSel = t.type === 'activeSelection';
+    const actions = [];
+    if (isActiveSel) {
+        const objs = (typeof t.getObjects === 'function') ? t.getObjects() : [];
+        if (!objs.some((o) => o._isCellLayer || o._isTerrainLayer)) {
+            actions.push({ icon: 'create_new_folder', title: 'グループ化', onClick: () => groupSelected() });
+        }
+    } else if (isGroup) {
+        actions.push({ icon: 'folder_open', title: 'グループ解除', onClick: () => ungroupSelected() });
+    }
+    // 全選択タイプ共通の操作
+    actions.push({ icon: 'content_copy', title: '複製', onClick: (tt) => duplicateActive(tt) });
+    actions.push({ icon: t.lockMovementX ? 'lock' : 'lock_open', title: 'ロック切替', onClick: (tt) => toggleLockActive(tt) });
+    actions.push({ icon: 'flip_to_front', title: '最前面へ', onClick: (tt) => { App.canvas.bringToFront(tt); App.canvas.renderAll(); pushHistory('最前面へ'); } });
+    actions.push({ icon: 'flip_to_back', title: '最背面へ', onClick: (tt) => { App.canvas.sendToBack(tt); App.canvas.renderAll(); pushHistory('最背面へ'); } });
+    actions.push({ icon: 'delete', title: '削除', onClick: (tt) => deleteActive(tt) });
+    return actions;
+}
+
+/** ロック切替: 全方向の移動/スケール/回転を一括 toggle。 */
+function toggleLockActive(t) {
+    if (!t) return;
+    const lock = !t.lockMovementX;
+    const props = { lockMovementX: lock, lockMovementY: lock, lockScalingX: lock, lockScalingY: lock, lockRotation: lock };
+    if (t.type === 'activeSelection' && typeof t.getObjects === 'function') {
+        t.getObjects().forEach((o) => o.set(props));
+    }
+    t.set(props);
+    App.canvas.renderAll();
+    renderLayerList();
+    pushHistory(lock ? 'ロック' : 'ロック解除');
+}
+
+/** 削除: activeSelection なら子全部、それ以外は単体。 */
+function deleteActive(t) {
+    if (!t) return;
+    const targets = (t.type === 'activeSelection' && typeof t.getObjects === 'function') ? t.getObjects().slice() : [t];
+    targets.forEach((o) => App.canvas.remove(o));
+    App.canvas.discardActiveObject();
+    App.selectedLayerIds = [];
+    renderLayerList();
+    App.canvas.renderAll();
+    updateSelectionInfo();
+    pushHistory(targets.length === 1 ? `${targets[0]._layerName || '要素'}を削除` : `${targets.length}個削除`);
+}
+
+/** 複製: cloneAsync で位置をずらしてレイヤー化。 */
+function duplicateActive(t) {
+    if (!t) return;
+    const targets = (t.type === 'activeSelection' && typeof t.getObjects === 'function') ? t.getObjects().slice() : [t];
+    const newObjs = [];
+    let pending = targets.length;
+    targets.forEach((o) => {
+        o.clone((cloned) => {
+            cloned.set({ left: (cloned.left || 0) + 20, top: (cloned.top || 0) + 20 });
+            addLayerObject((o._layerName || '要素') + ' コピー', cloned);
+            newObjs.push(cloned);
+            if (--pending === 0) {
+                App.canvas.discardActiveObject();
+                if (newObjs.length === 1) App.canvas.setActiveObject(newObjs[0]);
+                else if (newObjs.length > 1) {
+                    const sel = new fabric.ActiveSelection(newObjs, { canvas: App.canvas });
+                    App.canvas.setActiveObject(sel);
+                }
+                App.canvas.renderAll();
+                pushHistory(targets.length === 1 ? '複製' : `${targets.length}個複製`);
+            }
+        }, SAVE_CUSTOM_PROPS);
+    });
+}
+
+/** 横長アクションバー (背景 + 区切りなし) を描き、各アイコンを並べる。 */
+function drawActionBar(ctx, cx, cy, actions, iconColor) {
+    if (!actions || actions.length === 0) return;
+    const totalW = ACTION_PAD * 2 + actions.length * ACTION_ICON_SIZE + (actions.length - 1) * ACTION_ICON_GAP;
+    const h = ACTION_BAR_HEIGHT;
+    const r = h / 2;
+    const half = totalW / 2;
     ctx.save();
     ctx.translate(cx, cy);
+    // 背景 (角丸長方形)
     ctx.fillStyle = 'rgba(10, 18, 26, 0.92)';
-    ctx.strokeStyle = accent;
+    ctx.strokeStyle = '#0099ff';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(-half + r, -half);
-    ctx.lineTo(half - r, -half);
-    ctx.quadraticCurveTo(half, -half, half, -half + r);
-    ctx.lineTo(half, half - r);
-    ctx.quadraticCurveTo(half, half, half - r, half);
-    ctx.lineTo(-half + r, half);
-    ctx.quadraticCurveTo(-half, half, -half, half - r);
-    ctx.lineTo(-half, -half + r);
-    ctx.quadraticCurveTo(-half, -half, -half + r, -half);
+    ctx.moveTo(-half + r, -h / 2);
+    ctx.lineTo(half - r, -h / 2);
+    ctx.quadraticCurveTo(half, -h / 2, half, -h / 2 + r);
+    ctx.lineTo(half, h / 2 - r);
+    ctx.quadraticCurveTo(half, h / 2, half - r, h / 2);
+    ctx.lineTo(-half + r, h / 2);
+    ctx.quadraticCurveTo(-half, h / 2, -half, h / 2 - r);
+    ctx.lineTo(-half, -h / 2 + r);
+    ctx.quadraticCurveTo(-half, -h / 2, -half + r, -h / 2);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = accent;
-    ctx.font = '18px "Material Symbols Outlined"';
+    // 各アイコン (左端から並べる)
+    ctx.fillStyle = iconColor;
+    ctx.font = `${ACTION_ICON_SIZE - 4}px "Material Symbols Outlined"`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(iconName, 0, 1);
+    let xCursor = -half + ACTION_PAD + ACTION_ICON_SIZE / 2;
+    for (let i = 0; i < actions.length; i++) {
+        ctx.fillText(actions[i].icon, xCursor, 1);
+        xCursor += ACTION_ICON_SIZE + ACTION_ICON_GAP;
+    }
     ctx.restore();
 }
 
-/**
- * 指定プロトタイプ (fabric.Group / fabric.ActiveSelection) の controls に
- * 上中央ツールバーボタンを追加する。slot を変えると左へ並ぶ。
- * @param {object} proto - fabric.Group.prototype もしくは fabric.ActiveSelection.prototype
- * @param {{key:string, icon:string, accent:string, slot?:number, isVisible:(t:fabric.Object)=>boolean, onClick:(t:fabric.Object)=>void}} opts
- */
-function addToolbarControl(proto, opts) {
-    const slot = opts.slot || 0;
-    const offsetX = -slot * (TOOLBAR_BTN_SIZE + 4);
-    proto.controls[opts.key] = new fabric.Control({
-        x: 0,
-        y: -0.5,
-        offsetX,
-        offsetY: TOOLBAR_BTN_OFFSET_Y,
-        cursorStyle: 'pointer',
-        sizeX: TOOLBAR_BTN_SIZE,
-        sizeY: TOOLBAR_BTN_SIZE,
-        touchSizeX: TOOLBAR_BTN_SIZE + 4,
-        touchSizeY: TOOLBAR_BTN_SIZE + 4,
-        mouseUpHandler: (eventData, transform) => {
-            const target = transform.target;
-            if (!opts.isVisible(target)) return false;
-            opts.onClick(target);
-            return true;
-        },
-        render: function (ctx, left, top, styleOverride, fabricObject) {
-            if (!opts.isVisible(fabricObject)) return;
-            drawToolbarButton(ctx, left, top, opts.icon, opts.accent);
-        },
-    });
+/** クリック位置 (バーローカル X) からアイコン index を割り出す。範囲外なら -1。 */
+function actionBarHitIndex(localX, actions) {
+    if (!actions || actions.length === 0) return -1;
+    const totalW = ACTION_PAD * 2 + actions.length * ACTION_ICON_SIZE + (actions.length - 1) * ACTION_ICON_GAP;
+    const xFromLeft = localX + totalW / 2 - ACTION_PAD;
+    if (xFromLeft < 0) return -1;
+    const stride = ACTION_ICON_SIZE + ACTION_ICON_GAP;
+    const idx = Math.floor(xFromLeft / stride);
+    if (idx < 0 || idx >= actions.length) return -1;
+    // クリックがアイコン範囲内かチェック (gap 部分は無視)
+    const within = xFromLeft - idx * stride;
+    if (within > ACTION_ICON_SIZE) return -1;
+    return idx;
 }
 
 (function setupSelectionControls() {
     if (typeof fabric === 'undefined') return;
-    const CYAN = '#00e5ff';
-    // 個別オブジェクト (addLayerObject) と同じ枠/コーナースタイルを Group / ActiveSelection
-    // (複数選択時に自動生成される一時オブジェクト) にも適用して見た目を統一する。
-    const selectionStyle = {
+    Object.assign(fabric.Object.prototype, {
         borderColor: '#0099ff',
         cornerColor: 'white',
         cornerStrokeColor: '#0099ff',
         cornerSize: 15,
         transparentCorners: false,
         borderScaleFactor: 2,
-    };
-    Object.assign(fabric.Group.prototype, selectionStyle);
-    Object.assign(fabric.ActiveSelection.prototype, selectionStyle);
-    // 注意: fabric.Group.prototype.controls と fabric.ActiveSelection.prototype.controls は
-    // どちらも fabric.Object.prototype.controls と同一オブジェクトを参照しているため (継承)、
-    // ここで追加したコントロールは Rect/Ellipse などすべての選択にも紐づく。
-    // isVisible で型を厳密にチェックしないと、非対象型の選択時に getObjects() 呼出で
-    // TypeError → renderAll 中断 → after:render 未発火 → グリッド消失 となるので注意。
-    addToolbarControl(fabric.Group.prototype, {
-        key: 'actionUngroup',
-        icon: 'folder_open',
-        accent: CYAN,
-        slot: 0,
-        isVisible: (t) => t && t.type === 'group' && !t._isCellLayer && !t._isTerrainLayer,
-        onClick: (t) => {
-            App.canvas.setActiveObject(t);
-            ungroupSelected();
-        },
     });
-    addToolbarControl(fabric.ActiveSelection.prototype, {
-        key: 'actionGroup',
-        icon: 'create_new_folder',
-        accent: CYAN,
-        slot: 0,
-        isVisible: (t) => t && t.type === 'activeSelection' && typeof t.getObjects === 'function' && !t.getObjects().some((o) => o._isCellLayer || o._isTerrainLayer),
-        onClick: () => groupSelected(),
+    const iconColor = getCssVarColor('--text', '#e8eef5');
+    // 単一の "actionBar" Control を fabric.Object.prototype に登録する。
+    // Group.prototype.controls / ActiveSelection.prototype.controls は Object と同じ参照なので、
+    // ここで登録すれば全タイプで表示される。表示するアクションは getActionsForTarget が決める。
+    fabric.Object.prototype.controls.actionBar = new fabric.Control({
+        x: 0,
+        y: -0.5,
+        offsetX: 0,
+        offsetY: ACTION_BAR_OFFSET_Y,
+        cursorStyle: 'pointer',
+        // sizeX は target ごとに変わるので render の widest case で確保。getActionsBarWidth で動的計算する。
+        sizeX: 240,
+        sizeY: ACTION_BAR_HEIGHT,
+        touchSizeX: 280,
+        touchSizeY: ACTION_BAR_HEIGHT + 6,
+        mouseUpHandler: (eventData, transform) => {
+            const target = transform.target;
+            const actions = getActionsForTarget(target);
+            if (actions.length === 0) return false;
+            // 表示座標 (canvas DOM pixel) で計算: eventData.clientX をキャンバス左上基準に変換 →
+            // target.oCoords.actionBar.x も同じ表示座標系なので、差分が「バー中心からの水平オフセット」になる。
+            const coord = target.oCoords?.actionBar;
+            if (!coord) return false;
+            const rect = App.canvas.upperCanvasEl.getBoundingClientRect();
+            const dispX = eventData.clientX - rect.left;
+            const localX = dispX - coord.x;
+            const idx = actionBarHitIndex(localX, actions);
+            if (idx < 0) return false;
+            actions[idx].onClick(target);
+            return true;
+        },
+        render: function (ctx, left, top, styleOverride, fabricObject) {
+            const actions = getActionsForTarget(fabricObject);
+            if (actions.length === 0) return;
+            drawActionBar(ctx, left, top, actions, iconColor);
+        },
     });
     // Material Symbols フォントのロード完了後に canvas を再描画 (初回選択時にアイコンが ligature として描けるように)
     if (document.fonts?.load) {
