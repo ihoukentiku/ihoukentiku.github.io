@@ -75,6 +75,13 @@ GridAdapters.square = {
         });
     },
 
+    /** SVG パスの subpath 文字列を返す (1セル分の閉じた四角形)。 */
+    cellSubpath(col, row) {
+        const cs = App.cellSize;
+        const x = col * cs, y = row * cs;
+        return `M ${x} ${y} h ${cs} v ${cs} h -${cs} z`;
+    },
+
     snapPoints(x, y) {
         const cs = App.cellSize;
         return [
@@ -288,6 +295,13 @@ function createHexAdapter(orientation, fit) {
                 _cellCol: col,
                 _cellRow: row,
             });
+        },
+
+        /** SVG パスの subpath 文字列を返す (1ヘクス = 6点 + 閉路)。 */
+        cellSubpath(col, row) {
+            const c = hexCenter(col, row);
+            const v = hexVertices(c.x, c.y);
+            return `M ${v[0].x} ${v[0].y} L ${v[1].x} ${v[1].y} L ${v[2].x} ${v[2].y} L ${v[3].x} ${v[3].y} L ${v[4].x} ${v[4].y} L ${v[5].x} ${v[5].y} z`;
         },
 
         snapPoints(x, y) {

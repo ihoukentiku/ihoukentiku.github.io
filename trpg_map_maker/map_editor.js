@@ -1056,8 +1056,12 @@ function initCanvas() {
         }
         if (App._cellStrokeActive) {
             const cat = App._cellStrokeCategory === 'ground' ? '地面_セル' : 'セル';
+            const layer = App._cellStrokeCategory === 'ground'
+                ? getMapLayers().reverse().find((o) => o._isCellLayer && o._isGroundLayer && App.selectedLayerIds.includes(o._layerId))
+                : getMapLayers().reverse().find((o) => o._isCellLayer && !o._isGroundLayer && App.selectedLayerIds.includes(o._layerId));
             App._cellStrokeActive = false;
             App._cellStrokeCategory = null;
+            if (layer) commitCellLayer(layer);
             pushHistory(`${cat}塗り`);
         }
     });
@@ -2012,6 +2016,8 @@ function createCellLayer() {
         noScaleCache: false,
         _isCellLayer: true,
         _cellData: new Map(),
+        _pendingErase: new Set(),
+        _tempChildren: [],
     });
     addLayerObject('セル', group);
     // 作成直後に選択状態にする
@@ -2021,11 +2027,10 @@ function createCellLayer() {
 }
 
 /**
- * セルレイヤー上の1セルをペン塗り / 消しゴム消去する。ドラッグ中も毎フレーム呼ばれる。
- * セル形状とキーは GridAdapter に委ねる (スクエア: 矩形 / ヘクス: 六角形)。
- * @param {number} col
- * @param {number} row
- * @param {'pen'|'eraser'} tool
+ * セルレイヤー上の1セルをペン塗り / 消しゴム消去する (シンプルモード)。
+ * - データモデル: layer._cellData は (col,row) → cellEntry のマップ。真のソース。
+ * - 視覚: ドラッグ中はテンポラリ Rect を group に重ねる (シャドウは group が一括処理)。
+ * - mouseup で commitCellLayer() が走り、_pendingErase 反映 + Path に再コンパイル。
  */
 function handleCellPaint(col, row, tool) {
     const layer = getOrCreateCellLayer();
@@ -2036,27 +2041,12 @@ function handleCellPaint(col, row, tool) {
     const adapter = ga();
     const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
-        const c2 = rgba(App.fillColor, App.fillOpacity);
-        const fkey = 'solid:' + c2;
-        const existing = layer._cellData?.get(key);
-        if (existing) {
-            existing.set({ fill: c2, stroke: c2, _fillKey: fkey });
-        } else {
-            const shape = adapter.createCellShape(col, row, c2);
-            if (!shape) return;
-            shape._fillKey = fkey;
-            layer.addWithUpdate(shape);
-            if (!layer._cellData) layer._cellData = new Map();
-            layer._cellData.set(key, shape);
-        }
+        const colorStr = rgba(App.fillColor, App.fillOpacity);
+        const entry = { col, row, fillKey: 'solid:' + colorStr, mode: 'solid', solidColor: colorStr };
+        addCellToLayer(layer, key, entry, colorStr);
     } else if (tool === 'eraser') {
-        const existing = layer._cellData?.get(key);
-        if (existing) {
-            layer.removeWithUpdate(existing);
-            layer._cellData.delete(key);
-        }
+        eraseCellFromLayer(layer, adapter, col, row);
     }
-    App.canvas.renderAll();
 }
 
 /**
@@ -2084,6 +2074,8 @@ function createGroundCellLayer() {
         _isCellLayer: true,
         _isGroundLayer: true,
         _cellData: new Map(),
+        _pendingErase: new Set(),
+        _tempChildren: [],
     });
     addCategoryLayer('地面_セル', group, '_isGroundLayer');
     App.selectedLayerIds = [group._layerId];
@@ -2091,13 +2083,142 @@ function createGroundCellLayer() {
     return group;
 }
 
+/* ----------------------------------------------------------------
+   セルレイヤー操作ヘルパ (Path 化方式)
+---------------------------------------------------------------- */
+
+/** entry から fabric.Pattern (画像未ロード時は color フォールバック) を作る。 */
+function entryToFill(entry) {
+    if (!entry) return '#888888';
+    if (entry.mode === 'solid') return entry.solidColor || '#888888';
+    return getPatternFill(entry.patternId, '#888888');
+}
+
 /**
- * 地面モードのセル塗り (ペン / 消しゴム)。ドラッグ中も毎フレーム呼ばれる。
- * ペン時: 現在の groundPattern (solid / pattern) を fill / stroke として適用
- * 消しゴム時: そのセルを削除
- * @param {number} col
- * @param {number} row
- * @param {'pen'|'eraser'} tool
+ * (col,row) に cellEntry を追加し、視覚フィードバック用の temp Rect を group に重ねる。
+ * 既に同じ位置にセルがあれば上書き (entry のみ。古い temp Rect は次回 commit でクリーンアップ)。
+ */
+function addCellToLayer(layer, key, entry, tempFill) {
+    if (!layer._cellData) layer._cellData = new Map();
+    if (!layer._pendingErase) layer._pendingErase = new Set();
+    if (!layer._tempChildren) layer._tempChildren = [];
+    // ペンで描いた場所が以前に同セッションで消し予約されてたら撤回
+    layer._pendingErase.delete(key);
+    layer._cellData.set(key, entry);
+    // temp Rect (完成形 fill。シャドウは group 任せなので Rect には付けない)
+    const adapter = ga();
+    const shape = adapter.createCellShape(entry.col, entry.row, tempFill);
+    if (!shape) return;
+    shape._temp = true;
+    // パターンの world アンカー (temp Rect はまだ group に入る前なので left が world 座標)
+    snapshotWorldPosition(shape);
+    if (entry.mode === 'pattern') {
+        applyPatternTransformOnObj(shape, entry.patOffX, entry.patOffY, entry.patRot, entry.patScale);
+    }
+    layer.addWithUpdate(shape);
+    layer._tempChildren.push(shape);
+    App.canvas.requestRenderAll();
+}
+
+/**
+ * (col,row) を消し予約セットに入れ、destination-out の temp Rect を重ねて視覚的に消えたように見せる。
+ * group の objectCaching: true により destination-out はレイヤー内に限定される。
+ */
+function eraseCellFromLayer(layer, adapter, col, row) {
+    const key = adapter.cellKey(col, row);
+    if (!layer._pendingErase) layer._pendingErase = new Set();
+    if (!layer._tempChildren) layer._tempChildren = [];
+    // _cellData にも _tempChildren にもまだ無いセルは消す対象なし
+    if (!layer._cellData.has(key) && !hasTempCellAt(layer, col, row)) return;
+    layer._pendingErase.add(key);
+    const shape = adapter.createCellShape(col, row, 'rgba(0,0,0,1)');
+    if (!shape) return;
+    shape._temp = true;
+    shape.set({ globalCompositeOperation: 'destination-out' });
+    snapshotWorldPosition(shape);
+    layer.addWithUpdate(shape);
+    layer._tempChildren.push(shape);
+    App.canvas.requestRenderAll();
+}
+
+function hasTempCellAt(layer, col, row) {
+    return (layer._tempChildren || []).some((c) => c._cellCol === col && c._cellRow === row && !c.globalCompositeOperation);
+}
+
+/**
+ * paint 終了時 (mouseup) に呼ぶ。temp 要素を全削除 → _pendingErase 反映 → _cellData を
+ * fillKey でグルーピングして fabric.Path[] を再生成 → group の中身を入れ替え。
+ */
+function commitCellLayer(layer) {
+    if (!layer || !layer._isCellLayer) return;
+    if (!layer._cellData) layer._cellData = new Map();
+    // 消し予約を _cellData に反映
+    if (layer._pendingErase) {
+        for (const k of layer._pendingErase) layer._cellData.delete(k);
+        layer._pendingErase.clear();
+    }
+    // group から全ての子要素 (temp Rect + 旧 compiled Path) を削除
+    const oldChildren = layer.getObjects().slice();
+    for (const c of oldChildren) layer.remove(c);
+    layer._tempChildren = [];
+    // fillKey でグルーピング
+    const groups = new Map(); // fillKey → { entries: [], sample: cellEntry }
+    for (const entry of layer._cellData.values()) {
+        let g = groups.get(entry.fillKey);
+        if (!g) {
+            g = { entries: [], sample: entry };
+            groups.set(entry.fillKey, g);
+        }
+        g.entries.push(entry);
+    }
+    // 各グループから fabric.Path を生成
+    const adapter = ga();
+    for (const g of groups.values()) {
+        const d = g.entries.map((e) => adapter.cellSubpath(e.col, e.row)).join(' ');
+        const fill = entryToFill(g.sample);
+        const path = new fabric.Path(d, {
+            fill,
+            stroke: fill,    // 隣接 subpath 境界の AA 隙間を埋める
+            strokeWidth: 0.5,
+            objectCaching: false,
+            selectable: false,
+            evented: false,
+            fillRule: 'nonzero',
+        });
+        // パターン世界アンカー: snapshotWorldPosition 後 applyPatternTransformOnObj
+        snapshotWorldPosition(path);
+        if (g.sample.mode === 'pattern') {
+            applyPatternTransformOnObj(path, g.sample.patOffX, g.sample.patOffY, g.sample.patRot, g.sample.patScale);
+        }
+        layer.addWithUpdate(path);
+    }
+    // 何も無くなったら group のサイズが 0 になり描画不能 → dummy 1x1 透明 Rect で保持
+    if (layer.getObjects().length === 0) {
+        layer.addWithUpdate(new fabric.Rect({ left: 0, top: 0, width: 1, height: 1, fill: 'rgba(0,0,0,0)', selectable: false, evented: false }));
+    }
+    layer.dirty = true;
+    App.canvas.requestRenderAll();
+}
+
+/** save 用に _cellData を配列化する。toJSON 直前に layer._cellEntries にセット。 */
+function syncCellEntries(layer) {
+    if (!layer || !layer._cellData) { layer._cellEntries = []; return; }
+    layer._cellEntries = Array.from(layer._cellData.values());
+}
+
+/** load 後に _cellEntries 配列から _cellData Map を復元。 */
+function rebuildCellDataFromEntries(layer, adapter) {
+    layer._cellData = new Map();
+    layer._pendingErase = new Set();
+    layer._tempChildren = [];
+    const arr = layer._cellEntries || [];
+    for (const e of arr) layer._cellData.set(adapter.cellKey(e.col, e.row), e);
+}
+
+/**
+ * 地面モードのセル塗り (ペン / 消しゴム)。
+ * cellEntry には現在のパターン設定 (オフセット/回転/倍率) を snapshot して焼き込む。
+ * → 同じパターン id でも設定が違えば別 fillKey になり、commit 時に別 Path に分かれる。
  */
 function handleGroundCellPaint(col, row, tool = 'pen') {
     const layer = getOrCreateGroundCellLayer();
@@ -2108,35 +2229,34 @@ function handleGroundCellPaint(col, row, tool = 'pen') {
     const adapter = ga();
     const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
-        const fill = getGroundFill();
-        const fkey = getGroundFillKey();
-        const existing = layer._cellData?.get(key);
-        if (existing) {
-            // 既存セルの再塗り (色を上書き) — pattern オフセットも今の設定で再スナップショット
-            existing.set({ fill, stroke: fill, _fillKey: fkey });
-            snapshotPatternSettings(existing);
-            applyPatternOrigin(existing);
-        } else {
-            const shape = adapter.createCellShape(col, row, fill);
-            if (!shape) return;
-            shape._fillKey = fkey;
-            // group に入れる前のワールド座標を保存 → addWithUpdate で obj.left がずれても
-            // パターンオフセット計算は _worldLeft 優先で安定する
-            snapshotWorldPosition(shape);
-            snapshotPatternSettings(shape);
-            applyPatternOrigin(shape);
-            layer.addWithUpdate(shape);
-            if (!layer._cellData) layer._cellData = new Map();
-            layer._cellData.set(key, shape);
-        }
+        const entry = makeGroundCellEntry(col, row);
+        const tempFill = getGroundFill();
+        addCellToLayer(layer, key, entry, tempFill);
     } else if (tool === 'eraser') {
-        const existing = layer._cellData?.get(key);
-        if (existing) {
-            layer.removeWithUpdate(existing);
-            layer._cellData.delete(key);
-        }
+        eraseCellFromLayer(layer, adapter, col, row);
     }
-    App.canvas.renderAll();
+}
+
+/** App.groundPattern + パターン設定 (offset/rotation/scale) を snapshot した cellEntry を作る。 */
+function makeGroundCellEntry(col, row) {
+    const s = App.groundPattern;
+    if (s.mode === 'solid') {
+        const c = s.solidColor || '#888888';
+        return { col, row, fillKey: 'solid:' + c, mode: 'solid', solidColor: c };
+    }
+    const def = getPatternDef(s.id);
+    const initScale = def?.scale ?? 1;
+    const patOffX = App.patternOffsetX || 0;
+    const patOffY = App.patternOffsetY || 0;
+    const patRot = App.patternRotation || 0;
+    const patScale = initScale * (App.patternScale ?? 1);
+    return {
+        col, row,
+        fillKey: `pattern:${s.id}|${patOffX},${patOffY}|${patRot}|${patScale}`,
+        mode: 'pattern',
+        patternId: s.id,
+        patOffX, patOffY, patRot, patScale,
+    };
 }
 
 /** 塗りつぶしツールの上限セル数。超過時は中止して警告を出す。 */
@@ -2153,52 +2273,50 @@ const FILL_MAX_CELLS = 10000;
  * @param {number} row
  * @param {fabric.Group} layer - 対象セルレイヤー
  */
-function fillCells(col, row, layer, newColorOverride) {
+function fillCells(col, row, layer, _unused) {
     if (!layer._cellData || layer._cellData.size === 0) {
         setTransientStatus('セルレイヤーが空です');
         return;
     }
     const adapter = ga();
 
-    // bbox: 塗られたセルの (col, row) の最小/最大
-    let minC = Infinity,
-        maxC = -Infinity,
-        minR = Infinity,
-        maxR = -Infinity;
-    for (const cell of layer._cellData.values()) {
-        if (cell._cellCol < minC) minC = cell._cellCol;
-        if (cell._cellCol > maxC) maxC = cell._cellCol;
-        if (cell._cellRow < minR) minR = cell._cellRow;
-        if (cell._cellRow > maxR) maxR = cell._cellRow;
+    // bbox: 既存セル (col, row) の最小/最大
+    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+    for (const e of layer._cellData.values()) {
+        if (e.col < minC) minC = e.col;
+        if (e.col > maxC) maxC = e.col;
+        if (e.row < minR) minR = e.row;
+        if (e.row > maxR) maxR = e.row;
     }
     if (col < minC || col > maxC || row < minR || row > maxR) {
         setTransientStatus('セルレイヤーの範囲外です');
         return;
     }
 
-    // newColorOverride が指定されればそれを使う (地面塗りつぶし時など)。
-    // 未指定ならシンプルモードの App.fillColor/fillOpacity を使用。
-    const newColor = newColorOverride !== undefined ? newColorOverride : rgba(App.fillColor, App.fillOpacity);
-    // パターン (fabric.Pattern) は参照比較不可なので、各セルに保存した _fillKey で同色判定する
-    const newFillKey = layer._isGroundLayer
-        ? getGroundFillKey()
-        : 'solid:' + newColor;
-    const startKey = adapter.cellKey(col, row);
-    const startCell = layer._cellData.get(startKey);
-    const targetFillKey = startCell ? (startCell._fillKey ?? ('solid:' + startCell.fill)) : null;
+    // 新エントリ生成 (地面 or シンプル)
+    const newEntryAt = (c, r) => layer._isGroundLayer
+        ? makeGroundCellEntry(c, r)
+        : (() => {
+            const col2 = rgba(App.fillColor, App.fillOpacity);
+            return { col: c, row: r, fillKey: 'solid:' + col2, mode: 'solid', solidColor: col2 };
+        })();
+    const sample = newEntryAt(col, row);
+    const newFillKey = sample.fillKey;
+
+    const startCell = layer._cellData.get(adapter.cellKey(col, row));
+    const targetFillKey = startCell ? startCell.fillKey : null;
     if (newFillKey === targetFillKey) return;
 
-    // BFS — 隣接は adapter に委譲 (スクエア: 4近傍 / ヘクス: 6近傍)
-    const visited = new Set([startKey]);
+    // BFS
+    const visited = new Set([adapter.cellKey(col, row)]);
     const queue = [[col, row]];
     const toFill = [];
-
     while (queue.length > 0) {
         const [c, r] = queue.shift();
         if (c < minC || c > maxC || r < minR || r > maxR) continue;
         if (!adapter.cellExists(c, r)) continue;
         const cell = layer._cellData.get(adapter.cellKey(c, r));
-        const cellFillKey = cell ? (cell._fillKey ?? ('solid:' + cell.fill)) : null;
+        const cellFillKey = cell ? cell.fillKey : null;
         if (cellFillKey !== targetFillKey) continue;
         toFill.push([c, r]);
         if (toFill.length > FILL_MAX_CELLS) {
@@ -2207,47 +2325,15 @@ function fillCells(col, row, layer, newColorOverride) {
         }
         for (const [nc, nr] of adapter.cellNeighbors(c, r)) {
             const k = adapter.cellKey(nc, nr);
-            if (!visited.has(k)) {
-                visited.add(k);
-                queue.push([nc, nr]);
-            }
+            if (!visited.has(k)) { visited.add(k); queue.push([nc, nr]); }
         }
     }
 
-    applyFill(layer, adapter, toFill, newColor, newFillKey);
+    for (const [c, r] of toFill) {
+        layer._cellData.set(adapter.cellKey(c, r), newEntryAt(c, r));
+    }
+    commitCellLayer(layer);
     pushHistory(`塗りつぶし (${toFill.length}セル)`);
-}
-
-/** fillCells から呼ばれる適用ヘルパ。 newFillKey は同色判定用 (パターン id or 'solid:#xxx')。 */
-function applyFill(layer, adapter, cells, newColor, newFillKey) {
-    const isGround = layer._isGroundLayer;
-    for (const [c, r] of cells) {
-        const key = adapter.cellKey(c, r);
-        // fabric.Pattern は obj.fill.offsetX 等を per-shape で書き換えるので、
-        // 全セルで同じインスタンスを共有すると最後のセルのオフセットで全部上書きされる。
-        // → ground モードでは毎セル新しい fill (getGroundFill が new fabric.Pattern を返す) を取得する。
-        const cellFill = isGround ? getGroundFill() : newColor;
-        const existing = layer._cellData.get(key);
-        if (existing) {
-            existing.set({ fill: cellFill, stroke: cellFill, _fillKey: newFillKey });
-            if (isGround) {
-                snapshotPatternSettings(existing);
-                applyPatternOrigin(existing);
-            }
-        } else {
-            const shape = adapter.createCellShape(c, r, cellFill);
-            if (!shape) continue;
-            shape._fillKey = newFillKey;
-            if (isGround) {
-                snapshotWorldPosition(shape);
-                snapshotPatternSettings(shape);
-                applyPatternOrigin(shape);
-            }
-            layer.addWithUpdate(shape);
-            layer._cellData.set(key, shape);
-        }
-    }
-    App.canvas.renderAll();
 }
 
 /* ================================================================
@@ -3321,7 +3407,7 @@ function buildSaveData() {
         nextLayerId: App.nextLayerId,
         layerCounters: App.layerCounters,
         viewportTransform: App.canvas.viewportTransform.slice(),
-        canvas: App.canvas.toJSON(SAVE_CUSTOM_PROPS),
+        canvas: (App.canvas.getObjects().forEach((o) => { if (o._isCellLayer) syncCellEntries(o); }), App.canvas.toJSON(SAVE_CUSTOM_PROPS)),
     };
 }
 
@@ -3376,14 +3462,10 @@ function restoreSaveData(data) {
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
                 // 新規作成時 (createCellLayer / createGroundCellLayer) と同じ設定にして挙動を揃える。
-                // fabric は noScaleCache をシリアライズしないので、ロード時に再設定が必要。
                 obj.set({ objectCaching: true, noScaleCache: false });
-                obj._cellData = new Map();
-                obj.getObjects().forEach((r) => {
-                    if (r._cellCol !== undefined && r._cellRow !== undefined) {
-                        obj._cellData.set(adapter.cellKey(r._cellCol, r._cellRow), r);
-                    }
-                });
+                // _cellEntries (シリアライズ済み配列) から _cellData Map を復元 → commit で Path 再生成
+                rebuildCellDataFromEntries(obj, adapter);
+                commitCellLayer(obj);
             }
         });
         renderLayerList();
@@ -3560,6 +3642,8 @@ const HISTORY_DEBOUNCE_MS = 500;
  * @returns {string}
  */
 function serializeHistorySnapshot() {
+    // toJSON 前に _cellData → _cellEntries を同期 (永続化されるのは _cellEntries 側)
+    App.canvas.getObjects().forEach((o) => { if (o._isCellLayer) syncCellEntries(o); });
     return JSON.stringify({
         canvas: App.canvas.toJSON(SAVE_CUSTOM_PROPS),
         nextLayerId: App.nextLayerId,
@@ -3636,15 +3720,9 @@ function restoreHistorySnapshot(snapshot, displayName) {
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
-                // 新規作成時 (createCellLayer / createGroundCellLayer) と同じ設定にして挙動を揃える。
-                // fabric は noScaleCache をシリアライズしないので、ロード時に再設定が必要。
                 obj.set({ objectCaching: true, noScaleCache: false });
-                obj._cellData = new Map();
-                obj.getObjects().forEach((r) => {
-                    if (r._cellCol !== undefined && r._cellRow !== undefined) {
-                        obj._cellData.set(adapter.cellKey(r._cellCol, r._cellRow), r);
-                    }
-                });
+                rebuildCellDataFromEntries(obj, adapter);
+                commitCellLayer(obj);
             }
         });
         App.canvas.discardActiveObject();
