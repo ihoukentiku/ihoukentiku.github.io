@@ -155,8 +155,8 @@ const WALL_GENRES = [
 const PATTERNS = [
     // scale: パターン定義側の初期倍率 (画像 1px → キャンバス scale px)。
     //   最終倍率 = (PATTERNS[].scale) × (App.patternScale ユーザー設定値)
-    { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 1 },
-    { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 1 },
+    { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 0.5 },
+    { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.5 },
 ];
 
 /** id からパターン定義を取得する。無ければ null。 */
@@ -2005,9 +2005,11 @@ function createCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // objectCaching: false で各セルを毎フレーム描画 (パターン画像のディテールが拡大時も保たれる)。
-        // 代わりに「グループ単位の統一シャドウ」は失われ、各セルに影がつく
-        objectCaching: false,
+        // 統一シャドウのため group キャッシュを有効化。
+        // noScaleCache: false にしないと、デフォルト挙動 (1x で焼いて拡大表示) で
+        // ズーム時にビットマップが伸びてジャギーになる。false なら現在の zoom に応じて毎回再キャッシュ。
+        objectCaching: true,
+        noScaleCache: false,
         _isCellLayer: true,
         _cellData: new Map(),
     });
@@ -2074,9 +2076,11 @@ function createGroundCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // objectCaching: false で各セルを毎フレーム描画 (パターン画像のディテールが拡大時も保たれる)。
-        // 代わりに「グループ単位の統一シャドウ」は失われ、各セルに影がつく
-        objectCaching: false,
+        // 統一シャドウのため group キャッシュを有効化。
+        // noScaleCache: false にしないと、デフォルト挙動 (1x で焼いて拡大表示) で
+        // ズーム時にビットマップが伸びてジャギーになる。false なら現在の zoom に応じて毎回再キャッシュ。
+        objectCaching: true,
+        noScaleCache: false,
         _isCellLayer: true,
         _isGroundLayer: true,
         _cellData: new Map(),
@@ -2219,15 +2223,19 @@ function applyFill(layer, adapter, cells, newColor, newFillKey) {
     const isGround = layer._isGroundLayer;
     for (const [c, r] of cells) {
         const key = adapter.cellKey(c, r);
+        // fabric.Pattern は obj.fill.offsetX 等を per-shape で書き換えるので、
+        // 全セルで同じインスタンスを共有すると最後のセルのオフセットで全部上書きされる。
+        // → ground モードでは毎セル新しい fill (getGroundFill が new fabric.Pattern を返す) を取得する。
+        const cellFill = isGround ? getGroundFill() : newColor;
         const existing = layer._cellData.get(key);
         if (existing) {
-            existing.set({ fill: newColor, stroke: newColor, _fillKey: newFillKey });
+            existing.set({ fill: cellFill, stroke: cellFill, _fillKey: newFillKey });
             if (isGround) {
                 snapshotPatternSettings(existing);
                 applyPatternOrigin(existing);
             }
         } else {
-            const shape = adapter.createCellShape(c, r, newColor);
+            const shape = adapter.createCellShape(c, r, cellFill);
             if (!shape) continue;
             shape._fillKey = newFillKey;
             if (isGround) {
@@ -3367,6 +3375,9 @@ function restoreSaveData(data) {
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
+                // 新規作成時 (createCellLayer / createGroundCellLayer) と同じ設定にして挙動を揃える。
+                // fabric は noScaleCache をシリアライズしないので、ロード時に再設定が必要。
+                obj.set({ objectCaching: true, noScaleCache: false });
                 obj._cellData = new Map();
                 obj.getObjects().forEach((r) => {
                     if (r._cellCol !== undefined && r._cellRow !== undefined) {
@@ -3625,6 +3636,9 @@ function restoreHistorySnapshot(snapshot, displayName) {
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
+                // 新規作成時 (createCellLayer / createGroundCellLayer) と同じ設定にして挙動を揃える。
+                // fabric は noScaleCache をシリアライズしないので、ロード時に再設定が必要。
+                obj.set({ objectCaching: true, noScaleCache: false });
                 obj._cellData = new Map();
                 obj.getObjects().forEach((r) => {
                     if (r._cellCol !== undefined && r._cellRow !== undefined) {
