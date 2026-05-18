@@ -29,6 +29,7 @@
         <link rel="stylesheet" href="../common.css" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
         <style>
             :root {
                 --page-width: 100%;
@@ -1096,9 +1097,9 @@
                         <div class="f">
                             <span class="fl">線種</span>
                             <div class="seg">
-                                <input type="radio" name="grid-style" id="gs-solid" value="solid" checked /><label for="gs-solid">実線</label>
+                                <input type="radio" name="grid-style" id="gs-solid" value="solid" /><label for="gs-solid">実線</label>
                                 <input type="radio" name="grid-style" id="gs-dash" value="dashed" /><label for="gs-dash">破線</label>
-                                <input type="radio" name="grid-style" id="gs-dot" value="dotted" /><label for="gs-dot">点線</label>
+                                <input type="radio" name="grid-style" id="gs-dot" value="dotted" checked /><label for="gs-dot">点線</label>
                             </div>
                         </div>
                     </div>

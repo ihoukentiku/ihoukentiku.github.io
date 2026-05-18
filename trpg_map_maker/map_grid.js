@@ -165,6 +165,8 @@ GridAdapters.square = {
     },
 
     drawGridLines(ctx, viewport) {
+        // LOD: ズームアウトが激しい時はグリッドを描かない
+        if (viewport.zoom !== undefined && viewport.zoom < 0.25) return;
         const cs = App.cellSize;
         const sc = Math.floor(viewport.wl / cs) - 1;
         const ec = Math.ceil(viewport.wr / cs) + 1;
@@ -189,6 +191,17 @@ GridAdapters.square = {
             [col, row + 1],
             [col, row - 1],
         ];
+    },
+
+    /**
+     * 移動量 (dx, dy) [px] を「セル何個分のシフトか」に近似し、
+     * { colDelta, rowDelta, snappedDx, snappedDy } を返す。snapped はそのシフトを表すきれいな px 量。
+     */
+    snapDelta(dx, dy) {
+        const cs = App.cellSize;
+        const colDelta = Math.round(dx / cs);
+        const rowDelta = Math.round(dy / cs);
+        return { colDelta, rowDelta, snappedDx: colDelta * cs, snappedDy: rowDelta * cs };
     },
 
     formatCoord(col, row) {
@@ -428,6 +441,8 @@ function createHexAdapter(orientation, fit) {
         },
 
         drawGridLines(ctx, viewport) {
+            // LOD: ズームアウトが激しい時はグリッドを描かない (重さ対策)
+            if (viewport.zoom !== undefined && viewport.zoom < 0.35) return;
             const p = getParams();
             // ビューポートをカバーする (col, row) 範囲を概算
             const margin = 2;
@@ -439,7 +454,6 @@ function createHexAdapter(orientation, fit) {
             if (isFlat) {
                 cMin = Math.floor(lx0 / (3 * p.dx)) - margin;
                 cMax = Math.ceil(lx1 / (3 * p.dx)) + margin;
-                // row は col に依存するので、両端の col に対して row 範囲を計算
                 rMin = Math.floor(Math.min(ly0 / (2 * p.dy) - cMax / 2, ly0 / (2 * p.dy) - cMin / 2)) - margin;
                 rMax = Math.ceil(Math.max(ly1 / (2 * p.dy) - cMin / 2, ly1 / (2 * p.dy) - cMax / 2)) + margin;
             } else {
@@ -448,14 +462,19 @@ function createHexAdapter(orientation, fit) {
                 cMin = Math.floor(Math.min(lx0 / (2 * p.dx) - rMax / 2, lx0 / (2 * p.dx) - rMin / 2)) - margin;
                 cMax = Math.ceil(Math.max(lx1 / (2 * p.dx) - rMin / 2, lx1 / (2 * p.dx) - rMax / 2)) + margin;
             }
+            // 各ヘクスは 6 辺だが、隣接ヘクスと共有するため 3 辺だけ描けば全エッジ網羅できる。
+            // 頂点 i → i+1 を辺 i とすると、辺 0/1/2 を担当し、3/4/5 は隣接が描いてくれる。
+            // (ループ内で行を1つ広げに走査するので、境界の片側辺もカバー)
             ctx.beginPath();
             for (let c = cMin; c <= cMax; c++) {
                 for (let r = rMin; r <= rMax; r++) {
                     const cen = hexCenter(c, r);
                     const verts = hexVertices(cen.x, cen.y);
+                    // 辺 0: v0 → v1, 辺 1: v1 → v2, 辺 2: v2 → v3
                     ctx.moveTo(verts[0].x, verts[0].y);
-                    for (let i = 1; i < 6; i++) ctx.lineTo(verts[i].x, verts[i].y);
-                    ctx.closePath();
+                    ctx.lineTo(verts[1].x, verts[1].y);
+                    ctx.lineTo(verts[2].x, verts[2].y);
+                    ctx.lineTo(verts[3].x, verts[3].y);
                 }
             }
             ctx.stroke();
@@ -464,6 +483,34 @@ function createHexAdapter(orientation, fit) {
         cellNeighbors(col, row) {
             // 6 ヘクス隣接
             return HEX_NEIGHBOR_OFFSETS.map(([dc, dr]) => [col + dc, row + dr]);
+        },
+
+        /**
+         * 移動量 (dx, dy) [px] を「axial 単位の整数シフト」にスナップする。
+         * axial 基底: flat → col=(3dx,dy), row=(0,2dy) / pointy → col=(2dx,0), row=(dx,3dy)
+         */
+        snapDelta(dx, dy) {
+            const p = getParams();
+            let colDelta, rowDelta;
+            if (isFlat) {
+                // dx = c*3dx, dy = c*dy + r*2dy → c = dx/(3dx), r = (dy - c*dy)/(2dy)
+                colDelta = Math.round(dx / (3 * p.dx));
+                rowDelta = Math.round((dy - colDelta * p.dy) / (2 * p.dy));
+                return {
+                    colDelta, rowDelta,
+                    snappedDx: colDelta * 3 * p.dx,
+                    snappedDy: colDelta * p.dy + rowDelta * 2 * p.dy,
+                };
+            } else {
+                // dy = r*3dy, dx = c*2dx + r*dx → r = dy/(3dy), c = (dx - r*dx)/(2dx)
+                rowDelta = Math.round(dy / (3 * p.dy));
+                colDelta = Math.round((dx - rowDelta * p.dx) / (2 * p.dx));
+                return {
+                    colDelta, rowDelta,
+                    snappedDx: colDelta * 2 * p.dx + rowDelta * p.dx,
+                    snappedDy: rowDelta * 3 * p.dy,
+                };
+            }
         },
 
         formatCoord(col, row) {

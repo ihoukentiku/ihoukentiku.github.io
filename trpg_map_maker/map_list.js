@@ -235,7 +235,7 @@ async function handleCreate() {
             gridType,
             gridColor: 'rgba(0,0,0,1)',
             gridLineWidth: 1,
-            gridDashArray: null,
+            gridDashArray: [2, 4], // 点線をデフォルトに
             nextLayerId: 10,
             layerCounters: {},
             viewportTransform: null,

@@ -66,7 +66,7 @@ const App = {
     groundShadowEnabled: false,
     wallShadowEnabled: true,
     simpleShadowEnabled: false, // シンプルモード (矩形/楕円/線/折線/多角形/曲線/フリーハンド/テキスト/画像/セル) 共通
-    shadowColor: 'rgba(0,0,0,0.55)',
+    shadowColor: '#0000008c', // 不透明度約55% (= 0x8c/0xff)
     shadowBlur: 8,
     shadowOffsetX: 0,
     shadowOffsetY: 0,
@@ -87,9 +87,9 @@ const App = {
     strokeWidth: 2,
     strokeDashArray: null, // null=実線, [10,5]=破線, [2,4]=点線
     cornerRadius: 0,
-    gridColor: 'rgba(0,0,0,1)',
+    gridColor: '#000000ff',
     gridLineWidth: 1,
-    gridDashArray: null,
+    gridDashArray: [2, 4], // 点線をデフォルトに
     nextLayerId: 10,
     layerCounters: {}, // 種別ごとのレイヤー連番 { '矩形': 2, 'セル': 1, ... }
     selectedLayerIds: [], // レイヤーパネル上の選択
@@ -388,6 +388,7 @@ function initPickr() {
         el,
         theme: 'nano',
         default: def,
+        defaultRepresentation: 'HEXA', // 入力欄を常に #RRGGBBAA で表示
         components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
     });
     // change: ドラッグ中も即時反映 (履歴はデバウンス) + ピッカーボタンの色も同期 (applyColor(true))
@@ -430,29 +431,31 @@ function initPickr() {
         }
     });
 
-    gridPickr = Pickr.create(opts('#grid-color-picker', 'rgba(0,0,0,1)'));
+    gridPickr = Pickr.create(opts('#grid-color-picker', App.gridColor || '#000000ff'));
     gridPickr.on('change', (c, _src, instance) => {
         if (!c) return;
-        App.gridColor = c.toRGBA().toString();
+        App.gridColor = c.toHEXA().toString(); // #rrggbbaa (alpha 含む hex)
         instance.applyColor(true);
         drawGrid();
     });
 
     // 影 色ピッカー — App.shadowColor を更新するだけ (新規描画時に反映、地面/壁共通)
+    let wsp = null;
     const wallShadowEl = document.getElementById('shadow-color');
     if (wallShadowEl) {
-        const wsp = Pickr.create(opts('#shadow-color', App.shadowColor));
+        wsp = Pickr.create(opts('#shadow-color', App.shadowColor));
         wsp.on('change', (c, _src, instance) => {
             if (!c) return;
-            App.shadowColor = c.toRGBA().toString();
+            App.shadowColor = c.toHEXA().toString();
             instance.applyColor(true);
         });
         attachEyedropper(wsp);
     }
     // フリーハンド専用色 (シンプルの strokeColor とは独立)
+    let fhp = null;
     const fhEl = document.getElementById('freehand-color-picker');
     if (fhEl) {
-        const fhp = Pickr.create(opts('#freehand-color-picker', App.freehandColor || '#000000'));
+        fhp = Pickr.create(opts('#freehand-color-picker', App.freehandColor || '#000000'));
         fhp.on('change', (c, _src, instance) => {
             if (!c) return;
             App.freehandColor = c.toHEXA().toString().slice(0, 7);
@@ -466,6 +469,11 @@ function initPickr() {
     attachEyedropper(fillPickr);
     attachEyedropper(strokePickr);
     attachEyedropper(gridPickr);
+    // 入力欄の表示フォーマットを強制 HEXA (Pickr の defaultRepresentation オプションだけでは
+    // 効かないことがあるので post-create で setColorRepresentation を呼ぶ)
+    [fillPickr, strokePickr, gridPickr, wsp, fhp].forEach((p) => {
+        if (p?.setColorRepresentation) p.setColorRepresentation('HEXA');
+    });
 }
 
 /**
@@ -476,8 +484,6 @@ function initPickr() {
  */
 function attachEyedropper(pickr) {
     if (!pickr || typeof window.EyeDropper === 'undefined') return;
-    // Pickr の root.interaction はネスト構造のオブジェクトで HTMLElement ではない。
-    // 確実なのは root.app (= .pcr-app) を起点に .pcr-interaction を querySelector する方法。
     const root = pickr.getRoot();
     const interaction = root?.app?.querySelector?.('.pcr-interaction') || root?.interaction?.input?.parentElement;
     if (!interaction || interaction.querySelector('.pcr-eyedropper')) return;
@@ -490,8 +496,13 @@ function attachEyedropper(pickr) {
         e.preventDefault();
         try {
             const result = await new window.EyeDropper().open();
-            // setColor は silent=false で 'change' イベントを発火 → 既存ハンドラで App 状態に反映される
-            pickr.setColor(result.sRGBHex, false);
+            const hex8 = result.sRGBHex.toUpperCase() + 'FF';
+            pickr.setColor(hex8);
+            // setColor だけだと透明度スライダ位置が元のまま残るブラウザ実装があるので、
+            // setHSVA で alpha=1 を直接書き戻してスライダ位置も同期する。
+            const c = pickr.getColor();
+            if (c) pickr.setHSVA(c.h, c.s, c.v, 1, false);
+            pickr.setColorRepresentation('HEXA');
         } catch (_) {
             // ユーザー Esc キャンセル等 — 何もしない
         }
@@ -1110,16 +1121,46 @@ function initCanvas() {
     });
     App.canvas.on('object:modified', function (opt) {
         updateSelectionInfo();
-        if (opt.target) applyPatternOrigin(opt.target);
+        const t = opt.target;
+        // セルレイヤー: 累積シフトを _cellData の col/row に反映し、commit で Path 再生成。
+        // 位置 (left/top) は commit 後の bbox で再決定されるのでリセット。
+        if (t && t._isCellLayer && t._snapAccum) {
+            const { colDelta, rowDelta } = t._snapAccum;
+            if (colDelta !== 0 || rowDelta !== 0) {
+                const newMap = new Map();
+                for (const e of t._cellData.values()) {
+                    e.col += colDelta;
+                    e.row += rowDelta;
+                    newMap.set(`${e.col},${e.row}`, e);
+                }
+                t._cellData = newMap;
+                commitCellLayer(t);
+            }
+            t._snapStart = undefined;
+            t._snapAccum = undefined;
+        }
+        if (t) applyPatternOrigin(t);
         // 移動・リサイズ・回転の確定で履歴を積む (テキスト編集による modified は無視)
         if (App._isRestoring) return;
-        const t = opt.target;
         if (!t || (t._isMapText && t.isEditing)) return;
         const name = t?._layerName || 'オブジェクト';
         pushHistory(`${name}を変更`);
     });
     App.canvas.on('object:moving', function (opt) {
         const obj = opt.target;
+        // セルレイヤーは grid 単位にしか動かさない (回転/拡縮はロック済み)
+        if (obj && obj._isCellLayer) {
+            if (obj._snapStart === undefined) {
+                obj._snapStart = { left: obj.left, top: obj.top };
+            }
+            const adapter = ga();
+            const dx = obj.left - obj._snapStart.left;
+            const dy = obj.top - obj._snapStart.top;
+            const s = adapter.snapDelta(dx, dy);
+            obj.set({ left: obj._snapStart.left + s.snappedDx, top: obj._snapStart.top + s.snappedDy });
+            obj._snapAccum = s; // commit (object:modified) で利用
+            return;
+        }
         if (App.snapEnabled) {
             const snapped = snapToGrid(obj.left, obj.top);
             if (snapped) obj.set({ left: snapped.x, top: snapped.y });
@@ -1220,7 +1261,7 @@ function _initGridRenderer() {
         ctx.lineWidth = App.gridLineWidth;
         ctx.setLineDash(App.gridDashArray || []);
         // グリッド線描画は gridType ごとに差し替え可能 — GridAdapter に委譲
-        ga().drawGridLines(ctx, { wl, wt, wr, wb });
+        ga().drawGridLines(ctx, { wl, wt, wr, wb, zoom });
         ctx.restore();
 
         // 出力モード: キャンバス全体を暗く、選択範囲だけ明るく
@@ -1393,6 +1434,178 @@ function getCssVarColor(name, fallback) {
 }
 
 /** target に応じて表示するアクション一覧を返す。 */
+/* ================================================================
+   SVG ブール演算 (union / intersection / difference / xor)
+   外部ライブラリ polygon-clipping (window.polygonClipping) を使う。
+   対象: rect / ellipse / circle / polygon / polyline / path。
+       Group / セル / フリーハンド / テキスト / 画像 / 線 は対象外。
+================================================================ */
+const BOOL_CURVE_SAMPLES = 24;
+
+/** fabric.Object → 世界座標のリング配列 [ring1, ring2, ...] (各ring = [[x,y], ...])。対象外なら null */
+function shapeToWorldRings(obj) {
+    if (!obj) return null;
+    const m = obj.calcTransformMatrix();
+    const apply = (lx, ly) => {
+        const p = fabric.util.transformPoint({ x: lx, y: ly }, m);
+        return [p.x, p.y];
+    };
+    const off = obj.pathOffset || { x: 0, y: 0 };
+    const t = obj.type;
+    if (t === 'rect') {
+        const w2 = obj.width / 2, h2 = obj.height / 2;
+        return [[apply(-w2, -h2), apply(w2, -h2), apply(w2, h2), apply(-w2, h2)]];
+    }
+    if (t === 'polygon' || t === 'polyline') {
+        return [obj.points.map((p) => apply(p.x - off.x, p.y - off.y))];
+    }
+    if (t === 'ellipse') {
+        const N = 64; const pts = [];
+        for (let i = 0; i < N; i++) {
+            const a = (i * 2 * Math.PI) / N;
+            pts.push(apply(Math.cos(a) * obj.rx, Math.sin(a) * obj.ry));
+        }
+        return [pts];
+    }
+    if (t === 'circle') {
+        const N = 64; const pts = [];
+        for (let i = 0; i < N; i++) {
+            const a = (i * 2 * Math.PI) / N;
+            pts.push(apply(Math.cos(a) * obj.radius, Math.sin(a) * obj.radius));
+        }
+        return [pts];
+    }
+    if (t === 'path') return pathToRings(obj, off, apply);
+    return null;
+}
+
+function pathToRings(obj, off, apply) {
+    const cmds = obj.path || [];
+    const rings = [];
+    let cur = null;
+    let curLx = 0, curLy = 0;
+    let startLx = 0, startLy = 0;
+    const N = BOOL_CURVE_SAMPLES;
+    const pushPt = (lx, ly) => { cur.push(apply(lx - off.x, ly - off.y)); curLx = lx; curLy = ly; };
+    const sampleQuad = (p0, p1, p2) => {
+        for (let i = 1; i <= N; i++) {
+            const t = i / N, u = 1 - t;
+            pushPt(u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0],
+                   u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]);
+        }
+    };
+    const sampleCubic = (p0, p1, p2, p3) => {
+        for (let i = 1; i <= N; i++) {
+            const t = i / N, u = 1 - t;
+            pushPt(u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0],
+                   u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]);
+        }
+    };
+    for (const c of cmds) {
+        const op = c[0];
+        if (op === 'M' || op === 'm') {
+            if (cur && cur.length >= 3) rings.push(cur);
+            cur = [];
+            startLx = c[1]; startLy = c[2];
+            pushPt(startLx, startLy);
+        } else if (op === 'L' || op === 'l') {
+            pushPt(c[1], c[2]);
+        } else if (op === 'Q' || op === 'q') {
+            sampleQuad([curLx, curLy], [c[1], c[2]], [c[3], c[4]]);
+        } else if (op === 'C' || op === 'c') {
+            sampleCubic([curLx, curLy], [c[1], c[2]], [c[3], c[4]], [c[5], c[6]]);
+        } else if (op === 'Z' || op === 'z') {
+            if (cur && cur.length >= 3) rings.push(cur);
+            cur = null;
+            curLx = startLx; curLy = startLy;
+        }
+    }
+    if (cur && cur.length >= 3) rings.push(cur);
+    return rings;
+}
+
+/** fabric.Object がブール演算の対象になりうるか */
+function isBooleanTarget(o) {
+    if (!o) return false;
+    if (o._isCellLayer || o._isTerrainLayer || o._isFreehandLayer || o._isMapText) return false;
+    return ['rect', 'ellipse', 'circle', 'polygon', 'polyline', 'path'].includes(o.type);
+}
+
+/**
+ * 選択中の 2+ オブジェクトに対しブール演算を実行する。結果は 1 個の fabric.Path に。
+ * 第一選択 (selectionOrder[0]) のスタイル (fill/stroke/shadow など) を継承し、その z 位置に挿入。
+ * @param {'union'|'intersection'|'difference'|'xor'} op
+ */
+function performBooleanOp(op) {
+    if (typeof polygonClipping === 'undefined') {
+        setTransientStatus('polygon-clipping ライブラリが読み込まれていません');
+        return;
+    }
+    const active = App.canvas.getActiveObject();
+    if (!active || active.type !== 'activeSelection') {
+        setTransientStatus('2 個以上の図形を選択してください');
+        return;
+    }
+    const objs = active.getObjects().filter(isBooleanTarget);
+    if (objs.length < 2) {
+        setTransientStatus('ブール演算可能な図形を 2 個以上選んでください');
+        return;
+    }
+    // calcTransformMatrix は親 (ActiveSelection) を辿って正しいワールド座標を返すので、
+    // 解除前にここで多角形化する。
+    const polys = objs.map(shapeToWorldRings).filter((r) => r && r.length > 0);
+    if (polys.length < 2) {
+        setTransientStatus('変換できる図形が足りません');
+        return;
+    }
+    let result;
+    try {
+        result = polygonClipping[op](polys[0], ...polys.slice(1));
+    } catch (e) {
+        console.error(e);
+        setTransientStatus('ブール演算に失敗しました');
+        return;
+    }
+    if (!result || result.length === 0) {
+        setTransientStatus('結果が空です');
+        return;
+    }
+    // 結果を fabric.Path に
+    let d = '';
+    for (const poly of result) {
+        for (const ring of poly) {
+            if (ring.length < 3) continue;
+            d += `M ${ring[0][0]} ${ring[0][1]}`;
+            for (let i = 1; i < ring.length; i++) d += ` L ${ring[i][0]} ${ring[i][1]}`;
+            d += ' Z ';
+        }
+    }
+    // 第一選択 (objs[0]) からスタイル継承
+    const src = objs[0];
+    const path = new fabric.Path(d, {
+        fill: src.fill,
+        stroke: src.stroke,
+        strokeWidth: src.strokeWidth,
+        strokeDashArray: src.strokeDashArray,
+        strokeLineJoin: src.strokeLineJoin,
+        strokeLineCap: src.strokeLineCap,
+        shadow: src.shadow,
+        opacity: src.opacity,
+        objectCaching: false,
+        fillRule: 'evenodd',
+    });
+    // 元オブジェクトを削除、結果を追加。先に ActiveSelection 解除してから remove(...) 一括呼び出し。
+    App.canvas.discardActiveObject();
+    const zIndex = App.canvas.getObjects().indexOf(src);
+    App.canvas.remove(...objs);
+    const opLabel = { union: '合体', intersection: '交差', difference: '差', xor: '排他' }[op] || op;
+    addLayerObject(opLabel, path);
+    if (zIndex >= 0) App.canvas.moveTo(path, zIndex);
+    App.canvas.setActiveObject(path);
+    App.canvas.renderAll();
+    pushHistory(`ブール演算: ${opLabel}`);
+}
+
 function getActionsForTarget(t) {
     if (!t) return [];
     const isContainer = t._isCellLayer || t._isTerrainLayer || t._isFreehandLayer;
@@ -1569,6 +1782,56 @@ function actionBarHitIndex(localX, actions) {
             drawActionBar(ctx, left, top, actions, iconColor);
         },
     });
+
+    // ブール演算バー (アクションバーの更に上に独立配置、2+ の対象図形が選ばれているときだけ表示)
+    const BOOL_BAR_OFFSET_Y = ACTION_BAR_OFFSET_Y - (ACTION_BAR_HEIGHT + 6);
+    const boolActions = [
+        { icon: 'join_full', title: '合体 (union)', op: 'union' },
+        { icon: 'join_left', title: '交差 (intersection)', op: 'intersection' },
+        { icon: 'difference', title: '差 (difference)', op: 'difference' },
+        { icon: 'compare', title: '排他 (xor)', op: 'xor' },
+    ];
+    const boolActionsForTarget = (t) => {
+        if (!t || t.type !== 'activeSelection') return [];
+        const objs = (typeof t.getObjects === 'function') ? t.getObjects() : [];
+        const usable = objs.filter(isBooleanTarget);
+        if (usable.length < 2) return [];
+        return boolActions.map((a) => ({
+            icon: a.icon, title: a.title,
+            onClick: () => performBooleanOp(a.op),
+        }));
+    };
+    fabric.Object.prototype.controls.booleanBar = new fabric.Control({
+        x: 0,
+        y: -0.5,
+        offsetX: 0,
+        offsetY: BOOL_BAR_OFFSET_Y,
+        cursorStyle: 'pointer',
+        sizeX: 200,
+        sizeY: ACTION_BAR_HEIGHT,
+        touchSizeX: 220,
+        touchSizeY: ACTION_BAR_HEIGHT + 6,
+        mouseUpHandler: (eventData, transform) => {
+            const target = transform.target;
+            const actions = boolActionsForTarget(target);
+            if (actions.length === 0) return false;
+            const coord = target.oCoords?.booleanBar;
+            if (!coord) return false;
+            const rect = App.canvas.upperCanvasEl.getBoundingClientRect();
+            const dispX = eventData.clientX - rect.left;
+            const localX = dispX - coord.x;
+            const idx = actionBarHitIndex(localX, actions);
+            if (idx < 0) return false;
+            actions[idx].onClick(target);
+            return true;
+        },
+        render: function (ctx, left, top, styleOverride, fabricObject) {
+            const actions = boolActionsForTarget(fabricObject);
+            if (actions.length === 0) return;
+            drawActionBar(ctx, left, top, actions, iconColor);
+        },
+    });
+
     // Material Symbols フォントのロード完了後に canvas を再描画 (初回選択時にアイコンが ligature として描けるように)
     if (document.fonts?.load) {
         document.fonts.load('18px "Material Symbols Outlined"').then(() => {
@@ -2019,6 +2282,11 @@ function createCellLayer() {
         _pendingErase: new Set(),
         _tempChildren: [],
         _tempByKey: new Map(),
+        // セルレイヤーは grid と紐づくので、回転/スケーリングは禁止。移動はグリッド単位に snap される
+        lockScalingX: true,
+        lockScalingY: true,
+        lockRotation: true,
+        hasControls: false,
     });
     addLayerObject('セル', group);
     // 作成直後に選択状態にする
@@ -2078,6 +2346,11 @@ function createGroundCellLayer() {
         _pendingErase: new Set(),
         _tempChildren: [],
         _tempByKey: new Map(),
+        // セルレイヤーは grid と紐づくので、回転/スケーリングは禁止。移動はグリッド単位に snap される
+        lockScalingX: true,
+        lockScalingY: true,
+        lockRotation: true,
+        hasControls: false,
     });
     addCategoryLayer('地面_セル', group, '_isGroundLayer');
     App.selectedLayerIds = [group._layerId];
@@ -2881,8 +3154,11 @@ function mountPatternPicker(root, opts) {
         el: triggerEl,
         theme: 'nano',
         default: state0.solidColor || '#888888',
+        defaultRepresentation: 'HEX',
         components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: false } },
     });
+    // opacity 無しなので HEX (6桁) を強制
+    if (pickr.setColorRepresentation) pickr.setColorRepresentation('HEX');
     pickr.on('change', (c, _src, instance) => {
         if (!c) return;
         // refreshPatternPickers から setColor を呼んだだけのときは無視
@@ -3475,9 +3751,17 @@ function restoreSaveData(data) {
     if (fdEl) fdEl.value = App.freehandDecimation;
     const fpEl = document.getElementById('freehand-pressure');
     if (fpEl) fpEl.checked = App.freehandPressure;
-    App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
+    App.gridColor = data.gridColor || '#000000ff';
     App.gridLineWidth = data.gridLineWidth || 1;
-    App.gridDashArray = data.gridDashArray || null;
+    // 新規マップ (= 未保存の data.gridDashArray が undefined) は点線をデフォルトに。
+    // 明示的に null (実線) で保存されたマップは尊重するため、!== undefined をチェック。
+    App.gridDashArray = data.gridDashArray !== undefined ? data.gridDashArray : [2, 4];
+    // ロード値に合わせて radio button も同期
+    const styleId = App.gridDashArray === null ? 'gs-solid'
+        : (App.gridDashArray && App.gridDashArray[0] === 2) ? 'gs-dot'
+        : 'gs-dash';
+    const styleEl = document.getElementById(styleId);
+    if (styleEl) styleEl.checked = true;
     App.nextLayerId = data.nextLayerId || 10;
     App.layerCounters = data.layerCounters || {};
     App.selectedLayerIds = [];
