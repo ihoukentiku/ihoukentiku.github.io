@@ -49,9 +49,9 @@ const App = {
     editMode: 'simple', // 'simple' | 'map' — シンプル/地図モードの切替 (per-map で保存)
     // ---- 地図モード: 地面/壁タブの状態 (Phase B) ----
     groundTool: 'cell', // 'cell' | 'rect'
-    groundPattern: { mode: 'pattern', id: 'stone_floor', genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
+    groundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
-    wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
+    wallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#5a5a5a' },
     wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
     // ---- フリーハンド (Fabric brushes 拡張) ----
     freehandBrush: 'pencil', // 'pencil' | 'circle' | 'spray' | 'eraser'
@@ -76,6 +76,7 @@ const App = {
     patternOffsetX: 0, // 全パターン共通の追加オフセット (px)
     patternOffsetY: 0,
     patternRotation: 0, // 度
+    patternScale: 1, // ユーザー指定のカスタム倍率 (PATTERNS[].scale との積で適用)
     activeTool: 'select',
     cellSize: 72,
     canvas: null,
@@ -129,242 +130,20 @@ const App = {
 const AUTO_SAVE_DEBOUNCE_MS = 2500;
 
 /* ================================================================
-   地形プリセット
+   パターン (地面 / 壁 共通)
+   - WebP 画像を patterns/full/ (本番) と patterns/thumb/ (ピッカー用) に置く
+   - 各エントリは ground / wall ジャンルを別個に持つ。両方埋めれば共用可能
+   - color: 画像が読み込めない/未配置時の単色フォールバック
 ================================================================ */
-const TERRAIN_PRESETS = {
-    indoor: [
-        { id: 'stone_floor', name: '石床', color: '#8a8a8a', pattern: 'speckle' },
-        { id: 'wood_floor', name: '木床', color: '#a0724e', pattern: 'stripe' },
-        { id: 'tile_floor', name: 'タイル', color: '#c4b9a0', pattern: 'grid' },
-        { id: 'brick', name: 'レンガ', color: '#a85d3e', pattern: 'brick' },
-        { id: 'carpet', name: 'カーペット', color: '#7b3344', pattern: 'none' },
-        { id: 'marble', name: '大理石', color: '#d4cfc8', pattern: 'speckle' },
-    ],
-    outdoor: [
-        { id: 'grass', name: '草', color: '#4a8c3f', pattern: 'speckle' },
-        { id: 'dirt', name: '土', color: '#8b6e4e', pattern: 'speckle' },
-        { id: 'sand', name: '砂', color: '#d4c07a', pattern: 'dot' },
-        { id: 'water_s', name: '水(浅)', color: '#5ba3cf', pattern: 'wave' },
-        { id: 'water_d', name: '水(深)', color: '#2a6496', pattern: 'wave' },
-        { id: 'swamp', name: '沼', color: '#5e7a4a', pattern: 'wave' },
-        { id: 'road', name: '道', color: '#9e9078', pattern: 'none' },
-        { id: 'snow', name: '雪', color: '#e8e8ee', pattern: 'dot' },
-    ],
-    cave: [
-        { id: 'cave_stone', name: '石床', color: '#6b6b6b', pattern: 'speckle' },
-        { id: 'gravel', name: '砂利', color: '#7a7568', pattern: 'dot' },
-        { id: 'cave_water', name: '水', color: '#3a7aaa', pattern: 'wave' },
-        { id: 'lava', name: '溶岩', color: '#c43e1a', pattern: 'wave' },
-        { id: 'ice', name: '氷', color: '#aad4e6', pattern: 'hatch' },
-        { id: 'moss', name: '苔', color: '#4e6e3a', pattern: 'speckle' },
-    ],
-};
+const PATTERN_DIR_FULL = 'patterns/full/';
+const PATTERN_DIR_THUMB = 'patterns/thumb/';
 
-/**
- * 地形プリセットからセル1枚分のテクスチャを描いた canvas を返す。
- * @param {string} baseColor - ベース色 (#RRGGBB)
- * @param {'stripe'|'grid'|'brick'|'hatch'|'dot'|'speckle'|'wave'|'none'} patternType
- * @param {number} sz - 一辺 (px)
- * @returns {HTMLCanvasElement}
- */
-function renderTerrainCanvas(baseColor, patternType, sz) {
-    const c = document.createElement('canvas');
-    c.width = sz;
-    c.height = sz;
-    const ctx = c.getContext('2d');
-    // ベース色
-    ctx.fillStyle = baseColor;
-    ctx.fillRect(0, 0, sz, sz);
-    // パターン描画
-    const pColor = adjustBrightness(baseColor, -30);
-    const pColorLight = adjustBrightness(baseColor, 20);
-    ctx.strokeStyle = pColor;
-    ctx.fillStyle = pColor;
-    switch (patternType) {
-        case 'stripe': {
-            // フローリング: 4段の横板、横目地のみ
-            const rows = 4;
-            const bh = sz / rows;
-            const line = adjustBrightness(baseColor, -30);
-            ctx.strokeStyle = line;
-            ctx.lineWidth = Math.max(1, sz / 40);
-            for (let r = 0; r <= rows; r++) {
-                const y = r * bh;
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(sz, y);
-                ctx.stroke();
-            }
-            break;
-        }
-        case 'grid': {
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = adjustBrightness(baseColor, -15);
-            const step = sz / 2;
-            for (let x = step; x < sz; x += step) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, sz);
-                ctx.stroke();
-            }
-            for (let y = step; y < sz; y += step) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(sz, y);
-                ctx.stroke();
-            }
-            break;
-        }
-        case 'brick': {
-            // レンガ: 4段、偶数段は半レンガオフセット、色統一
-            const rows = 4;
-            const bh = sz / rows;
-            const brickW = sz / 2;
-            const mortar = adjustBrightness(baseColor, -40);
-            const mw = Math.max(1, sz / 40);
-            ctx.strokeStyle = mortar;
-            ctx.lineWidth = mw;
-            // 横目地
-            for (let r = 0; r <= rows; r++) {
-                ctx.beginPath();
-                ctx.moveTo(0, r * bh);
-                ctx.lineTo(sz, r * bh);
-                ctx.stroke();
-            }
-            // 縦目地
-            for (let r = 0; r < rows; r++) {
-                const y = r * bh;
-                const off = r % 2 === 0 ? 0 : brickW * 0.5;
-                for (let x = off; x <= sz; x += brickW) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x, y + bh);
-                    ctx.stroke();
-                }
-            }
-            break;
-        }
-        case 'hatch': {
-            ctx.lineWidth = 1;
-            ctx.globalAlpha = 0.3;
-            const step = Math.max(4, sz / 6);
-            for (let x = 0; x < sz * 2; x += step) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x - sz, sz);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x - sz, 0);
-                ctx.lineTo(x, sz);
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
-            break;
-        }
-        case 'dot': {
-            ctx.globalAlpha = 0.35;
-            const step = Math.max(5, sz / 5);
-            const r = Math.max(1, sz / 25);
-            for (let y = step / 2; y < sz; y += step) {
-                for (let x = step / 2; x < sz; x += step) {
-                    ctx.beginPath();
-                    ctx.arc(x + Math.sin(x * 7 + y * 3) * step * 0.2, y + Math.cos(x * 3 + y * 7) * step * 0.2, r, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-            ctx.globalAlpha = 1;
-            break;
-        }
-        case 'speckle': {
-            ctx.globalAlpha = 0.25;
-            const count = Math.max(8, Math.floor((sz * sz) / 80));
-            const r = Math.max(1, sz / 30);
-            // deterministic pseudo-random based on baseColor hash
-            let seed = 0;
-            for (let i = 0; i < baseColor.length; i++) seed = (seed * 31 + baseColor.charCodeAt(i)) | 0;
-            const rng = () => {
-                seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-                return seed / 0x7fffffff;
-            };
-            for (let i = 0; i < count; i++) {
-                ctx.fillStyle = rng() > 0.5 ? pColor : pColorLight;
-                ctx.beginPath();
-                ctx.arc(rng() * sz, rng() * sz, r * (0.5 + rng()), 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-            break;
-        }
-        case 'wave': {
-            ctx.lineWidth = Math.max(1, sz / 25);
-            ctx.globalAlpha = 0.3;
-            ctx.strokeStyle = pColorLight;
-            const amp = sz / 10,
-                wl = sz / 2;
-            for (let row = 0; row < 3; row++) {
-                const yBase = (sz * (row + 0.5)) / 3;
-                ctx.beginPath();
-                for (let x = 0; x <= sz; x += 2) {
-                    ctx.lineTo(x, yBase + Math.sin((x / wl) * Math.PI * 2 + row) * amp);
-                }
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
-            break;
-        }
-        // 'none': ベース色のみ
-    }
-    return c;
-}
-
-/**
- * 地形プリセットからセル1枚分のテクスチャを生成し、繰り返しタイル可能な fabric.Pattern として返す。
- * @param {string} baseColor - ベース色 (#RRGGBB)
- * @param {'stripe'|'grid'|'brick'|'hatch'|'dot'|'speckle'|'wave'|'none'} patternType
- * @param {number} cellSize - 1セルの一辺 (px)
- * @returns {fabric.Pattern}
- */
-function generateTerrainPattern(baseColor, patternType, cellSize) {
-    return new fabric.Pattern({ source: renderTerrainCanvas(baseColor, patternType, cellSize), repeat: 'repeat' });
-}
-
-/* ================================================================
-   地面 / 壁パターン (Phase B-1)
-   既存の renderTerrainCanvas 描画ルーチンを共用。各エントリは
-   { id, name, genre, color, pattern } の形を取る。
-================================================================ */
 const GROUND_GENRES = [
     { id: 'all', name: '全て' },
     { id: 'indoor', name: '屋内' },
     { id: 'outdoor', name: '屋外' },
     { id: 'cave', name: '洞窟' },
 ];
-const GROUND_PATTERNS = [
-    // 屋内
-    { id: 'stone_floor', name: '石床', genre: 'indoor', color: '#8a8a8a', pattern: 'speckle' },
-    { id: 'wood_floor', name: '木床', genre: 'indoor', color: '#a0724e', pattern: 'stripe' },
-    { id: 'tile_floor', name: 'タイル', genre: 'indoor', color: '#c4b9a0', pattern: 'grid' },
-    { id: 'brick_floor', name: 'レンガ', genre: 'indoor', color: '#a85d3e', pattern: 'brick' },
-    { id: 'carpet', name: 'カーペット', genre: 'indoor', color: '#7b3344', pattern: 'none' },
-    { id: 'marble', name: '大理石', genre: 'indoor', color: '#d4cfc8', pattern: 'speckle' },
-    // 屋外
-    { id: 'grass', name: '草', genre: 'outdoor', color: '#4a8c3f', pattern: 'speckle' },
-    { id: 'dirt', name: '土', genre: 'outdoor', color: '#8b6e4e', pattern: 'speckle' },
-    { id: 'sand', name: '砂', genre: 'outdoor', color: '#d4c07a', pattern: 'dot' },
-    { id: 'water_s', name: '水(浅)', genre: 'outdoor', color: '#5ba3cf', pattern: 'wave' },
-    { id: 'water_d', name: '水(深)', genre: 'outdoor', color: '#2a6496', pattern: 'wave' },
-    { id: 'swamp', name: '沼', genre: 'outdoor', color: '#5e7a4a', pattern: 'wave' },
-    { id: 'road', name: '道', genre: 'outdoor', color: '#9e9078', pattern: 'none' },
-    { id: 'snow', name: '雪', genre: 'outdoor', color: '#e8e8ee', pattern: 'dot' },
-    // 洞窟
-    { id: 'cave_stone', name: '石床', genre: 'cave', color: '#6b6b6b', pattern: 'speckle' },
-    { id: 'gravel', name: '砂利', genre: 'cave', color: '#7a7568', pattern: 'dot' },
-    { id: 'cave_water', name: '水', genre: 'cave', color: '#3a7aaa', pattern: 'wave' },
-    { id: 'lava', name: '溶岩', genre: 'cave', color: '#c43e1a', pattern: 'wave' },
-    { id: 'ice', name: '氷', genre: 'cave', color: '#aad4e6', pattern: 'hatch' },
-    { id: 'moss', name: '苔', genre: 'cave', color: '#4e6e3a', pattern: 'speckle' },
-];
-
 const WALL_GENRES = [
     { id: 'all', name: '全て' },
     { id: 'stone', name: '石壁' },
@@ -372,32 +151,22 @@ const WALL_GENRES = [
     { id: 'brick', name: 'レンガ' },
     { id: 'natural', name: '自然' },
 ];
-const WALL_PATTERNS = [
-    { id: 'stone_wall', name: '石壁', genre: 'stone', color: '#7a7a7a', pattern: 'brick' },
-    { id: 'wood_wall', name: '木壁', genre: 'wood', color: '#6e4a30', pattern: 'stripe' },
-    { id: 'brick_wall', name: 'レンガ', genre: 'brick', color: '#a85d3e', pattern: 'brick' },
-    { id: 'cliff', name: '崖', genre: 'natural', color: '#5a4838', pattern: 'hatch' },
+
+const PATTERNS = [
+    // scale: パターン定義側の初期倍率 (画像 1px → キャンバス scale px)。
+    //   最終倍率 = (PATTERNS[].scale) × (App.patternScale ユーザー設定値)
+    { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 1 },
+    { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 1 },
 ];
 
-/** id から地面/壁パターン定義を取得する (どちらにも無ければ null)。 */
+/** id からパターン定義を取得する。無ければ null。 */
 function getPatternDef(id) {
-    return GROUND_PATTERNS.find((p) => p.id === id) || WALL_PATTERNS.find((p) => p.id === id) || null;
+    return PATTERNS.find((p) => p.id === id) || null;
 }
 
-/**
- * 16進カラーの各チャンネルに amount を加減して明度を調整する。
- * @param {string} hex - #RRGGBB
- * @param {number} amount - -255〜255 (負で暗く、正で明るく)
- * @returns {string} #RRGGBB
- */
-function adjustBrightness(hex, amount) {
-    let r = parseInt(hex.slice(1, 3), 16),
-        g = parseInt(hex.slice(3, 5), 16),
-        b = parseInt(hex.slice(5, 7), 16);
-    r = Math.max(0, Math.min(255, r + amount));
-    g = Math.max(0, Math.min(255, g + amount));
-    b = Math.max(0, Math.min(255, b + amount));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+/** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。 */
+function patternsForCategory(category) {
+    return PATTERNS.filter((p) => p[category]);
 }
 
 /* ================================================================
@@ -1146,6 +915,7 @@ function initCanvas() {
                               objectCaching: false,
                               isPreview: true,
                           });
+                applyPatternOriginLive(preview);
                 App.canvas.add(preview);
             }
             App.canvas.renderAll();
@@ -1163,20 +933,20 @@ function initCanvas() {
             const pIsButt = _previewStrokeMod.strokeLineCap === 'butt';
             const plcorr = pIsButt && y1 === y2 ? 0 : phsw;
             const ptcorr = pIsButt && x1 === x2 ? 0 : phsw;
-            App.canvas.add(
-                new fabric.Line([x1, y1, x2, y2], {
-                    left: Math.min(x1, x2) - plcorr,
-                    top: Math.min(y1, y2) - ptcorr,
-                    stroke: _previewStyle.stroke,
-                    strokeWidth: _previewStyle.strokeWidth,
-                    strokeDashArray: _previewStyle.strokeDashArray,
-                    ..._previewStrokeMod,
-                    selectable: false,
-                    evented: false,
-                    isPreview: true,
-                    objectCaching: false,
-                })
-            );
+            const __linePreview = new fabric.Line([x1, y1, x2, y2], {
+                left: Math.min(x1, x2) - plcorr,
+                top: Math.min(y1, y2) - ptcorr,
+                stroke: _previewStyle.stroke,
+                strokeWidth: _previewStyle.strokeWidth,
+                strokeDashArray: _previewStyle.strokeDashArray,
+                ..._previewStrokeMod,
+                selectable: false,
+                evented: false,
+                isPreview: true,
+                objectCaching: false,
+            });
+            applyPatternOriginLive(__linePreview);
+            App.canvas.add(__linePreview);
             App.canvas.renderAll();
         }
 
@@ -1185,19 +955,19 @@ function initCanvas() {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
             removePreview();
-            App.canvas.add(
-                new fabric.Polyline([...App._pathPoints, pt], {
-                    stroke: _previewStyle.stroke,
-                    strokeWidth: _previewStyle.strokeWidth,
-                    strokeDashArray: _previewStyle.strokeDashArray,
-                    ..._previewStrokeMod,
-                    fill: '',
-                    selectable: false,
-                    evented: false,
-                    isPreview: true,
-                    objectCaching: false,
-                })
-            );
+            const __polyPreview = new fabric.Polyline([...App._pathPoints, pt], {
+                stroke: _previewStyle.stroke,
+                strokeWidth: _previewStyle.strokeWidth,
+                strokeDashArray: _previewStyle.strokeDashArray,
+                ..._previewStrokeMod,
+                fill: '',
+                selectable: false,
+                evented: false,
+                isPreview: true,
+                objectCaching: false,
+            });
+            applyPatternOriginLive(__polyPreview);
+            App.canvas.add(__polyPreview);
             App.canvas.renderAll();
         }
 
@@ -1206,19 +976,19 @@ function initCanvas() {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
             removePreview();
-            App.canvas.add(
-                new fabric.Polygon([...App._polygonPoints, pt], {
-                    stroke: _previewStyle.stroke,
-                    strokeWidth: _previewStyle.strokeWidth,
-                    strokeDashArray: _previewStyle.strokeDashArray,
-                    ..._previewStrokeMod,
-                    fill: _previewStyle.fillSoft || _previewStyle.fill,
-                    selectable: false,
-                    evented: false,
-                    isPreview: true,
-                    objectCaching: false,
-                })
-            );
+            const __polygonPreview = new fabric.Polygon([...App._polygonPoints, pt], {
+                stroke: _previewStyle.stroke,
+                strokeWidth: _previewStyle.strokeWidth,
+                strokeDashArray: _previewStyle.strokeDashArray,
+                ..._previewStrokeMod,
+                fill: _previewStyle.fillSoft || _previewStyle.fill,
+                selectable: false,
+                evented: false,
+                isPreview: true,
+                objectCaching: false,
+            });
+            applyPatternOriginLive(__polygonPreview);
+            App.canvas.add(__polygonPreview);
             App.canvas.renderAll();
         }
 
@@ -1231,19 +1001,19 @@ function initCanvas() {
             const closed = _sub === 'curve-closed';
             const d = closed ? buildClosedBezierPath(previewPts) : buildBezierPath(previewPts);
             if (d) {
-                App.canvas.add(
-                    new fabric.Path(d, {
-                        stroke: _previewStyle.stroke,
-                        strokeWidth: _previewStyle.strokeWidth,
-                        strokeDashArray: _previewStyle.strokeDashArray,
-                        ..._previewStrokeMod,
-                        fill: closed ? _previewStyle.fillSoft || _previewStyle.fill : '',
-                        selectable: false,
-                        evented: false,
-                        isPreview: true,
-                        objectCaching: false,
-                    })
-                );
+                const __curvePreview = new fabric.Path(d, {
+                    stroke: _previewStyle.stroke,
+                    strokeWidth: _previewStyle.strokeWidth,
+                    strokeDashArray: _previewStyle.strokeDashArray,
+                    ..._previewStrokeMod,
+                    fill: closed ? _previewStyle.fillSoft || _previewStyle.fill : '',
+                    selectable: false,
+                    evented: false,
+                    isPreview: true,
+                    objectCaching: false,
+                });
+                applyPatternOriginLive(__curvePreview);
+                App.canvas.add(__curvePreview);
             }
             App.canvas.renderAll();
         }
@@ -1937,7 +1707,7 @@ function createFreehandLayer() {
         evented: false,
         // セル同様、グループ全体に1つの影を落とすため & 消しゴム (destination-out) を
         // このレイヤー内だけに効かせるためにキャッシュを有効化
-        objectCaching: true,
+        objectCaching: false,
         _isFreehandLayer: true,
     });
     addLayerObject('フリーハンド', group);
@@ -2235,8 +2005,9 @@ function createCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // objectCaching: true でないとグループ全体にひとつの影が落ちず、各セルにバラバラの影が描かれる
-        objectCaching: true,
+        // objectCaching: false で各セルを毎フレーム描画 (パターン画像のディテールが拡大時も保たれる)。
+        // 代わりに「グループ単位の統一シャドウ」は失われ、各セルに影がつく
+        objectCaching: false,
         _isCellLayer: true,
         _cellData: new Map(),
     });
@@ -2263,13 +2034,15 @@ function handleCellPaint(col, row, tool) {
     const adapter = ga();
     const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
+        const c2 = rgba(App.fillColor, App.fillOpacity);
+        const fkey = 'solid:' + c2;
         const existing = layer._cellData?.get(key);
         if (existing) {
-            const c2 = rgba(App.fillColor, App.fillOpacity);
-            existing.set({ fill: c2, stroke: c2 });
+            existing.set({ fill: c2, stroke: c2, _fillKey: fkey });
         } else {
-            const shape = adapter.createCellShape(col, row, rgba(App.fillColor, App.fillOpacity));
+            const shape = adapter.createCellShape(col, row, c2);
             if (!shape) return;
+            shape._fillKey = fkey;
             layer.addWithUpdate(shape);
             if (!layer._cellData) layer._cellData = new Map();
             layer._cellData.set(key, shape);
@@ -2301,8 +2074,9 @@ function createGroundCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // objectCaching: true でないとグループ全体にひとつの影が落ちず、各セルにバラバラの影が描かれる
-        objectCaching: true,
+        // objectCaching: false で各セルを毎フレーム描画 (パターン画像のディテールが拡大時も保たれる)。
+        // 代わりに「グループ単位の統一シャドウ」は失われ、各セルに影がつく
+        objectCaching: false,
         _isCellLayer: true,
         _isGroundLayer: true,
         _cellData: new Map(),
@@ -2331,15 +2105,20 @@ function handleGroundCellPaint(col, row, tool = 'pen') {
     const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
         const fill = getGroundFill();
+        const fkey = getGroundFillKey();
         const existing = layer._cellData?.get(key);
         if (existing) {
             // 既存セルの再塗り (色を上書き) — pattern オフセットも今の設定で再スナップショット
-            existing.set({ fill, stroke: fill });
+            existing.set({ fill, stroke: fill, _fillKey: fkey });
             snapshotPatternSettings(existing);
             applyPatternOrigin(existing);
         } else {
             const shape = adapter.createCellShape(col, row, fill);
             if (!shape) return;
+            shape._fillKey = fkey;
+            // group に入れる前のワールド座標を保存 → addWithUpdate で obj.left がずれても
+            // パターンオフセット計算は _worldLeft 優先で安定する
+            snapshotWorldPosition(shape);
             snapshotPatternSettings(shape);
             applyPatternOrigin(shape);
             layer.addWithUpdate(shape);
@@ -2396,10 +2175,14 @@ function fillCells(col, row, layer, newColorOverride) {
     // newColorOverride が指定されればそれを使う (地面塗りつぶし時など)。
     // 未指定ならシンプルモードの App.fillColor/fillOpacity を使用。
     const newColor = newColorOverride !== undefined ? newColorOverride : rgba(App.fillColor, App.fillOpacity);
+    // パターン (fabric.Pattern) は参照比較不可なので、各セルに保存した _fillKey で同色判定する
+    const newFillKey = layer._isGroundLayer
+        ? getGroundFillKey()
+        : 'solid:' + newColor;
     const startKey = adapter.cellKey(col, row);
     const startCell = layer._cellData.get(startKey);
-    const targetColor = startCell ? startCell.fill : null;
-    if (targetColor === newColor) return;
+    const targetFillKey = startCell ? (startCell._fillKey ?? ('solid:' + startCell.fill)) : null;
+    if (newFillKey === targetFillKey) return;
 
     // BFS — 隣接は adapter に委譲 (スクエア: 4近傍 / ヘクス: 6近傍)
     const visited = new Set([startKey]);
@@ -2411,8 +2194,8 @@ function fillCells(col, row, layer, newColorOverride) {
         if (c < minC || c > maxC || r < minR || r > maxR) continue;
         if (!adapter.cellExists(c, r)) continue;
         const cell = layer._cellData.get(adapter.cellKey(c, r));
-        const cellColor = cell ? cell.fill : null;
-        if (cellColor !== targetColor) continue;
+        const cellFillKey = cell ? (cell._fillKey ?? ('solid:' + cell.fill)) : null;
+        if (cellFillKey !== targetFillKey) continue;
         toFill.push([c, r]);
         if (toFill.length > FILL_MAX_CELLS) {
             setTransientStatus(`塗りつぶし上限 (${FILL_MAX_CELLS}セル) を超えました`);
@@ -2427,18 +2210,18 @@ function fillCells(col, row, layer, newColorOverride) {
         }
     }
 
-    applyFill(layer, adapter, toFill, newColor);
+    applyFill(layer, adapter, toFill, newColor, newFillKey);
     pushHistory(`塗りつぶし (${toFill.length}セル)`);
 }
 
-/** fillCells から呼ばれる適用ヘルパ。 */
-function applyFill(layer, adapter, cells, newColor) {
+/** fillCells から呼ばれる適用ヘルパ。 newFillKey は同色判定用 (パターン id or 'solid:#xxx')。 */
+function applyFill(layer, adapter, cells, newColor, newFillKey) {
     const isGround = layer._isGroundLayer;
     for (const [c, r] of cells) {
         const key = adapter.cellKey(c, r);
         const existing = layer._cellData.get(key);
         if (existing) {
-            existing.set({ fill: newColor, stroke: newColor });
+            existing.set({ fill: newColor, stroke: newColor, _fillKey: newFillKey });
             if (isGround) {
                 snapshotPatternSettings(existing);
                 applyPatternOrigin(existing);
@@ -2446,7 +2229,9 @@ function applyFill(layer, adapter, cells, newColor) {
         } else {
             const shape = adapter.createCellShape(c, r, newColor);
             if (!shape) continue;
+            shape._fillKey = newFillKey;
             if (isGround) {
+                snapshotWorldPosition(shape);
                 snapshotPatternSettings(shape);
                 applyPatternOrigin(shape);
             }
@@ -2461,50 +2246,77 @@ function applyFill(layer, adapter, cells, newColor) {
    地形パターン（データのみ保持 — 描画UIは別途実装）
 ================================================================ */
 // パターン用ソースキャンバスをキャッシュ (描画は重いので使い回す)。
-// fabric.Pattern インスタンス自体は shape ごとに独立 (offsetX/Y/transform を per-shape で持つため)。
-let _terrainCanvasCache = new Map(); // key: `${id}_${cellSize}` → HTMLCanvasElement
+/* ----------------------------------------------------------------
+   パターン画像ロード (lazy)
+   - フル画像 (patterns/full/) は使用時に load → HTMLImageElement をキャッシュ
+   - ロード中は色フォールバック、完了後 renderAll で差し替わる
+---------------------------------------------------------------- */
+const _patternImageCache = new Map(); // id → { state: 'loading'|'ready'|'error', img?: HTMLImageElement }
 
 /**
- * 地形プリセットから fill 値を返す。pattern='none' は色文字列、それ以外は
- * `(id, cellSize)` キーでキャッシュした fabric.Pattern を返す。
- * @param {{id:string,color:string,pattern:string}} preset
- * @returns {string|fabric.Pattern}
+ * パターン id のフル画像をロードする。既に ready / loading なら何もしない。
+ * 完了時に canvas を renderAll し、置かれた色フォールバックが画像に切り替わる。
  */
-function getTerrainFill(preset) {
-    if (preset.pattern === 'none') return preset.color;
-    const key = `${preset.id}_${App.cellSize}`;
-    let src = _terrainCanvasCache.get(key);
-    if (!src) {
-        src = renderTerrainCanvas(preset.color, preset.pattern, App.cellSize);
-        _terrainCanvasCache.set(key, src);
-    }
-    // 毎回新しい Pattern インスタンスを返す — shape ごとに offsetX/Y/transform を独立管理するため
-    return new fabric.Pattern({ source: src, repeat: 'repeat' });
+function loadPatternImage(id) {
+    const def = getPatternDef(id);
+    if (!def || !def.file) return;
+    const cached = _patternImageCache.get(id);
+    if (cached) return; // loading / ready / error いずれも再試行しない
+    _patternImageCache.set(id, { state: 'loading' });
+    const img = new Image();
+    img.onload = () => {
+        _patternImageCache.set(id, { state: 'ready', img });
+        App.canvas?.requestRenderAll();
+    };
+    img.onerror = () => {
+        _patternImageCache.set(id, { state: 'error' });
+    };
+    img.src = PATTERN_DIR_FULL + def.file;
 }
 
 /**
- * App.groundPattern の状態 (solid / pattern) から実際の fill 値を返す。
+ * パターン id から fill / stroke 値を返す。
+ * - 画像がキャッシュ済みなら fabric.Pattern (repeat)
+ * - まだロードしてなければトリガ + 単色フォールバック
+ * @param {string} id
+ * @param {string} fallback - 単色フォールバック (def.color が無いときの最終フォールバック)
  * @returns {string|fabric.Pattern}
  */
+function getPatternFill(id, fallback) {
+    const def = getPatternDef(id);
+    if (!def) return fallback || '#888888';
+    const cached = _patternImageCache.get(id);
+    if (cached?.state === 'ready') {
+        return new fabric.Pattern({ source: cached.img, repeat: 'repeat' });
+    }
+    if (!cached) loadPatternImage(id);
+    return def.color || fallback || '#888888';
+}
+
+/** App.groundPattern (solid / pattern) から fill 値を返す。 */
 function getGroundFill() {
     const s = App.groundPattern;
     if (s.mode === 'solid') return s.solidColor || '#888888';
-    const def = getPatternDef(s.id);
-    if (!def) return s.solidColor || '#888888';
-    return getTerrainFill(def);
+    return getPatternFill(s.id, s.solidColor);
 }
 
-/**
- * App.wallPattern の状態から stroke 値を返す。
- * @returns {string|fabric.Pattern}
- */
+/** App.wallPattern (solid / pattern) から stroke 値を返す。 */
 function getWallStroke() {
     const s = App.wallPattern;
     if (s.mode === 'solid') return s.solidColor || '#333333';
-    const def = getPatternDef(s.id);
-    if (!def) return s.solidColor || '#333333';
-    return getTerrainFill(def);
+    return getPatternFill(s.id, s.solidColor);
 }
+
+/**
+ * fill を一意に識別するキー文字列を返す。バケツ塗りつぶしの同色判定に使う
+ * (fabric.Pattern は毎回 new するので参照比較ができず、ID 比較が必要)。
+ */
+function fillKeyFor(state) {
+    if (!state) return null;
+    if (state.mode === 'solid') return 'solid:' + (state.solidColor || '');
+    return 'pattern:' + (state.id || '');
+}
+function getGroundFillKey() { return fillKeyFor(App.groundPattern); }
 
 /**
  * activeTool=='ground'|'wall' のとき、選択中のサブツールを返す。
@@ -2603,11 +2415,31 @@ function applyShadowAtCreate(obj) {
  */
 function snapshotPatternSettings(obj) {
     if (!obj) return;
+    // 現在の activeTool に対応するパターン定義から初期倍率を取得 → ユーザー倍率と掛けて保存
+    const def = currentPatternDef();
+    const initScale = def?.scale ?? 1;
     obj.set({
         _patternOffsetX: App.patternOffsetX || 0,
         _patternOffsetY: App.patternOffsetY || 0,
         _patternRotation: App.patternRotation || 0,
+        _patternScale: initScale * (App.patternScale ?? 1),
     });
+}
+
+/** 現在の activeTool ('ground' | 'wall') に対応する選択中パターン定義を返す。 */
+function currentPatternDef() {
+    if (App.activeTool === 'wall') return getPatternDef(App.wallPattern?.id);
+    if (App.activeTool === 'ground') return getPatternDef(App.groundPattern?.id);
+    return null;
+}
+
+/** state.mode === 'pattern' なのに id が PATTERNS に無い場合、単色モードに矯正する。 */
+function normalizePatternState(state) {
+    if (!state) return;
+    if (state.mode === 'pattern' && !getPatternDef(state.id)) {
+        state.mode = 'solid';
+        state.id = null;
+    }
 }
 
 /**
@@ -2621,22 +2453,57 @@ function snapshotPatternSettings(obj) {
  */
 function applyPatternOrigin(obj) {
     if (!obj) return;
-    const baseOffX = obj._patternOffsetX || 0;
-    const baseOffY = obj._patternOffsetY || 0;
-    const deg = obj._patternRotation || 0;
-    // セル子要素は world 計算をスキップ (cells naturally align at multiples of cellSize)
-    // const isCellChild = obj._cellCol !== undefined && obj.group;
-    // const worldOffX = isCellChild ? 0 : -(obj.left || 0);
-    // const worldOffY = isCellChild ? 0 : -(obj.top || 0);
-    const worldOffX = -(obj.left || 0);
-    const worldOffY = -(obj.top || 0);
+    applyPatternTransformOnObj(
+        obj,
+        obj._patternOffsetX || 0,
+        obj._patternOffsetY || 0,
+        obj._patternRotation || 0,
+        obj._patternScale ?? 1,
+    );
+}
+
+/**
+ * cell など、グループに addWithUpdate された後に obj.left がグループ相対座標になる要素のため、
+ * 作成時のワールド座標を別フィールドに保存しておく。applyPatternTransformOnObj はこれを優先して
+ * 「ワールド原点アンカー」の offset を計算する。
+ */
+function snapshotWorldPosition(obj) {
+    if (!obj) return;
+    obj._worldLeft = obj.left || 0;
+    obj._worldTop = obj.top || 0;
+}
+
+/**
+ * preview 用: obj の snapshot ではなく現在の App グローバル + パターン定義の初期倍率を
+ * その場で組み立てて適用する (プレビュー中にオフセット/回転/倍率を変えると即反映される)。
+ */
+function applyPatternOriginLive(obj) {
+    if (!obj) return;
+    const def = currentPatternDef();
+    const initScale = def?.scale ?? 1;
+    applyPatternTransformOnObj(
+        obj,
+        App.patternOffsetX || 0,
+        App.patternOffsetY || 0,
+        App.patternRotation || 0,
+        initScale * (App.patternScale ?? 1),
+    );
+}
+
+/** fill / stroke に Pattern があれば offset と patternTransform (scale * rotation) を反映する。 */
+function applyPatternTransformOnObj(obj, baseOffX, baseOffY, deg, scale) {
+    // _worldLeft があれば優先 (group の子は addWithUpdate 後に obj.left がグループ相対になるため)
+    const refLeft = (obj._worldLeft !== undefined) ? obj._worldLeft : (obj.left || 0);
+    const refTop = (obj._worldTop !== undefined) ? obj._worldTop : (obj.top || 0);
+    const worldOffX = -refLeft;
+    const worldOffY = -refTop;
     const offX = worldOffX + baseOffX;
     const offY = worldOffY + baseOffY;
-    let transform = null;
-    if (deg !== 0) {
-        const r = (deg * Math.PI) / 180;
-        transform = [Math.cos(r), Math.sin(r), -Math.sin(r), Math.cos(r), 0, 0];
-    }
+    const s = scale || 1;
+    const r = (deg * Math.PI) / 180;
+    const cos = Math.cos(r), sin = Math.sin(r);
+    // 倍率が 1 かつ回転が 0 なら transform 不要 (null)
+    const transform = (s === 1 && deg === 0) ? null : [s * cos, s * sin, -s * sin, s * cos, 0, 0];
     let changed = false;
     if (obj.fill && typeof fabric !== 'undefined' && obj.fill instanceof fabric.Pattern) {
         obj.fill.offsetX = offX;
@@ -2772,16 +2639,12 @@ function setGridType(type) {
    横にジャンルタブが並び、選択ジャンルでフィルタしたパターンを 4 列タイルグリッドで表示。
    左上は「単色」タイル (App.fillColor を使う)。Solid と Pattern のどちらでも選択可能。
 ================================================================ */
-const PP_THUMB_SIZE = 96; // パターンタイル内に描くテクスチャの一辺 (px) — 高解像度で 1 タイル分を見せる
-
 /**
- * パターン定義から data URL のサムネを生成する。
- * @param {{color:string, pattern:string}} def
- * @returns {string}
+ * パターン定義からサムネ画像 URL を返す (patterns/thumb/{file})。
+ * 画像が存在しない場合は <img> の onerror でタイルを非表示にする (renderPatternPickerContent 内で処理)。
  */
-function makePatternThumbDataUrl(def) {
-    const c = renderTerrainCanvas(def.color, def.pattern, PP_THUMB_SIZE);
-    return c.toDataURL();
+function makePatternThumbUrl(def) {
+    return PATTERN_DIR_THUMB + def.file;
 }
 
 /**
@@ -2838,13 +2701,23 @@ function renderPatternPickerContent(root, opts) {
         tilesEl.appendChild(solid);
     }
 
-    // パターンタイル (フィルタ済み)
-    const filtered = genreId === 'all' ? opts.patterns : opts.patterns.filter((p) => p.genre === genreId);
+    // パターンタイル (フィルタ済み)。opts.category ('ground' | 'wall') 側のジャンルでフィルタ。
+    const cat = opts.category;
+    const filtered = opts.patterns.filter((p) => {
+        if (!p[cat]) return false;
+        return genreId === 'all' || p[cat] === genreId;
+    });
     filtered.forEach((p) => {
         const tile = document.createElement('div');
         tile.className = 'pp-tile' + (state.mode === 'pattern' && state.id === p.id ? ' active' : '');
         tile.title = p.name;
-        tile.style.backgroundImage = `url(${makePatternThumbDataUrl(p)})`;
+        // サムネ <img> を直接埋めて onerror で要素ごと隠す (画像未配置は非表示)
+        const thumb = document.createElement('img');
+        thumb.src = makePatternThumbUrl(p);
+        thumb.alt = '';
+        thumb.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        thumb.onerror = () => { tile.remove(); };
+        tile.appendChild(thumb);
         const lbl = document.createElement('div');
         lbl.className = 'pp-label';
         lbl.textContent = p.name;
@@ -2887,6 +2760,11 @@ function mountPatternPicker(root, opts) {
     });
     pickr.on('change', (c, _src, instance) => {
         if (!c) return;
+        // refreshPatternPickers から setColor を呼んだだけのときは無視
+        // (Pickr は silent=true でも内部状態の差異で 'change' を発火することがある)。
+        // これがないと、復元時に mode='pattern' が 'solid' に上書きされて
+        // UI とデータが食い違う。
+        if (root._suppressColorChange) return;
         const hex = c.toHEXA().toString().slice(0, 7);
         opts.setState({ ...opts.getState(), mode: 'solid', solidColor: hex });
         instance.applyColor(true);
@@ -2906,7 +2784,8 @@ function refreshPatternPickers() {
     const groundRoot = document.getElementById('ground-pattern-picker');
     if (groundRoot) {
         mountPatternPicker(groundRoot, {
-            patterns: GROUND_PATTERNS,
+            category: 'ground',
+            patterns: PATTERNS,
             genres: GROUND_GENRES,
             getState: () => App.groundPattern,
             setState: (s) => {
@@ -2914,12 +2793,17 @@ function refreshPatternPickers() {
                 pushHistoryDebounced('地面パターンを変更');
             },
         });
-        if (groundRoot._pickr) groundRoot._pickr.setColor(App.groundPattern.solidColor || '#888888', true);
+        if (groundRoot._pickr) {
+            groundRoot._suppressColorChange = true;
+            groundRoot._pickr.setColor(App.groundPattern.solidColor || '#888888', true);
+            setTimeout(() => { groundRoot._suppressColorChange = false; }, 0);
+        }
     }
     const wallRoot = document.getElementById('wall-pattern-picker');
     if (wallRoot) {
         mountPatternPicker(wallRoot, {
-            patterns: WALL_PATTERNS,
+            category: 'wall',
+            patterns: PATTERNS,
             genres: WALL_GENRES,
             getState: () => App.wallPattern,
             setState: (s) => {
@@ -2927,7 +2811,11 @@ function refreshPatternPickers() {
                 pushHistoryDebounced('壁パターンを変更');
             },
         });
-        if (wallRoot._pickr) wallRoot._pickr.setColor(App.wallPattern.solidColor || '#888888', true);
+        if (wallRoot._pickr) {
+            wallRoot._suppressColorChange = true;
+            wallRoot._pickr.setColor(App.wallPattern.solidColor || '#888888', true);
+            setTimeout(() => { wallRoot._suppressColorChange = false; }, 0);
+        }
     }
 }
 
@@ -3399,6 +3287,10 @@ document.addEventListener('DOMContentLoaded', () => {
  * @returns {object}
  */
 function buildSaveData() {
+    // ツール/パターン/フリーハンドの「最後に選んでいた値」も保存する。
+    // → リロード後も同じ選択状態から再開できる (UX 向上)。
+    // 注意: 履歴 (Undo/Redo) のスナップショットは serializeHistorySnapshot 側で別管理なので、
+    //       これらをここに含めても履歴を汚さない。
     return {
         version: 1,
         cellSize: App.cellSize,
@@ -3439,6 +3331,9 @@ function restoreSaveData(data) {
     if (data.groundPattern) App.groundPattern = data.groundPattern;
     if (data.wallTool) App.wallTool = data.wallTool;
     if (data.wallPattern) App.wallPattern = data.wallPattern;
+    // 旧版で保存された未知パターン ID は単色にフォールバックして UI と実状態の食い違いを防ぐ
+    normalizePatternState(App.groundPattern);
+    normalizePatternState(App.wallPattern);
     if (typeof data.wallThickness === 'number') App.wallThickness = data.wallThickness;
     const wt = document.getElementById('wall-thickness');
     if (wt) wt.value = App.wallThickness;
@@ -3448,6 +3343,13 @@ function restoreSaveData(data) {
     if (typeof data.freehandOpacity === 'number') App.freehandOpacity = data.freehandOpacity;
     if (typeof data.freehandDecimation === 'number') App.freehandDecimation = data.freehandDecimation;
     if (typeof data.freehandPressure === 'boolean') App.freehandPressure = data.freehandPressure;
+    // 復元値を各 input/タイルに反映
+    const fwEl = document.getElementById('freehand-width');
+    if (fwEl) fwEl.value = App.freehandWidth;
+    const fdEl = document.getElementById('freehand-decimation');
+    if (fdEl) fdEl.value = App.freehandDecimation;
+    const fpEl = document.getElementById('freehand-pressure');
+    if (fpEl) fpEl.checked = App.freehandPressure;
     App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
     App.gridLineWidth = data.gridLineWidth || 1;
     App.gridDashArray = data.gridDashArray || null;
@@ -3478,6 +3380,9 @@ function restoreSaveData(data) {
         document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.groundTool === App.groundTool));
         document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.wallTool === App.wallTool));
         refreshPatternPickers();
+        // フリーハンドブラシタイル & 実ブラシも復元後の App.freehandBrush に同期
+        document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((t) => t.classList.toggle('active', t.dataset.freehandBrush === App.freehandBrush));
+        if (App.canvas?.isDrawingMode) setFreehandBrush(App.freehandBrush);
         App.canvas.renderAll();
         drawGrid();
         clearHistory();
@@ -4209,6 +4114,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('pattern-rotation')?.addEventListener('input', function () {
         App.patternRotation = parseInt(this.value) || 0;
+    });
+    document.getElementById('pattern-scale')?.addEventListener('input', function () {
+        // UI は % 単位 (100 = 等倍)、内部は倍率 (1.0 = 等倍)
+        const v = parseFloat(this.value);
+        App.patternScale = (isFinite(v) && v > 0) ? v / 100 : 1;
     });
 
     // テキストスタイル切替 (ボールド/イタリック/下線/取消線) — 編集中で選択範囲があれば部分適用

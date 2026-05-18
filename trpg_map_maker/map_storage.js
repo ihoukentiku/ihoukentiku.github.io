@@ -15,8 +15,8 @@ const SAVE_CUSTOM_PROPS = [
     '_layerId', '_isMapLayer', '_layerName',
     '_isCellLayer', '_isTerrainLayer', '_isMapText', '_isFreehandLayer',
     '_isGroundLayer', '_isWallLayer',
-    '_cellCol', '_cellRow', '_terrainId',
-    '_patternOffsetX', '_patternOffsetY', '_patternRotation',
+    '_cellCol', '_cellRow', '_terrainId', '_worldLeft', '_worldTop', '_fillKey',
+    '_patternOffsetX', '_patternOffsetY', '_patternRotation', '_patternScale',
     'globalCompositeOperation',
 ];
 
