@@ -2,7 +2,7 @@
 
 /* ================================================================
    TRPG マップ用 IndexedDB アクセス層
-   trpg_map_list.html と trpg_map_maker.html の両方から読み込む共通モジュール。
+   map_list.html と map_editor.html の両方から読み込む共通モジュール。
    保存レコードの構造: { id, name, gridType, createdAt, updatedAt, thumbnail, data }
 ================================================================ */
 

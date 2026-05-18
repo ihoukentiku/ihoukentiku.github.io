@@ -14,7 +14,7 @@
         ext.className = 'header-ext';
         // CSS Grid (auto 1fr auto) で 左=戻る / 中=名前+ステータス / 右=Undo/Redo
         ext.innerHTML = `
-            <a href="trpg_map_list.html" class="map-back-btn" title="マイマップ一覧へ戻る">
+            <a href="map_list.html" class="map-back-btn" title="マイマップ一覧へ戻る">
                 <span class="material-symbols-outlined">map</span>
                 <span>マップ一覧へ戻る</span>
             </a>
@@ -1361,7 +1361,9 @@ function initCanvas() {
         if (isEraser) {
             // 消しゴム: 親フリーハンドレイヤー内に destination-out で追加 → そのレイヤー内だけ消える。
             // (group の objectCaching が ON なので合成はキャッシュ canvas 内で完結)
-            path.set({ globalCompositeOperation: 'destination-out' });
+            // ★ stroke は不透明にしないと destination-out が部分的にしか効かず、消し跡が半透明に残る。
+            //   プレビュー用 brush.color (半透明赤) が path にコピーされるので、ここで上書きする。
+            path.set({ globalCompositeOperation: 'destination-out', stroke: 'rgba(0,0,0,1)', opacity: 1 });
         }
         // 単体 fabric.Path は canvas に既に add されているので、レイヤー化する前に一旦除外
         App.canvas.remove(path);
@@ -1849,7 +1851,7 @@ function syncFreehandBrushProps() {
     // 消しゴム: destination-out では描画時の色は最終的に無視されるが、プレビュー (contextTop) には
     // brush.color がそのまま見える。何を消しているか分かりやすいよう赤色で見せる。
     if (b._isEraser) {
-        b.color = 'rgba(255,0,0,0.85)';
+        b.color = 'rgba(255,0,0,0.5)';
     } else {
         b.color = rgba(App.freehandColor || '#000000', App.freehandOpacity ?? 1);
     }
@@ -3388,7 +3390,7 @@ document.addEventListener('DOMContentLoaded', () => {
    自動保存はサムネを再生成しない (重い)。サムネは明示保存 / 離脱時のみ生成。
    Ctrl+S = 明示保存 (デバウンスをフラッシュ + サムネ生成)。
    DB アクセス層 (openDB/dbGet/dbPut 等) と SAVE_CUSTOM_PROPS は
-   trpg_map_storage.js で定義済み。
+   map_storage.js で定義済み。
 ================================================================ */
 
 /**
@@ -3518,7 +3520,7 @@ function generateThumbnail() {
 async function loadMapFromUrl() {
     const id = new URLSearchParams(location.search).get('id');
     if (!id) {
-        location.replace('trpg_map_list.html');
+        location.replace('map_list.html');
         return;
     }
     let rec;
@@ -3526,11 +3528,11 @@ async function loadMapFromUrl() {
         rec = await dbGet(id);
     } catch (e) {
         console.error(e);
-        location.replace('trpg_map_list.html');
+        location.replace('map_list.html');
         return;
     }
     if (!rec) {
-        location.replace('trpg_map_list.html');
+        location.replace('map_list.html');
         return;
     }
     App.mapId = rec.id;

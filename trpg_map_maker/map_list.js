@@ -5,7 +5,7 @@
    - IndexedDB のマップ一覧をカードグリッドで表示
    - 新規作成ウィザード (スクエア / ヘクス[後者は実装準備中])
    - 複製・名前変更・削除・JSON 出力/読込
-   - カードクリックで trpg_map_maker.html?id=xxx へ遷移
+   - カードクリックで map_editor.html?id=xxx へ遷移
 ================================================================ */
 
 /* ----------------------------------------------------------------
@@ -57,7 +57,7 @@ async function renderList() {
             </div>`;
 
         // サムネクリック / info クリックで編集画面へ
-        const goEdit = () => { location.href = `trpg_map_maker.html?id=${encodeURIComponent(rec.id)}`; };
+        const goEdit = () => { location.href = `map_editor.html?id=${encodeURIComponent(rec.id)}`; };
         card.querySelector('.thumb-wrap').addEventListener('click', goEdit);
         card.querySelector('.info').addEventListener('click', goEdit);
 
@@ -243,7 +243,7 @@ async function handleCreate() {
         },
     };
     await dbPut(rec);
-    location.href = `trpg_map_maker.html?id=${encodeURIComponent(rec.id)}`;
+    location.href = `map_editor.html?id=${encodeURIComponent(rec.id)}`;
 }
 
 /* ----------------------------------------------------------------

@@ -34,8 +34,8 @@
 ### 追加で実装したもの
 
 - ✅ **ページ構成変更 (案2)** — 一覧画面と編集画面を分離
-    - `trpg_map_list.html` (カードグリッド + 新規作成ウィザード + JSON 入出力 + 複製 / 改名 / 削除)
-    - `trpg_map_maker.html?id=xxx` (編集画面)
+    - `trpg_map_maker/map_list.html` (カードグリッド + 新規作成ウィザード + JSON 入出力 + 複製 / 改名 / 削除)
+    - `trpg_map_maker/map_editor.html?id=xxx` (編集画面)
     - 一覧が空なら自動でウィザード起動
 - ✅ **3 段ウィザード** — スクエア / ヘクス → フラット / ポインティ → ココフォリア整合 → 名前
 - ✅ **自動保存 (ハイブリッド)**
@@ -51,7 +51,8 @@
     - 履歴はデバウンスで連続変更を集約
 - ✅ **セル塗りツール UI 強化** — 3 タイルボタン (ペン / 消しゴム / 塗りつぶし)
 - ✅ **JSDoc 追加** — 主要関数すべて
-- ✅ **JS ファイル分離** — `trpg_map_storage.js` (DB)、`trpg_map_grid.js` (GridAdapter)、`trpg_map_list.js` (一覧)
+- ✅ **JS ファイル分離** — `map_storage.js` (DB)、`map_grid.js` (GridAdapter)、`map_list.js` (一覧)
+- ✅ **ディレクトリ化** — `trpg_map_maker/` 配下に `map_list.html / map_editor.html / map_*.js` を集約 (将来パターン画像等もここへ)
 - ✅ **GridAdapter 抽象化** — 5 種 (square + hex 4 種) を統一インタフェース
 - ✅ **隣接セル AA 隙間対策** — fill と同色の 0.1〜0.5px ストロークで埋める
 - ✅ **ヘクス選択肢の baked** — マップ作成時に gridType を固定 (ヘッダーの切替 UI 廃止)
@@ -103,11 +104,13 @@
 ## アーキテクチャ概要
 
 ```
-trpg_map_list.html / .js     — マップ一覧画面 + 新規作成ウィザード + JSON 入出力
-trpg_map_maker.html / .js    — 編集画面 (Fabric.js キャンバス + ツール群)
-trpg_map_grid.js             — GridAdapter (5 種のセル幾何を統一インタフェースで提供)
-trpg_map_storage.js          — IndexedDB ラッパ + 共通ユーティリティ
-common.css / common.js       — サイト共通 (ヘッダー / フッター / テーマ / モーダル / 数値スピナー)
+trpg_map_maker/
+  map_list.html / map_list.js     — マップ一覧画面 + 新規作成ウィザード + JSON 入出力
+  map_editor.html / map_editor.js — 編集画面 (Fabric.js キャンバス + ツール群)
+  map_grid.js                     — GridAdapter (5 種のセル幾何を統一インタフェースで提供)
+  map_storage.js                  — IndexedDB ラッパ + 共通ユーティリティ
+  (将来: patterns/ 以下に静的パターン画像)
+../common.css / ../common.js      — サイト共通 (ヘッダー / フッター / テーマ / モーダル / 数値スピナー)
 ```
 
 ### データ永続化
