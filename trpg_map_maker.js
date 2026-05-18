@@ -53,6 +53,14 @@ const App = {
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
     wallPattern: { mode: 'pattern', id: 'stone_wall', genreId: 'all', solidColor: '#5a5a5a' },
     wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
+    // ---- フリーハンド (Fabric brushes 拡張) ----
+    freehandBrush: 'pencil', // 'pencil' | 'circle' | 'spray' | 'eraser'
+    freehandWidth: 3,
+    freehandColor: '#000000', // フリーハンド専用色 (シンプル描画の strokeColor とは独立)
+    freehandOpacity: 1,
+    freehandDecimation: 4, // 0=無効。fabric.PencilBrush.decimate (px 単位の許容誤差)
+    freehandPressure: true, // タブレット圧力検知 (e.pressure)
+    _strokePressureMax: 0, // 1ストローク中の最大 pressure
     // ---- 影 (新規描画時に適用、既存オブジェクトは obj.shadow としてそのまま保持)
     //     色/ぼかし/オフセットは地面と壁で共通。on/off だけ別状態。 ----
     groundShadowEnabled: false,
@@ -543,12 +551,15 @@ function updateFillStrokeVisibility() {
     // - フィル色 / ストローク色 / 線種: シンプル描画 (色を指定するもの) のみ
     // - 線幅: シンプル描画 + 壁モード描画 (地面は fill のみで stroke 不要)
     // - 角丸: 矩形サブツール (モード問わず)
-    let showFillColor = isSimpleDraw;
-    let showStrokeColor = isSimpleDraw;
-    let showStrokeStyle = isSimpleDraw;
+    const isFreehand = sub === 'freehand';
+    // フリーハンドは色 / 線幅 / 線種 等を全て freehand 専用パネル側で持つので、
+    // 共通フィル/ストロークセクションは何も表示しない (= 全行 false)。
+    let showFillColor = isSimpleDraw && !isFreehand;
+    let showStrokeColor = isSimpleDraw && !isFreehand;
+    let showStrokeStyle = isSimpleDraw && !isFreehand;
     // 壁モードでは線幅 (strokeWidth) ではなく「壁の厚み」(wallThickness) を出す。
     const showWallThickness = isWall && drawSubtools.includes(sub);
-    let showStrokeWidth = isSimpleDraw;
+    let showStrokeWidth = isSimpleDraw && !isFreehand;
     let showRadius = sub === 'rect';
     if (isSelect) {
         const activeObjs = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
@@ -580,9 +591,9 @@ function updateFillStrokeVisibility() {
     // 影セクション: 何かしらの描画 (シンプル/地面/壁) で表示
     setDisp('shadow-sec', isSimpleDraw || isGround || isWall);
     refreshShadowUI();
-    // 線継ぎ目 / 線端: ストロークがあるサブツール (= strokeWidth 行が出るとき) と同じ条件で出す
-    setDisp('stroke-line-join-row', showStrokeWidth);
-    setDisp('stroke-line-cap-row', showStrokeWidth);
+    // 線継ぎ目 / 線端: ストロークがあるサブツールと同条件、ただしフリーハンドでは出さない
+    setDisp('stroke-line-join-row', showStrokeWidth && !isFreehand);
+    setDisp('stroke-line-cap-row', showStrokeWidth && !isFreehand);
 }
 
 /** 影セクションの on/off トグルを現在の activeTool カテゴリ (シンプル/地面/壁) に合わせて反映する。 */
@@ -668,6 +679,19 @@ function initPickr() {
             instance.applyColor(true);
         });
         attachEyedropper(wsp);
+    }
+    // フリーハンド専用色 (シンプルの strokeColor とは独立)
+    const fhEl = document.getElementById('freehand-color-picker');
+    if (fhEl) {
+        const fhp = Pickr.create(opts('#freehand-color-picker', App.freehandColor || '#000000'));
+        fhp.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.freehandColor = c.toHEXA().toString().slice(0, 7);
+            App.freehandOpacity = c.toRGBA()[3];
+            instance.applyColor(true);
+            syncFreehandBrushProps();
+        });
+        attachEyedropper(fhp);
     }
     // 既存ピッカーにスポイトボタンを追加 (fill / stroke / grid)
     attachEyedropper(fillPickr);
@@ -1330,10 +1354,25 @@ function initCanvas() {
         applyPatternOrigin(obj);
     });
     App.canvas.on('path:created', (opt) => {
-        if (opt.path) {
-            opt.path.set({ selectable: false, evented: false });
-            addLayerObject('フリーハンド', opt.path);
+        if (!opt.path) return;
+        const path = opt.path;
+        path.set({ selectable: false, evented: false });
+        const isEraser = App.canvas.freeDrawingBrush?._isEraser;
+        if (isEraser) {
+            // 消しゴム: 親フリーハンドレイヤー内に destination-out で追加 → そのレイヤー内だけ消える。
+            // (group の objectCaching が ON なので合成はキャッシュ canvas 内で完結)
+            path.set({ globalCompositeOperation: 'destination-out' });
         }
+        // 単体 fabric.Path は canvas に既に add されているので、レイヤー化する前に一旦除外
+        App.canvas.remove(path);
+        const layer = getOrCreateFreehandLayer();
+        layer.addWithUpdate(path);
+        if (!App.selectedLayerIds.includes(layer._layerId)) {
+            App.selectedLayerIds = [layer._layerId];
+            renderLayerList();
+        }
+        App.canvas.renderAll();
+        pushHistory(isEraser ? '消しゴム' : 'フリーハンドを追加');
     });
 
     window.addEventListener('resize', () => {
@@ -1500,8 +1539,8 @@ function groupSelected() {
         return;
     }
     const items = active.getObjects();
-    if (items.some((o) => o._isCellLayer || o._isTerrainLayer)) {
-        setTransientStatus('セル/地形レイヤーはグループ化できません');
+    if (items.some((o) => o._isCellLayer || o._isTerrainLayer || o._isFreehandLayer)) {
+        setTransientStatus('セル/地形/フリーハンドレイヤーはグループ化できません');
         return;
     }
     const group = active.toGroup();
@@ -1532,8 +1571,8 @@ function ungroupSelected() {
         setTransientStatus('グループを選択してください');
         return;
     }
-    if (active._isCellLayer || active._isTerrainLayer) {
-        setTransientStatus('セル/地形レイヤーは解除できません');
+    if (active._isCellLayer || active._isTerrainLayer || active._isFreehandLayer) {
+        setTransientStatus('セル/地形/フリーハンドレイヤーは解除できません');
         return;
     }
     const items = active.getObjects().slice();
@@ -1580,13 +1619,13 @@ function getCssVarColor(name, fallback) {
 /** target に応じて表示するアクション一覧を返す。 */
 function getActionsForTarget(t) {
     if (!t) return [];
-    const isCellOrTerrain = t._isCellLayer || t._isTerrainLayer;
-    const isGroup = t.type === 'group' && !isCellOrTerrain;
+    const isContainer = t._isCellLayer || t._isTerrainLayer || t._isFreehandLayer;
+    const isGroup = t.type === 'group' && !isContainer;
     const isActiveSel = t.type === 'activeSelection';
     const actions = [];
     if (isActiveSel) {
         const objs = (typeof t.getObjects === 'function') ? t.getObjects() : [];
-        if (!objs.some((o) => o._isCellLayer || o._isTerrainLayer)) {
+        if (!objs.some((o) => o._isCellLayer || o._isTerrainLayer || o._isFreehandLayer)) {
             actions.push({ icon: 'create_new_folder', title: 'グループ化', onClick: () => groupSelected() });
         }
     } else if (isGroup) {
@@ -1761,6 +1800,149 @@ function actionBarHitIndex(localX, actions) {
         });
     }
 })();
+
+/* ================================================================
+   フリーハンド (Fabric brushes 拡張)
+   - ブラシ種類: pencil / circle / spray / eraser
+   - 筆圧検知 (PointerEvent.pressure を使い、ストローク内の最大値で width をスケール)
+   - Shift で直線 (押下中の onMouseMove で中間点を捨て、最初+現在の2点で再描画)
+   - 消しゴム: destination-out 合成で「下の絵を消す」path として生成
+================================================================ */
+
+/** ブラシを切り替え、現在の各種設定 (幅/色/不透明度/decimation) を貼り直す。 */
+function setFreehandBrush(type) {
+    if (!App.canvas) return;
+    App.freehandBrush = type;
+    let brush;
+    switch (type) {
+        case 'circle':
+            brush = new fabric.CircleBrush(App.canvas);
+            break;
+        case 'spray':
+            brush = new fabric.SprayBrush(App.canvas);
+            // SprayBrush は density/dotWidth が固有プロパティ
+            brush.density = 20;
+            brush.dotWidth = 1;
+            brush.dotWidthVariance = 1;
+            brush.randomOpacity = true;
+            break;
+        case 'eraser':
+            brush = new fabric.PencilBrush(App.canvas);
+            brush._isEraser = true;
+            break;
+        case 'pencil':
+        default:
+            brush = new fabric.PencilBrush(App.canvas);
+            break;
+    }
+    App.canvas.freeDrawingBrush = brush;
+    patchFreehandBrush(brush);
+    syncFreehandBrushProps();
+}
+
+/** 現在の App.freehand* 設定を現行ブラシに反映する。 */
+function syncFreehandBrushProps() {
+    const b = App.canvas?.freeDrawingBrush;
+    if (!b) return;
+    const baseW = parseInt(document.getElementById('freehand-width')?.value) || App.freehandWidth || 3;
+    b.width = baseW;
+    // 消しゴム: destination-out では描画時の色は最終的に無視されるが、プレビュー (contextTop) には
+    // brush.color がそのまま見える。何を消しているか分かりやすいよう赤色で見せる。
+    if (b._isEraser) {
+        b.color = 'rgba(255,0,0,0.85)';
+    } else {
+        b.color = rgba(App.freehandColor || '#000000', App.freehandOpacity ?? 1);
+    }
+    if ('decimate' in b) {
+        b.decimate = App.freehandDecimation || 0;
+    }
+}
+
+/** ブラシインスタンスに「筆圧 + Shift 直線」のフックを刺す。同じブラシに二重適用しない。 */
+function patchFreehandBrush(brush) {
+    if (!brush || brush._patched) return;
+    brush._patched = true;
+
+    // --- 筆圧: ストローク中の最大 pressure を _strokePressureMax に記録 ---
+    const origDown = brush.onMouseDown.bind(brush);
+    const origMove = brush.onMouseMove.bind(brush);
+    const origUp = brush.onMouseUp ? brush.onMouseUp.bind(brush) : null;
+
+    brush.onMouseDown = function (pointer, opts) {
+        App._strokePressureMax = 0;
+        const p = opts?.e?.pressure;
+        if (App.freehandPressure && typeof p === 'number' && p > 0 && opts?.e?.pointerType !== 'mouse') {
+            App._strokePressureMax = p;
+        }
+        return origDown(pointer, opts);
+    };
+    brush.onMouseMove = function (pointer, opts) {
+        const e = opts?.e;
+        const p = e?.pressure;
+        if (App.freehandPressure && typeof p === 'number' && p > 0 && e?.pointerType !== 'mouse') {
+            if (p > App._strokePressureMax) App._strokePressureMax = p;
+        }
+        // Shift 押下中は直線にする: 内部の _points を [start, current] の2点に置き換えて再描画
+        if (App._shiftHeld && Array.isArray(this._points) && this._points.length > 0) {
+            this._points = [this._points[0]];
+            // 親 onMouseMove が pointer を追加 → 結果 [start, current] になる
+            const ret = origMove(pointer, opts);
+            // contextTop を直接書き直す (PencilBrush のみ — circle/spray は中間点も意味あるので shift は無効)
+            if (this._render && this.canvas?.contextTop) {
+                this.canvas.clearContext(this.canvas.contextTop);
+                this._render();
+            }
+            return ret;
+        }
+        return origMove(pointer, opts);
+    };
+    if (origUp) {
+        brush.onMouseUp = function (opts) {
+            // 筆圧があったら最終 width をスケール (ストローク中の最大値 0..1 を 0.3..1.4 程度にマップ)
+            if (App.freehandPressure && App._strokePressureMax > 0) {
+                const base = parseInt(document.getElementById('freehand-width')?.value) || App.freehandWidth || 3;
+                const scale = 0.3 + App._strokePressureMax * 1.1; // 軽く強調
+                this.width = Math.max(1, Math.round(base * scale));
+            }
+            const ret = origUp(opts);
+            // 元の width に戻す (次ストロークが筆圧無しでも基本値に戻る)
+            this.width = parseInt(document.getElementById('freehand-width')?.value) || App.freehandWidth || 3;
+            App._strokePressureMax = 0;
+            return ret;
+        };
+    }
+}
+
+/* ----------------------------------------------------------------
+   フリーハンドレイヤー (= 複数ストロークをまとめる fabric.Group)
+   セルレイヤーと同じ思想: 自動で 1 つのレイヤーに集約、ユーザーが「レイヤー追加」
+   タイルで明示的に新規作成。消しゴムも同レイヤーに入れて、当該レイヤー内だけを消す。
+---------------------------------------------------------------- */
+
+/** 選択中の既存フリーハンドレイヤー、無ければ最上位のもの、それも無ければ新規作成。 */
+function getOrCreateFreehandLayer() {
+    const selected = App.canvas.getObjects().find((o) => o._isFreehandLayer && App.selectedLayerIds.includes(o._layerId));
+    if (selected) return selected;
+    const existing = getMapLayers().reverse().find((o) => o._isFreehandLayer);
+    if (existing) return existing;
+    return createFreehandLayer();
+}
+
+/** 空のフリーハンドレイヤー (fabric.Group) を新規作成。objectCaching:true でグループ単位の影/合成を成立させる。 */
+function createFreehandLayer() {
+    const group = new fabric.Group([], {
+        selectable: false,
+        evented: false,
+        // セル同様、グループ全体に1つの影を落とすため & 消しゴム (destination-out) を
+        // このレイヤー内だけに効かせるためにキャッシュを有効化
+        objectCaching: true,
+        _isFreehandLayer: true,
+    });
+    addLayerObject('フリーハンド', group);
+    App.selectedLayerIds = [group._layerId];
+    renderLayerList();
+    return group;
+}
 
 /**
  * canvas のアクティブ選択 → App.selectedLayerIds への片方向同期。
@@ -2847,8 +3029,13 @@ function setActiveTool(toolName) {
 
     if (toolName === 'freehand') {
         App.canvas.isDrawingMode = true;
-        App.canvas.freeDrawingBrush.width = parseInt(document.getElementById('freehand-width')?.value) || 3;
-        App.canvas.freeDrawingBrush.color = rgba(App.strokeColor, App.strokeOpacity);
+        setFreehandBrush(App.freehandBrush);
+        // セル同様、最上位のフリーハンドレイヤーを自動選択 (無ければ新規作成は最初の path:created に委ねる)
+        const fl = getMapLayers().reverse().find((o) => o._isFreehandLayer);
+        if (fl && !App.selectedLayerIds.includes(fl._layerId)) {
+            App.selectedLayerIds = [fl._layerId];
+            renderLayerList();
+        }
     }
     App.canvas.defaultCursor = defaultCursorForTool(toolName);
     App.canvas.renderAll();
@@ -3220,6 +3407,12 @@ function buildSaveData() {
         wallTool: App.wallTool,
         wallPattern: App.wallPattern,
         wallThickness: App.wallThickness,
+        freehandBrush: App.freehandBrush,
+        freehandWidth: App.freehandWidth,
+        freehandColor: App.freehandColor,
+        freehandOpacity: App.freehandOpacity,
+        freehandDecimation: App.freehandDecimation,
+        freehandPressure: App.freehandPressure,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
         gridDashArray: App.gridDashArray,
@@ -3247,6 +3440,12 @@ function restoreSaveData(data) {
     if (typeof data.wallThickness === 'number') App.wallThickness = data.wallThickness;
     const wt = document.getElementById('wall-thickness');
     if (wt) wt.value = App.wallThickness;
+    if (data.freehandBrush) App.freehandBrush = data.freehandBrush;
+    if (typeof data.freehandWidth === 'number') App.freehandWidth = data.freehandWidth;
+    if (data.freehandColor) App.freehandColor = data.freehandColor;
+    if (typeof data.freehandOpacity === 'number') App.freehandOpacity = data.freehandOpacity;
+    if (typeof data.freehandDecimation === 'number') App.freehandDecimation = data.freehandDecimation;
+    if (typeof data.freehandPressure === 'boolean') App.freehandPressure = data.freehandPressure;
     App.gridColor = data.gridColor || 'rgba(0,0,0,1)';
     App.gridLineWidth = data.gridLineWidth || 1;
     App.gridDashArray = data.gridDashArray || null;
@@ -3878,9 +4077,30 @@ document.addEventListener('DOMContentLoaded', () => {
         pushHistory('ブレンドモードを変更');
     });
 
-    // フリーハンド線幅
+    // フリーハンド: ブラシ種類タイル (add-layer タイルは active 対象外、即アクション)
+    document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((tile) => {
+        tile.addEventListener('click', () => {
+            document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((t) => t.classList.remove('active'));
+            tile.classList.add('active');
+            setFreehandBrush(tile.dataset.freehandBrush);
+        });
+    });
+    document.querySelector('#freehand-brush-tiles [data-freehand-action="add-layer"]')?.addEventListener('click', () => {
+        createFreehandLayer();
+    });
+    // フリーハンド: 線幅
     document.getElementById('freehand-width')?.addEventListener('input', function () {
-        if (App.canvas.isDrawingMode) App.canvas.freeDrawingBrush.width = parseInt(this.value) || 3;
+        App.freehandWidth = parseInt(this.value) || 3;
+        syncFreehandBrushProps();
+    });
+    // フリーハンド: 平滑化 (decimation)
+    document.getElementById('freehand-decimation')?.addEventListener('input', function () {
+        App.freehandDecimation = parseInt(this.value) || 0;
+        syncFreehandBrushProps();
+    });
+    // フリーハンド: 筆圧検知
+    document.getElementById('freehand-pressure')?.addEventListener('change', function () {
+        App.freehandPressure = this.checked;
     });
 
     // スナップ設定

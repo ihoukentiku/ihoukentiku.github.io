@@ -1217,14 +1217,35 @@
                         <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (ドア/家具/木/岩などのSVGスタンプ)</p>
                     </div>
                 </div>
-                <!-- フリーハンド -->
+                <!-- フリーハンド (Fabric brushes + 圧力検知 + Shift で直線) -->
                 <div class="prop-group" data-prop="freehand">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">draw</span>フリーハンド</div>
+                        <div class="tool-tiles" id="freehand-brush-tiles">
+                            <div class="tool-tile active" data-freehand-brush="pencil" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
+                            <!-- ドット (CircleBrush) は一旦非表示。復活させたい時は下行のコメントを外すだけ
+                            <div class="tool-tile" data-freehand-brush="circle" title="ドット"><span class="material-symbols-outlined">scatter_plot</span><span>ドット</span></div>
+                            -->
+                            <div class="tool-tile" data-freehand-brush="spray" title="スプレー"><span class="material-symbols-outlined">shower</span><span>スプレー</span></div>
+                            <div class="tool-tile" data-freehand-brush="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
+                            <div class="tool-tile" data-freehand-action="add-layer" title="フリーハンドレイヤーを追加"><span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span></div>
+                        </div>
+                        <div class="f" id="freehand-color-row">
+                            <span class="fl">色</span>
+                            <div id="freehand-color-picker"></div>
+                        </div>
                         <div class="f">
                             <span class="fl">線幅</span>
                             <div class="row"><input type="number" id="freehand-width" value="3" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div>
                         </div>
+                        <div class="f">
+                            <span class="fl">平滑化</span>
+                            <div class="row"><input type="number" id="freehand-decimation" value="4" min="0" max="20" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="freehand-pressure" checked /><span class="tl">筆圧検知 (タブレット)</span></label>
+                        </div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.65rem; margin: 0.2rem 0 0">Shift キーを押しながら描くと直線になります</p>
                     </div>
                 </div>
                 <!-- テキスト -->
