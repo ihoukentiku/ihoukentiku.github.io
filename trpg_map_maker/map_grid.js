@@ -30,6 +30,48 @@
         ステータスバー表示用の文字列 (例: "12, 7")。
 ================================================================ */
 
+/**
+ * 有向辺の集合 (各辺 from→to は CW で外周を向いている前提) を連結して閉ループ化し、
+ * SVG path d 文字列を返す。穴は CCW で別ループになり、fill-rule='evenodd' で正しく描かれる。
+ * @param {{from:[number,number], to:[number,number]}[]} edges - 座標は格子単位 (grid units)
+ * @param {number} unit - 1 格子の世界座標サイズ (square なら cellSize、hex は別途座標が world ならば 1)
+ */
+function walkEdgeLoopsToD(edges, unit) {
+    if (edges.length === 0) return '';
+    // 浮動小数誤差を吸収するため小数 3 桁で量子化したキーを使う。
+    const ptKey = (p) => `${Math.round(p[0] * 1000) / 1000},${Math.round(p[1] * 1000) / 1000}`;
+    const fromMap = new Map();
+    for (const ed of edges) {
+        const k = ptKey(ed.from);
+        if (!fromMap.has(k)) fromMap.set(k, []);
+        fromMap.get(k).push(ed);
+    }
+    const used = new Set();
+    const loops = [];
+    for (const seed of edges) {
+        if (used.has(seed)) continue;
+        const loop = [];
+        let cur = seed;
+        let safety = edges.length + 4;
+        while (cur && !used.has(cur) && safety-- > 0) {
+            used.add(cur);
+            loop.push(cur.from);
+            const cand = fromMap.get(ptKey(cur.to)) || [];
+            cur = cand.find((e) => !used.has(e));
+        }
+        if (loop.length >= 3) loops.push(loop);
+    }
+    let d = '';
+    for (const loop of loops) {
+        d += `M ${loop[0][0] * unit} ${loop[0][1] * unit}`;
+        for (let i = 1; i < loop.length; i++) {
+            d += ` L ${loop[i][0] * unit} ${loop[i][1] * unit}`;
+        }
+        d += ' z';
+    }
+    return d;
+}
+
 const GridAdapters = {};
 
 /** 現在の App.gridType に対応する GridAdapter を返す。未対応なら square を返す。 */
@@ -80,6 +122,33 @@ GridAdapters.square = {
         const cs = App.cellSize;
         const x = col * cs, y = row * cs;
         return `M ${x} ${y} h ${cs} v ${cs} h -${cs} z`;
+    },
+
+    /**
+     * entries (同じ fillKey のセル群) の輪郭を 1 つの SVG d 文字列にまとめる。
+     * 境界辺 (隣接セルが同グループに無い辺) を CW で集めてループ化、穴は CCW で別ループに。
+     * fill-rule='evenodd' で穴対応。
+     * @param {Array<{col:number,row:number}>} entries
+     * @returns {string}
+     */
+    buildUnionPath(entries) {
+        const cs = App.cellSize;
+        const set = new Set(entries.map((e) => `${e.col},${e.row}`));
+        // 各セル外周を CW で 4 辺。隣接が同グループに無い辺だけ収集
+        // 辺座標は (col, row) 単位の格子点 (世界座標 = grid * cs)。
+        const edges = [];
+        for (const e of entries) {
+            const { col, row } = e;
+            // 上辺: (col,row) → (col+1,row)。外側 = (col,row-1)
+            if (!set.has(`${col},${row - 1}`)) edges.push({ from: [col, row], to: [col + 1, row] });
+            // 右辺: (col+1,row) → (col+1,row+1)。外側 = (col+1,row)
+            if (!set.has(`${col + 1},${row}`)) edges.push({ from: [col + 1, row], to: [col + 1, row + 1] });
+            // 下辺: (col+1,row+1) → (col,row+1)。外側 = (col,row+1)
+            if (!set.has(`${col},${row + 1}`)) edges.push({ from: [col + 1, row + 1], to: [col, row + 1] });
+            // 左辺: (col,row+1) → (col,row)。外側 = (col-1,row)
+            if (!set.has(`${col - 1},${row}`)) edges.push({ from: [col, row + 1], to: [col, row] });
+        }
+        return walkEdgeLoopsToD(edges, cs);
     },
 
     snapPoints(x, y) {
@@ -302,6 +371,34 @@ function createHexAdapter(orientation, fit) {
             const c = hexCenter(col, row);
             const v = hexVertices(c.x, c.y);
             return `M ${v[0].x} ${v[0].y} L ${v[1].x} ${v[1].y} L ${v[2].x} ${v[2].y} L ${v[3].x} ${v[3].y} L ${v[4].x} ${v[4].y} L ${v[5].x} ${v[5].y} z`;
+        },
+
+        /**
+         * 同じ fillKey のヘクス群を 1 つの輪郭 SVG d にまとめる。
+         * 各ヘクスは 6 辺。隣接ヘクスが同グループに無い辺だけ集めて連結。
+         * neighborByEdgeIdx: 頂点 i → i+1 の辺の「外側ヘクス」が axial 上の何方向か。
+         * (flat-top / pointy-top で順序が違うが、cellNeighbors と同じ並びと仮定)
+         */
+        buildUnionPath(entries) {
+            const set = new Set(entries.map((e) => `${e.col},${e.row}`));
+            // cellNeighbors の返す並びと「頂点 i 〜 i+1 の辺」を対応させる。
+            // hex の頂点列 (hexVertices) の隣接エッジ index i は方向 i に対応するよう作る。
+            // → adapter.cellNeighbors の i 番目を「頂点 i 〜 i+1 の辺の外側」として扱う前提。
+            //   この対応が崩れていたら hex の union が壊れる。順序の根拠は本ファイル末尾の hexVertices と cellNeighbors を参照。
+            const edges = [];
+            for (const e of entries) {
+                const { col, row } = e;
+                const c = hexCenter(col, row);
+                const v = hexVertices(c.x, c.y);
+                const neigh = this.cellNeighbors(col, row);
+                for (let i = 0; i < 6; i++) {
+                    const [nc, nr] = neigh[i];
+                    if (!set.has(`${nc},${nr}`)) {
+                        edges.push({ from: [v[i].x, v[i].y], to: [v[(i + 1) % 6].x, v[(i + 1) % 6].y] });
+                    }
+                }
+            }
+            return walkEdgeLoopsToD(edges, 1);
         },
 
         snapPoints(x, y) {

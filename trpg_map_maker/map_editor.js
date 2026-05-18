@@ -2012,12 +2012,13 @@ function createCellLayer() {
         // 統一シャドウのため group キャッシュを有効化。
         // noScaleCache: false にしないと、デフォルト挙動 (1x で焼いて拡大表示) で
         // ズーム時にビットマップが伸びてジャギーになる。false なら現在の zoom に応じて毎回再キャッシュ。
-        objectCaching: true,
+        objectCaching: false,
         noScaleCache: false,
         _isCellLayer: true,
         _cellData: new Map(),
         _pendingErase: new Set(),
         _tempChildren: [],
+        _tempByKey: new Map(),
     });
     addLayerObject('セル', group);
     // 作成直後に選択状態にする
@@ -2069,13 +2070,14 @@ function createGroundCellLayer() {
         // 統一シャドウのため group キャッシュを有効化。
         // noScaleCache: false にしないと、デフォルト挙動 (1x で焼いて拡大表示) で
         // ズーム時にビットマップが伸びてジャギーになる。false なら現在の zoom に応じて毎回再キャッシュ。
-        objectCaching: true,
+        objectCaching: false,
         noScaleCache: false,
         _isCellLayer: true,
         _isGroundLayer: true,
         _cellData: new Map(),
         _pendingErase: new Set(),
         _tempChildren: [],
+        _tempByKey: new Map(),
     });
     addCategoryLayer('地面_セル', group, '_isGroundLayer');
     App.selectedLayerIds = [group._layerId];
@@ -2102,21 +2104,27 @@ function addCellToLayer(layer, key, entry, tempFill) {
     if (!layer._cellData) layer._cellData = new Map();
     if (!layer._pendingErase) layer._pendingErase = new Set();
     if (!layer._tempChildren) layer._tempChildren = [];
-    // ペンで描いた場所が以前に同セッションで消し予約されてたら撤回
+    if (!layer._tempByKey) layer._tempByKey = new Map();
     layer._pendingErase.delete(key);
+    const prev = layer._cellData.get(key);
+    const existingTemp = layer._tempByKey.get(key);
+    // 既に同じ fill で同セルに temp Rect が乗っているなら何もしない (ペンドラッグの重複防止)
+    if (existingTemp && prev && prev.fillKey === entry.fillKey) return;
+    // 違う fill なら古い temp Rect を取り除いてから新しいのを置く
+    if (existingTemp) removeTempChild(layer, existingTemp);
     layer._cellData.set(key, entry);
-    // temp Rect (完成形 fill。シャドウは group 任せなので Rect には付けない)
     const adapter = ga();
     const shape = adapter.createCellShape(entry.col, entry.row, tempFill);
     if (!shape) return;
     shape._temp = true;
-    // パターンの world アンカー (temp Rect はまだ group に入る前なので left が world 座標)
+    shape._cellKey = key;
     snapshotWorldPosition(shape);
     if (entry.mode === 'pattern') {
         applyPatternTransformOnObj(shape, entry.patOffX, entry.patOffY, entry.patRot, entry.patScale);
     }
     layer.addWithUpdate(shape);
     layer._tempChildren.push(shape);
+    layer._tempByKey.set(key, shape);
     App.canvas.requestRenderAll();
 }
 
@@ -2128,21 +2136,41 @@ function eraseCellFromLayer(layer, adapter, col, row) {
     const key = adapter.cellKey(col, row);
     if (!layer._pendingErase) layer._pendingErase = new Set();
     if (!layer._tempChildren) layer._tempChildren = [];
-    // _cellData にも _tempChildren にもまだ無いセルは消す対象なし
-    if (!layer._cellData.has(key) && !hasTempCellAt(layer, col, row)) return;
+    if (!layer._tempByKey) layer._tempByKey = new Map();
+    // _cellData にも temp にも無いセルは消す対象なし
+    if (!layer._cellData.has(key) && !layer._tempByKey.has(key)) return;
+    // 既に同セルに temp 要素 (ペン or 消し) があれば取り除き、消しゴム rect で置き換え
+    const existingTemp = layer._tempByKey.get(key);
+    if (existingTemp) {
+        // 既存が同じく destination-out なら何もしない (消しゴムドラッグの重複防止)
+        if (existingTemp.globalCompositeOperation === 'destination-out') {
+            layer._pendingErase.add(key);
+            return;
+        }
+        removeTempChild(layer, existingTemp);
+    }
     layer._pendingErase.add(key);
     const shape = adapter.createCellShape(col, row, 'rgba(0,0,0,1)');
     if (!shape) return;
     shape._temp = true;
+    shape._cellKey = key;
     shape.set({ globalCompositeOperation: 'destination-out' });
     snapshotWorldPosition(shape);
     layer.addWithUpdate(shape);
     layer._tempChildren.push(shape);
+    layer._tempByKey.set(key, shape);
     App.canvas.requestRenderAll();
 }
 
-function hasTempCellAt(layer, col, row) {
-    return (layer._tempChildren || []).some((c) => c._cellCol === col && c._cellRow === row && !c.globalCompositeOperation);
+/** _tempChildren / _tempByKey / group から temp 要素を取り除く。 */
+function removeTempChild(layer, child) {
+    if (!child) return;
+    layer.removeWithUpdate(child);
+    const idx = layer._tempChildren.indexOf(child);
+    if (idx >= 0) layer._tempChildren.splice(idx, 1);
+    if (child._cellKey && layer._tempByKey?.get(child._cellKey) === child) {
+        layer._tempByKey.delete(child._cellKey);
+    }
 }
 
 /**
@@ -2161,6 +2189,7 @@ function commitCellLayer(layer) {
     const oldChildren = layer.getObjects().slice();
     for (const c of oldChildren) layer.remove(c);
     layer._tempChildren = [];
+    layer._tempByKey = new Map();
     // fillKey でグルーピング
     const groups = new Map(); // fillKey → { entries: [], sample: cellEntry }
     for (const entry of layer._cellData.values()) {
@@ -2171,19 +2200,20 @@ function commitCellLayer(layer) {
         }
         g.entries.push(entry);
     }
-    // 各グループから fabric.Path を生成
+    // 各グループから fabric.Path を生成 (融合された 1 つの輪郭)
     const adapter = ga();
     for (const g of groups.values()) {
-        const d = g.entries.map((e) => adapter.cellSubpath(e.col, e.row)).join(' ');
+        const d = adapter.buildUnionPath(g.entries);
+        if (!d) continue;
         const fill = entryToFill(g.sample);
         const path = new fabric.Path(d, {
             fill,
-            stroke: fill,    // 隣接 subpath 境界の AA 隙間を埋める
-            strokeWidth: 0.5,
+            stroke: null,         // 輪郭融合済みなので AA 隙間対策の縁取りは不要
+            strokeWidth: 0,
             objectCaching: false,
             selectable: false,
             evented: false,
-            fillRule: 'nonzero',
+            fillRule: 'evenodd',  // 穴付き領域に対応
         });
         // パターン世界アンカー: snapshotWorldPosition 後 applyPatternTransformOnObj
         snapshotWorldPosition(path);
@@ -2211,6 +2241,7 @@ function rebuildCellDataFromEntries(layer, adapter) {
     layer._cellData = new Map();
     layer._pendingErase = new Set();
     layer._tempChildren = [];
+    layer._tempByKey = new Map();
     const arr = layer._cellEntries || [];
     for (const e of arr) layer._cellData.set(adapter.cellKey(e.col, e.row), e);
 }
@@ -3462,7 +3493,7 @@ function restoreSaveData(data) {
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
                 // 新規作成時 (createCellLayer / createGroundCellLayer) と同じ設定にして挙動を揃える。
-                obj.set({ objectCaching: true, noScaleCache: false });
+                obj.set({ objectCaching: false, noScaleCache: false });
                 // _cellEntries (シリアライズ済み配列) から _cellData Map を復元 → commit で Path 再生成
                 rebuildCellDataFromEntries(obj, adapter);
                 commitCellLayer(obj);
@@ -3720,7 +3751,7 @@ function restoreHistorySnapshot(snapshot, displayName) {
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
-                obj.set({ objectCaching: true, noScaleCache: false });
+                obj.set({ objectCaching: false, noScaleCache: false });
                 rebuildCellDataFromEntries(obj, adapter);
                 commitCellLayer(obj);
             }
