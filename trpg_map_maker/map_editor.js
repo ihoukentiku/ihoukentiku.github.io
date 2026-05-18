@@ -2847,6 +2847,41 @@ function getPatternFill(id, fallback) {
     return def.color || fallback || '#888888';
 }
 
+/**
+ * ストローク用の Pattern fill 値を返す。
+ * 通常版 (getPatternFill) との違い: source 画像を PATTERNS[].scale × App.patternScale 分だけ
+ * 事前にダウンスケールした canvas に差し替える。
+ *
+ * 理由: fabric.Pattern の patternTransform に scale を入れると、ストロークの場合 fabric が
+ * ctx.transform 経由で適用する経路を取り、ストローク幾何 (lineWidth) まで scale 倍されてしまう。
+ * → ズーム時に壁が想定より細くなる。フィルは pattern 座標系内で閉じるので影響しない。
+ * 事前縮小 + patternTransform に scale を含めない、で回避する。
+ */
+const _strokeScaledSourceCache = new Map(); // 'id@scale' → HTMLCanvasElement
+function getStrokePatternFill(id, fallback) {
+    const def = getPatternDef(id);
+    if (!def) return fallback || '#888888';
+    const cached = _patternImageCache.get(id);
+    if (cached?.state !== 'ready') {
+        if (!cached) loadPatternImage(id);
+        return def.color || fallback || '#888888';
+    }
+    const totalScale = (def.scale ?? 1) * (App.patternScale ?? 1);
+    if (totalScale === 1) return new fabric.Pattern({ source: cached.img, repeat: 'repeat' });
+    const key = `${id}@${totalScale}`;
+    let scaled = _strokeScaledSourceCache.get(key);
+    if (!scaled) {
+        const sw = Math.max(1, Math.round(cached.img.naturalWidth * totalScale));
+        const sh = Math.max(1, Math.round(cached.img.naturalHeight * totalScale));
+        scaled = document.createElement('canvas');
+        scaled.width = sw;
+        scaled.height = sh;
+        scaled.getContext('2d').drawImage(cached.img, 0, 0, sw, sh);
+        _strokeScaledSourceCache.set(key, scaled);
+    }
+    return new fabric.Pattern({ source: scaled, repeat: 'repeat' });
+}
+
 /** App.groundPattern (solid / pattern) から fill 値を返す。 */
 function getGroundFill() {
     const s = App.groundPattern;
@@ -2858,7 +2893,7 @@ function getGroundFill() {
 function getWallStroke() {
     const s = App.wallPattern;
     if (s.mode === 'solid') return s.solidColor || '#333333';
-    return getPatternFill(s.id, s.solidColor);
+    return getStrokePatternFill(s.id, s.solidColor);
 }
 
 /**
@@ -2900,7 +2935,7 @@ function getRoomGroundFill() {
 function getRoomWallStroke() {
     const s = App.roomWallPattern;
     if (!s || s.mode === 'solid') return s?.solidColor || '#5a5a5a';
-    return getPatternFill(s.id, s.solidColor);
+    return getStrokePatternFill(s.id, s.solidColor);
 }
 
 /**
@@ -3185,7 +3220,8 @@ function applyPatternTransformParts(obj, baseOffX, baseOffY, deg, fillScale, str
     if (obj.stroke && typeof fabric !== 'undefined' && obj.stroke instanceof fabric.Pattern) {
         obj.stroke.offsetX = offX;
         obj.stroke.offsetY = offY;
-        obj.stroke.patternTransform = makeT(strokeScale);
+        // ストロークでは scale を patternTransform に入れない (上記同様)。scale は事前に source 画像に焼き込み。
+        obj.stroke.patternTransform = (deg === 0) ? null : [Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180), -Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180), 0, 0];
         changed = true;
     }
     if (changed) obj.dirty = true;
@@ -3215,7 +3251,10 @@ function applyPatternTransformOnObj(obj, baseOffX, baseOffY, deg, scale) {
     if (obj.stroke && typeof fabric !== 'undefined' && obj.stroke instanceof fabric.Pattern) {
         obj.stroke.offsetX = offX;
         obj.stroke.offsetY = offY;
-        obj.stroke.patternTransform = transform;
+        // ストロークでは patternTransform に scale を入れない (fabric が ctx.transform で適用するため
+        // 線幅が崩れる)。scale は getStrokePatternFill で source 画像側に焼き込み済み。
+        // 回転のみ patternTransform に反映する。
+        obj.stroke.patternTransform = (deg === 0) ? null : [cos, sin, -sin, cos, 0, 0];
         changed = true;
     }
     if (changed) obj.dirty = true;
