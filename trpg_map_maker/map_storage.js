@@ -15,6 +15,7 @@ const SAVE_CUSTOM_PROPS = [
     '_layerId', '_isMapLayer', '_layerName',
     '_isCellLayer', '_isTerrainLayer', '_isMapText', '_isFreehandLayer',
     '_isGroundLayer', '_isWallLayer',
+    '_isRoomGroup', '_isRoomGround', '_isRoomWall',
     '_terrainId', '_worldLeft', '_worldTop',
     // セルレイヤーは _cellEntries (配列) として保存 (内部 Map は再構築される)
     '_cellEntries',

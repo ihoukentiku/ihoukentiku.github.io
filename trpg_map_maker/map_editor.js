@@ -53,6 +53,13 @@ const App = {
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
     wallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#5a5a5a' },
     wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
+    // ---- 地図モード: 部屋タブ (地面+壁の複合) ----
+    roomTool: 'rect', // 'rect' | 'ellipse' | 'polygon' | 'curve-closed'
+    roomGroundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#9b8c70' },
+    roomWallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#5a5a5a' },
+    roomWallThickness: 12,
+    roomGroundShadowEnabled: false,
+    roomWallShadowEnabled: true,
     // ---- フリーハンド (Fabric brushes 拡張) ----
     freehandBrush: 'pencil', // 'pencil' | 'circle' | 'spray' | 'eraser'
     freehandWidth: 3,
@@ -313,7 +320,8 @@ function updateFillStrokeVisibility() {
     const drawSubtools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'curve', 'curve-closed'];
     const isGround = App.activeTool === 'ground';
     const isWall = App.activeTool === 'wall';
-    const isSimpleDraw = !isGround && !isWall && drawSubtools.includes(sub);
+    const isRoom = App.activeTool === 'room';
+    const isSimpleDraw = !isGround && !isWall && !isRoom && drawSubtools.includes(sub);
     const isSelect = App.activeTool === 'select';
 
     // 各行の表示判定
@@ -355,9 +363,9 @@ function updateFillStrokeVisibility() {
     // スナップ設定: 描画系サブツール (シンプル/地面/壁) で表示。セルは grid 単位なので不要
     const snapSubtools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
     setDisp('snap-sec', snapSubtools.includes(sub));
-    // パターン共通設定: 地面/壁モードでのみ表示
-    setDisp('pattern-transform-sec', isGround || isWall);
-    // 影セクション: 何かしらの描画 (シンプル/地面/壁) で表示
+    // パターン共通設定: 地面/壁/部屋モードで表示
+    setDisp('pattern-transform-sec', isGround || isWall || isRoom);
+    // 影セクション: シンプル/地面/壁で表示 (部屋は専用トグルを prop-group 内に持つ)
     setDisp('shadow-sec', isSimpleDraw || isGround || isWall);
     refreshShadowUI();
     // 線継ぎ目 / 線端: ストロークがあるサブツールと同条件、ただしフリーハンドでは出さない
@@ -653,35 +661,62 @@ function initCanvas() {
                         const style = getCurrentDrawStyle();
                         const left = Math.min(d.startX, pt.x),
                             top = Math.min(d.startY, pt.y);
-                        const hsw = style.strokeWidth / 2;
                         const subtool = activeSubtool();
-                        const obj =
-                            subtool === 'rect'
-                                ? new fabric.Rect({
-                                      left: left - hsw,
-                                      top: top - hsw,
-                                      width: w,
-                                      height: h,
-                                      rx: App.cornerRadius,
-                                      ry: App.cornerRadius,
-                                      fill: style.fill,
-                                      stroke: style.stroke,
-                                      strokeWidth: style.strokeWidth,
-                                      strokeDashArray: style.strokeDashArray,
-                                      objectCaching: false,
-                                  })
-                                : new fabric.Ellipse({
-                                      left: left - hsw,
-                                      top: top - hsw,
-                                      rx: w / 2,
-                                      ry: h / 2,
-                                      fill: style.fill,
-                                      stroke: style.stroke,
-                                      strokeWidth: style.strokeWidth,
-                                      strokeDashArray: style.strokeDashArray,
-                                      objectCaching: false,
-                                  });
-                        addCategoryLayer(style.namePrefix + (subtool === 'rect' ? '矩形' : '楕円'), obj, style.flag);
+                        if (App.activeTool === 'room') {
+                            const hswR = (App.roomWallThickness || 12) / 2;
+                            addRoom(
+                                '部屋_' + (subtool === 'rect' ? '矩形' : '楕円'),
+                                (st) =>
+                                    subtool === 'rect'
+                                        ? new fabric.Rect({
+                                              left: left - hswR,
+                                              top: top - hswR,
+                                              width: w,
+                                              height: h,
+                                              rx: App.cornerRadius,
+                                              ry: App.cornerRadius,
+                                              ...st,
+                                              objectCaching: false,
+                                          })
+                                        : new fabric.Ellipse({
+                                              left: left - hswR,
+                                              top: top - hswR,
+                                              rx: w / 2,
+                                              ry: h / 2,
+                                              ...st,
+                                              objectCaching: false,
+                                          })
+                            );
+                        } else {
+                            const hsw = style.strokeWidth / 2;
+                            const obj =
+                                subtool === 'rect'
+                                    ? new fabric.Rect({
+                                          left: left - hsw,
+                                          top: top - hsw,
+                                          width: w,
+                                          height: h,
+                                          rx: App.cornerRadius,
+                                          ry: App.cornerRadius,
+                                          fill: style.fill,
+                                          stroke: style.stroke,
+                                          strokeWidth: style.strokeWidth,
+                                          strokeDashArray: style.strokeDashArray,
+                                          objectCaching: false,
+                                      })
+                                    : new fabric.Ellipse({
+                                          left: left - hsw,
+                                          top: top - hsw,
+                                          rx: w / 2,
+                                          ry: h / 2,
+                                          fill: style.fill,
+                                          stroke: style.stroke,
+                                          strokeWidth: style.strokeWidth,
+                                          strokeDashArray: style.strokeDashArray,
+                                          objectCaching: false,
+                                      });
+                            addCategoryLayer(style.namePrefix + (subtool === 'rect' ? '矩形' : '楕円'), obj, style.flag);
+                        }
                     }
                     App._drawing = null;
                 }
@@ -862,7 +897,7 @@ function initCanvas() {
         const _previewStyle = (() => {
             const s = getCurrentDrawStyle();
             const base =
-                App.activeTool === 'ground' || App.activeTool === 'wall'
+                App.activeTool === 'ground' || App.activeTool === 'wall' || App.activeTool === 'room'
                     ? s
                     : {
                           ...s,
@@ -1442,9 +1477,24 @@ function getCssVarColor(name, fallback) {
 ================================================================ */
 const BOOL_CURVE_SAMPLES = 24;
 
+/** ブール演算のカテゴリを返す。同一カテゴリ同士のみ演算可。 */
+function boolCategory(o) {
+    if (!o) return null;
+    if (o._isRoomGroup) return 'room';
+    if (o._isWallLayer) return 'wall';
+    if (o._isGroundLayer) return 'ground';
+    return 'simple';
+}
+
 /** fabric.Object → 世界座標のリング配列 [ring1, ring2, ...] (各ring = [[x,y], ...])。対象外なら null */
 function shapeToWorldRings(obj) {
     if (!obj) return null;
+    // 部屋グループは中の地面 (_isRoomGround) を演算対象として扱う
+    if (obj._isRoomGroup && typeof obj.getObjects === 'function') {
+        const ground = obj.getObjects().find((c) => c._isRoomGround);
+        if (!ground) return null;
+        return shapeToWorldRings(ground);
+    }
     const m = obj.calcTransformMatrix();
     const apply = (lx, ly) => {
         const p = fabric.util.transformPoint({ x: lx, y: ly }, m);
@@ -1528,6 +1578,7 @@ function pathToRings(obj, off, apply) {
 function isBooleanTarget(o) {
     if (!o) return false;
     if (o._isCellLayer || o._isTerrainLayer || o._isFreehandLayer || o._isMapText) return false;
+    if (o._isRoomGroup) return true;
     return ['rect', 'ellipse', 'circle', 'polygon', 'polyline', 'path'].includes(o.type);
 }
 
@@ -1549,6 +1600,16 @@ function performBooleanOp(op) {
     const objs = active.getObjects().filter(isBooleanTarget);
     if (objs.length < 2) {
         setTransientStatus('ブール演算可能な図形を 2 個以上選んでください');
+        return;
+    }
+    // カテゴリチェック (シンプル/地面/壁/部屋は混在不可)
+    const cat = boolCategory(objs[0]);
+    if (!objs.every((o) => boolCategory(o) === cat)) {
+        setTransientStatus('同じ種類 (シンプル/地面/壁/部屋) の図形だけを選んでください');
+        return;
+    }
+    if (cat === 'room') {
+        performBooleanOpRoom(op, objs);
         return;
     }
     // calcTransformMatrix は親 (ActiveSelection) を辿って正しいワールド座標を返すので、
@@ -1604,6 +1665,88 @@ function performBooleanOp(op) {
     App.canvas.setActiveObject(path);
     App.canvas.renderAll();
     pushHistory(`ブール演算: ${opLabel}`);
+}
+
+/**
+ * 部屋グループ同士のブール演算。
+ * 各部屋の地面 (_isRoomGround) を世界座標リング化 → polygon-clipping → SVG path 化し、
+ * その path から新しい地面/壁の fabric.Path を生成して新しい部屋グループに包む。
+ * スタイル (fill / stroke / strokeWidth / shadow) は第一選択の部屋から継承。
+ * @param {string} op
+ * @param {fabric.Object[]} rooms - _isRoomGroup を持つ fabric.Group の配列
+ */
+function performBooleanOpRoom(op, rooms) {
+    if (typeof polygonClipping === 'undefined') {
+        setTransientStatus('polygon-clipping ライブラリが読み込まれていません');
+        return;
+    }
+    const polys = rooms.map(shapeToWorldRings).filter((r) => r && r.length > 0);
+    if (polys.length < 2) {
+        setTransientStatus('変換できる部屋が足りません');
+        return;
+    }
+    let result;
+    try {
+        result = polygonClipping[op](polys[0], ...polys.slice(1));
+    } catch (e) {
+        console.error(e);
+        setTransientStatus('ブール演算に失敗しました');
+        return;
+    }
+    if (!result || result.length === 0) {
+        setTransientStatus('結果が空です');
+        return;
+    }
+    let d = '';
+    for (const poly of result) {
+        for (const ring of poly) {
+            if (ring.length < 3) continue;
+            d += `M ${ring[0][0]} ${ring[0][1]}`;
+            for (let i = 1; i < ring.length; i++) d += ` L ${ring[i][0]} ${ring[i][1]}`;
+            d += ' Z ';
+        }
+    }
+    // 第一選択の部屋からスタイル継承
+    const src = rooms[0];
+    const srcGround = src.getObjects().find((c) => c._isRoomGround);
+    const srcWall = src.getObjects().find((c) => c._isRoomWall);
+    const ground = new fabric.Path(d, {
+        fill: srcGround?.fill ?? getRoomGroundFill(),
+        stroke: null,
+        strokeWidth: 0,
+        shadow: srcGround?.shadow || null,
+        opacity: srcGround?.opacity ?? 1,
+        objectCaching: false,
+        fillRule: 'evenodd',
+    });
+    ground.set({ _isRoomGround: true });
+    const wall = new fabric.Path(d, {
+        fill: '',
+        stroke: srcWall?.stroke ?? getRoomWallStroke(),
+        strokeWidth: srcWall?.strokeWidth ?? (App.roomWallThickness || 12),
+        strokeLineJoin: srcWall?.strokeLineJoin || 'miter',
+        strokeLineCap: srcWall?.strokeLineCap || 'butt',
+        shadow: srcWall?.shadow || null,
+        opacity: srcWall?.opacity ?? 1,
+        objectCaching: false,
+        fillRule: 'evenodd',
+    });
+    wall.set({ _isRoomWall: true });
+    const group = new fabric.Group([ground, wall], {
+        objectCaching: false,
+        subTargetCheck: false,
+    });
+    group.set({ _isRoomGroup: true });
+
+    App.canvas.discardActiveObject();
+    const zIndex = App.canvas.getObjects().indexOf(src);
+    App.canvas.remove(...rooms);
+    const opLabel = { union: '合体', intersection: '交差', difference: '差', xor: '排他' }[op] || op;
+    addLayerObject(opLabel + '_部屋', group);
+    if (zIndex >= 0) App.canvas.moveTo(group, zIndex);
+    App.canvas.setActiveObject(group);
+    App.canvas.renderAll();
+    pushHistory(`部屋のブール演算: ${opLabel}`);
 }
 
 function getActionsForTarget(t) {
@@ -1796,6 +1939,9 @@ function actionBarHitIndex(localX, actions) {
         const objs = (typeof t.getObjects === 'function') ? t.getObjects() : [];
         const usable = objs.filter(isBooleanTarget);
         if (usable.length < 2) return [];
+        // 同一カテゴリでなければブール演算不可
+        const cat = boolCategory(usable[0]);
+        if (!usable.every((o) => boolCategory(o) === cat)) return [];
         return boolActions.map((a) => ({
             icon: a.icon, title: a.title,
             onClick: () => performBooleanOp(a.op),
@@ -2728,7 +2874,93 @@ function activeSubtool() {
     if (App.activeTool === 'wall') {
         return document.querySelector('#wall-tool-tiles .tool-tile.active')?.dataset.wallTool || 'rect';
     }
+    if (App.activeTool === 'room') {
+        return document.querySelector('#room-tool-tiles .tool-tile.active')?.dataset.roomTool || 'rect';
+    }
     return App.activeTool;
+}
+
+/** App.roomGroundPattern → fill 値 (solid/pattern)。 */
+function getRoomGroundFill() {
+    const s = App.roomGroundPattern;
+    if (!s || s.mode === 'solid') return s?.solidColor || '#9b8c70';
+    return getPatternFill(s.id, s.solidColor);
+}
+/** App.roomWallPattern → stroke 値 (solid/pattern)。 */
+function getRoomWallStroke() {
+    const s = App.roomWallPattern;
+    if (!s || s.mode === 'solid') return s?.solidColor || '#5a5a5a';
+    return getPatternFill(s.id, s.solidColor);
+}
+
+/**
+ * 部屋の子オブジェクト (地面/壁) にパターン変換用のスナップショットを書き込む。
+ * snapshotPatternSettings の部屋版 — kind に応じて roomGroundPattern / roomWallPattern を参照する。
+ */
+function snapshotRoomPatternSettings(obj, kind) {
+    if (!obj) return;
+    const state = kind === 'wall' ? App.roomWallPattern : App.roomGroundPattern;
+    const def = getPatternDef(state?.id);
+    const initScale = def?.scale ?? 1;
+    obj.set({
+        _patternOffsetX: App.patternOffsetX || 0,
+        _patternOffsetY: App.patternOffsetY || 0,
+        _patternRotation: App.patternRotation || 0,
+        _patternScale: initScale * (App.patternScale ?? 1),
+    });
+}
+
+/** 影オブジェクトを共通設定から生成する。affectStroke=true で fill 透明の壁にも効かせる。 */
+function makeShadowFromApp() {
+    return new fabric.Shadow({
+        color: App.shadowColor,
+        blur: App.shadowBlur,
+        offsetX: App.shadowOffsetX,
+        offsetY: App.shadowOffsetY,
+        affectStroke: true,
+    });
+}
+
+/**
+ * 部屋を作成する。同一ジオメトリで「地面 (fill=パターン)」「壁 (stroke=パターン+太さ)」の 2 つの
+ * fabric.Object を makeShape ファクトリから生成し、fabric.Group にまとめてキャンバスへ追加する。
+ * グループ解除すれば地面/壁の 2 レイヤーとして個別編集可能。
+ * @param {string} typeName  - レイヤー名 (例 '部屋_矩形')
+ * @param {function(object):fabric.Object} makeShape - スタイルを受け取って同型の fabric.Object を返すファクトリ
+ */
+function addRoom(typeName, makeShape) {
+    const ground = makeShape({
+        fill: getRoomGroundFill(),
+        stroke: null,
+        strokeWidth: 0,
+        strokeDashArray: null,
+    });
+    if (!ground) return;
+    ground.set({ _isRoomGround: true, objectCaching: false });
+    snapshotRoomPatternSettings(ground, 'ground');
+    applyPatternOrigin(ground);
+    if (App.roomGroundShadowEnabled) ground.set('shadow', makeShadowFromApp());
+
+    const wall = makeShape({
+        fill: '',
+        stroke: getRoomWallStroke(),
+        strokeWidth: App.roomWallThickness || 12,
+        strokeLineJoin: App.strokeLineJoin || 'miter',
+        strokeLineCap: App.strokeLineCap || 'butt',
+        strokeDashArray: null,
+    });
+    if (!wall) return;
+    wall.set({ _isRoomWall: true, objectCaching: false });
+    snapshotRoomPatternSettings(wall, 'wall');
+    applyPatternOrigin(wall);
+    if (App.roomWallShadowEnabled) wall.set('shadow', makeShadowFromApp());
+
+    const group = new fabric.Group([ground, wall], {
+        objectCaching: false,
+        subTargetCheck: false,
+    });
+    group.set({ _isRoomGroup: true });
+    addLayerObject(typeName, group);
 }
 
 /**
@@ -2757,6 +2989,17 @@ function getCurrentDrawStyle() {
             strokeDashArray: null,
             namePrefix: '壁_',
             flag: '_isWallLayer',
+        };
+    }
+    if (App.activeTool === 'room') {
+        // プレビュー専用 — 確定時は addRoom が地面/壁を別個に生成するためここの flag/namePrefix は使われない
+        return {
+            fill: getRoomGroundFill(),
+            stroke: getRoomWallStroke(),
+            strokeWidth: App.roomWallThickness || 12,
+            strokeDashArray: null,
+            namePrefix: '部屋_',
+            flag: null,
         };
     }
     // シンプルモード (既存挙動)
@@ -3216,6 +3459,43 @@ function refreshPatternPickers() {
             wallRoot._suppressColorChange = true;
             wallRoot._pickr.setColor(App.wallPattern.solidColor || '#888888', true);
             setTimeout(() => { wallRoot._suppressColorChange = false; }, 0);
+        }
+    }
+    // 部屋: 地面 / 壁の 2 つを並べる
+    const roomGroundRoot = document.getElementById('room-ground-pattern-picker');
+    if (roomGroundRoot) {
+        mountPatternPicker(roomGroundRoot, {
+            category: 'ground',
+            patterns: PATTERNS,
+            genres: GROUND_GENRES,
+            getState: () => App.roomGroundPattern,
+            setState: (s) => {
+                App.roomGroundPattern = s;
+                pushHistoryDebounced('部屋・地面パターンを変更');
+            },
+        });
+        if (roomGroundRoot._pickr) {
+            roomGroundRoot._suppressColorChange = true;
+            roomGroundRoot._pickr.setColor(App.roomGroundPattern.solidColor || '#9b8c70', true);
+            setTimeout(() => { roomGroundRoot._suppressColorChange = false; }, 0);
+        }
+    }
+    const roomWallRoot = document.getElementById('room-wall-pattern-picker');
+    if (roomWallRoot) {
+        mountPatternPicker(roomWallRoot, {
+            category: 'wall',
+            patterns: PATTERNS,
+            genres: WALL_GENRES,
+            getState: () => App.roomWallPattern,
+            setState: (s) => {
+                App.roomWallPattern = s;
+                pushHistoryDebounced('部屋・壁パターンを変更');
+            },
+        });
+        if (roomWallRoot._pickr) {
+            roomWallRoot._suppressColorChange = true;
+            roomWallRoot._pickr.setColor(App.roomWallPattern.solidColor || '#5a5a5a', true);
+            setTimeout(() => { roomWallRoot._suppressColorChange = false; }, 0);
         }
     }
 }
@@ -3702,6 +3982,12 @@ function buildSaveData() {
         wallTool: App.wallTool,
         wallPattern: App.wallPattern,
         wallThickness: App.wallThickness,
+        roomTool: App.roomTool,
+        roomGroundPattern: App.roomGroundPattern,
+        roomWallPattern: App.roomWallPattern,
+        roomWallThickness: App.roomWallThickness,
+        roomGroundShadowEnabled: App.roomGroundShadowEnabled,
+        roomWallShadowEnabled: App.roomWallShadowEnabled,
         freehandBrush: App.freehandBrush,
         freehandWidth: App.freehandWidth,
         freehandColor: App.freehandColor,
@@ -3732,12 +4018,26 @@ function restoreSaveData(data) {
     if (data.groundPattern) App.groundPattern = data.groundPattern;
     if (data.wallTool) App.wallTool = data.wallTool;
     if (data.wallPattern) App.wallPattern = data.wallPattern;
+    if (data.roomTool) App.roomTool = data.roomTool;
+    if (data.roomGroundPattern) App.roomGroundPattern = data.roomGroundPattern;
+    if (data.roomWallPattern) App.roomWallPattern = data.roomWallPattern;
+    if (typeof data.roomWallThickness === 'number') App.roomWallThickness = data.roomWallThickness;
+    if (typeof data.roomGroundShadowEnabled === 'boolean') App.roomGroundShadowEnabled = data.roomGroundShadowEnabled;
+    if (typeof data.roomWallShadowEnabled === 'boolean') App.roomWallShadowEnabled = data.roomWallShadowEnabled;
     // 旧版で保存された未知パターン ID は単色にフォールバックして UI と実状態の食い違いを防ぐ
     normalizePatternState(App.groundPattern);
     normalizePatternState(App.wallPattern);
+    normalizePatternState(App.roomGroundPattern);
+    normalizePatternState(App.roomWallPattern);
     if (typeof data.wallThickness === 'number') App.wallThickness = data.wallThickness;
     const wt = document.getElementById('wall-thickness');
     if (wt) wt.value = App.wallThickness;
+    const rwt = document.getElementById('room-wall-thickness');
+    if (rwt) rwt.value = App.roomWallThickness;
+    const rgs = document.getElementById('room-ground-shadow-enabled');
+    if (rgs) rgs.checked = !!App.roomGroundShadowEnabled;
+    const rws = document.getElementById('room-wall-shadow-enabled');
+    if (rws) rws.checked = !!App.roomWallShadowEnabled;
     if (data.freehandBrush) App.freehandBrush = data.freehandBrush;
     if (typeof data.freehandWidth === 'number') App.freehandWidth = data.freehandWidth;
     if (data.freehandColor) App.freehandColor = data.freehandColor;
@@ -3787,6 +4087,7 @@ function restoreSaveData(data) {
         // 地面/壁ツールタイル + パターンピッカーを App 状態に同期
         document.querySelectorAll('#ground-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.groundTool === App.groundTool));
         document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.wallTool === App.wallTool));
+        document.querySelectorAll('#room-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.roomTool === App.roomTool));
         refreshPatternPickers();
         // フリーハンドブラシタイル & 実ブラシも復元後の App.freehandBrush に同期
         document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((t) => t.classList.toggle('active', t.dataset.freehandBrush === App.freehandBrush));
@@ -4185,20 +4486,30 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.key === 'Enter' && App._polygonPoints.length >= 3 && activeSubtool() === 'polygon') {
         removePreview();
-        const style = getCurrentDrawStyle();
-        addCategoryLayer(
-            style.namePrefix + '多角形',
-            new fabric.Polygon(App._polygonPoints, {
-                stroke: style.stroke,
-                strokeWidth: style.strokeWidth,
-                strokeDashArray: style.strokeDashArray,
-                fill: style.fill,
+        if (App.activeTool === 'room') {
+            const pts = App._polygonPoints.slice();
+            addRoom('部屋_多角形', (st) => new fabric.Polygon(pts.map((p) => ({ x: p.x, y: p.y })), {
+                ...st,
                 selectable: false,
                 evented: false,
                 objectCaching: false,
-            }),
-            style.flag
-        );
+            }));
+        } else {
+            const style = getCurrentDrawStyle();
+            addCategoryLayer(
+                style.namePrefix + '多角形',
+                new fabric.Polygon(App._polygonPoints, {
+                    stroke: style.stroke,
+                    strokeWidth: style.strokeWidth,
+                    strokeDashArray: style.strokeDashArray,
+                    fill: style.fill,
+                    selectable: false,
+                    evented: false,
+                    objectCaching: false,
+                }),
+                style.flag
+            );
+        }
         App._polygonPoints = [];
         e.preventDefault();
         return;
@@ -4228,18 +4539,22 @@ document.addEventListener('keydown', (e) => {
         removePreview();
         const d = buildClosedBezierPath(App._curvePoints);
         if (d) {
-            const style = getCurrentDrawStyle();
-            addCategoryLayer(
-                style.namePrefix + '閉曲線',
-                new fabric.Path(d, {
-                    stroke: style.stroke,
-                    strokeWidth: style.strokeWidth,
-                    strokeDashArray: style.strokeDashArray,
-                    fill: style.fill,
-                    objectCaching: false,
-                }),
-                style.flag
-            );
+            if (App.activeTool === 'room') {
+                addRoom('部屋_閉曲線', (st) => new fabric.Path(d, { ...st, objectCaching: false }));
+            } else {
+                const style = getCurrentDrawStyle();
+                addCategoryLayer(
+                    style.namePrefix + '閉曲線',
+                    new fabric.Path(d, {
+                        stroke: style.stroke,
+                        strokeWidth: style.strokeWidth,
+                        strokeDashArray: style.strokeDashArray,
+                        fill: style.fill,
+                        objectCaching: false,
+                    }),
+                    style.flag
+                );
+            }
         }
         App._curvePoints = [];
         e.preventDefault();
@@ -4511,6 +4826,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     document.querySelector(`#wall-tool-tiles .tool-tile[data-wall-tool="${App.wallTool}"]`)?.classList.add('active');
+
+    // 部屋ツールタイル (矩形/楕円/多角形/閉曲線)
+    document.querySelectorAll('#room-tool-tiles .tool-tile').forEach((tile) => {
+        tile.addEventListener('click', () => {
+            document.querySelectorAll('#room-tool-tiles .tool-tile').forEach((t) => t.classList.remove('active'));
+            tile.classList.add('active');
+            App.roomTool = tile.dataset.roomTool;
+            resetDrawingState();
+            updateFillStrokeVisibility();
+        });
+    });
+    document.querySelector(`#room-tool-tiles .tool-tile[data-room-tool="${App.roomTool}"]`)?.classList.add('active');
+
+    // 部屋・壁の厚み
+    document.getElementById('room-wall-thickness')?.addEventListener('input', function () {
+        App.roomWallThickness = parseInt(this.value) || 12;
+        if (App.activeTool === 'select') {
+            const targets = [];
+            App.canvas.getActiveObjects().forEach((o) => {
+                if (o._isRoomGroup && typeof o.getObjects === 'function') {
+                    const w = o.getObjects().find((c) => c._isRoomWall);
+                    if (w) targets.push(w);
+                }
+            });
+            if (targets.length === 0) return;
+            targets.forEach((o) => o.set({ strokeWidth: App.roomWallThickness }));
+            App.canvas.renderAll();
+            pushHistoryDebounced('部屋・壁の厚みを変更');
+        }
+    });
+
+    // 部屋・影トグル
+    document.getElementById('room-ground-shadow-enabled')?.addEventListener('change', function () {
+        App.roomGroundShadowEnabled = this.checked;
+        pushHistoryDebounced('部屋・地面影設定を変更');
+    });
+    document.getElementById('room-wall-shadow-enabled')?.addEventListener('change', function () {
+        App.roomWallShadowEnabled = this.checked;
+        pushHistoryDebounced('部屋・壁影設定を変更');
+    });
 
     // パターン共通設定 (オフセット/回転) — 値を更新するのみ。新規描画時に snapshot されて適用される
     document.getElementById('pattern-offset-x')?.addEventListener('input', function () {

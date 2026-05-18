@@ -1208,7 +1208,26 @@
                 <div class="prop-group" data-prop="room">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">home</span>部屋</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (地面+外周壁+部屋名の一括生成)</p>
+                        <div class="tool-tiles" id="room-tool-tiles">
+                            <div class="tool-tile" data-room-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
+                            <div class="tool-tile" data-room-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
+                            <div class="tool-tile" data-room-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
+                            <div class="tool-tile" data-room-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">壁の厚み</span>
+                            <div class="row"><input type="number" id="room-wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="s-ttl" style="margin-top: 0.6rem"><span class="material-symbols-outlined">landscape</span>地面</div>
+                        <div class="pattern-picker" id="room-ground-pattern-picker"></div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">地面に影を付ける</span></label>
+                        </div>
+                        <div class="s-ttl" style="margin-top: 0.6rem"><span class="material-symbols-outlined">outdoor_garden</span>壁</div>
+                        <div class="pattern-picker" id="room-wall-pattern-picker"></div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">壁に影を付ける</span></label>
+                        </div>
                     </div>
                 </div>
                 <!-- 地図モード: 装飾 -->
