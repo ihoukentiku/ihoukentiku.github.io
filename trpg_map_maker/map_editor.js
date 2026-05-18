@@ -164,6 +164,9 @@ const PATTERNS = [
     //   最終倍率 = (PATTERNS[].scale) × (App.patternScale ユーザー設定値)
     { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 0.5 },
     { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.5 },
+    { id: 'rock', name: '岩', file: '岩.webp', color: '#7a7368', ground: 'cave', wall: 'stone', scale: 0.5 },
+    { id: 'rock-moss', name: '岩 (苔)', file: '岩(苔).webp', color: '#6b7a52', ground: 'cave', wall: 'natural', scale: 0.5 },
+    { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 0.5 },
 ];
 
 /** id からパターン定義を取得する。無ければ null。 */
@@ -663,14 +666,16 @@ function initCanvas() {
                             top = Math.min(d.startY, pt.y);
                         const subtool = activeSubtool();
                         if (App.activeTool === 'room') {
-                            const hswR = (App.roomWallThickness || 12) / 2;
                             addRoom(
                                 '部屋_' + (subtool === 'rect' ? '矩形' : '楕円'),
-                                (st) =>
-                                    subtool === 'rect'
+                                (st) => {
+                                    // stroke を持つ壁のみオフセット補正 (fabric は bbox に stroke を含むため)。
+                                    // 地面 (strokeWidth=0) はオフセット 0 で純粋な矩形/楕円のまま。
+                                    const hsw = (st.strokeWidth || 0) / 2;
+                                    return subtool === 'rect'
                                         ? new fabric.Rect({
-                                              left: left - hswR,
-                                              top: top - hswR,
+                                              left: left - hsw,
+                                              top: top - hsw,
                                               width: w,
                                               height: h,
                                               rx: App.cornerRadius,
@@ -679,13 +684,14 @@ function initCanvas() {
                                               objectCaching: false,
                                           })
                                         : new fabric.Ellipse({
-                                              left: left - hswR,
-                                              top: top - hswR,
+                                              left: left - hsw,
+                                              top: top - hsw,
                                               rx: w / 2,
                                               ry: h / 2,
                                               ...st,
                                               objectCaching: false,
-                                          })
+                                          });
+                                }
                             );
                         } else {
                             const hsw = style.strokeWidth / 2;
@@ -1732,15 +1738,19 @@ function performBooleanOpRoom(op, rooms) {
         fillRule: 'evenodd',
     });
     wall.set({ _isRoomWall: true });
-    const group = new fabric.Group([ground, wall], {
-        objectCaching: false,
-        subTargetCheck: false,
-    });
-    group.set({ _isRoomGroup: true });
 
     App.canvas.discardActiveObject();
     const zIndex = App.canvas.getObjects().indexOf(src);
     App.canvas.remove(...rooms);
+    // addRoom と同じく toGroup() 経由でまとめる (Group コンストラクタ経路だと
+    // 子ストロークが zoom と乖離する問題があるため)
+    App.canvas.add(ground);
+    App.canvas.add(wall);
+    const sel = new fabric.ActiveSelection([ground, wall], { canvas: App.canvas });
+    App.canvas.setActiveObject(sel);
+    const group = sel.toGroup();
+    group.set({ _isRoomGroup: true, objectCaching: false, subTargetCheck: false });
+    App.canvas.discardActiveObject();
     const opLabel = { union: '合体', intersection: '交差', difference: '差', xor: '排他' }[op] || op;
     addLayerObject(opLabel + '_部屋', group);
     if (zIndex >= 0) App.canvas.moveTo(group, zIndex);
@@ -2955,11 +2965,21 @@ function addRoom(typeName, makeShape) {
     applyPatternOrigin(wall);
     if (App.roomWallShadowEnabled) wall.set('shadow', makeShadowFromApp());
 
-    const group = new fabric.Group([ground, wall], {
+    // 壁モード (canvas 直下) のストロークが zoom に正しく追従するのに対し、
+    // new fabric.Group([ground, wall]) で包むと子ストロークが zoom と乖離する fabric の挙動がある。
+    // ActiveSelection.toGroup() (= 既存のグループ化操作) と同じ経路を使えば正常に zoom スケールするので、
+    // 一度両方を canvas に追加 → ActiveSelection 化 → toGroup() でまとめる。
+    App.canvas.add(ground);
+    App.canvas.add(wall);
+    const sel = new fabric.ActiveSelection([ground, wall], { canvas: App.canvas });
+    App.canvas.setActiveObject(sel);
+    const group = sel.toGroup();
+    group.set({
+        _isRoomGroup: true,
         objectCaching: false,
         subTargetCheck: false,
     });
-    group.set({ _isRoomGroup: true });
+    App.canvas.discardActiveObject();
     addLayerObject(typeName, group);
 }
 
@@ -3120,6 +3140,21 @@ function snapshotWorldPosition(obj) {
  */
 function applyPatternOriginLive(obj) {
     if (!obj) return;
+    if (App.activeTool === 'room') {
+        // 部屋プレビュー: fill (地面パターン) と stroke (壁パターン) で別々の初期 scale を持つため個別適用
+        const userScale = App.patternScale ?? 1;
+        const gScale = (getPatternDef(App.roomGroundPattern?.id)?.scale ?? 1) * userScale;
+        const wScale = (getPatternDef(App.roomWallPattern?.id)?.scale ?? 1) * userScale;
+        applyPatternTransformParts(
+            obj,
+            App.patternOffsetX || 0,
+            App.patternOffsetY || 0,
+            App.patternRotation || 0,
+            gScale,
+            wScale,
+        );
+        return;
+    }
     const def = currentPatternDef();
     const initScale = def?.scale ?? 1;
     applyPatternTransformOnObj(
@@ -3129,6 +3164,31 @@ function applyPatternOriginLive(obj) {
         App.patternRotation || 0,
         initScale * (App.patternScale ?? 1),
     );
+}
+
+/** fill と stroke に別 scale を適用する版 (部屋プレビュー用)。 */
+function applyPatternTransformParts(obj, baseOffX, baseOffY, deg, fillScale, strokeScale) {
+    const refLeft = (obj._worldLeft !== undefined) ? obj._worldLeft : (obj.left || 0);
+    const refTop = (obj._worldTop !== undefined) ? obj._worldTop : (obj.top || 0);
+    const offX = -refLeft + baseOffX;
+    const offY = -refTop + baseOffY;
+    const r = (deg * Math.PI) / 180;
+    const cos = Math.cos(r), sin = Math.sin(r);
+    const makeT = (s) => (s === 1 && deg === 0) ? null : [s * cos, s * sin, -s * sin, s * cos, 0, 0];
+    let changed = false;
+    if (obj.fill && typeof fabric !== 'undefined' && obj.fill instanceof fabric.Pattern) {
+        obj.fill.offsetX = offX;
+        obj.fill.offsetY = offY;
+        obj.fill.patternTransform = makeT(fillScale);
+        changed = true;
+    }
+    if (obj.stroke && typeof fabric !== 'undefined' && obj.stroke instanceof fabric.Pattern) {
+        obj.stroke.offsetX = offX;
+        obj.stroke.offsetY = offY;
+        obj.stroke.patternTransform = makeT(strokeScale);
+        changed = true;
+    }
+    if (changed) obj.dirty = true;
 }
 
 /** fill / stroke に Pattern があれば offset と patternTransform (scale * rotation) を反映する。 */
@@ -4082,6 +4142,12 @@ function restoreSaveData(data) {
                 rebuildCellDataFromEntries(obj, adapter);
                 commitCellLayer(obj);
             }
+            if (obj._isRoomGroup && obj.type === 'group') {
+                obj.set({ objectCaching: false, noScaleCache: false });
+                if (typeof obj.getObjects === 'function') {
+                    obj.getObjects().forEach((c) => c.set({ objectCaching: false, noScaleCache: false }));
+                }
+            }
         });
         renderLayerList();
         // 地面/壁ツールタイル + パターンピッカーを App 状態に同期
@@ -4339,6 +4405,12 @@ function restoreHistorySnapshot(snapshot, displayName) {
                 obj.set({ objectCaching: false, noScaleCache: false });
                 rebuildCellDataFromEntries(obj, adapter);
                 commitCellLayer(obj);
+            }
+            if (obj._isRoomGroup && obj.type === 'group') {
+                obj.set({ objectCaching: false, noScaleCache: false });
+                if (typeof obj.getObjects === 'function') {
+                    obj.getObjects().forEach((c) => c.set({ objectCaching: false, noScaleCache: false }));
+                }
             }
         });
         App.canvas.discardActiveObject();
