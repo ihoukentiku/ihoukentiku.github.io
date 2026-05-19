@@ -1234,7 +1234,39 @@
                 <div class="prop-group" data-prop="decor">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">chair</span>装飾</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">未実装 — Phase C で追加予定 (ドア/家具/木/岩などのSVGスタンプ)</p>
+                        <div class="decor-picker" id="decor-picker" style="margin-bottom: 0.7rem"></div>
+                        <div class="f">
+                            <span class="fl">サイズ</span>
+                            <div class="row"><input type="number" id="decor-scale" value="100" min="10" max="1000" step="10" class="custom-spinner" /><span class="unit">%</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">回転</span>
+                            <div class="row"><input type="number" id="decor-rotation" value="0" min="-360" max="360" step="1" class="custom-spinner" /><span class="unit">°</span></div>
+                        </div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.6rem; margin: -0.2rem 0 0.3rem">R キーで 30° 刻みに回転</p>
+                        <div class="f">
+                            <span class="fl">反転</span>
+                            <div style="display: flex; gap: 0.8rem">
+                                <label class="tog"><input type="checkbox" id="decor-flip-x" /><span class="tl">水平</span></label>
+                                <label class="tog"><input type="checkbox" id="decor-flip-y" /><span class="tl">垂直</span></label>
+                            </div>
+                        </div>
+                        <!-- SVG 選択時のみ表示 -->
+                        <div id="decor-color-sec" style="display: none">
+                            <div class="f" id="decor-fill-row">
+                                <span class="fl">フィル</span>
+                                <div id="decor-fill-picker"></div>
+                            </div>
+                            <div class="f" id="decor-stroke-row">
+                                <span class="fl">ストローク</span>
+                                <div id="decor-stroke-picker"></div>
+                            </div>
+                            <p class="fl" style="opacity: 0.5; font-size: 0.6rem; margin: -0.2rem 0 0.3rem">色は元の SVG をそのまま使用。ピッカーで変更すると全 path に適用されます</p>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="decor-shadow-enabled" checked /><span class="tl">影を付ける</span></label>
+                        </div>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.62rem; margin: 0.3rem 0 0">クリック点が装飾の中心。スナップはツールバー下のスナップ設定に従う (Shift で一時無効)</p>
                     </div>
                 </div>
                 <!-- フリーハンド (Fabric brushes + 圧力検知 + Shift で直線) -->
@@ -1403,10 +1435,10 @@
                             <label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label>
                         </div>
                         <div class="f">
-                            <label class="tog"><input type="checkbox" id="snap-center" /><span class="tl">セル中心</span></label>
+                            <label class="tog"><input type="checkbox" id="snap-center" checked /><span class="tl">セル中心</span></label>
                         </div>
                         <div class="f">
-                            <label class="tog"><input type="checkbox" id="snap-midpoint" /><span class="tl">辺の中点</span></label>
+                            <label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label>
                         </div>
                     </div>
                 </div>

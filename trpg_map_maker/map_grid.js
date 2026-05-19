@@ -433,8 +433,15 @@ function createHexAdapter(orientation, fit) {
                 // ヘクス中心: 'center' タイプ (三角形頂点でもある)
                 candidates.push({ x: c.x, y: c.y, type: 'center' });
                 // 6 頂点: 'intersection' タイプ
-                for (const v of hexVertices(c.x, c.y)) {
+                const verts = hexVertices(c.x, c.y);
+                for (const v of verts) {
                     candidates.push({ x: v.x, y: v.y, type: 'intersection' });
+                }
+                // 6 辺の中点: 'midpoint' タイプ (頂点 i と i+1 の中点)
+                for (let i = 0; i < verts.length; i++) {
+                    const a = verts[i];
+                    const b = verts[(i + 1) % verts.length];
+                    candidates.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, type: 'midpoint' });
                 }
             }
             return candidates;

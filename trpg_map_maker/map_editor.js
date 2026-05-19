@@ -60,6 +60,17 @@ const App = {
     roomWallThickness: 12,
     roomGroundShadowEnabled: false,
     roomWallShadowEnabled: true,
+    // ---- 地図モード: 装飾タブ ----
+    decorId: null,                       // 選択中の DECORS エントリ id (null = 未選択)
+    decorGenreId: 'all',
+    decorScale: 1,                       // ユーザー倍率。最終 = DECORS[].scale × decorScale
+    decorRotation: 0,                    // 度
+    decorFlipX: false,
+    decorFlipY: false,
+    decorFill: null,                     // null = 元色維持、'#RRGGBB' = 全 path/shape の fill を上書き
+    decorStroke: null,                   // 同上 (stroke)
+    decorShadowEnabled: true,
+    _lastPointer: null, // 直近の canvas 座標カーソル位置 (装飾プレビューの即時再描画に使う)
     // ---- フリーハンド (Fabric brushes 拡張) ----
     freehandBrush: 'pencil', // 'pencil' | 'circle' | 'spray' | 'eraser'
     freehandWidth: 3,
@@ -108,8 +119,8 @@ const App = {
     _lineStart: null,
     snapEnabled: true,
     snapIntersection: true,
-    snapCenter: false,
-    snapMidpoint: false,
+    snapCenter: true,
+    snapMidpoint: true,
     _snapPt: null,
     _exportMode: false, // 出力範囲選択モード
     _exportRect: null, // { x, y, w, h } キャンバス座標での出力範囲
@@ -166,12 +177,51 @@ const PATTERNS = [
     { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.5 },
     { id: 'rock', name: '岩', file: '岩.webp', color: '#7a7368', ground: 'cave', wall: 'stone', scale: 0.5 },
     { id: 'rock-moss', name: '岩 (苔)', file: '岩(苔).webp', color: '#6b7a52', ground: 'cave', wall: 'natural', scale: 0.5 },
-    { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 0.5 },
+    { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 1 },
 ];
 
 /** id からパターン定義を取得する。無ければ null。 */
 function getPatternDef(id) {
     return PATTERNS.find((p) => p.id === id) || null;
+}
+
+/* ================================================================
+   装飾スタンプ (Decor)
+   - SVG (decors/svg/foo.svg) と画像 (decors/image/foo.webp 等) を混在管理
+   - type が 'svg' か 'image' でロード/描画経路を切替
+   - scale: 1セル幅を基準とした初期倍率 (最終倍率 = scale × App.decorScale)
+================================================================ */
+const DECOR_DIR_SVG = 'decors/svg/';
+const DECOR_DIR_IMAGE = 'decors/image/';
+const DECOR_DIR_THUMB = 'decors/thumb/';
+
+const DECOR_GENRES = [
+    { id: 'all', name: '全て' },
+    { id: 'furniture', name: '家具' },
+    { id: 'door', name: 'ドア' },
+    { id: 'nature', name: '自然' },
+    { id: 'light', name: '灯火' },
+    { id: 'misc', name: 'その他' },
+];
+
+const DECORS = [
+    // type='svg' は decors/svg/{file}、type='image' は decors/image/{file}
+    // scale: 1セル幅を基準とした初期倍率 (1 = ちょうどセル幅)
+    // sample 用に最小限のものを置く。実素材は decors/ 配下に追加して、ここに登録するだけで使えるようになる。
+    { id: 'door-wood', name: 'ドア (木)', type: 'svg', file: 'door-wood.svg', genre: 'door', scale: 1 },
+    { id: 'chair', name: '椅子', type: 'svg', file: 'chair.svg', genre: 'furniture', scale: 0.7 },
+    { id: 'torch', name: 'たいまつ', type: 'svg', file: 'torch.svg', genre: 'light', scale: 0.5 },
+];
+
+/** id から装飾定義を取得する。無ければ null。 */
+function getDecorDef(id) {
+    return DECORS.find((d) => d.id === id) || null;
+}
+
+/** 指定ジャンル ID で装飾をフィルタする。'all' は全件。 */
+function decorsForGenre(genreId) {
+    if (!genreId || genreId === 'all') return DECORS;
+    return DECORS.filter((d) => d.genre === genreId);
 }
 
 /** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。 */
@@ -646,6 +696,12 @@ function initCanvas() {
             return;
         }
 
+        // 装飾ツール: クリック位置に配置 (中心座標 = クリック点、スナップ ON ならセル中心に丸め)
+        if (App.activeTool === 'decor') {
+            placeDecorAt(ptr);
+            return;
+        }
+
         // ツール別 — activeSubtool() で「シンプル/地面/壁」共通のサブツール名にディスパッチ
         switch (activeSubtool()) {
             case 'rect':
@@ -879,6 +935,13 @@ function initCanvas() {
             panY = opt.e.clientY;
             App.canvas.requestRenderAll();
             drawGrid();
+            return;
+        }
+
+        // 装飾ツール: 半透明プレビューを cursor 位置に追従
+        if (App.activeTool === 'decor') {
+            App._lastPointer = { x: ptr.x, y: ptr.y };
+            updateDecorPreview(ptr);
             return;
         }
 
@@ -3018,6 +3081,243 @@ function addRoom(typeName, makeShape) {
     addLayerObject(typeName, group);
 }
 
+/* ================================================================
+   装飾 (Decor) ローダー & インスタンサー
+   - SVG: fabric.loadSVGFromString → fabric.util.groupSVGElements で fabric.Group に
+   - 画像: fabric.Image.fromURL で fabric.Image に
+   - 結果はキャッシュして、配置時に clone する
+================================================================ */
+const _decorCache = new Map(); // id → { state, baseObj?, originalColors?, baseWidth?, baseHeight? }
+
+/**
+ * 装飾 id を非同期にロードし、キャッシュに置く。完了後 canvas を再描画する。
+ * SVG: パース → fabric.Group。同時に各 path の元 fill/stroke を originalColors に格納。
+ * 画像: HTMLImageElement → fabric.Image。
+ */
+function loadDecorAsset(id) {
+    const def = getDecorDef(id);
+    if (!def) return;
+    const cached = _decorCache.get(id);
+    if (cached) return;
+    _decorCache.set(id, { state: 'loading' });
+    if (def.type === 'svg') {
+        fabric.loadSVGFromURL(DECOR_DIR_SVG + def.file, (objects, options) => {
+            if (!objects || objects.length === 0) {
+                _decorCache.set(id, { state: 'error' });
+                return;
+            }
+            // 元色を path 単位で保存 (色変更時の参照、リセット用)
+            const originalColors = objects.map((o) => ({ fill: o.fill, stroke: o.stroke }));
+            const group = fabric.util.groupSVGElements(objects, options);
+            _decorCache.set(id, {
+                state: 'ready',
+                baseObj: group,
+                originalColors,
+                baseWidth: group.width * (group.scaleX || 1),
+                baseHeight: group.height * (group.scaleY || 1),
+            });
+            App.canvas?.requestRenderAll();
+        });
+    } else {
+        // image
+        fabric.Image.fromURL(DECOR_DIR_IMAGE + def.file, (img) => {
+            if (!img) {
+                _decorCache.set(id, { state: 'error' });
+                return;
+            }
+            _decorCache.set(id, {
+                state: 'ready',
+                baseObj: img,
+                originalColors: null,
+                baseWidth: img.width,
+                baseHeight: img.height,
+            });
+            App.canvas?.requestRenderAll();
+        }, { crossOrigin: 'anonymous' });
+    }
+}
+
+/**
+ * 装飾 id から fabric.Object のインスタンスを生成する (clone)。配置・プレビュー両方で使う。
+ * @param {string} id
+ * @param {object} opts - { centerX, centerY, scale, rotation, flipX, flipY, fill, stroke, preview }
+ * @param {function(fabric.Object):void} cb - 生成完了コールバック (clone は非同期)
+ */
+function createDecorInstance(id, opts, cb) {
+    const def = getDecorDef(id);
+    if (!def) { cb && cb(null); return; }
+    const cached = _decorCache.get(id);
+    if (!cached || cached.state !== 'ready') {
+        if (!cached) loadDecorAsset(id);
+        cb && cb(null);
+        return;
+    }
+    cached.baseObj.clone((clone) => {
+        // 1セル幅基準でスケール係数を算出
+        const cellSize = App.cellSize || 72;
+        const initScale = def.scale ?? 1;
+        const totalScale = initScale * (opts.scale ?? 1);
+        const baseDim = Math.max(cached.baseWidth, cached.baseHeight) || 1;
+        // baseDim = 1セル幅にフィット → ベース倍率
+        const fit = (cellSize / baseDim) * totalScale;
+
+        clone.set({
+            originX: 'center',
+            originY: 'center',
+            left: opts.centerX,
+            top: opts.centerY,
+            scaleX: fit * (opts.flipX ? -1 : 1),
+            scaleY: fit * (opts.flipY ? -1 : 1),
+            angle: opts.rotation || 0,
+            objectCaching: false,
+            _decorId: id,
+            _isDecorLayer: true,
+            _decorIsSvg: def.type === 'svg',
+            _decorScale: opts.scale ?? 1,
+            _decorFlipX: !!opts.flipX,
+            _decorFlipY: !!opts.flipY,
+            _decorFill: opts.fill || null,
+            _decorStroke: opts.stroke || null,
+        });
+        // SVG の色上書き (fill/stroke が指定されたら全 path に一律適用、null なら元色維持)
+        if (def.type === 'svg' && clone.getObjects) {
+            const children = clone.getObjects();
+            children.forEach((child, i) => {
+                const orig = cached.originalColors?.[i] || {};
+                child.set({
+                    fill: opts.fill ?? orig.fill,
+                    stroke: opts.stroke ?? orig.stroke,
+                });
+            });
+        }
+        if (opts.preview) {
+            clone.set({ opacity: 0.5, selectable: false, evented: false, isPreview: true });
+        }
+        cb && cb(clone);
+    });
+}
+
+/**
+ * クリック位置 → 配置中心座標。
+ * 他のツールと同じ汎用スナップ (snapToGrid: 交点/中点/中心) を使う。
+ * Shift 押下中 / snapEnabled OFF はスナップ無効でカーソル位置そのまま。
+ */
+function decorPlacementCenter(ptr) {
+    return snapToGrid(ptr.x, ptr.y) || { x: ptr.x, y: ptr.y };
+}
+
+/** 現在の App.decor* 設定で配置用 opts を組み立てる。 */
+function currentDecorOpts(centerX, centerY, preview = false) {
+    return {
+        centerX, centerY,
+        scale: App.decorScale ?? 1,
+        rotation: App.decorRotation || 0,
+        flipX: !!App.decorFlipX,
+        flipY: !!App.decorFlipY,
+        fill: App.decorFill,
+        stroke: App.decorStroke,
+        preview,
+    };
+}
+
+/** 装飾プレビュー (半透明) を更新。既存プレビューは削除して作り直す。 */
+function updateDecorPreview(ptr) {
+    removePreview();
+    App._snapPt = null; // 装飾モードでは青スナップマーカーは出さない (プレビュー自体が位置を示す)
+    if (App.activeTool !== 'decor' || !App.decorId) return;
+    const center = decorPlacementCenter(ptr);
+    createDecorInstance(App.decorId, currentDecorOpts(center.x, center.y, true), (obj) => {
+        if (!obj || App.activeTool !== 'decor' || !App.decorId) return;
+        App.canvas.add(obj);
+        App.canvas.requestRenderAll();
+    });
+}
+
+/** 装飾プロパティ (色/角度/サイズ/反転) 変更時にプレビューを即時再描画する。 */
+function refreshDecorPreview() {
+    if (App.activeTool !== 'decor' || !App._lastPointer) return;
+    updateDecorPreview(App._lastPointer);
+}
+
+/** 装飾をキャンバスに配置 (確定)。 */
+function placeDecorAt(ptr) {
+    if (!App.decorId) {
+        setTransientStatus('装飾を選択してください');
+        return;
+    }
+    const center = decorPlacementCenter(ptr);
+    createDecorInstance(App.decorId, currentDecorOpts(center.x, center.y, false), (obj) => {
+        if (!obj) return;
+        if (App.decorShadowEnabled) obj.set('shadow', makeShadowFromApp());
+        const def = getDecorDef(App.decorId);
+        addLayerObject('装飾_' + (def?.name || App.decorId), obj);
+    });
+}
+
+/* ================================================================
+   装飾ピッカー — パターンピッカーと類似だが単色行は無し
+================================================================ */
+function mountDecorPicker(root) {
+    if (!root) return;
+    root.innerHTML = '';
+    // ジャンルタブ
+    const genres = document.createElement('div');
+    genres.className = 'pp-genres';
+    DECOR_GENRES.forEach((g) => {
+        const b = document.createElement('button');
+        b.className = 'pp-genre' + (g.id === App.decorGenreId ? ' active' : '');
+        b.textContent = g.name;
+        b.addEventListener('click', () => {
+            App.decorGenreId = g.id;
+            mountDecorPicker(root);
+        });
+        genres.appendChild(b);
+    });
+    root.appendChild(genres);
+
+    // タイル一覧
+    const scroll = document.createElement('div');
+    scroll.className = 'pp-tiles-scroll';
+    const tiles = document.createElement('div');
+    tiles.className = 'pp-tiles';
+    decorsForGenre(App.decorGenreId).forEach((d) => {
+        const t = document.createElement('div');
+        t.className = 'pp-tile' + (d.id === App.decorId ? ' active' : '');
+        t.title = d.name;
+        // サムネ: SVG は file 直接、画像は thumb があれば優先
+        const src = d.type === 'svg' ? DECOR_DIR_SVG + d.file : DECOR_DIR_THUMB + d.file;
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = 'position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;';
+        img.onerror = () => { img.style.display = 'none'; };
+        t.appendChild(img);
+        const lbl = document.createElement('div');
+        lbl.className = 'pp-label';
+        lbl.textContent = d.name;
+        t.appendChild(lbl);
+        t.addEventListener('click', () => {
+            App.decorId = d.id;
+            loadDecorAsset(d.id);
+            mountDecorPicker(root);
+            refreshDecorColorSection();
+            refreshDecorPreview();
+            pushHistoryDebounced('装飾を選択');
+        });
+        tiles.appendChild(t);
+    });
+    scroll.appendChild(tiles);
+    root.appendChild(scroll);
+}
+
+/** SVG 選択時のみ色セクションを表示する。 */
+function refreshDecorColorSection() {
+    const sec = document.getElementById('decor-color-sec');
+    if (!sec) return;
+    const def = getDecorDef(App.decorId);
+    const show = def && def.type === 'svg';
+    sec.style.display = show ? '' : 'none';
+}
+
 /**
  * 現在の描画スタイル (fill / stroke / strokeWidth / 線種 / 名称プレフィクス / カテゴリフラグ) を返す。
  * シンプルモード: App.fillColor / strokeColor 等を反映
@@ -4087,6 +4387,15 @@ function buildSaveData() {
         roomWallThickness: App.roomWallThickness,
         roomGroundShadowEnabled: App.roomGroundShadowEnabled,
         roomWallShadowEnabled: App.roomWallShadowEnabled,
+        decorId: App.decorId,
+        decorGenreId: App.decorGenreId,
+        decorScale: App.decorScale,
+        decorRotation: App.decorRotation,
+        decorFlipX: App.decorFlipX,
+        decorFlipY: App.decorFlipY,
+        decorFill: App.decorFill,
+        decorStroke: App.decorStroke,
+        decorShadowEnabled: App.decorShadowEnabled,
         freehandBrush: App.freehandBrush,
         freehandWidth: App.freehandWidth,
         freehandColor: App.freehandColor,
@@ -4123,6 +4432,15 @@ function restoreSaveData(data) {
     if (typeof data.roomWallThickness === 'number') App.roomWallThickness = data.roomWallThickness;
     if (typeof data.roomGroundShadowEnabled === 'boolean') App.roomGroundShadowEnabled = data.roomGroundShadowEnabled;
     if (typeof data.roomWallShadowEnabled === 'boolean') App.roomWallShadowEnabled = data.roomWallShadowEnabled;
+    if (data.decorId !== undefined) App.decorId = data.decorId;
+    if (data.decorGenreId) App.decorGenreId = data.decorGenreId;
+    if (typeof data.decorScale === 'number') App.decorScale = data.decorScale;
+    if (typeof data.decorRotation === 'number') App.decorRotation = data.decorRotation;
+    if (typeof data.decorFlipX === 'boolean') App.decorFlipX = data.decorFlipX;
+    if (typeof data.decorFlipY === 'boolean') App.decorFlipY = data.decorFlipY;
+    if (data.decorFill !== undefined) App.decorFill = data.decorFill;
+    if (data.decorStroke !== undefined) App.decorStroke = data.decorStroke;
+    if (typeof data.decorShadowEnabled === 'boolean') App.decorShadowEnabled = data.decorShadowEnabled;
     // 旧版で保存された未知パターン ID は単色にフォールバックして UI と実状態の食い違いを防ぐ
     normalizePatternState(App.groundPattern);
     normalizePatternState(App.wallPattern);
@@ -4194,6 +4512,16 @@ function restoreSaveData(data) {
         document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.wallTool === App.wallTool));
         document.querySelectorAll('#room-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.roomTool === App.roomTool));
         refreshPatternPickers();
+        // 装飾 UI 同期
+        mountDecorPicker(document.getElementById('decor-picker'));
+        refreshDecorColorSection();
+        const dscEl = document.getElementById('decor-scale'); if (dscEl) dscEl.value = Math.round((App.decorScale ?? 1) * 100);
+        const drotEl = document.getElementById('decor-rotation'); if (drotEl) drotEl.value = App.decorRotation || 0;
+        const dfxEl = document.getElementById('decor-flip-x'); if (dfxEl) dfxEl.checked = !!App.decorFlipX;
+        const dfyEl = document.getElementById('decor-flip-y'); if (dfyEl) dfyEl.checked = !!App.decorFlipY;
+        const dseEl = document.getElementById('decor-shadow-enabled'); if (dseEl) dseEl.checked = !!App.decorShadowEnabled;
+        // 保存済み装飾レイヤーの参照する SVG/画像を再ロード (キャッシュは空)
+        App.canvas.getObjects().forEach((o) => { if (o._isDecorLayer && o._decorId) loadDecorAsset(o._decorId); });
         // フリーハンドブラシタイル & 実ブラシも復元後の App.freehandBrush に同期
         document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((t) => t.classList.toggle('active', t.dataset.freehandBrush === App.freehandBrush));
         if (App.canvas?.isDrawingMode) setFreehandBrush(App.freehandBrush);
@@ -4572,6 +4900,20 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         if (e.shiftKey) ungroupSelected();
         else groupSelected();
+        return;
+    }
+
+    // 装飾ツール: R キーで「30°, 45°, 60°, 90° の倍数」を通る位置に順次移動
+    if (App.activeTool === 'decor' && key === 'r' && !ctrl && !e.altKey) {
+        e.preventDefault();
+        // 30°/45°/60°/90° 系全てを通過する一覧 (重複除去・昇順)
+        const stops = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
+        const cur = ((App.decorRotation || 0) % 360 + 360) % 360;
+        const next = stops.find((a) => a > cur + 0.5);
+        App.decorRotation = (next !== undefined) ? next : 0;
+        const rotEl = document.getElementById('decor-rotation');
+        if (rotEl) rotEl.value = App.decorRotation;
+        refreshDecorPreview();
         return;
     }
 
@@ -4977,6 +5319,64 @@ document.addEventListener('DOMContentLoaded', () => {
         App.roomWallShadowEnabled = this.checked;
         pushHistoryDebounced('部屋・壁影設定を変更');
     });
+
+    // ---- 装飾ツール UI ----
+    mountDecorPicker(document.getElementById('decor-picker'));
+    refreshDecorColorSection();
+
+    document.getElementById('decor-scale')?.addEventListener('input', function () {
+        const v = parseFloat(this.value);
+        App.decorScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+        refreshDecorPreview();
+    });
+    const rotInput = document.getElementById('decor-rotation');
+    rotInput?.addEventListener('input', function () {
+        const v = parseFloat(this.value);
+        App.decorRotation = isFinite(v) ? v : 0;
+        refreshDecorPreview();
+    });
+    document.getElementById('decor-flip-x')?.addEventListener('change', function () {
+        App.decorFlipX = this.checked;
+        refreshDecorPreview();
+    });
+    document.getElementById('decor-flip-y')?.addEventListener('change', function () {
+        App.decorFlipY = this.checked;
+        refreshDecorPreview();
+    });
+    document.getElementById('decor-shadow-enabled')?.addEventListener('change', function () {
+        App.decorShadowEnabled = this.checked;
+        // 影は配置時のみ反映なのでプレビューは不要
+    });
+
+    // 装飾 fill / stroke Pickr — 値を変更したら App.decorFill/Stroke を上書き
+    const dfEl = document.getElementById('decor-fill-picker');
+    if (dfEl && typeof Pickr !== 'undefined') {
+        const dfPickr = Pickr.create({
+            el: dfEl, theme: 'nano', default: '#888888', defaultRepresentation: 'HEXA',
+            components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
+        });
+        dfPickr.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.decorFill = c.toHEXA().toString().slice(0, 7);
+            instance.applyColor(true);
+            refreshDecorPreview();
+            pushHistoryDebounced('装飾フィル色を変更');
+        });
+    }
+    const dsEl = document.getElementById('decor-stroke-picker');
+    if (dsEl && typeof Pickr !== 'undefined') {
+        const dsPickr = Pickr.create({
+            el: dsEl, theme: 'nano', default: '#222222', defaultRepresentation: 'HEXA',
+            components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
+        });
+        dsPickr.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.decorStroke = c.toHEXA().toString().slice(0, 7);
+            instance.applyColor(true);
+            refreshDecorPreview();
+            pushHistoryDebounced('装飾ストローク色を変更');
+        });
+    }
 
     // パターン共通設定 (オフセット/回転) — 値を更新するのみ。新規描画時に snapshot されて適用される
     document.getElementById('pattern-offset-x')?.addEventListener('input', function () {
