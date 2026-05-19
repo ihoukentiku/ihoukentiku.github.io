@@ -21,10 +21,18 @@ decors/
 2. (画像のみ) `thumb/` に同名のサムネを置く
 3. `map_editor.js` の `DECORS` 配列にエントリ追加:
    ```js
-   { id: 'foo', name: '名前', type: 'svg', file: 'foo.svg', genre: 'furniture', scale: 1 }
+   { id: 'foo', name: '名前', type: 'svg', file: 'foo.svg',
+     genres: ['furniture', 'icon'], scale: 1,
+     anchorX: 'center', anchorY: 'center' }
    ```
    - `type`: `'svg'` / `'image'`
-   - `genre`: `furniture` / `door` / `nature` / `light` / `misc`
+   - `genres`: 所属ジャンル (複数可)。`floorplan` / `icon` / `furniture` / `door` / `nature` / `light` / `misc`
+   - `scale`: 1 セル幅基準の初期倍率 (1 = ちょうど 1 セル幅)
+   - `anchorX` / `anchorY`: 基準点 (省略時は `'center'`)
+     - `anchorX`: `'left'` / `'center'` / `'right'`
+     - `anchorY`: `'top'` / `'center'` / `'bottom'`
+     - 9 つの組合せから 1 つ。**カーソル追従・スナップ・回転** すべての基準点になる
+     - 例: ドアならヒンジを基準にしたい → `anchorX: 'left', anchorY: 'top'`
 
 ## SVG の色変更について
 

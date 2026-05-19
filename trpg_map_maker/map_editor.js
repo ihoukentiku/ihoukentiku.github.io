@@ -213,51 +213,51 @@ const DECORS = [
     //
     // ---- game-icons (CC BY 3.0) — スタイル系アイコン ----
     // ドア
-    { id: 'door-simple',  name: 'ドア',         type: 'svg', file: 'door-simple.svg',  genres: ['door', 'icon'],        scale: 1 },
-    { id: 'door-arched',  name: 'アーチドア',   type: 'svg', file: 'door-arched.svg',  genres: ['door', 'icon'],        scale: 1 },
-    { id: 'double-door',  name: '両開き扉',     type: 'svg', file: 'double-door.svg',  genres: ['door', 'icon'],        scale: 1 },
+    { id: 'door-simple',  name: 'ドア',         type: 'svg', file: 'door-simple.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'door-arched',  name: 'アーチドア',   type: 'svg', file: 'door-arched.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'double-door',  name: '両開き扉',     type: 'svg', file: 'double-door.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
     // 家具
-    { id: 'chair-wood',     name: '椅子',         type: 'svg', file: 'chair-wood.svg',      genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'director-chair', name: '監督椅子',     type: 'svg', file: 'director-chair.svg',  genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'bed',            name: 'ベッド',       type: 'svg', file: 'bed.svg',             genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'sofa',           name: 'ソファ',       type: 'svg', file: 'sofa.svg',            genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'table-round',    name: '円卓',         type: 'svg', file: 'table-round.svg',     genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'dining-table',   name: '食卓',         type: 'svg', file: 'dining-table.svg',    genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'desk',           name: 'デスク',       type: 'svg', file: 'desk.svg',            genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'bookshelf',      name: '本棚',         type: 'svg', file: 'bookshelf.svg',       genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'piano',          name: 'ピアノ',       type: 'svg', file: 'piano.svg',           genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'chest',          name: '宝箱',         type: 'svg', file: 'chest.svg',           genres: ['furniture', 'icon'], scale: 1 },
-    { id: 'barrel',         name: '樽',           type: 'svg', file: 'barrel.svg',          genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'chair-wood',     name: '椅子',         type: 'svg', file: 'chair-wood.svg',      genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'director-chair', name: '監督椅子',     type: 'svg', file: 'director-chair.svg',  genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'bed',            name: 'ベッド',       type: 'svg', file: 'bed.svg',             genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'sofa',           name: 'ソファ',       type: 'svg', file: 'sofa.svg',            genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'table-round',    name: '円卓',         type: 'svg', file: 'table-round.svg',     genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'dining-table',   name: '食卓',         type: 'svg', file: 'dining-table.svg',    genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'desk',           name: 'デスク',       type: 'svg', file: 'desk.svg',            genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'bookshelf',      name: '本棚',         type: 'svg', file: 'bookshelf.svg',       genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'piano',          name: 'ピアノ',       type: 'svg', file: 'piano.svg',           genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'chest',          name: '宝箱',         type: 'svg', file: 'chest.svg',           genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'barrel',         name: '樽',           type: 'svg', file: 'barrel.svg',          genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 設備系もアイコンとして残す
-    { id: 'window',       name: '窓',             type: 'svg', file: 'window.svg',       genres: ['icon'], scale: 1 },
-    { id: 'bathtub',      name: 'バスタブ',       type: 'svg', file: 'bathtub.svg',      genres: ['icon'], scale: 1 },
-    { id: 'shower',       name: 'シャワー',       type: 'svg', file: 'shower.svg',       genres: ['icon'], scale: 1 },
-    { id: 'sink',         name: 'シンク',         type: 'svg', file: 'sink.svg',         genres: ['icon'], scale: 1 },
-    { id: 'stove',        name: 'コンロ',         type: 'svg', file: 'stove.svg',        genres: ['icon'], scale: 1 },
-    { id: 'oven',         name: 'オーブン',       type: 'svg', file: 'oven.svg',         genres: ['icon'], scale: 1 },
-    { id: 'fireplace',    name: '暖炉',           type: 'svg', file: 'fireplace.svg',    genres: ['icon'], scale: 1 },
-    { id: 'stairs',       name: '階段',           type: 'svg', file: 'stairs.svg',       genres: ['icon'], scale: 1 },
-    { id: 'escalator',    name: 'エスカレータ',   type: 'svg', file: 'escalator.svg',    genres: ['icon'], scale: 1 },
-    { id: 'ladder',       name: 'はしご',         type: 'svg', file: 'ladder.svg',       genres: ['icon'], scale: 1 },
+    { id: 'window',       name: '窓',             type: 'svg', file: 'window.svg',       genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'bathtub',      name: 'バスタブ',       type: 'svg', file: 'bathtub.svg',      genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'shower',       name: 'シャワー',       type: 'svg', file: 'shower.svg',       genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'sink',         name: 'シンク',         type: 'svg', file: 'sink.svg',         genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'stove',        name: 'コンロ',         type: 'svg', file: 'stove.svg',        genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'oven',         name: 'オーブン',       type: 'svg', file: 'oven.svg',         genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'fireplace',    name: '暖炉',           type: 'svg', file: 'fireplace.svg',    genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'stairs',       name: '階段',           type: 'svg', file: 'stairs.svg',       genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'escalator',    name: 'エスカレータ',   type: 'svg', file: 'escalator.svg',    genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'ladder',       name: 'はしご',         type: 'svg', file: 'ladder.svg',       genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 灯火
-    { id: 'candles',      name: 'ろうそく',     type: 'svg', file: 'candles.svg',      genres: ['light', 'icon'],  scale: 1 },
-    { id: 'campfire',     name: '焚き火',       type: 'svg', file: 'campfire.svg',     genres: ['light', 'icon'],  scale: 1 },
-    { id: 'lamp',         name: '電球',         type: 'svg', file: 'lamp.svg',         genres: ['light', 'icon'],  scale: 1 },
-    { id: 'desk-lamp',    name: 'デスクライト', type: 'svg', file: 'desk-lamp.svg',    genres: ['light', 'icon'],  scale: 1 },
-    { id: 'floor-lamp',   name: 'フロアライト', type: 'svg', file: 'floor-lamp.svg',   genres: ['light', 'icon'],  scale: 1 },
-    { id: 'bed-lamp',     name: 'ベッドランプ', type: 'svg', file: 'bed-lamp.svg',     genres: ['light', 'icon'],  scale: 1 },
+    { id: 'candles',      name: 'ろうそく',     type: 'svg', file: 'candles.svg',      genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'campfire',     name: '焚き火',       type: 'svg', file: 'campfire.svg',     genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'lamp',         name: '電球',         type: 'svg', file: 'lamp.svg',         genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'desk-lamp',    name: 'デスクライト', type: 'svg', file: 'desk-lamp.svg',    genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'floor-lamp',   name: 'フロアライト', type: 'svg', file: 'floor-lamp.svg',   genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'bed-lamp',     name: 'ベッドランプ', type: 'svg', file: 'bed-lamp.svg',     genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
     // 自然
-    { id: 'tree-oak',     name: '木 (オーク)',  type: 'svg', file: 'tree-oak.svg',     genres: ['nature', 'icon'], scale: 1 },
-    { id: 'tree-pine',    name: '木 (松)',      type: 'svg', file: 'tree-pine.svg',    genres: ['nature', 'icon'], scale: 1 },
-    { id: 'stone-block',  name: '岩',           type: 'svg', file: 'stone-block.svg',  genres: ['nature', 'icon'], scale: 1 },
-    { id: 'flowers',      name: '花',           type: 'svg', file: 'flowers.svg',      genres: ['nature', 'icon'], scale: 1 },
-    { id: 'plant-pot',    name: '観葉植物',     type: 'svg', file: 'plant-pot.svg',    genres: ['nature', 'icon'], scale: 1 },
-    { id: 'wood-pile',    name: '薪の山',       type: 'svg', file: 'wood-pile.svg',    genres: ['nature', 'icon'], scale: 1 },
+    { id: 'tree-oak',     name: '木 (オーク)',  type: 'svg', file: 'tree-oak.svg',     genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'tree-pine',    name: '木 (松)',      type: 'svg', file: 'tree-pine.svg',    genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'stone-block',  name: '岩',           type: 'svg', file: 'stone-block.svg',  genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'flowers',      name: '花',           type: 'svg', file: 'flowers.svg',      genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'plant-pot',    name: '観葉植物',     type: 'svg', file: 'plant-pot.svg',    genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'wood-pile',    name: '薪の山',       type: 'svg', file: 'wood-pile.svg',    genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // その他
-    { id: 'fountain',     name: '噴水',         type: 'svg', file: 'fountain.svg',     genres: ['misc', 'icon'],   scale: 1 },
-    { id: 'wood-cabin',   name: '小屋',         type: 'svg', file: 'wood-cabin.svg',   genres: ['misc', 'icon'],   scale: 1 },
-    { id: 'coffee-pot',   name: 'コーヒーポット', type: 'svg', file: 'coffee-pot.svg', genres: ['misc', 'icon'],   scale: 1 },
-    { id: 'scale',        name: 'はかり',       type: 'svg', file: 'scale.svg',        genres: ['misc', 'icon'],   scale: 1 },
+    { id: 'fountain',     name: '噴水',         type: 'svg', file: 'fountain.svg',     genres: ['misc', 'icon'],   scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'wood-cabin',   name: '小屋',         type: 'svg', file: 'wood-cabin.svg',   genres: ['misc', 'icon'],   scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'coffee-pot',   name: 'コーヒーポット', type: 'svg', file: 'coffee-pot.svg', genres: ['misc', 'icon'],   scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'scale',        name: 'はかり',       type: 'svg', file: 'scale.svg',        genres: ['misc', 'icon'],   scale: 1, anchorX: 'center', anchorY: 'center' },
 ];
 
 /** id から装飾定義を取得する。無ければ null。 */
@@ -276,6 +276,20 @@ function decorGenres(d) {
 function decorsForGenre(genreId) {
     if (!genreId || genreId === 'all') return DECORS;
     return DECORS.filter((d) => decorGenres(d).includes(genreId));
+}
+
+/**
+ * DECORS[].anchorX / anchorY を fabric の origin 文字列に変換する (未指定は中央)。
+ *   anchorX: 'left' | 'center' | 'right'
+ *   anchorY: 'top'  | 'center' | 'bottom'
+ * 9 つの組合せ (左上 / 中央上 / 右上 / 左中央 / 中央 / 右中央 / 左下 / 中央下 / 右下)
+ * のどれを「配置クリック点・スナップ点・回転中心」にするかを SVG/画像ごとに指定する。
+ */
+function decorAnchorToOriginX(anchorX) {
+    return (anchorX === 'left' || anchorX === 'right') ? anchorX : 'center';
+}
+function decorAnchorToOriginY(anchorY) {
+    return (anchorY === 'top' || anchorY === 'bottom') ? anchorY : 'center';
 }
 
 /** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。 */
@@ -3221,15 +3235,18 @@ function createDecorInstance(id, opts, cb) {
         // baseDim = 1セル幅にフィット → ベース倍率
         const fit = (cellSize / baseDim) * totalScale;
 
-        const natX = cached.natSignX ?? 1;
-        const natY = cached.natSignY ?? 1;
+        // DECORS[].anchorX / anchorY ('start' | 'center' | 'end') → fabric の originX / originY 文字列
+        // この基準点 (= 9 つから 1 つ) が、配置クリック位置 / スナップ点 / 回転中心になる。
+        const ax = decorAnchorToOriginX(def.anchorX);
+        const ay = decorAnchorToOriginY(def.anchorY);
         clone.set({
-            originX: 'center',
-            originY: 'center',
+            originX: ax,
+            originY: ay,
             left: opts.centerX,
             top: opts.centerY,
-            scaleX: fit * natX * (opts.flipX ? -1 : 1),
-            scaleY: fit * natY * (opts.flipY ? -1 : 1),
+            // 反転トグル: OFF = 反転なし (+1)、ON = 反転 (-1)
+            scaleX: fit * (opts.flipX ? -1 : 1),
+            scaleY: fit * (opts.flipY ? -1 : 1),
             angle: opts.rotation || 0,
             objectCaching: false,
             _decorId: id,
