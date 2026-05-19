@@ -413,6 +413,13 @@
             .decor-picker .pp-tiles-scroll {
                 max-height: 400px;
             }
+            /* 装飾タイルは透過 SVG を見やすくするためチェッカーボード背景 (編集画面背景と同じ色使い) */
+            .decor-picker .pp-tile {
+                background: repeating-conic-gradient(#2b2b2b 0% 25%, #1f1f1f 25% 50%) 0 0 / 12px 12px;
+            }
+            [data-theme='light'] .decor-picker .pp-tile {
+                background: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%) 0 0 / 12px 12px;
+            }
             .pp-tiles {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -848,9 +855,12 @@
                 position: relative;
                 overflow: hidden;
                 /* カーソルは Fabric の defaultCursor (setActiveTool で設定) に任せる */
-                background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
+                background-image: repeating-conic-gradient(#2b2b2b 0% 25%, #1f1f1f 25% 50%);
                 background-size: 18px 18px;
                 background-position: 0 0;
+            }
+            [data-theme='light'] #canvas-area {
+                background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
             }
             #canvas-area canvas {
                 display: block;
