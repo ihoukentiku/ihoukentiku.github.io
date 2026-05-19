@@ -409,6 +409,10 @@
                 scrollbar-width: thin;
                 padding-right: 2px;
             }
+            /* 装飾ピッカーはアセット数が多いのでスクロール領域を 2 倍にする */
+            .decor-picker .pp-tiles-scroll {
+                max-height: 400px;
+            }
             .pp-tiles {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -1263,10 +1267,7 @@
                             </div>
                             <p class="fl" style="opacity: 0.5; font-size: 0.6rem; margin: -0.2rem 0 0.3rem">色は元の SVG をそのまま使用。ピッカーで変更すると全 path に適用されます</p>
                         </div>
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="decor-shadow-enabled" checked /><span class="tl">影を付ける</span></label>
-                        </div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.62rem; margin: 0.3rem 0 0">クリック点が装飾の中心。スナップはツールバー下のスナップ設定に従う (Shift で一時無効)</p>
+                        <p class="fl" style="opacity: 0.5; font-size: 0.62rem; margin: 0.3rem 0 0">クリック点が装飾の中心。スナップはツールバー下のスナップ設定に従う (Shift で一時無効)。影は下の「影」セクションで詳細設定可能</p>
                     </div>
                 </div>
                 <!-- フリーハンド (Fabric brushes + 圧力検知 + Shift で直線) -->

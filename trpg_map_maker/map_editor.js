@@ -49,14 +49,14 @@ const App = {
     editMode: 'simple', // 'simple' | 'map' — シンプル/地図モードの切替 (per-map で保存)
     // ---- 地図モード: 地面/壁タブの状態 (Phase B) ----
     groundTool: 'cell', // 'cell' | 'rect'
-    groundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#9b8c70' }, // mode: 'solid' | 'pattern'
+    groundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#ffffff' }, // mode: 'solid' | 'pattern'
     wallTool: 'rect', // 'rect' | 'ellipse' | 'line' | 'path' | 'polygon' | 'curve' | 'curve-closed'
-    wallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#5a5a5a' },
+    wallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
     // ---- 地図モード: 部屋タブ (地面+壁の複合) ----
     roomTool: 'rect', // 'rect' | 'ellipse' | 'polygon' | 'curve-closed'
-    roomGroundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#9b8c70' },
-    roomWallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#5a5a5a' },
+    roomGroundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#ffffff' },
+    roomWallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     roomWallThickness: 12,
     roomGroundShadowEnabled: false,
     roomWallShadowEnabled: true,
@@ -197,6 +197,8 @@ const DECOR_DIR_THUMB = 'decors/thumb/';
 
 const DECOR_GENRES = [
     { id: 'all', name: '全て' },
+    { id: 'floorplan', name: '間取り図' },
+    { id: 'icon', name: 'アイコン' },
     { id: 'furniture', name: '家具' },
     { id: 'door', name: 'ドア' },
     { id: 'nature', name: '自然' },
@@ -207,10 +209,55 @@ const DECOR_GENRES = [
 const DECORS = [
     // type='svg' は decors/svg/{file}、type='image' は decors/image/{file}
     // scale: 1セル幅を基準とした初期倍率 (1 = ちょうどセル幅)
-    // sample 用に最小限のものを置く。実素材は decors/ 配下に追加して、ここに登録するだけで使えるようになる。
-    { id: 'door-wood', name: 'ドア (木)', type: 'svg', file: 'door-wood.svg', genre: 'door', scale: 1 },
-    { id: 'chair', name: '椅子', type: 'svg', file: 'chair.svg', genre: 'furniture', scale: 0.7 },
-    { id: 'torch', name: 'たいまつ', type: 'svg', file: 'torch.svg', genre: 'light', scale: 0.5 },
+    // genres: 1 装飾が複数ジャンルに属する場合は配列で指定 (例: game-icons のドアは「ドア」「アイコン」の両方)
+    //
+    // ---- game-icons (CC BY 3.0) — スタイル系アイコン ----
+    // ドア
+    { id: 'door-simple',  name: 'ドア',         type: 'svg', file: 'door-simple.svg',  genres: ['door', 'icon'],        scale: 1 },
+    { id: 'door-arched',  name: 'アーチドア',   type: 'svg', file: 'door-arched.svg',  genres: ['door', 'icon'],        scale: 1 },
+    { id: 'double-door',  name: '両開き扉',     type: 'svg', file: 'double-door.svg',  genres: ['door', 'icon'],        scale: 1 },
+    // 家具
+    { id: 'chair-wood',     name: '椅子',         type: 'svg', file: 'chair-wood.svg',      genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'director-chair', name: '監督椅子',     type: 'svg', file: 'director-chair.svg',  genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'bed',            name: 'ベッド',       type: 'svg', file: 'bed.svg',             genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'sofa',           name: 'ソファ',       type: 'svg', file: 'sofa.svg',            genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'table-round',    name: '円卓',         type: 'svg', file: 'table-round.svg',     genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'dining-table',   name: '食卓',         type: 'svg', file: 'dining-table.svg',    genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'desk',           name: 'デスク',       type: 'svg', file: 'desk.svg',            genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'bookshelf',      name: '本棚',         type: 'svg', file: 'bookshelf.svg',       genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'piano',          name: 'ピアノ',       type: 'svg', file: 'piano.svg',           genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'chest',          name: '宝箱',         type: 'svg', file: 'chest.svg',           genres: ['furniture', 'icon'], scale: 1 },
+    { id: 'barrel',         name: '樽',           type: 'svg', file: 'barrel.svg',          genres: ['furniture', 'icon'], scale: 1 },
+    // 設備系もアイコンとして残す
+    { id: 'window',       name: '窓',             type: 'svg', file: 'window.svg',       genres: ['icon'], scale: 1 },
+    { id: 'bathtub',      name: 'バスタブ',       type: 'svg', file: 'bathtub.svg',      genres: ['icon'], scale: 1 },
+    { id: 'shower',       name: 'シャワー',       type: 'svg', file: 'shower.svg',       genres: ['icon'], scale: 1 },
+    { id: 'sink',         name: 'シンク',         type: 'svg', file: 'sink.svg',         genres: ['icon'], scale: 1 },
+    { id: 'stove',        name: 'コンロ',         type: 'svg', file: 'stove.svg',        genres: ['icon'], scale: 1 },
+    { id: 'oven',         name: 'オーブン',       type: 'svg', file: 'oven.svg',         genres: ['icon'], scale: 1 },
+    { id: 'fireplace',    name: '暖炉',           type: 'svg', file: 'fireplace.svg',    genres: ['icon'], scale: 1 },
+    { id: 'stairs',       name: '階段',           type: 'svg', file: 'stairs.svg',       genres: ['icon'], scale: 1 },
+    { id: 'escalator',    name: 'エスカレータ',   type: 'svg', file: 'escalator.svg',    genres: ['icon'], scale: 1 },
+    { id: 'ladder',       name: 'はしご',         type: 'svg', file: 'ladder.svg',       genres: ['icon'], scale: 1 },
+    // 灯火
+    { id: 'candles',      name: 'ろうそく',     type: 'svg', file: 'candles.svg',      genres: ['light', 'icon'],  scale: 1 },
+    { id: 'campfire',     name: '焚き火',       type: 'svg', file: 'campfire.svg',     genres: ['light', 'icon'],  scale: 1 },
+    { id: 'lamp',         name: '電球',         type: 'svg', file: 'lamp.svg',         genres: ['light', 'icon'],  scale: 1 },
+    { id: 'desk-lamp',    name: 'デスクライト', type: 'svg', file: 'desk-lamp.svg',    genres: ['light', 'icon'],  scale: 1 },
+    { id: 'floor-lamp',   name: 'フロアライト', type: 'svg', file: 'floor-lamp.svg',   genres: ['light', 'icon'],  scale: 1 },
+    { id: 'bed-lamp',     name: 'ベッドランプ', type: 'svg', file: 'bed-lamp.svg',     genres: ['light', 'icon'],  scale: 1 },
+    // 自然
+    { id: 'tree-oak',     name: '木 (オーク)',  type: 'svg', file: 'tree-oak.svg',     genres: ['nature', 'icon'], scale: 1 },
+    { id: 'tree-pine',    name: '木 (松)',      type: 'svg', file: 'tree-pine.svg',    genres: ['nature', 'icon'], scale: 1 },
+    { id: 'stone-block',  name: '岩',           type: 'svg', file: 'stone-block.svg',  genres: ['nature', 'icon'], scale: 1 },
+    { id: 'flowers',      name: '花',           type: 'svg', file: 'flowers.svg',      genres: ['nature', 'icon'], scale: 1 },
+    { id: 'plant-pot',    name: '観葉植物',     type: 'svg', file: 'plant-pot.svg',    genres: ['nature', 'icon'], scale: 1 },
+    { id: 'wood-pile',    name: '薪の山',       type: 'svg', file: 'wood-pile.svg',    genres: ['nature', 'icon'], scale: 1 },
+    // その他
+    { id: 'fountain',     name: '噴水',         type: 'svg', file: 'fountain.svg',     genres: ['misc', 'icon'],   scale: 1 },
+    { id: 'wood-cabin',   name: '小屋',         type: 'svg', file: 'wood-cabin.svg',   genres: ['misc', 'icon'],   scale: 1 },
+    { id: 'coffee-pot',   name: 'コーヒーポット', type: 'svg', file: 'coffee-pot.svg', genres: ['misc', 'icon'],   scale: 1 },
+    { id: 'scale',        name: 'はかり',       type: 'svg', file: 'scale.svg',        genres: ['misc', 'icon'],   scale: 1 },
 ];
 
 /** id から装飾定義を取得する。無ければ null。 */
@@ -218,10 +265,17 @@ function getDecorDef(id) {
     return DECORS.find((d) => d.id === id) || null;
 }
 
-/** 指定ジャンル ID で装飾をフィルタする。'all' は全件。 */
+/** 装飾の所属ジャンル一覧を返す (新形式 genres[] と旧形式 genre 両対応)。 */
+function decorGenres(d) {
+    if (Array.isArray(d.genres)) return d.genres;
+    if (d.genre) return [d.genre];
+    return [];
+}
+
+/** 指定ジャンル ID で装飾をフィルタする。'all' は全件。1 装飾が複数ジャンルに属するケースに対応。 */
 function decorsForGenre(genreId) {
     if (!genreId || genreId === 'all') return DECORS;
-    return DECORS.filter((d) => d.genre === genreId);
+    return DECORS.filter((d) => decorGenres(d).includes(genreId));
 }
 
 /** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。 */
@@ -418,8 +472,9 @@ function updateFillStrokeVisibility() {
     setDisp('snap-sec', snapSubtools.includes(sub));
     // パターン共通設定: 地面/壁/部屋モードで表示
     setDisp('pattern-transform-sec', isGround || isWall || isRoom);
-    // 影セクション: シンプル/地面/壁で表示 (部屋は専用トグルを prop-group 内に持つ)
-    setDisp('shadow-sec', isSimpleDraw || isGround || isWall);
+    // 影セクション: シンプル/地面/壁/装飾で表示 (部屋は専用トグルを prop-group 内に持つ)
+    const isDecorTool = App.activeTool === 'decor';
+    setDisp('shadow-sec', isSimpleDraw || isGround || isWall || isDecorTool);
     refreshShadowUI();
     // 線継ぎ目 / 線端: ストロークがあるサブツールと同条件、ただしフリーハンドでは出さない
     setDisp('stroke-line-join-row', showStrokeWidth && !isFreehand);
@@ -430,7 +485,11 @@ function updateFillStrokeVisibility() {
 function refreshShadowUI() {
     const cb = document.getElementById('shadow-enabled');
     if (!cb) return;
-    cb.checked = App.activeTool === 'ground' ? !!App.groundShadowEnabled : App.activeTool === 'wall' ? !!App.wallShadowEnabled : !!App.simpleShadowEnabled;
+    cb.checked =
+        App.activeTool === 'ground' ? !!App.groundShadowEnabled
+        : App.activeTool === 'wall' ? !!App.wallShadowEnabled
+        : App.activeTool === 'decor' ? !!App.decorShadowEnabled
+        : !!App.simpleShadowEnabled;
 }
 
 /* ================================================================
@@ -509,6 +568,7 @@ function initPickr() {
             if (!c) return;
             App.shadowColor = c.toHEXA().toString();
             instance.applyColor(true);
+            refreshDecorPreview();
         });
         attachEyedropper(wsp);
     }
@@ -3161,13 +3221,15 @@ function createDecorInstance(id, opts, cb) {
         // baseDim = 1セル幅にフィット → ベース倍率
         const fit = (cellSize / baseDim) * totalScale;
 
+        const natX = cached.natSignX ?? 1;
+        const natY = cached.natSignY ?? 1;
         clone.set({
             originX: 'center',
             originY: 'center',
             left: opts.centerX,
             top: opts.centerY,
-            scaleX: fit * (opts.flipX ? -1 : 1),
-            scaleY: fit * (opts.flipY ? -1 : 1),
+            scaleX: fit * natX * (opts.flipX ? -1 : 1),
+            scaleY: fit * natY * (opts.flipY ? -1 : 1),
             angle: opts.rotation || 0,
             objectCaching: false,
             _decorId: id,
@@ -3180,15 +3242,18 @@ function createDecorInstance(id, opts, cb) {
             _decorStroke: opts.stroke || null,
         });
         // SVG の色上書き (fill/stroke が指定されたら全 path に一律適用、null なら元色維持)
-        if (def.type === 'svg' && clone.getObjects) {
-            const children = clone.getObjects();
+        // - 複数要素の SVG → fabric.Group になるので getObjects() で子を走査
+        // - 単一要素の SVG → fabric.Path などの単体オブジェクトになるので自身に適用
+        if (def.type === 'svg') {
+            const children = (typeof clone.getObjects === 'function') ? clone.getObjects() : [clone];
             children.forEach((child, i) => {
                 const orig = cached.originalColors?.[i] || {};
-                child.set({
-                    fill: opts.fill ?? orig.fill,
-                    stroke: opts.stroke ?? orig.stroke,
-                });
+                const newFill = opts.fill ?? orig.fill;
+                const newStroke = opts.stroke ?? orig.stroke;
+                child.set({ fill: newFill, stroke: newStroke, dirty: true });
             });
+            // group キャッシュも無効化して即時再描画
+            if (typeof clone.set === 'function') clone.set('dirty', true);
         }
         if (opts.preview) {
             clone.set({ opacity: 0.5, selectable: false, evented: false, isPreview: true });
@@ -3228,6 +3293,7 @@ function updateDecorPreview(ptr) {
     const center = decorPlacementCenter(ptr);
     createDecorInstance(App.decorId, currentDecorOpts(center.x, center.y, true), (obj) => {
         if (!obj || App.activeTool !== 'decor' || !App.decorId) return;
+        if (App.decorShadowEnabled) obj.set('shadow', makeShadowFromApp());
         App.canvas.add(obj);
         App.canvas.requestRenderAll();
     });
@@ -3297,6 +3363,15 @@ function mountDecorPicker(root) {
         t.appendChild(lbl);
         t.addEventListener('click', () => {
             App.decorId = d.id;
+            // 装飾を切り替えたら色上書きはリセット (元の SVG 色に戻す)。
+            // ピッカー本体の表示色も視覚的に元色っぽい既定 (#222 / #000) に戻すが、
+            // change イベントが走ると App.decorFill/Stroke が再設定されてしまうので suppress。
+            App.decorFill = null;
+            App.decorStroke = null;
+            App._suppressDecorPickr = true;
+            App._decorFillPickr?.setColor('#222222', true);
+            App._decorStrokePickr?.setColor('#000000', true);
+            setTimeout(() => { App._suppressDecorPickr = false; }, 0);
             loadDecorAsset(d.id);
             mountDecorPicker(root);
             refreshDecorColorSection();
@@ -4367,6 +4442,8 @@ document.addEventListener('DOMContentLoaded', () => {
  * @returns {object}
  */
 function buildSaveData() {
+    // プレビュー (装飾の半透明スタンプ等) は保存前に除去
+    removePreview();
     // ツール/パターン/フリーハンドの「最後に選んでいた値」も保存する。
     // → リロード後も同じ選択状態から再開できる (UX 向上)。
     // 注意: 履歴 (Undo/Redo) のスナップショットは serializeHistorySnapshot 側で別管理なので、
@@ -4490,6 +4567,8 @@ function restoreSaveData(data) {
 
     App.canvas.loadFromJSON(data.canvas, function () {
         if (data.viewportTransform) App.canvas.setViewportTransform(data.viewportTransform);
+        // 古い保存ファイルに焼き付いたプレビュー (isPreview) を念のため除去
+        App.canvas.getObjects().filter((o) => o.isPreview).forEach((o) => App.canvas.remove(o));
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
@@ -4519,7 +4598,7 @@ function restoreSaveData(data) {
         const drotEl = document.getElementById('decor-rotation'); if (drotEl) drotEl.value = App.decorRotation || 0;
         const dfxEl = document.getElementById('decor-flip-x'); if (dfxEl) dfxEl.checked = !!App.decorFlipX;
         const dfyEl = document.getElementById('decor-flip-y'); if (dfyEl) dfyEl.checked = !!App.decorFlipY;
-        const dseEl = document.getElementById('decor-shadow-enabled'); if (dseEl) dseEl.checked = !!App.decorShadowEnabled;
+        // 装飾影 on/off は共通 #shadow-enabled (refreshShadowUI で同期)
         // 保存済み装飾レイヤーの参照する SVG/画像を再ロード (キャッシュは空)
         App.canvas.getObjects().forEach((o) => { if (o._isDecorLayer && o._decorId) loadDecorAsset(o._decorId); });
         // フリーハンドブラシタイル & 実ブラシも復元後の App.freehandBrush に同期
@@ -4691,6 +4770,8 @@ const HISTORY_DEBOUNCE_MS = 500;
  * @returns {string}
  */
 function serializeHistorySnapshot() {
+    // toJSON 前にプレビュー (isPreview) を除去 — 装飾プレビューが履歴に焼き付くのを防ぐ
+    removePreview();
     // toJSON 前に _cellData → _cellEntries を同期 (永続化されるのは _cellEntries 側)
     App.canvas.getObjects().forEach((o) => { if (o._isCellLayer) syncCellEntries(o); });
     return JSON.stringify({
@@ -4766,6 +4847,8 @@ function restoreHistorySnapshot(snapshot, displayName) {
     App._curvePoints = [];
 
     App.canvas.loadFromJSON(data.canvas, () => {
+        // 履歴に焼き付いたプレビューを除去
+        App.canvas.getObjects().filter((o) => o.isPreview).forEach((o) => App.canvas.remove(o));
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
@@ -5343,20 +5426,20 @@ document.addEventListener('DOMContentLoaded', () => {
         App.decorFlipY = this.checked;
         refreshDecorPreview();
     });
-    document.getElementById('decor-shadow-enabled')?.addEventListener('change', function () {
-        App.decorShadowEnabled = this.checked;
-        // 影は配置時のみ反映なのでプレビューは不要
-    });
+    // 装飾の影 on/off は共通の #shadow-enabled (shadow-sec) を介して操作する。
+    // (装飾モードに切替時、refreshShadowUI が App.decorShadowEnabled を反映)
 
-    // 装飾 fill / stroke Pickr — 値を変更したら App.decorFill/Stroke を上書き
+    // 装飾 fill / stroke Pickr — App._suppressDecorPickr が true の間は変更を無視し、
+    // 「ピッカー初期化」「装飾切替時のリセット」のときに誤って色上書きが走らないようにする。
+    App._suppressDecorPickr = true;
     const dfEl = document.getElementById('decor-fill-picker');
     if (dfEl && typeof Pickr !== 'undefined') {
-        const dfPickr = Pickr.create({
-            el: dfEl, theme: 'nano', default: '#888888', defaultRepresentation: 'HEXA',
+        App._decorFillPickr = Pickr.create({
+            el: dfEl, theme: 'nano', default: '#222222', defaultRepresentation: 'HEXA',
             components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
         });
-        dfPickr.on('change', (c, _src, instance) => {
-            if (!c) return;
+        App._decorFillPickr.on('change', (c, _src, instance) => {
+            if (!c || App._suppressDecorPickr) return;
             App.decorFill = c.toHEXA().toString().slice(0, 7);
             instance.applyColor(true);
             refreshDecorPreview();
@@ -5365,18 +5448,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const dsEl = document.getElementById('decor-stroke-picker');
     if (dsEl && typeof Pickr !== 'undefined') {
-        const dsPickr = Pickr.create({
-            el: dsEl, theme: 'nano', default: '#222222', defaultRepresentation: 'HEXA',
+        App._decorStrokePickr = Pickr.create({
+            el: dsEl, theme: 'nano', default: '#000000', defaultRepresentation: 'HEXA',
             components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
         });
-        dsPickr.on('change', (c, _src, instance) => {
-            if (!c) return;
+        App._decorStrokePickr.on('change', (c, _src, instance) => {
+            if (!c || App._suppressDecorPickr) return;
             App.decorStroke = c.toHEXA().toString().slice(0, 7);
             instance.applyColor(true);
             refreshDecorPreview();
             pushHistoryDebounced('装飾ストローク色を変更');
         });
     }
+    // ピッカーの初期 change イベント (default 設定で発火する) を全部消化したら抑制解除
+    setTimeout(() => { App._suppressDecorPickr = false; }, 50);
 
     // パターン共通設定 (オフセット/回転) — 値を更新するのみ。新規描画時に snapshot されて適用される
     document.getElementById('pattern-offset-x')?.addEventListener('input', function () {
@@ -5443,16 +5528,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shadow-enabled')?.addEventListener('change', function () {
         if (App.activeTool === 'ground') App.groundShadowEnabled = this.checked;
         else if (App.activeTool === 'wall') App.wallShadowEnabled = this.checked;
+        else if (App.activeTool === 'decor') App.decorShadowEnabled = this.checked;
         else App.simpleShadowEnabled = this.checked;
+        refreshDecorPreview();
     });
     document.getElementById('shadow-blur')?.addEventListener('input', function () {
         App.shadowBlur = parseInt(this.value) || 0;
+        refreshDecorPreview();
     });
     document.getElementById('shadow-offset-x')?.addEventListener('input', function () {
         App.shadowOffsetX = parseInt(this.value) || 0;
+        refreshDecorPreview();
     });
     document.getElementById('shadow-offset-y')?.addEventListener('input', function () {
         App.shadowOffsetY = parseInt(this.value) || 0;
+        refreshDecorPreview();
     });
 
     // strokeLineJoin (線の継ぎ目) / strokeLineCap (線の端) — 全描画ストロークに適用
