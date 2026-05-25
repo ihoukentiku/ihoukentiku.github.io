@@ -177,7 +177,7 @@ const PATTERNS = [
     { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.5 },
     { id: 'rock', name: '岩', file: '岩.webp', color: '#7a7368', ground: 'cave', wall: 'stone', scale: 0.5 },
     { id: 'rock-moss', name: '岩 (苔)', file: '岩(苔).webp', color: '#6b7a52', ground: 'cave', wall: 'natural', scale: 0.5 },
-    { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 1 },
+    { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 0.25 },
 ];
 
 /** id からパターン定義を取得する。無ければ null。 */
@@ -211,6 +211,13 @@ const DECORS = [
     // scale: 1セル幅を基準とした初期倍率 (1 = ちょうどセル幅)
     // genres: 1 装飾が複数ジャンルに属する場合は配列で指定 (例: game-icons のドアは「ドア」「アイコン」の両方)
     //
+    // ---- 間取り図 (ハンドクラフト、白フィル/黒ストロークの真上ビュー) ----
+    // ドア
+    { id: 'fp-door',             name: 'ドア',       type: 'svg', file: 'fp-door.svg',             genres: ['floorplan', 'door'], scale: 0.8, anchorX: 'center', anchorY: 'center' },
+    { id: 'fp-door-large',       name: 'ドア (大)',  type: 'svg', file: 'fp-door-large.svg',       genres: ['floorplan', 'door'], scale: 1.6, anchorX: 'center', anchorY: 'center' },
+    { id: 'fp-door-open',        name: '開き戸',     type: 'svg', file: 'fp-door-open.svg',        genres: ['floorplan', 'door'], scale: 0.8, anchorX: 'center',   anchorY: 'bottom' },
+    { id: 'fp-door-double-open', name: '両開き戸',   type: 'svg', file: 'fp-door-double-open.svg', genres: ['floorplan', 'door'], scale: 1.57, anchorX: 'center', anchorY: 'bottom' },
+
     // ---- game-icons (CC BY 3.0) — スタイル系アイコン ----
     // ドア
     { id: 'door-simple',  name: 'ドア',         type: 'svg', file: 'door-simple.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
