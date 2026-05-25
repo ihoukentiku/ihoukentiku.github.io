@@ -54,7 +54,7 @@ const App = {
     wallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
     // ---- 地図モード: 部屋タブ (地面+壁の複合) ----
-    roomTool: 'rect', // 'rect' | 'ellipse' | 'polygon' | 'curve-closed'
+    roomTool: 'rect', // 'rect' | 'ellipse' | 'polygon' | 'curve-closed' | 'path' | 'curve'
     roomGroundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#ffffff' },
     roomWallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     roomWallThickness: 12,
@@ -1609,6 +1609,9 @@ const ACTION_ICON_GAP = 6;
 const ACTION_PAD = 8;
 const ACTION_BAR_HEIGHT = 32;
 const ACTION_BAR_OFFSET_Y = -42;
+// 回転ハンドル (上中央, offsetY -40) との重なりを避けるため、アクションバーは右に逃がす。
+// 5アクション時の半幅 ≒ 80px。100 px 右へ寄せれば左端は中央から +20px となりハンドルを十分回避。
+const ACTION_BAR_OFFSET_X = 100;
 
 /** CSS 変数 --text の値を取得 (canvas 描画用)。フォールバックあり。 */
 function getCssVarColor(name, fallback) {
@@ -2049,7 +2052,7 @@ function actionBarHitIndex(localX, actions) {
     fabric.Object.prototype.controls.actionBar = new fabric.Control({
         x: 0,
         y: -0.5,
-        offsetX: 0,
+        offsetX: ACTION_BAR_OFFSET_X,
         offsetY: ACTION_BAR_OFFSET_Y,
         cursorStyle: 'pointer',
         // sizeX は target ごとに変わるので render の widest case で確保。getActionsBarWidth で動的計算する。
@@ -2104,7 +2107,7 @@ function actionBarHitIndex(localX, actions) {
     fabric.Object.prototype.controls.booleanBar = new fabric.Control({
         x: 0,
         y: -0.5,
-        offsetX: 0,
+        offsetX: ACTION_BAR_OFFSET_X,
         offsetY: BOOL_BAR_OFFSET_Y,
         cursorStyle: 'pointer',
         sizeX: 200,
@@ -5026,20 +5029,33 @@ document.addEventListener('keydown', (e) => {
 
     if (e.key === 'Enter' && activeSubtool() === 'path' && App._pathPoints.length >= 2) {
         removePreview();
-        const style = getCurrentDrawStyle();
-        addCategoryLayer(
-            style.namePrefix + '折線',
-            new fabric.Polyline(App._pathPoints, {
-                stroke: style.stroke,
-                strokeWidth: style.strokeWidth,
-                strokeDashArray: style.strokeDashArray,
-                fill: '',
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-            }),
-            style.flag
-        );
+        if (App.activeTool === 'room') {
+            // 部屋 (折線): 地面は閉じた塗り (Polygon)、壁は開いた線 (Polyline)。
+            // 「一部だけ壁の無い部屋」を表現するため、壁は最後の点と最初の点を結ばずに残す。
+            const pts = App._pathPoints.map((p) => ({ x: p.x, y: p.y }));
+            addRoom('部屋_折線', (st) => {
+                const isWall = (st.strokeWidth || 0) > 0;
+                if (isWall) {
+                    return new fabric.Polyline(pts, { ...st, fill: '', objectCaching: false });
+                }
+                return new fabric.Polygon(pts, { ...st, objectCaching: false });
+            });
+        } else {
+            const style = getCurrentDrawStyle();
+            addCategoryLayer(
+                style.namePrefix + '折線',
+                new fabric.Polyline(App._pathPoints, {
+                    stroke: style.stroke,
+                    strokeWidth: style.strokeWidth,
+                    strokeDashArray: style.strokeDashArray,
+                    fill: '',
+                    selectable: false,
+                    evented: false,
+                    objectCaching: false,
+                }),
+                style.flag
+            );
+        }
         App._pathPoints = [];
         e.preventDefault();
         return;
@@ -5078,18 +5094,29 @@ document.addEventListener('keydown', (e) => {
         removePreview();
         const d = buildBezierPath(App._curvePoints);
         if (d) {
-            const style = getCurrentDrawStyle();
-            addCategoryLayer(
-                style.namePrefix + '曲線',
-                new fabric.Path(d, {
-                    stroke: style.stroke,
-                    strokeWidth: style.strokeWidth,
-                    strokeDashArray: style.strokeDashArray,
-                    fill: '',
-                    objectCaching: false,
-                }),
-                style.flag
-            );
+            if (App.activeTool === 'room') {
+                // 部屋 (曲線): 同じ open path "d" を使い、ground は fill (Canvas が暗黙閉じ)、wall は stroke のみで開いたまま描く。
+                addRoom('部屋_曲線', (st) => {
+                    const isWall = (st.strokeWidth || 0) > 0;
+                    if (isWall) {
+                        return new fabric.Path(d, { ...st, fill: '', objectCaching: false });
+                    }
+                    return new fabric.Path(d, { ...st, objectCaching: false });
+                });
+            } else {
+                const style = getCurrentDrawStyle();
+                addCategoryLayer(
+                    style.namePrefix + '曲線',
+                    new fabric.Path(d, {
+                        stroke: style.stroke,
+                        strokeWidth: style.strokeWidth,
+                        strokeDashArray: style.strokeDashArray,
+                        fill: '',
+                        objectCaching: false,
+                    }),
+                    style.flag
+                );
+            }
         }
         App._curvePoints = [];
         e.preventDefault();
