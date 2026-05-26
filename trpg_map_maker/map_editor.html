@@ -499,11 +499,73 @@
                 scrollbar-color: var(--border-bright) transparent;
             }
             .s-sec {
-                padding: 0.5rem 0.6rem;
+                padding: 0.6rem 0.7rem;
                 border-bottom: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
             }
             .s-sec:last-child {
                 border-bottom: none;
+            }
+            /* セクション内サブヘッダ (例: 部屋の「地面」「壁」、選択パネルの「塗り」「影」)
+               .s-sec と違って padding/border は無く、点線の上ボーダーだけで区切る。 */
+            .s-sub-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.62rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding-top: 0.55rem;
+                border-top: 1px dashed var(--border);
+            }
+            .s-sub-ttl > .material-symbols-outlined {
+                font-size: 0.78rem;
+            }
+            .s-sub-ttl.first {
+                padding-top: 0;
+                border-top: none;
+            }
+            /* s-sec 内の汎用 flex 縦コンテナ (sub-section の本体) */
+            .s-sub-body {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            /* 折りたたみ可能なサブセクション (s-sec 内に置く) — s-sec.collapsible と同じパターンの mini 版 */
+            .s-sub-section {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            .s-sub-section.collapsible > .s-sub-ttl {
+                cursor: pointer;
+                user-select: none;
+            }
+            .s-sub-section.collapsible > .s-sub-ttl .s-chevron {
+                margin-left: auto;
+                transition: transform 0.2s ease;
+                transform: rotate(90deg);
+                font-size: 0.9rem;
+            }
+            .s-sub-section.collapsible.collapsed > .s-sub-ttl .s-chevron {
+                transform: rotate(0deg);
+            }
+            .s-sub-section.collapsible > .s-sub-body {
+                overflow: hidden;
+                max-height: 800px;
+                transition: max-height 0.2s ease, opacity 0.2s ease;
+                opacity: 1;
+            }
+            .s-sub-section.collapsible.collapsed > .s-sub-body {
+                max-height: 0;
+                opacity: 0;
+            }
+            .s-sub-section.collapsible.collapsed {
+                gap: 0;
             }
             #snap-targets.disabled {
                 opacity: 0.3;
@@ -537,7 +599,6 @@
                 letter-spacing: 0.14em;
                 text-transform: uppercase;
                 color: var(--cyan);
-                margin-bottom: 0.5rem;
                 display: flex;
                 align-items: center;
                 gap: 0.35rem;
@@ -561,27 +622,25 @@
             .s-sec.collapsible > .s-body {
                 overflow: hidden;
                 max-height: 600px;
-                transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
+                transition: max-height 0.2s ease, opacity 0.2s ease;
                 opacity: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
             }
             .s-sec.collapsible.collapsed > .s-body {
                 max-height: 0;
                 opacity: 0;
-                margin-top: 0 !important;
             }
-            /* 折りたたみ時に s-ttl の下マージンを詰める */
-            .s-sec.collapsible.collapsed > .s-ttl {
-                margin-bottom: 0;
+            /* 折りたたみ可能セクションは、collapsed のとき gap を消して s-ttl だけになるようにする */
+            .s-sec.collapsible.collapsed {
+                gap: 0;
             }
             .f {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 gap: 0.5rem;
-                margin-bottom: 0.42rem;
-            }
-            .f:last-child {
-                margin-bottom: 0;
             }
             .f-col {
                 flex-direction: column;
@@ -1123,7 +1182,7 @@
                 <div class="prop-group active" data-prop="select">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">near_me</span>選択ツール</div>
-                        <div id="sel-info">
+                        <div id="sel-info" class="s-sub-body">
                             <p class="fl" style="opacity: 0.5" id="sel-none">オブジェクトを選択してください</p>
                         </div>
                     </div>
@@ -1164,28 +1223,24 @@
                 <div class="prop-group" data-prop="path">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">timeline</span>折線 (ポリライン)</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 頂点追加 / Enter: 確定 / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 多角形 -->
                 <div class="prop-group" data-prop="polygon">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">pentagon</span>多角形 (ポリゴン)</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 頂点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 曲線 -->
                 <div class="prop-group" data-prop="curve">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">conversion_path</span>曲線 (ベジェ)</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定 / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 閉曲線 -->
                 <div class="prop-group" data-prop="curve-closed">
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">all_inclusive</span>閉曲線 (ベジェ・閉)</div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.68rem; margin-top: 0.3rem">クリック: 制御点追加 / Enter: 確定(3点以上) / Esc: キャンセル</p>
                     </div>
                 </div>
                 <!-- 地図モード: 地面 -->
@@ -1200,7 +1255,6 @@
                             <div class="tool-tile" data-ground-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
                         </div>
                         <div class="pattern-picker" id="ground-pattern-picker"></div>
-                        <p class="fl" style="opacity: 0.4; font-size: 0.6rem; margin-top: 0.4rem">※ Phase B-2 で描画機能を実装予定</p>
                     </div>
                 </div>
                 <!-- 地図モード: 壁 -->
@@ -1231,19 +1285,94 @@
                             <div class="tool-tile" data-room-tool="path" title="折線 (自動で閉じる)"><span class="material-symbols-outlined">timeline</span><span>折線</span></div>
                             <div class="tool-tile" data-room-tool="curve" title="曲線 (自動で閉じる)"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
                         </div>
-                        <div class="f">
-                            <span class="fl">壁の厚み</span>
-                            <div class="row"><input type="number" id="room-wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+
+                        <!-- 地面サブセクション (折りたたみ可) -->
+                        <div class="s-sub-section collapsible">
+                            <div class="s-sub-ttl"><span class="material-symbols-outlined">landscape</span>地面<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-sub-body">
+                                <div class="pattern-picker" id="room-ground-pattern-picker"></div>
+
+                                <div class="s-sub-section collapsible collapsed">
+                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                    <div class="s-sub-body">
+                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="room-ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
+                                        <div class="f"><span class="fl">倍率</span><div class="row"><input type="number" id="room-ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div></div>
+                                    </div>
+                                </div>
+
+                                <div class="s-sub-section collapsible collapsed">
+                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                    <div class="s-sub-body">
+                                        <div class="f"><label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">影を付ける</span></label></div>
+                                        <div class="f"><span class="fl">色</span><div id="room-ground-shadow-color"></div></div>
+                                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="room-ground-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-ground-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-ground-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="s-ttl" style="margin-top: 0.6rem"><span class="material-symbols-outlined">landscape</span>地面</div>
-                        <div class="pattern-picker" id="room-ground-pattern-picker"></div>
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">地面に影を付ける</span></label>
-                        </div>
-                        <div class="s-ttl" style="margin-top: 0.6rem"><span class="material-symbols-outlined">outdoor_garden</span>壁</div>
-                        <div class="pattern-picker" id="room-wall-pattern-picker"></div>
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">壁に影を付ける</span></label>
+
+                        <!-- 壁サブセクション (折りたたみ可) -->
+                        <div class="s-sub-section collapsible">
+                            <div class="s-sub-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-sub-body">
+                                <div class="pattern-picker" id="room-wall-pattern-picker"></div>
+
+                                <div class="f">
+                                    <span class="fl">壁の厚み</span>
+                                    <div class="row"><input type="number" id="room-wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">線種</span>
+                                    <div class="seg">
+                                        <input type="radio" name="room-wall-stroke-style" id="rwss-solid" value="solid" checked /><label for="rwss-solid">実線</label>
+                                        <input type="radio" name="room-wall-stroke-style" id="rwss-dash" value="dashed" /><label for="rwss-dash">破線</label>
+                                        <input type="radio" name="room-wall-stroke-style" id="rwss-dot" value="dotted" /><label for="rwss-dot">点線</label>
+                                        <input type="radio" name="room-wall-stroke-style" id="rwss-dashdot" value="dashdot" /><label for="rwss-dashdot">一点鎖</label>
+                                        <input type="radio" name="room-wall-stroke-style" id="rwss-longdash" value="longdash" /><label for="rwss-longdash">長破線</label>
+                                    </div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">線継目</span>
+                                    <select id="room-wall-stroke-line-join">
+                                        <option value="miter">角 (miter)</option>
+                                        <option value="round">丸 (round)</option>
+                                        <option value="bevel">面取 (bevel)</option>
+                                    </select>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">線端</span>
+                                    <select id="room-wall-stroke-line-cap">
+                                        <option value="butt">なし (butt)</option>
+                                        <option value="round">丸 (round)</option>
+                                        <option value="square">角 (square)</option>
+                                    </select>
+                                </div>
+
+                                <div class="s-sub-section collapsible collapsed">
+                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                    <div class="s-sub-body">
+                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="room-wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
+                                        <div class="f"><span class="fl">倍率</span><div class="row"><input type="number" id="room-wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div></div>
+                                    </div>
+                                </div>
+
+                                <div class="s-sub-section collapsible collapsed">
+                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                    <div class="s-sub-body">
+                                        <div class="f"><label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">影を付ける</span></label></div>
+                                        <div class="f"><span class="fl">色</span><div id="room-wall-shadow-color"></div></div>
+                                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="room-wall-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-wall-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-wall-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1260,7 +1389,6 @@
                             <span class="fl">回転</span>
                             <div class="row"><input type="number" id="decor-rotation" value="0" min="-360" max="360" step="1" class="custom-spinner" /><span class="unit">°</span></div>
                         </div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.6rem; margin: -0.2rem 0 0.3rem">R キーで 30° 刻みに回転</p>
                         <div class="f">
                             <span class="fl">反転</span>
                             <div style="display: flex; gap: 0.8rem">
@@ -1278,9 +1406,7 @@
                                 <span class="fl">ストローク</span>
                                 <div id="decor-stroke-picker"></div>
                             </div>
-                            <p class="fl" style="opacity: 0.5; font-size: 0.6rem; margin: -0.2rem 0 0.3rem">色は元の SVG をそのまま使用。ピッカーで変更すると全 path に適用されます</p>
                         </div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.62rem; margin: 0.3rem 0 0">クリック点が装飾の中心。スナップはツールバー下のスナップ設定に従う (Shift で一時無効)。影は下の「影」セクションで詳細設定可能</p>
                     </div>
                 </div>
                 <!-- フリーハンド (Fabric brushes + 圧力検知 + Shift で直線) -->
@@ -1311,7 +1437,6 @@
                         <div class="f">
                             <label class="tog"><input type="checkbox" id="freehand-pressure" checked /><span class="tl">筆圧検知 (タブレット)</span></label>
                         </div>
-                        <p class="fl" style="opacity: 0.5; font-size: 0.65rem; margin: 0.2rem 0 0">Shift キーを押しながら描くと直線になります</p>
                     </div>
                 </div>
                 <!-- テキスト -->
@@ -1349,7 +1474,6 @@
                                 <div class="tool-tile text-style-mini" data-text-style="linethrough" title="取り消し線"><span class="material-symbols-outlined">format_strikethrough</span></div>
                             </div>
                         </div>
-                        <p class="fl" id="text-style-hint" style="opacity: 0.5; font-size: 0.65rem; margin: 0.2rem 0 0">編集中に文字を選択すると、選択部分のみに適用されます</p>
                     </div>
                 </div>
                 <!-- 画像 -->

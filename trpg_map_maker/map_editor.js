@@ -58,8 +58,30 @@ const App = {
     roomGroundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#ffffff' },
     roomWallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     roomWallThickness: 12,
+    // 部屋専用のパターン詳細 (地面/壁を個別に管理)
+    roomGroundPatternOffsetX: 0,
+    roomGroundPatternOffsetY: 0,
+    roomGroundPatternRotation: 0,
+    roomGroundPatternScale: 1,
+    roomWallPatternOffsetX: 0,
+    roomWallPatternOffsetY: 0,
+    roomWallPatternRotation: 0,
+    roomWallPatternScale: 1,
+    // 部屋専用の影設定 (地面/壁を個別に管理)
     roomGroundShadowEnabled: false,
+    roomGroundShadowColor: '#0000008c',
+    roomGroundShadowBlur: 8,
+    roomGroundShadowOffsetX: 0,
+    roomGroundShadowOffsetY: 0,
     roomWallShadowEnabled: true,
+    roomWallShadowColor: '#0000008c',
+    roomWallShadowBlur: 8,
+    roomWallShadowOffsetX: 0,
+    roomWallShadowOffsetY: 0,
+    // 部屋専用の壁ストロークスタイル
+    roomWallStrokeDashArray: null,
+    roomWallStrokeLineJoin: 'miter',
+    roomWallStrokeLineCap: 'butt',
     // ---- 地図モード: 装飾タブ ----
     decorId: null,                       // 選択中の DECORS エントリ id (null = 未選択)
     decorGenreId: 'all',
@@ -482,14 +504,18 @@ function updateFillStrokeVisibility() {
     // 共通フィル/ストロークセクションは何も表示しない (= 全行 false)。
     let showFillColor = isSimpleDraw && !isFreehand;
     let showStrokeColor = isSimpleDraw && !isFreehand;
-    let showStrokeStyle = isSimpleDraw && !isFreehand;
+    // 線種 (破線/点線) は壁でも有効。地面は塗りのみで stroke 無しなので除外。
+    let showStrokeStyle = (isSimpleDraw || isWall) && !isFreehand;
     // 壁モードでは線幅 (strokeWidth) ではなく「壁の厚み」(wallThickness) を出す。
     const showWallThickness = isWall && drawSubtools.includes(sub);
     let showStrokeWidth = isSimpleDraw && !isFreehand;
+    // 線継目 / 線端: 壁モードでも有効 (厚みを持つ壁ストロークに効く)
+    let showStrokeJoinCap = (showStrokeWidth || showWallThickness) && !isFreehand;
     let showRadius = sub === 'rect';
     if (isSelect) {
         const activeObjs = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
         showFillColor = showStrokeColor = showStrokeStyle = showStrokeWidth = activeObjs.length > 0;
+        showStrokeJoinCap = activeObjs.length > 0;
         showRadius = activeObjs.some((o) => o.type === 'rect');
     }
 
@@ -504,7 +530,7 @@ function updateFillStrokeVisibility() {
     setDisp('stroke-style-row', showStrokeStyle);
     setDisp('corner-radius-row', showRadius);
     // セクション全体は中に何か出てれば表示
-    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showWallThickness || showStrokeStyle || showRadius;
+    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showWallThickness || showStrokeStyle || showRadius || showStrokeJoinCap;
     setDisp('fill-stroke-sec', anyRow);
     // タイトル「フィル / ストローク」は色行が出てる時だけ意味があるので隠す/出す
     setDisp('fill-stroke-title', showFillColor || showStrokeColor);
@@ -512,15 +538,15 @@ function updateFillStrokeVisibility() {
     // スナップ設定: 描画系サブツール (シンプル/地面/壁) で表示。セルは grid 単位なので不要
     const snapSubtools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
     setDisp('snap-sec', snapSubtools.includes(sub));
-    // パターン共通設定: 地面/壁/部屋モードで表示
-    setDisp('pattern-transform-sec', isGround || isWall || isRoom);
+    // パターン共通設定: 地面/壁モードで表示 (部屋は地面/壁サブセクションに個別UIを持つ)
+    setDisp('pattern-transform-sec', isGround || isWall);
     // 影セクション: シンプル/地面/壁/装飾で表示 (部屋は専用トグルを prop-group 内に持つ)
     const isDecorTool = App.activeTool === 'decor';
     setDisp('shadow-sec', isSimpleDraw || isGround || isWall || isDecorTool);
     refreshShadowUI();
-    // 線継ぎ目 / 線端: ストロークがあるサブツールと同条件、ただしフリーハンドでは出さない
-    setDisp('stroke-line-join-row', showStrokeWidth && !isFreehand);
-    setDisp('stroke-line-cap-row', showStrokeWidth && !isFreehand);
+    // 線継ぎ目 / 線端: シンプル + 壁モードで有効
+    setDisp('stroke-line-join-row', showStrokeJoinCap);
+    setDisp('stroke-line-cap-row', showStrokeJoinCap);
 }
 
 /** 影セクションの on/off トグルを現在の activeTool カテゴリ (シンプル/地面/壁) に合わせて反映する。 */
@@ -614,6 +640,28 @@ function initPickr() {
         });
         attachEyedropper(wsp);
     }
+    // 部屋・地面の影色ピッカー
+    let rgsp = null;
+    if (document.getElementById('room-ground-shadow-color')) {
+        rgsp = Pickr.create(opts('#room-ground-shadow-color', App.roomGroundShadowColor));
+        rgsp.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.roomGroundShadowColor = c.toHEXA().toString();
+            instance.applyColor(true);
+        });
+        attachEyedropper(rgsp);
+    }
+    // 部屋・壁の影色ピッカー
+    let rwsp = null;
+    if (document.getElementById('room-wall-shadow-color')) {
+        rwsp = Pickr.create(opts('#room-wall-shadow-color', App.roomWallShadowColor));
+        rwsp.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.roomWallShadowColor = c.toHEXA().toString();
+            instance.applyColor(true);
+        });
+        attachEyedropper(rwsp);
+    }
     // フリーハンド専用色 (シンプルの strokeColor とは独立)
     let fhp = null;
     const fhEl = document.getElementById('freehand-color-picker');
@@ -634,7 +682,7 @@ function initPickr() {
     attachEyedropper(gridPickr);
     // 入力欄の表示フォーマットを強制 HEXA (Pickr の defaultRepresentation オプションだけでは
     // 効かないことがあるので post-create で setColorRepresentation を呼ぶ)
-    [fillPickr, strokePickr, gridPickr, wsp, fhp].forEach((p) => {
+    [fillPickr, strokePickr, gridPickr, wsp, fhp, rgsp, rwsp].forEach((p) => {
         if (p?.setColorRepresentation) p.setColorRepresentation('HEXA');
     });
 }
@@ -853,6 +901,13 @@ function initCanvas() {
                             );
                         } else {
                             const hsw = style.strokeWidth / 2;
+                            const commonStroke = {
+                                stroke: style.stroke,
+                                strokeWidth: style.strokeWidth,
+                                strokeDashArray: style.strokeDashArray,
+                                strokeLineJoin: style.strokeLineJoin || 'miter',
+                                strokeLineCap: style.strokeLineCap || 'butt',
+                            };
                             const obj =
                                 subtool === 'rect'
                                     ? new fabric.Rect({
@@ -863,9 +918,7 @@ function initCanvas() {
                                           rx: App.cornerRadius,
                                           ry: App.cornerRadius,
                                           fill: style.fill,
-                                          stroke: style.stroke,
-                                          strokeWidth: style.strokeWidth,
-                                          strokeDashArray: style.strokeDashArray,
+                                          ...commonStroke,
                                           objectCaching: false,
                                       })
                                     : new fabric.Ellipse({
@@ -874,9 +927,7 @@ function initCanvas() {
                                           rx: w / 2,
                                           ry: h / 2,
                                           fill: style.fill,
-                                          stroke: style.stroke,
-                                          strokeWidth: style.strokeWidth,
-                                          strokeDashArray: style.strokeDashArray,
+                                          ...commonStroke,
                                           objectCaching: false,
                                       });
                             addCategoryLayer(style.namePrefix + (subtool === 'rect' ? '矩形' : '楕円'), obj, style.flag);
@@ -2606,6 +2657,7 @@ function updateSelectionInfo() {
 
     // --- 基本情報 ---
     const basic = document.createElement('div');
+    basic.className = 's-sub-body';
     if (active.length === 1) {
         const o = active[0];
         basic.innerHTML = `
@@ -2628,9 +2680,11 @@ function updateSelectionInfo() {
             pushHistory(`${o._layerName}のYを変更`);
         });
     } else {
-        basic.innerHTML = `<p class="fl" style="opacity:0.5">${active.length} 個のオブジェクトを選択中</p>`;
+        basic.innerHTML = `<div class="fl" style="opacity:0.6">${active.length} 個のオブジェクトを選択中</div>`;
     }
     info.appendChild(basic);
+
+    let sectionIndex = 1;
 
     // --- パターン編集 (該当する選択がある場合) ---
     const editable = getEditablePatternTargets(active);
@@ -2639,19 +2693,19 @@ function updateSelectionInfo() {
         editable.forEach((e) => { (byKind[e.kind] = byKind[e.kind] || []).push(e); });
         const LABELS = { 'ground': '地面', 'wall': '壁', 'room-ground': '部屋の地面', 'room-wall': '部屋の壁' };
         Object.entries(byKind).forEach(([kind, entries]) => {
-            info.appendChild(buildSelPatternSection(kind, LABELS[kind], entries, info));
+            info.appendChild(buildSelPatternSection(kind, LABELS[kind], entries, info, sectionIndex++ === 0));
         });
     }
 
     // --- 影編集 ---
-    info.appendChild(buildSelShadowSection(active, info));
+    info.appendChild(buildSelShadowSection(active, info, false));
 
     if (window.IKLab?.initNumSpinners) IKLab.initNumSpinners(info);
     updateFillStrokeVisibility();
 }
 
 /** パターン編集セクションを構築する (kind ごとに1つ)。 */
-function buildSelPatternSection(kind, label, entries, infoRoot) {
+function buildSelPatternSection(kind, label, entries, infoRoot, isFirst) {
     const fillSide = isPatternKindFill(kind);
     const category = fillSide ? 'ground' : 'wall';
     const genres = fillSide ? GROUND_GENRES : WALL_GENRES;
@@ -2667,16 +2721,26 @@ function buildSelPatternSection(kind, label, entries, infoRoot) {
     };
     normalizePatternState(sharedState);
 
+    // 倍率の表示は「定義の初期 scale を除いたユーザー倍率」を % で表示する
+    // _patternScale = def.scale × userScale なので userScale = _patternScale / def.scale
+    const defForFirst = sharedState.mode === 'pattern' ? getPatternDef(sharedState.id) : null;
+    const defScale = defForFirst?.scale || 1;
+    const userScalePct = Math.round(((first._patternScale ?? 1) / defScale) * 100);
+
     const sec = document.createElement('div');
-    sec.className = 's-sec';
-    sec.style.marginTop = '0.5rem';
+    sec.className = 's-sub-body';
     sec.innerHTML = `
-        <div class="s-ttl"><span class="material-symbols-outlined">palette</span>${label}の${fillSide ? '塗り' : '輪郭'}</div>
+        <div class="s-sub-ttl${isFirst ? ' first' : ''}"><span class="material-symbols-outlined">palette</span>${label}の${fillSide ? '塗り' : '輪郭'}</div>
         <div class="sel-pattern-picker pattern-picker"></div>
-        <div class="f"><span class="fl">縮尺</span><input type="number" step="0.1" class="custom-spinner sel-pat-scale" value="${first._patternScale ?? 1}" /></div>
-        <div class="f"><span class="fl">X</span><input type="number" class="custom-spinner sel-pat-offx" value="${first._patternOffsetX || 0}" /></div>
-        <div class="f"><span class="fl">Y</span><input type="number" class="custom-spinner sel-pat-offy" value="${first._patternOffsetY || 0}" /></div>
-        <div class="f"><span class="fl">回転</span><input type="number" class="custom-spinner sel-pat-rot" value="${first._patternRotation || 0}" /></div>
+        <div class="s-sub-section collapsible collapsed">
+            <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+            <div class="s-sub-body">
+                <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" class="custom-spinner sel-pat-offx" value="${first._patternOffsetX || 0}" /><span class="unit">px</span></div></div>
+                <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" class="custom-spinner sel-pat-offy" value="${first._patternOffsetY || 0}" /><span class="unit">px</span></div></div>
+                <div class="f"><span class="fl">回転</span><div class="row"><input type="number" min="-360" max="360" class="custom-spinner sel-pat-rot" value="${first._patternRotation || 0}" /><span class="unit">°</span></div></div>
+                <div class="f"><span class="fl">倍率</span><div class="row"><input type="number" min="10" max="2000" step="10" class="custom-spinner sel-pat-scale" value="${userScalePct}" /><span class="unit">%</span></div></div>
+            </div>
+        </div>
     `;
 
     const pickerRoot = sec.querySelector('.sel-pattern-picker');
@@ -2692,7 +2756,6 @@ function buildSelPatternSection(kind, label, entries, infoRoot) {
             pushHistoryDebounced(label + 'のパターンを変更');
         },
     });
-    // mountPatternPicker が pickerRoot._pickr を持つので回収しておく
     if (pickerRoot._pickr) (infoRoot._pickrs = infoRoot._pickrs || []).push(pickerRoot._pickr);
 
     const refreshTransform = () => {
@@ -2700,23 +2763,30 @@ function buildSelPatternSection(kind, label, entries, infoRoot) {
         App.canvas.requestRenderAll();
     };
     sec.querySelector('.sel-pat-scale').addEventListener('input', function () {
-        const v = parseFloat(this.value);
-        if (!isFinite(v) || v <= 0) return;
-        entries.forEach((e) => { e.target._patternScale = v; });
+        const pct = parseFloat(this.value);
+        if (!isFinite(pct) || pct <= 0) return;
+        const userScale = pct / 100;
+        // 各 target の現 def.scale × userScale を _patternScale に保存
+        entries.forEach((e) => {
+            const eState = e.target._patternState;
+            const eDef = (eState && eState.mode === 'pattern') ? getPatternDef(eState.id) : null;
+            const eDefScale = eDef?.scale || 1;
+            e.target._patternScale = eDefScale * userScale;
+        });
         refreshTransform();
-        pushHistoryDebounced(label + 'の縮尺を変更');
+        pushHistoryDebounced(label + 'の倍率を変更');
     });
     sec.querySelector('.sel-pat-offx').addEventListener('input', function () {
         const v = parseFloat(this.value) || 0;
         entries.forEach((e) => { e.target._patternOffsetX = v; });
         refreshTransform();
-        pushHistoryDebounced(label + 'のXを変更');
+        pushHistoryDebounced(label + 'のオフセットXを変更');
     });
     sec.querySelector('.sel-pat-offy').addEventListener('input', function () {
         const v = parseFloat(this.value) || 0;
         entries.forEach((e) => { e.target._patternOffsetY = v; });
         refreshTransform();
-        pushHistoryDebounced(label + 'のYを変更');
+        pushHistoryDebounced(label + 'のオフセットYを変更');
     });
     sec.querySelector('.sel-pat-rot').addEventListener('input', function () {
         const v = parseFloat(this.value) || 0;
@@ -2727,25 +2797,32 @@ function buildSelPatternSection(kind, label, entries, infoRoot) {
     return sec;
 }
 
-/** 影編集セクションを構築する (選択全オブジェクト共通の一括適用)。 */
-function buildSelShadowSection(active, infoRoot) {
+/** 影編集セクションを構築する (選択全オブジェクト共通の一括適用)。折りたたみ可能。 */
+function buildSelShadowSection(active, infoRoot, isFirst) {
     const first = active[0];
-    const sh = first.shadow;
+    // 部屋グループの場合は子の地面の shadow を参照する (group 自身は shadow を持たない)
+    let probe = first;
+    if (first._isRoomGroup && typeof first.getObjects === 'function') {
+        const children = first.getObjects();
+        probe = children.find((c) => c._isRoomGround) || children.find((c) => c._isRoomWall) || first;
+    }
+    const sh = probe.shadow;
     const enabled = !!sh;
     const color = sh?.color || App.shadowColor || '#0000008c';
     const blur = sh?.blur ?? App.shadowBlur ?? 8;
     const offX = sh?.offsetX ?? App.shadowOffsetX ?? 0;
     const offY = sh?.offsetY ?? App.shadowOffsetY ?? 4;
     const sec = document.createElement('div');
-    sec.className = 's-sec';
-    sec.style.marginTop = '0.5rem';
+    sec.className = 's-sub-section collapsible collapsed';
     sec.innerHTML = `
-        <div class="s-ttl"><span class="material-symbols-outlined">contrast</span>影</div>
-        <div class="f"><label class="tog"><input type="checkbox" class="sel-shadow-on" ${enabled ? 'checked' : ''} /><span class="tl">影を有効にする</span></label></div>
-        <div class="f"><span class="fl">色</span><div class="sel-shadow-color"></div></div>
-        <div class="f"><span class="fl">ぼかし</span><input type="number" min="0" class="custom-spinner sel-shadow-blur" value="${blur}" /></div>
-        <div class="f"><span class="fl">X</span><input type="number" class="custom-spinner sel-shadow-offx" value="${offX}" /></div>
-        <div class="f"><span class="fl">Y</span><input type="number" class="custom-spinner sel-shadow-offy" value="${offY}" /></div>
+        <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+        <div class="s-sub-body">
+            <div class="f"><label class="tog"><input type="checkbox" class="sel-shadow-on" ${enabled ? 'checked' : ''} /><span class="tl">影を付ける</span></label></div>
+            <div class="f"><span class="fl">色</span><div class="sel-shadow-color"></div></div>
+            <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" min="0" class="custom-spinner sel-shadow-blur" value="${blur}" /><span class="unit">px</span></div></div>
+            <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" class="custom-spinner sel-shadow-offx" value="${offX}" /><span class="unit">px</span></div></div>
+            <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" class="custom-spinner sel-shadow-offy" value="${offY}" /><span class="unit">px</span></div></div>
+        </div>
     `;
     let currentColor = color;
     const pickr = Pickr.create({
@@ -2768,11 +2845,18 @@ function buildSelShadowSection(active, infoRoot) {
         const bl = parseFloat(sec.querySelector('.sel-shadow-blur').value) || 0;
         const ox = parseFloat(sec.querySelector('.sel-shadow-offx').value) || 0;
         const oy = parseFloat(sec.querySelector('.sel-shadow-offy').value) || 0;
+        const buildShadow = () => on ? new fabric.Shadow({ color: currentColor, blur: bl, offsetX: ox, offsetY: oy, affectStroke: true }) : null;
+        // 部屋グループは子の地面/壁にそれぞれ影を持たせる必要があるので展開して適用
         active.forEach((o) => {
-            if (!on) {
-                o.set('shadow', null);
+            if (o._isRoomGroup && typeof o.getObjects === 'function') {
+                o.getObjects().forEach((c) => {
+                    if (c._isRoomGround || c._isRoomWall) {
+                        c.set('shadow', buildShadow());
+                        c.dirty = true;
+                    }
+                });
             } else {
-                o.set('shadow', new fabric.Shadow({ color: currentColor, blur: bl, offsetX: ox, offsetY: oy, affectStroke: true }));
+                o.set('shadow', buildShadow());
             }
             o.dirty = true;
         });
@@ -3335,11 +3419,15 @@ function snapshotRoomPatternSettings(obj, kind) {
     const state = kind === 'wall' ? App.roomWallPattern : App.roomGroundPattern;
     const def = getPatternDef(state?.id);
     const initScale = def?.scale ?? 1;
+    const offX = kind === 'wall' ? App.roomWallPatternOffsetX : App.roomGroundPatternOffsetX;
+    const offY = kind === 'wall' ? App.roomWallPatternOffsetY : App.roomGroundPatternOffsetY;
+    const rot = kind === 'wall' ? App.roomWallPatternRotation : App.roomGroundPatternRotation;
+    const userScale = kind === 'wall' ? App.roomWallPatternScale : App.roomGroundPatternScale;
     obj.set({
-        _patternOffsetX: App.patternOffsetX || 0,
-        _patternOffsetY: App.patternOffsetY || 0,
-        _patternRotation: App.patternRotation || 0,
-        _patternScale: initScale * (App.patternScale ?? 1),
+        _patternOffsetX: offX || 0,
+        _patternOffsetY: offY || 0,
+        _patternRotation: rot || 0,
+        _patternScale: initScale * (userScale ?? 1),
         _patternState: { ...(state || {}) },
     });
 }
@@ -3351,6 +3439,18 @@ function makeShadowFromApp() {
         blur: App.shadowBlur,
         offsetX: App.shadowOffsetX,
         offsetY: App.shadowOffsetY,
+        affectStroke: true,
+    });
+}
+
+/** 部屋用の影。地面/壁で個別パラメータを持つ。 */
+function makeRoomShadow(kind) {
+    const isWall = kind === 'wall';
+    return new fabric.Shadow({
+        color: isWall ? App.roomWallShadowColor : App.roomGroundShadowColor,
+        blur: isWall ? App.roomWallShadowBlur : App.roomGroundShadowBlur,
+        offsetX: isWall ? App.roomWallShadowOffsetX : App.roomGroundShadowOffsetX,
+        offsetY: isWall ? App.roomWallShadowOffsetY : App.roomGroundShadowOffsetY,
         affectStroke: true,
     });
 }
@@ -3374,22 +3474,22 @@ function addRoom(typeName, makeShape) {
     snapshotRoomPatternSettings(ground, 'ground');
     snapshotWorldPosition(ground); // toGroup 後に obj.left が相対座標になるので世界座標を別途保持
     applyPatternOrigin(ground);
-    if (App.roomGroundShadowEnabled) ground.set('shadow', makeShadowFromApp());
+    if (App.roomGroundShadowEnabled) ground.set('shadow', makeRoomShadow('ground'));
 
     const wall = makeShape({
         fill: '',
         stroke: getRoomWallStroke(),
         strokeWidth: App.roomWallThickness || 12,
-        strokeLineJoin: App.strokeLineJoin || 'miter',
-        strokeLineCap: App.strokeLineCap || 'butt',
-        strokeDashArray: null,
+        strokeLineJoin: App.roomWallStrokeLineJoin || 'miter',
+        strokeLineCap: App.roomWallStrokeLineCap || 'butt',
+        strokeDashArray: App.roomWallStrokeDashArray,
     });
     if (!wall) return;
     wall.set({ _isRoomWall: true, objectCaching: false });
     snapshotRoomPatternSettings(wall, 'wall');
     snapshotWorldPosition(wall); // toGroup 後に obj.left が相対座標になるので世界座標を別途保持
     applyPatternOrigin(wall);
-    if (App.roomWallShadowEnabled) wall.set('shadow', makeShadowFromApp());
+    if (App.roomWallShadowEnabled) wall.set('shadow', makeRoomShadow('wall'));
 
     // 壁モード (canvas 直下) のストロークが zoom に正しく追従するのに対し、
     // new fabric.Group([ground, wall]) で包むと子ストロークが zoom と乖離する fabric の挙動がある。
@@ -3687,7 +3787,9 @@ function getCurrentDrawStyle() {
             fill: '', // 閉じた形状でも内側は透過
             stroke: getWallStroke(),
             strokeWidth: App.wallThickness || 12,
-            strokeDashArray: null,
+            strokeDashArray: App.strokeDashArray,
+            strokeLineJoin: App.strokeLineJoin || 'miter',
+            strokeLineCap: App.strokeLineCap || 'butt',
             namePrefix: '壁_',
             flag: '_isWallLayer',
         };
@@ -3709,6 +3811,8 @@ function getCurrentDrawStyle() {
         stroke: rgba(App.strokeColor, App.strokeOpacity),
         strokeWidth: App.strokeWidth,
         strokeDashArray: App.strokeDashArray,
+        strokeLineJoin: App.strokeLineJoin || 'miter',
+        strokeLineCap: App.strokeLineCap || 'butt',
         namePrefix: '',
         flag: null,
     };
@@ -4738,8 +4842,27 @@ function buildSaveData() {
         roomGroundPattern: App.roomGroundPattern,
         roomWallPattern: App.roomWallPattern,
         roomWallThickness: App.roomWallThickness,
+        roomGroundPatternOffsetX: App.roomGroundPatternOffsetX,
+        roomGroundPatternOffsetY: App.roomGroundPatternOffsetY,
+        roomGroundPatternRotation: App.roomGroundPatternRotation,
+        roomGroundPatternScale: App.roomGroundPatternScale,
+        roomWallPatternOffsetX: App.roomWallPatternOffsetX,
+        roomWallPatternOffsetY: App.roomWallPatternOffsetY,
+        roomWallPatternRotation: App.roomWallPatternRotation,
+        roomWallPatternScale: App.roomWallPatternScale,
         roomGroundShadowEnabled: App.roomGroundShadowEnabled,
+        roomGroundShadowColor: App.roomGroundShadowColor,
+        roomGroundShadowBlur: App.roomGroundShadowBlur,
+        roomGroundShadowOffsetX: App.roomGroundShadowOffsetX,
+        roomGroundShadowOffsetY: App.roomGroundShadowOffsetY,
         roomWallShadowEnabled: App.roomWallShadowEnabled,
+        roomWallShadowColor: App.roomWallShadowColor,
+        roomWallShadowBlur: App.roomWallShadowBlur,
+        roomWallShadowOffsetX: App.roomWallShadowOffsetX,
+        roomWallShadowOffsetY: App.roomWallShadowOffsetY,
+        roomWallStrokeDashArray: App.roomWallStrokeDashArray,
+        roomWallStrokeLineJoin: App.roomWallStrokeLineJoin,
+        roomWallStrokeLineCap: App.roomWallStrokeLineCap,
         decorId: App.decorId,
         decorGenreId: App.decorGenreId,
         decorScale: App.decorScale,
@@ -4783,8 +4906,27 @@ function restoreSaveData(data) {
     if (data.roomGroundPattern) App.roomGroundPattern = data.roomGroundPattern;
     if (data.roomWallPattern) App.roomWallPattern = data.roomWallPattern;
     if (typeof data.roomWallThickness === 'number') App.roomWallThickness = data.roomWallThickness;
+    if (typeof data.roomGroundPatternOffsetX === 'number') App.roomGroundPatternOffsetX = data.roomGroundPatternOffsetX;
+    if (typeof data.roomGroundPatternOffsetY === 'number') App.roomGroundPatternOffsetY = data.roomGroundPatternOffsetY;
+    if (typeof data.roomGroundPatternRotation === 'number') App.roomGroundPatternRotation = data.roomGroundPatternRotation;
+    if (typeof data.roomGroundPatternScale === 'number') App.roomGroundPatternScale = data.roomGroundPatternScale;
+    if (typeof data.roomWallPatternOffsetX === 'number') App.roomWallPatternOffsetX = data.roomWallPatternOffsetX;
+    if (typeof data.roomWallPatternOffsetY === 'number') App.roomWallPatternOffsetY = data.roomWallPatternOffsetY;
+    if (typeof data.roomWallPatternRotation === 'number') App.roomWallPatternRotation = data.roomWallPatternRotation;
+    if (typeof data.roomWallPatternScale === 'number') App.roomWallPatternScale = data.roomWallPatternScale;
     if (typeof data.roomGroundShadowEnabled === 'boolean') App.roomGroundShadowEnabled = data.roomGroundShadowEnabled;
+    if (typeof data.roomGroundShadowColor === 'string') App.roomGroundShadowColor = data.roomGroundShadowColor;
+    if (typeof data.roomGroundShadowBlur === 'number') App.roomGroundShadowBlur = data.roomGroundShadowBlur;
+    if (typeof data.roomGroundShadowOffsetX === 'number') App.roomGroundShadowOffsetX = data.roomGroundShadowOffsetX;
+    if (typeof data.roomGroundShadowOffsetY === 'number') App.roomGroundShadowOffsetY = data.roomGroundShadowOffsetY;
     if (typeof data.roomWallShadowEnabled === 'boolean') App.roomWallShadowEnabled = data.roomWallShadowEnabled;
+    if (typeof data.roomWallShadowColor === 'string') App.roomWallShadowColor = data.roomWallShadowColor;
+    if (typeof data.roomWallShadowBlur === 'number') App.roomWallShadowBlur = data.roomWallShadowBlur;
+    if (typeof data.roomWallShadowOffsetX === 'number') App.roomWallShadowOffsetX = data.roomWallShadowOffsetX;
+    if (typeof data.roomWallShadowOffsetY === 'number') App.roomWallShadowOffsetY = data.roomWallShadowOffsetY;
+    if (Array.isArray(data.roomWallStrokeDashArray) || data.roomWallStrokeDashArray === null) App.roomWallStrokeDashArray = data.roomWallStrokeDashArray;
+    if (typeof data.roomWallStrokeLineJoin === 'string') App.roomWallStrokeLineJoin = data.roomWallStrokeLineJoin;
+    if (typeof data.roomWallStrokeLineCap === 'string') App.roomWallStrokeLineCap = data.roomWallStrokeLineCap;
     if (data.decorId !== undefined) App.decorId = data.decorId;
     if (data.decorGenreId) App.decorGenreId = data.decorGenreId;
     if (typeof data.decorScale === 'number') App.decorScale = data.decorScale;
@@ -4808,6 +4950,40 @@ function restoreSaveData(data) {
     if (rgs) rgs.checked = !!App.roomGroundShadowEnabled;
     const rws = document.getElementById('room-wall-shadow-enabled');
     if (rws) rws.checked = !!App.roomWallShadowEnabled;
+    // 部屋・パターン詳細 input 復元
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    setVal('room-ground-pattern-offset-x', App.roomGroundPatternOffsetX);
+    setVal('room-ground-pattern-offset-y', App.roomGroundPatternOffsetY);
+    setVal('room-ground-pattern-rotation', App.roomGroundPatternRotation);
+    setVal('room-ground-pattern-scale', Math.round((App.roomGroundPatternScale ?? 1) * 100));
+    setVal('room-wall-pattern-offset-x', App.roomWallPatternOffsetX);
+    setVal('room-wall-pattern-offset-y', App.roomWallPatternOffsetY);
+    setVal('room-wall-pattern-rotation', App.roomWallPatternRotation);
+    setVal('room-wall-pattern-scale', Math.round((App.roomWallPatternScale ?? 1) * 100));
+    // 部屋・影詳細 input 復元
+    setVal('room-ground-shadow-blur', App.roomGroundShadowBlur);
+    setVal('room-ground-shadow-offset-x', App.roomGroundShadowOffsetX);
+    setVal('room-ground-shadow-offset-y', App.roomGroundShadowOffsetY);
+    setVal('room-wall-shadow-blur', App.roomWallShadowBlur);
+    setVal('room-wall-shadow-offset-x', App.roomWallShadowOffsetX);
+    setVal('room-wall-shadow-offset-y', App.roomWallShadowOffsetY);
+    // 部屋・壁ストロークスタイル input 復元
+    const setSelect = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    setSelect('room-wall-stroke-line-join', App.roomWallStrokeLineJoin);
+    setSelect('room-wall-stroke-line-cap', App.roomWallStrokeLineCap);
+    // dashArray から radio へ復元 (App.roomWallStrokeDashArray の値が dashed/dotted... のどれに該当するか)
+    const dashToStyle = (arr) => {
+        if (!arr || !Array.isArray(arr)) return 'solid';
+        if (arr.length === 4) return 'dashdot';
+        if (arr.length !== 2) return 'solid';
+        const r = arr[0] / arr[1];
+        if (r < 1) return 'dotted';
+        if (r >= 2.2) return 'longdash';
+        return 'dashed';
+    };
+    const rwsStyle = dashToStyle(App.roomWallStrokeDashArray);
+    const rwsRadio = document.querySelector(`input[name="room-wall-stroke-style"][value="${rwsStyle}"]`);
+    if (rwsRadio) rwsRadio.checked = true;
     if (data.freehandBrush) App.freehandBrush = data.freehandBrush;
     if (typeof data.freehandWidth === 'number') App.freehandWidth = data.freehandWidth;
     if (data.freehandColor) App.freehandColor = data.freehandColor;
@@ -5297,6 +5473,8 @@ document.addEventListener('keydown', (e) => {
                     stroke: style.stroke,
                     strokeWidth: style.strokeWidth,
                     strokeDashArray: style.strokeDashArray,
+                    strokeLineJoin: style.strokeLineJoin || 'miter',
+                    strokeLineCap: style.strokeLineCap || 'butt',
                     fill: '',
                     selectable: false,
                     evented: false,
@@ -5327,6 +5505,8 @@ document.addEventListener('keydown', (e) => {
                     stroke: style.stroke,
                     strokeWidth: style.strokeWidth,
                     strokeDashArray: style.strokeDashArray,
+                    strokeLineJoin: style.strokeLineJoin || 'miter',
+                    strokeLineCap: style.strokeLineCap || 'butt',
                     fill: style.fill,
                     selectable: false,
                     evented: false,
@@ -5360,6 +5540,8 @@ document.addEventListener('keydown', (e) => {
                         stroke: style.stroke,
                         strokeWidth: style.strokeWidth,
                         strokeDashArray: style.strokeDashArray,
+                        strokeLineJoin: style.strokeLineJoin || 'miter',
+                        strokeLineCap: style.strokeLineCap || 'butt',
                         fill: '',
                         objectCaching: false,
                     }),
@@ -5385,6 +5567,8 @@ document.addEventListener('keydown', (e) => {
                         stroke: style.stroke,
                         strokeWidth: style.strokeWidth,
                         strokeDashArray: style.strokeDashArray,
+                        strokeLineJoin: style.strokeLineJoin || 'miter',
+                        strokeLineCap: style.strokeLineCap || 'butt',
                         fill: style.fill,
                         objectCaching: false,
                     }),
@@ -5463,6 +5647,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 壁の厚み (wallThickness) — シンプル線幅とは別系統。選択中オブジェクトに即適用 (壁のみ対象)
     document.getElementById('wall-thickness')?.addEventListener('input', function () {
         App.wallThickness = parseInt(this.value) || 12;
+        // 壁モード中は線種ダッシュも厚みに連動して再計算
+        if (App.activeTool === 'wall') {
+            const style = document.querySelector('input[name="stroke-style"]:checked')?.value || 'solid';
+            App.strokeDashArray = getDashArray(style, App.wallThickness);
+        }
         if (App.activeTool === 'select') {
             const targets = App.canvas.getActiveObjects().filter((o) => o._isWallLayer);
             if (targets.length === 0) return;
@@ -5489,7 +5678,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 線種
     document.querySelectorAll('input[name="stroke-style"]').forEach((r) =>
         r.addEventListener('change', () => {
-            App.strokeDashArray = getDashArray(r.value, App.strokeWidth);
+            // 壁モード時は wallThickness ベース、それ以外は strokeWidth ベース
+            const w = (App.activeTool === 'wall') ? (App.wallThickness || 12) : (App.strokeWidth || 0);
+            App.strokeDashArray = getDashArray(r.value, w);
             if (App.activeTool === 'select') {
                 const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
                 if (targets.length === 0) return;
@@ -5703,6 +5894,75 @@ document.addEventListener('DOMContentLoaded', () => {
         pushHistoryDebounced('部屋・壁影設定を変更');
     });
 
+    // ---- 部屋: パターン詳細 / 影 / 壁ストロークの各入力 ----
+    // パターン詳細 (地面)
+    document.getElementById('room-ground-pattern-offset-x')?.addEventListener('input', function () {
+        App.roomGroundPatternOffsetX = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-ground-pattern-offset-y')?.addEventListener('input', function () {
+        App.roomGroundPatternOffsetY = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-ground-pattern-rotation')?.addEventListener('input', function () {
+        App.roomGroundPatternRotation = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-ground-pattern-scale')?.addEventListener('input', function () {
+        const v = parseFloat(this.value);
+        App.roomGroundPatternScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+    });
+    // パターン詳細 (壁)
+    document.getElementById('room-wall-pattern-offset-x')?.addEventListener('input', function () {
+        App.roomWallPatternOffsetX = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-wall-pattern-offset-y')?.addEventListener('input', function () {
+        App.roomWallPatternOffsetY = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-wall-pattern-rotation')?.addEventListener('input', function () {
+        App.roomWallPatternRotation = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-wall-pattern-scale')?.addEventListener('input', function () {
+        const v = parseFloat(this.value);
+        App.roomWallPatternScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+    });
+    // 影詳細 (地面) — チェックボックスは上で別ハンドラ
+    document.getElementById('room-ground-shadow-blur')?.addEventListener('input', function () {
+        App.roomGroundShadowBlur = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-ground-shadow-offset-x')?.addEventListener('input', function () {
+        App.roomGroundShadowOffsetX = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-ground-shadow-offset-y')?.addEventListener('input', function () {
+        App.roomGroundShadowOffsetY = parseInt(this.value) || 0;
+    });
+    // 影詳細 (壁)
+    document.getElementById('room-wall-shadow-blur')?.addEventListener('input', function () {
+        App.roomWallShadowBlur = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-wall-shadow-offset-x')?.addEventListener('input', function () {
+        App.roomWallShadowOffsetX = parseInt(this.value) || 0;
+    });
+    document.getElementById('room-wall-shadow-offset-y')?.addEventListener('input', function () {
+        App.roomWallShadowOffsetY = parseInt(this.value) || 0;
+    });
+    // 部屋・壁ストロークスタイル
+    document.querySelectorAll('input[name="room-wall-stroke-style"]').forEach((r) =>
+        r.addEventListener('change', () => {
+            App.roomWallStrokeDashArray = getDashArray(r.value, App.roomWallThickness || 12);
+        })
+    );
+    document.getElementById('room-wall-stroke-line-join')?.addEventListener('change', function () {
+        App.roomWallStrokeLineJoin = this.value;
+    });
+    document.getElementById('room-wall-stroke-line-cap')?.addEventListener('change', function () {
+        App.roomWallStrokeLineCap = this.value;
+    });
+    // 部屋・壁厚みが変わったら線種ダッシュも追従
+    document.getElementById('room-wall-thickness')?.addEventListener('input', function () {
+        const styleEl = document.querySelector('input[name="room-wall-stroke-style"]:checked');
+        if (styleEl) {
+            App.roomWallStrokeDashArray = getDashArray(styleEl.value, App.roomWallThickness);
+        }
+    });
+
     // ---- 装飾ツール UI ----
     mountDecorPicker(document.getElementById('decor-picker'));
     refreshDecorColorSection();
@@ -5868,6 +6128,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ttl.addEventListener('click', () => {
             ttl.parentElement.classList.toggle('collapsed');
         });
+    });
+    // s-sub-section の折りたたみ (event delegation: 動的に追加された select panel 内でも効くように)
+    document.body.addEventListener('click', (e) => {
+        const ttl = e.target.closest('.s-sub-section.collapsible > .s-sub-ttl');
+        if (!ttl) return;
+        ttl.parentElement.classList.toggle('collapsed');
     });
 
     // 影トグルの初期状態を activeTool に追随させる
