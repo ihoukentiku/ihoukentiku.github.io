@@ -2525,45 +2525,265 @@ function applyLayerSelectionToCanvas() {
 /* ================================================================
    選択オブジェクト情報表示
 ================================================================ */
+
+/**
+ * 選択中のオブジェクト群から「パターン編集対象」を平らに抽出する。
+ * 各エントリ: { target, kind: 'ground'|'wall'|'room-ground'|'room-wall' }
+ * 部屋グループは内部の地面/壁を別エントリで返す。セルレイヤーは対象外 (v1)。
+ */
+function getEditablePatternTargets(active) {
+    const result = [];
+    active.forEach((o) => {
+        if (o._isRoomGroup && typeof o.getObjects === 'function') {
+            const children = o.getObjects();
+            const g = children.find((c) => c._isRoomGround);
+            const w = children.find((c) => c._isRoomWall);
+            if (g) result.push({ target: g, kind: 'room-ground' });
+            if (w) result.push({ target: w, kind: 'room-wall' });
+        } else if (o._isCellLayer) {
+            // セルレイヤーは子セル個別塗りのため v1 では除外
+        } else if (o._isGroundLayer) {
+            result.push({ target: o, kind: 'ground' });
+        } else if (o._isWallLayer) {
+            result.push({ target: o, kind: 'wall' });
+        }
+    });
+    return result;
+}
+
+/** kind が地面側か (fill 編集) か壁側か (stroke 編集) を判定。 */
+function isPatternKindFill(kind) { return kind === 'ground' || kind === 'room-ground'; }
+
+/** state を target に適用 (fill/stroke を作り直す)。 */
+function applyPatternStateToTarget(target, kind, state) {
+    target._patternState = { ...state };
+    const fillSide = isPatternKindFill(kind);
+    const def = state.mode === 'pattern' ? getPatternDef(state.id) : null;
+    if (fillSide) {
+        target.set('fill', state.mode === 'solid'
+            ? (state.solidColor || '#888888')
+            : getPatternFill(state.id, state.solidColor));
+    } else {
+        target.set('stroke', state.mode === 'solid'
+            ? (state.solidColor || '#333333')
+            : getStrokePatternFill(state.id, state.solidColor));
+    }
+    // パターン定義が変わったら _patternScale を「現在の userScale * 新 def.scale」に再計算
+    // (mode=solid 時は既存値を保持。直接 _patternScale を弄っているユーザー入力は別フローで上書き)
+    if (def) {
+        const oldDef = getPatternDef(target._patternStateLastId);
+        const oldDefScale = oldDef?.scale || 1;
+        const userScale = (target._patternScale || 1) / oldDefScale;
+        target._patternScale = def.scale * userScale;
+    }
+    target._patternStateLastId = state.id || null;
+    applyPatternOrigin(target);
+    target.dirty = true;
+}
+
+/** 既存 Pickr インスタンスを後始末する (#sel-info を再構築する前に呼ぶ)。 */
+function destroySelInfoPickrs() {
+    const root = document.getElementById('sel-info');
+    if (!root) return;
+    (root._pickrs || []).forEach((p) => { try { p.destroyAndRemove(); } catch (_) {} });
+    root._pickrs = [];
+}
+
 /**
  * 「選択ツール」プロパティパネルの選択オブジェクト情報を再描画する。
- * 0個: プレースホルダ / 1個: X,Y,幅,高さ,回転を表示しX/Yは編集可 / 複数: 件数のみ。
+ * 0個: プレースホルダ / 1個以上: 基本情報 + パターン編集 (該当時) + 影編集
  */
 function updateSelectionInfo() {
     const info = document.getElementById('sel-info');
-    const none = document.getElementById('sel-none');
+    if (!info) return;
+    destroySelInfoPickrs();
     const active = App.canvas.getActiveObjects().filter((o) => o._isMapLayer);
     if (active.length === 0) {
         info.innerHTML = '<p class="fl" style="opacity:0.5" id="sel-none">オブジェクトを選択してください</p>';
         return;
     }
+    info.innerHTML = '';
+
+    // --- 基本情報 ---
+    const basic = document.createElement('div');
     if (active.length === 1) {
         const o = active[0];
-        info.innerHTML = `
-            <div class="f"><span class="fl">名前</span><span class="unit">${o._layerName}</span></div>
+        basic.innerHTML = `
+            <div class="f"><span class="fl">名前</span><span class="unit">${o._layerName || ''}</span></div>
             <div class="f"><span class="fl">X</span><input type="number" id="si-x" value="${Math.round(o.left)}" class="custom-spinner" /></div>
             <div class="f"><span class="fl">Y</span><input type="number" id="si-y" value="${Math.round(o.top)}" class="custom-spinner" /></div>
             <div class="f"><span class="fl">幅</span><span class="unit">${Math.round(o.width * (o.scaleX || 1))}</span></div>
             <div class="f"><span class="fl">高さ</span><span class="unit">${Math.round(o.height * (o.scaleY || 1))}</span></div>
             <div class="f"><span class="fl">回転</span><span class="unit">${Math.round(o.angle || 0)}°</span></div>`;
-        // X/Y 編集
-        info.querySelector('#si-x')?.addEventListener('change', function () {
+        basic.querySelector('#si-x')?.addEventListener('change', function () {
             o.set({ left: parseInt(this.value) });
             o.setCoords();
             App.canvas.renderAll();
             pushHistory(`${o._layerName}のXを変更`);
         });
-        info.querySelector('#si-y')?.addEventListener('change', function () {
+        basic.querySelector('#si-y')?.addEventListener('change', function () {
             o.set({ top: parseInt(this.value) });
             o.setCoords();
             App.canvas.renderAll();
             pushHistory(`${o._layerName}のYを変更`);
         });
     } else {
-        info.innerHTML = `<p class="fl" style="opacity:0.5">${active.length} 個のオブジェクトを選択中</p>`;
+        basic.innerHTML = `<p class="fl" style="opacity:0.5">${active.length} 個のオブジェクトを選択中</p>`;
     }
+    info.appendChild(basic);
+
+    // --- パターン編集 (該当する選択がある場合) ---
+    const editable = getEditablePatternTargets(active);
+    if (editable.length > 0) {
+        const byKind = {};
+        editable.forEach((e) => { (byKind[e.kind] = byKind[e.kind] || []).push(e); });
+        const LABELS = { 'ground': '地面', 'wall': '壁', 'room-ground': '部屋の地面', 'room-wall': '部屋の壁' };
+        Object.entries(byKind).forEach(([kind, entries]) => {
+            info.appendChild(buildSelPatternSection(kind, LABELS[kind], entries, info));
+        });
+    }
+
+    // --- 影編集 ---
+    info.appendChild(buildSelShadowSection(active, info));
+
     if (window.IKLab?.initNumSpinners) IKLab.initNumSpinners(info);
     updateFillStrokeVisibility();
+}
+
+/** パターン編集セクションを構築する (kind ごとに1つ)。 */
+function buildSelPatternSection(kind, label, entries, infoRoot) {
+    const fillSide = isPatternKindFill(kind);
+    const category = fillSide ? 'ground' : 'wall';
+    const genres = fillSide ? GROUND_GENRES : WALL_GENRES;
+    const first = entries[0].target;
+    const defaultColor = fillSide ? '#888888' : '#333333';
+    // state はオブジェクト間で共有: setState で entries 全てに反映
+    const sharedState = {
+        mode: 'solid',
+        id: null,
+        genreId: 'all',
+        solidColor: defaultColor,
+        ...(first._patternState || {}),
+    };
+    normalizePatternState(sharedState);
+
+    const sec = document.createElement('div');
+    sec.className = 's-sec';
+    sec.style.marginTop = '0.5rem';
+    sec.innerHTML = `
+        <div class="s-ttl"><span class="material-symbols-outlined">palette</span>${label}の${fillSide ? '塗り' : '輪郭'}</div>
+        <div class="sel-pattern-picker pattern-picker"></div>
+        <div class="f"><span class="fl">縮尺</span><input type="number" step="0.1" class="custom-spinner sel-pat-scale" value="${first._patternScale ?? 1}" /></div>
+        <div class="f"><span class="fl">X</span><input type="number" class="custom-spinner sel-pat-offx" value="${first._patternOffsetX || 0}" /></div>
+        <div class="f"><span class="fl">Y</span><input type="number" class="custom-spinner sel-pat-offy" value="${first._patternOffsetY || 0}" /></div>
+        <div class="f"><span class="fl">回転</span><input type="number" class="custom-spinner sel-pat-rot" value="${first._patternRotation || 0}" /></div>
+    `;
+
+    const pickerRoot = sec.querySelector('.sel-pattern-picker');
+    mountPatternPicker(pickerRoot, {
+        category,
+        patterns: PATTERNS,
+        genres,
+        getState: () => sharedState,
+        setState: (s) => {
+            Object.assign(sharedState, s);
+            entries.forEach((e) => applyPatternStateToTarget(e.target, e.kind, sharedState));
+            App.canvas.requestRenderAll();
+            pushHistoryDebounced(label + 'のパターンを変更');
+        },
+    });
+    // mountPatternPicker が pickerRoot._pickr を持つので回収しておく
+    if (pickerRoot._pickr) (infoRoot._pickrs = infoRoot._pickrs || []).push(pickerRoot._pickr);
+
+    const refreshTransform = () => {
+        entries.forEach((e) => applyPatternOrigin(e.target));
+        App.canvas.requestRenderAll();
+    };
+    sec.querySelector('.sel-pat-scale').addEventListener('input', function () {
+        const v = parseFloat(this.value);
+        if (!isFinite(v) || v <= 0) return;
+        entries.forEach((e) => { e.target._patternScale = v; });
+        refreshTransform();
+        pushHistoryDebounced(label + 'の縮尺を変更');
+    });
+    sec.querySelector('.sel-pat-offx').addEventListener('input', function () {
+        const v = parseFloat(this.value) || 0;
+        entries.forEach((e) => { e.target._patternOffsetX = v; });
+        refreshTransform();
+        pushHistoryDebounced(label + 'のXを変更');
+    });
+    sec.querySelector('.sel-pat-offy').addEventListener('input', function () {
+        const v = parseFloat(this.value) || 0;
+        entries.forEach((e) => { e.target._patternOffsetY = v; });
+        refreshTransform();
+        pushHistoryDebounced(label + 'のYを変更');
+    });
+    sec.querySelector('.sel-pat-rot').addEventListener('input', function () {
+        const v = parseFloat(this.value) || 0;
+        entries.forEach((e) => { e.target._patternRotation = v; });
+        refreshTransform();
+        pushHistoryDebounced(label + 'の回転を変更');
+    });
+    return sec;
+}
+
+/** 影編集セクションを構築する (選択全オブジェクト共通の一括適用)。 */
+function buildSelShadowSection(active, infoRoot) {
+    const first = active[0];
+    const sh = first.shadow;
+    const enabled = !!sh;
+    const color = sh?.color || App.shadowColor || '#0000008c';
+    const blur = sh?.blur ?? App.shadowBlur ?? 8;
+    const offX = sh?.offsetX ?? App.shadowOffsetX ?? 0;
+    const offY = sh?.offsetY ?? App.shadowOffsetY ?? 4;
+    const sec = document.createElement('div');
+    sec.className = 's-sec';
+    sec.style.marginTop = '0.5rem';
+    sec.innerHTML = `
+        <div class="s-ttl"><span class="material-symbols-outlined">contrast</span>影</div>
+        <div class="f"><label class="tog"><input type="checkbox" class="sel-shadow-on" ${enabled ? 'checked' : ''} /><span class="tl">影を有効にする</span></label></div>
+        <div class="f"><span class="fl">色</span><div class="sel-shadow-color"></div></div>
+        <div class="f"><span class="fl">ぼかし</span><input type="number" min="0" class="custom-spinner sel-shadow-blur" value="${blur}" /></div>
+        <div class="f"><span class="fl">X</span><input type="number" class="custom-spinner sel-shadow-offx" value="${offX}" /></div>
+        <div class="f"><span class="fl">Y</span><input type="number" class="custom-spinner sel-shadow-offy" value="${offY}" /></div>
+    `;
+    let currentColor = color;
+    const pickr = Pickr.create({
+        el: sec.querySelector('.sel-shadow-color'),
+        theme: 'nano',
+        default: color,
+        defaultRepresentation: 'HEXA',
+        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
+    });
+    pickr.on('change', (c) => {
+        if (!c) return;
+        currentColor = c.toHEXA().toString();
+        pickr.applyColor(true);
+        apply();
+    });
+    (infoRoot._pickrs = infoRoot._pickrs || []).push(pickr);
+
+    function apply() {
+        const on = sec.querySelector('.sel-shadow-on').checked;
+        const bl = parseFloat(sec.querySelector('.sel-shadow-blur').value) || 0;
+        const ox = parseFloat(sec.querySelector('.sel-shadow-offx').value) || 0;
+        const oy = parseFloat(sec.querySelector('.sel-shadow-offy').value) || 0;
+        active.forEach((o) => {
+            if (!on) {
+                o.set('shadow', null);
+            } else {
+                o.set('shadow', new fabric.Shadow({ color: currentColor, blur: bl, offsetX: ox, offsetY: oy, affectStroke: true }));
+            }
+            o.dirty = true;
+        });
+        App.canvas.requestRenderAll();
+        pushHistoryDebounced('影を変更');
+    }
+    sec.querySelector('.sel-shadow-on').addEventListener('change', apply);
+    sec.querySelector('.sel-shadow-blur').addEventListener('input', apply);
+    sec.querySelector('.sel-shadow-offx').addEventListener('input', apply);
+    sec.querySelector('.sel-shadow-offy').addEventListener('input', apply);
+    return sec;
 }
 
 /* ================================================================
@@ -3120,6 +3340,7 @@ function snapshotRoomPatternSettings(obj, kind) {
         _patternOffsetY: App.patternOffsetY || 0,
         _patternRotation: App.patternRotation || 0,
         _patternScale: initScale * (App.patternScale ?? 1),
+        _patternState: { ...(state || {}) },
     });
 }
 
@@ -3151,6 +3372,7 @@ function addRoom(typeName, makeShape) {
     if (!ground) return;
     ground.set({ _isRoomGround: true, objectCaching: false });
     snapshotRoomPatternSettings(ground, 'ground');
+    snapshotWorldPosition(ground); // toGroup 後に obj.left が相対座標になるので世界座標を別途保持
     applyPatternOrigin(ground);
     if (App.roomGroundShadowEnabled) ground.set('shadow', makeShadowFromApp());
 
@@ -3165,6 +3387,7 @@ function addRoom(typeName, makeShape) {
     if (!wall) return;
     wall.set({ _isRoomWall: true, objectCaching: false });
     snapshotRoomPatternSettings(wall, 'wall');
+    snapshotWorldPosition(wall); // toGroup 後に obj.left が相対座標になるので世界座標を別途保持
     applyPatternOrigin(wall);
     if (App.roomWallShadowEnabled) wall.set('shadow', makeShadowFromApp());
 
@@ -3537,11 +3760,16 @@ function snapshotPatternSettings(obj) {
     // 現在の activeTool に対応するパターン定義から初期倍率を取得 → ユーザー倍率と掛けて保存
     const def = currentPatternDef();
     const initScale = def?.scale ?? 1;
+    // 選択ツールからの後編集のため、mode/id/solidColor/genreId も保存しておく
+    let stateSnapshot = null;
+    if (App.activeTool === 'ground') stateSnapshot = { ...App.groundPattern };
+    else if (App.activeTool === 'wall') stateSnapshot = { ...App.wallPattern };
     obj.set({
         _patternOffsetX: App.patternOffsetX || 0,
         _patternOffsetY: App.patternOffsetY || 0,
         _patternRotation: App.patternRotation || 0,
         _patternScale: initScale * (App.patternScale ?? 1),
+        ...(stateSnapshot ? { _patternState: stateSnapshot } : {}),
     });
 }
 

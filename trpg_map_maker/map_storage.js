@@ -21,6 +21,7 @@ const SAVE_CUSTOM_PROPS = [
     // セルレイヤーは _cellEntries (配列) として保存 (内部 Map は再構築される)
     '_cellEntries',
     '_patternOffsetX', '_patternOffsetY', '_patternRotation', '_patternScale',
+    '_patternState',
     'globalCompositeOperation',
 ];
 
