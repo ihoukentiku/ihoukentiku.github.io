@@ -22,7 +22,10 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
         <!-- TRPGマップ用拡張フォント (テキストツールで選択可能) -->
-        <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;700&family=Yusei+Magic&family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@400;700&family=DotGothic16&family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;700&family=Yusei+Magic&family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@400;700&family=DotGothic16&family=Cinzel:wght@400;700&family=MedievalSharp&display=swap"
+            rel="stylesheet"
+        />
         <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
@@ -515,7 +518,7 @@
                 font-size: 0.62rem;
                 letter-spacing: 0.14em;
                 text-transform: uppercase;
-                color: var(--text-dim);
+                color: var(--text);
                 display: flex;
                 align-items: center;
                 gap: 0.35rem;
@@ -557,7 +560,9 @@
             .s-sub-section.collapsible > .s-sub-body {
                 overflow: hidden;
                 max-height: 800px;
-                transition: max-height 0.2s ease, opacity 0.2s ease;
+                transition:
+                    max-height 0.2s ease,
+                    opacity 0.2s ease;
                 opacity: 1;
             }
             .s-sub-section.collapsible.collapsed > .s-sub-body {
@@ -622,7 +627,9 @@
             .s-sec.collapsible > .s-body {
                 overflow: hidden;
                 max-height: 600px;
-                transition: max-height 0.2s ease, opacity 0.2s ease;
+                transition:
+                    max-height 0.2s ease,
+                    opacity 0.2s ease;
                 opacity: 1;
                 display: flex;
                 flex-direction: column;
@@ -1161,6 +1168,9 @@
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">grid_4x4</span>グリッド</div>
                         <div class="f">
+                            <label class="tog"><input type="checkbox" id="grid-visible" checked /><span class="tl">グリッドを表示</span></label>
+                        </div>
+                        <div class="f">
                             <span class="fl">色</span>
                             <div id="grid-color-picker"></div>
                         </div>
@@ -1172,9 +1182,21 @@
                             <span class="fl">線種</span>
                             <div class="seg">
                                 <input type="radio" name="grid-style" id="gs-solid" value="solid" /><label for="gs-solid">実線</label>
-                                <input type="radio" name="grid-style" id="gs-dash" value="dashed" /><label for="gs-dash">破線</label>
-                                <input type="radio" name="grid-style" id="gs-dot" value="dotted" checked /><label for="gs-dot">点線</label>
+                                <input type="radio" name="grid-style" id="gs-dash" value="dashed" checked /><label for="gs-dash">破線</label>
+                                <input type="radio" name="grid-style" id="gs-dot" value="dotted" /><label for="gs-dot">点線</label>
                             </div>
+                        </div>
+                    </div>
+                    <!-- スナップ設定 (設定タブにのみ表示) -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">grid_goldenratio</span>スナップ</div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="snap-enabled" checked /><span class="tl">スナップ有効 <kbd style="font-size: 0.6rem; opacity: 0.5; margin-left: 0.3rem">Shift: 一時無効</kbd></span></label>
+                        </div>
+                        <div id="snap-targets">
+                            <div class="f"><label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label></div>
+                            <div class="f"><label class="tog"><input type="checkbox" id="snap-center" checked /><span class="tl">セル中心</span></label></div>
+                            <div class="f"><label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label></div>
                         </div>
                     </div>
                 </div>
@@ -1196,7 +1218,9 @@
                                 <div class="tool-tile active" data-cell-tool="pen" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
                                 <div class="tool-tile" data-cell-tool="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
                                 <div class="tool-tile" data-cell-tool="fill" title="塗りつぶし"><span class="material-symbols-outlined">format_color_fill</span><span>塗潰し</span></div>
-                                <div class="tool-tile" data-cell-action="add-layer" title="セルレイヤーを追加"><span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span></div>
+                                <div class="tool-tile" data-cell-action="add-layer" title="セルレイヤーを追加">
+                                    <span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1245,6 +1269,7 @@
                 </div>
                 <!-- 地図モード: 地面 -->
                 <div class="prop-group" data-prop="ground">
+                    <!-- 地面: ツール選択 (+ セル時は cell-tools-block が JS で挿入) -->
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面</div>
                         <div class="tool-tiles" id="ground-tool-tiles">
@@ -1254,11 +1279,39 @@
                             <div class="tool-tile" data-ground-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
                             <div class="tool-tile" data-ground-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
                         </div>
-                        <div class="pattern-picker" id="ground-pattern-picker"></div>
                     </div>
+                    <!-- パターン -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">texture</span>パターン</div>
+                        <div class="pattern-picker" id="ground-pattern-picker"></div>
+                        <div class="s-sub-section collapsible collapsed">
+                            <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-sub-body">
+                                <div class="f">
+                                    <span class="fl">オフセットX</span>
+                                    <div class="row"><input type="number" id="ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">オフセットY</span>
+                                    <div class="row"><input type="number" id="ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">回転</span>
+                                    <div class="row"><input type="number" id="ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">倍率</span>
+                                    <div class="row"><input type="number" id="ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 影 (グローバル #shadow-sec が JS によって挿入される) -->
+                    <div class="shadow-mount" data-shadow-mount="ground"></div>
                 </div>
                 <!-- 地図モード: 壁 -->
                 <div class="prop-group" data-prop="wall">
+                    <!-- 壁: ツール選択 -->
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁</div>
                         <div class="tool-tiles" id="wall-tool-tiles">
@@ -1270,8 +1323,35 @@
                             <div class="tool-tile" data-wall-tool="curve" title="曲線"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
                             <div class="tool-tile" data-wall-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
                         </div>
-                        <div class="pattern-picker" id="wall-pattern-picker"></div>
                     </div>
+                    <!-- パターン -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">texture</span>パターン</div>
+                        <div class="pattern-picker" id="wall-pattern-picker"></div>
+                        <div class="s-sub-section collapsible collapsed">
+                            <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-sub-body">
+                                <div class="f">
+                                    <span class="fl">オフセットX</span>
+                                    <div class="row"><input type="number" id="wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">オフセットY</span>
+                                    <div class="row"><input type="number" id="wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">回転</span>
+                                    <div class="row"><input type="number" id="wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">倍率</span>
+                                    <div class="row"><input type="number" id="wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 影 (グローバル #shadow-sec が JS によって挿入される) -->
+                    <div class="shadow-mount" data-shadow-mount="wall"></div>
                 </div>
                 <!-- 地図モード: 部屋 -->
                 <div class="prop-group" data-prop="room">
@@ -1285,40 +1365,75 @@
                             <div class="tool-tile" data-room-tool="path" title="折線 (自動で閉じる)"><span class="material-symbols-outlined">timeline</span><span>折線</span></div>
                             <div class="tool-tile" data-room-tool="curve" title="曲線 (自動で閉じる)"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
                         </div>
+                    </div>
 
-                        <!-- 地面サブセクション (折りたたみ可) -->
-                        <div class="s-sub-section collapsible">
-                            <div class="s-sub-ttl"><span class="material-symbols-outlined">landscape</span>地面<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                            <div class="s-sub-body">
+                        <!-- 地面セクション (折りたたみ可) -->
+                        <div class="s-sec collapsible">
+                            <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-body">
                                 <div class="pattern-picker" id="room-ground-pattern-picker"></div>
 
                                 <div class="s-sub-section collapsible collapsed">
                                     <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
                                     <div class="s-sub-body">
-                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="room-ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
-                                        <div class="f"><span class="fl">倍率</span><div class="row"><input type="number" id="room-ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div></div>
+                                        <div class="f">
+                                            <span class="fl">オフセットX</span>
+                                            <div class="row"><input type="number" id="room-ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">オフセットY</span>
+                                            <div class="row"><input type="number" id="room-ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">回転</span>
+                                            <div class="row">
+                                                <input type="number" id="room-ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span>
+                                            </div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">倍率</span>
+                                            <div class="row">
+                                                <input type="number" id="room-ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div class="s-sub-section collapsible collapsed">
                                     <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
                                     <div class="s-sub-body">
-                                        <div class="f"><label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">影を付ける</span></label></div>
-                                        <div class="f"><span class="fl">色</span><div id="room-ground-shadow-color"></div></div>
-                                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="room-ground-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-ground-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-ground-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f">
+                                            <label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">影を付ける</span></label>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">色</span>
+                                            <div id="room-ground-shadow-color"></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">ぼかし</span>
+                                            <div class="row"><input type="number" id="room-ground-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">オフセットX</span>
+                                            <div class="row">
+                                                <input type="number" id="room-ground-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
+                                            </div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">オフセットY</span>
+                                            <div class="row">
+                                                <input type="number" id="room-ground-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 壁サブセクション (折りたたみ可) -->
-                        <div class="s-sub-section collapsible">
-                            <div class="s-sub-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                            <div class="s-sub-body">
+                        <!-- 壁セクション (折りたたみ可) -->
+                        <div class="s-sec collapsible">
+                            <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-body">
                                 <div class="pattern-picker" id="room-wall-pattern-picker"></div>
 
                                 <div class="f">
@@ -1355,26 +1470,59 @@
                                 <div class="s-sub-section collapsible collapsed">
                                     <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
                                     <div class="s-sub-body">
-                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="room-wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
-                                        <div class="f"><span class="fl">倍率</span><div class="row"><input type="number" id="room-wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div></div>
+                                        <div class="f">
+                                            <span class="fl">オフセットX</span>
+                                            <div class="row"><input type="number" id="room-wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">オフセットY</span>
+                                            <div class="row"><input type="number" id="room-wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">回転</span>
+                                            <div class="row">
+                                                <input type="number" id="room-wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span>
+                                            </div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">倍率</span>
+                                            <div class="row">
+                                                <input type="number" id="room-wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div class="s-sub-section collapsible collapsed">
                                     <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
                                     <div class="s-sub-body">
-                                        <div class="f"><label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">影を付ける</span></label></div>
-                                        <div class="f"><span class="fl">色</span><div id="room-wall-shadow-color"></div></div>
-                                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="room-wall-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="room-wall-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="room-wall-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                                        <div class="f">
+                                            <label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">影を付ける</span></label>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">色</span>
+                                            <div id="room-wall-shadow-color"></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">ぼかし</span>
+                                            <div class="row"><input type="number" id="room-wall-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">オフセットX</span>
+                                            <div class="row">
+                                                <input type="number" id="room-wall-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
+                                            </div>
+                                        </div>
+                                        <div class="f">
+                                            <span class="fl">オフセットY</span>
+                                            <div class="row">
+                                                <input type="number" id="room-wall-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
                 <!-- 地図モード: 装飾 -->
                 <div class="prop-group" data-prop="decor">
@@ -1420,7 +1568,9 @@
                             -->
                             <div class="tool-tile" data-freehand-brush="spray" title="スプレー"><span class="material-symbols-outlined">shower</span><span>スプレー</span></div>
                             <div class="tool-tile" data-freehand-brush="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
-                            <div class="tool-tile" data-freehand-action="add-layer" title="フリーハンドレイヤーを追加"><span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span></div>
+                            <div class="tool-tile" data-freehand-action="add-layer" title="フリーハンドレイヤーを追加">
+                                <span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span>
+                            </div>
                         </div>
                         <div class="f" id="freehand-color-row">
                             <span class="fl">色</span>
@@ -1467,7 +1617,7 @@
                         <!-- スタイルトグル (ボールド/イタリック/下線/取消線) — コンパクトサイズ -->
                         <div class="f" id="text-style-row">
                             <span class="fl">スタイル</span>
-                            <div id="text-style-tiles" style="display: grid; grid-template-columns: repeat(4, 24px); gap: 3px;">
+                            <div id="text-style-tiles" style="display: grid; grid-template-columns: repeat(4, 24px); gap: 3px">
                                 <div class="tool-tile text-style-mini" data-text-style="bold" title="太字 (Ctrl+B)"><span class="material-symbols-outlined">format_bold</span></div>
                                 <div class="tool-tile text-style-mini" data-text-style="italic" title="斜体 (Ctrl+I)"><span class="material-symbols-outlined">format_italic</span></div>
                                 <div class="tool-tile text-style-mini" data-text-style="underline" title="下線 (Ctrl+U)"><span class="material-symbols-outlined">format_underlined</span></div>
@@ -1476,23 +1626,8 @@
                         </div>
                     </div>
                 </div>
-                <!-- 画像 -->
-                <div class="prop-group" data-prop="image">
-                    <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">image</span>画像挿入</div>
-                        <input type="file" id="image-upload" accept="image/*" style="display: none" /><button class="btn-action" id="image-upload-btn">画像を選択</button>
-                    </div>
-                </div>
-                <!-- パターン共通設定 (地面/壁モードで表示) — fill-stroke-sec より先に。折りたたみ可。 -->
-                <div id="pattern-transform-sec" class="s-sec collapsible collapsed" style="display: none">
-                    <div class="s-ttl"><span class="material-symbols-outlined">tune</span>パターン<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                    <div class="s-body">
-                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
-                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div></div>
-                        <div class="f"><span class="fl">回転</span><div class="row"><input type="number" id="pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div></div>
-                        <div class="f"><span class="fl">倍率</span><div class="row"><input type="number" id="pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div></div>
-                    </div>
-                </div>
+                <!-- 画像 (ツールボタン押下で即起動するためプロパティパネルは不要。input は保持) -->
+                <input type="file" id="image-upload" accept="image/*" style="display: none" />
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display: none">
                     <div class="s-ttl" id="fill-stroke-title"><span class="material-symbols-outlined">palette</span>フィル / ストローク</div>
@@ -1544,42 +1679,35 @@
                     </div>
                 </div>
 
-                <!-- 影 — フィル/ストロークの直下。色/ぼかし/オフセットはカテゴリ共通、on/off だけ別状態。折りたたみ可。 -->
+                <!-- 影 ホーム位置 (シンプル/装飾系で使用). 地面/壁モードのときは JS で
+                     対応 prop-group 内の .shadow-mount に動的に移される。-->
+                <div id="shadow-home">
                 <div id="shadow-sec" class="s-sec collapsible collapsed" style="display: none">
                     <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
                     <div class="s-body">
                         <div class="f">
                             <label class="tog"><input type="checkbox" id="shadow-enabled" /><span class="tl">影を付ける</span></label>
                         </div>
-                        <div class="f"><span class="fl">色</span><div id="shadow-color"></div></div>
-                        <div class="f"><span class="fl">ぼかし</span><div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                        <div class="f"><span class="fl">オフセットX</span><div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
-                        <div class="f"><span class="fl">オフセットY</span><div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div></div>
+                        <div class="f">
+                            <span class="fl">色</span>
+                            <div id="shadow-color"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">ぼかし</span>
+                            <div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">オフセットX</span>
+                            <div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">オフセットY</span>
+                            <div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
                     </div>
+                </div>
                 </div>
 
-                <!-- 共通スナップ設定（一番下） -->
-                <div id="snap-sec" class="s-sec" style="display: none">
-                    <div class="s-ttl"><span class="material-symbols-outlined">grid_goldenratio</span>スナップ</div>
-                    <div class="f">
-                        <label class="tog"
-                            ><input type="checkbox" id="snap-enabled" checked /><span class="tl"
-                                >スナップ有効 <kbd style="font-size: 0.6rem; opacity: 0.5; margin-left: 0.3rem">Shift: 一時無効</kbd></span
-                            ></label
-                        >
-                    </div>
-                    <div id="snap-targets">
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label>
-                        </div>
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="snap-center" checked /><span class="tl">セル中心</span></label>
-                        </div>
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- キャンバス -->
@@ -1606,8 +1734,18 @@
                             <option value="multiply">乗算</option>
                             <option value="screen">スクリーン</option>
                             <option value="overlay">オーバーレイ</option>
-                            <option value="darken">暗く</option>
-                            <option value="lighten">明るく</option>
+                            <option value="darken">比較 (暗)</option>
+                            <option value="lighten">比較 (明)</option>
+                            <option value="color-dodge">覆い焼き</option>
+                            <option value="color-burn">焼き込み</option>
+                            <option value="hard-light">ハードライト</option>
+                            <option value="soft-light">ソフトライト</option>
+                            <option value="difference">差の絶対値</option>
+                            <option value="exclusion">除外</option>
+                            <option value="hue">色相</option>
+                            <option value="saturation">彩度</option>
+                            <option value="color">カラー</option>
+                            <option value="luminosity">輝度</option>
                         </select>
                     </div>
                 </div>
@@ -1652,48 +1790,53 @@
                     <span class="modal-title">画像出力</span><button class="modal-close" onclick="IKLab.closeModal('export-modal')"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body" style="padding: 1rem">
-                    <div style="text-align: center; margin-bottom: 0.6rem">
-                        <div
-                            id="export-preview-wrap"
-                            style="
-                                display: inline-block;
-                                background: repeating-conic-gradient(#444 0% 25%, #555 25% 50%);
-                                background-size: 12px 12px;
-                                border-radius: 4px;
-                                overflow: hidden;
-                                line-height: 0;
-                            "
-                        >
-                            <img id="export-preview-img" style="max-width: min(900px, 88vw); max-height: 55vh; display: block" />
+                    <!-- 左: 設定縦並び / 右: プレビュー -->
+                    <div style="display: grid; grid-template-columns: 220px 1fr; gap: 1rem; align-items: start">
+                        <div class="export-settings" style="display: flex; flex-direction: column; gap: 0.7rem">
+                            <div class="f" style="margin: 0; flex-direction: column; align-items: flex-start; gap: 0.3rem">
+                                <span class="fl">形式</span>
+                                <div class="seg">
+                                    <input type="radio" name="export-format" id="ef-png" value="png" checked /><label for="ef-png">PNG</label
+                                    ><input type="radio" name="export-format" id="ef-jpeg" value="jpeg" /><label for="ef-jpeg">JPEG</label
+                                    ><input type="radio" name="export-format" id="ef-svg" value="svg" /><label for="ef-svg">SVG</label>
+                                </div>
+                            </div>
+                            <div class="f" style="margin: 0; flex-direction: column; align-items: flex-start; gap: 0.3rem">
+                                <span class="fl">背景</span>
+                                <div class="seg">
+                                    <input type="radio" name="export-bg" id="eb-trans" value="transparent" checked /><label for="eb-trans">透明</label
+                                    ><input type="radio" name="export-bg" id="eb-white" value="white" /><label for="eb-white">白</label>
+                                </div>
+                            </div>
+                            <label class="tog" style="margin: 0"><input type="checkbox" id="export-grid" checked /><span class="tl">グリッド</span></label>
+                            <div class="f" style="margin: 0; flex-direction: column; align-items: flex-start; gap: 0.3rem">
+                                <span class="fl">セル解像度</span>
+                                <div class="row"><input type="number" id="export-cell-px" value="50" min="10" max="500" step="10" class="custom-spinner" /><span class="unit">px/セル</span></div>
+                            </div>
+                            <span id="export-output-size" style="font-size: 0.65rem; color: var(--text-dim)"></span>
+                            <button class="btn-action" id="export-btn" style="width: 100%; padding: 0.5rem; margin-top: auto">
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 0.3rem">download</span>ダウンロード
+                            </button>
+                        </div>
+                        <div>
+                            <div style="text-align: center; margin-bottom: 0.6rem">
+                                <div
+                                    id="export-preview-wrap"
+                                    style="
+                                        display: inline-block;
+                                        background: repeating-conic-gradient(#444 0% 25%, #555 25% 50%);
+                                        background-size: 12px 12px;
+                                        border-radius: 4px;
+                                        overflow: hidden;
+                                        line-height: 0;
+                                    "
+                                >
+                                    <img id="export-preview-img" style="max-width: min(700px, 70vw); max-height: 60vh; display: block" />
+                                </div>
+                            </div>
+                            <div id="export-modal-info" style="text-align: center; font-size: 0.72rem; color: var(--text-dim)"></div>
                         </div>
                     </div>
-                    <div id="export-modal-info" style="text-align: center; font-size: 0.72rem; color: var(--text-dim); margin-bottom: 0.6rem"></div>
-                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.2rem; margin-bottom: 0.5rem">
-                        <div class="f" style="margin: 0; gap: 0.4rem">
-                            <span class="fl">形式</span>
-                            <div class="seg">
-                                <input type="radio" name="export-format" id="ef-png" value="png" checked /><label for="ef-png">PNG</label
-                                ><input type="radio" name="export-format" id="ef-jpeg" value="jpeg" /><label for="ef-jpeg">JPEG</label
-                                ><input type="radio" name="export-format" id="ef-svg" value="svg" /><label for="ef-svg">SVG</label>
-                            </div>
-                        </div>
-                        <div class="f" style="margin: 0; gap: 0.4rem">
-                            <span class="fl">背景</span>
-                            <div class="seg">
-                                <input type="radio" name="export-bg" id="eb-trans" value="transparent" checked /><label for="eb-trans">透明</label
-                                ><input type="radio" name="export-bg" id="eb-white" value="white" /><label for="eb-white">白</label>
-                            </div>
-                        </div>
-                        <label class="tog" style="margin: 0"><input type="checkbox" id="export-grid" checked /><span class="tl">グリッド</span></label>
-                        <div class="f" style="margin: 0; gap: 0.4rem">
-                            <span class="fl">セル解像度</span>
-                            <div class="row"><input type="number" id="export-cell-px" value="50" min="10" max="500" step="10" class="custom-spinner" /><span class="unit">px/セル</span></div>
-                        </div>
-                        <span id="export-output-size" style="font-size: 0.65rem; color: var(--text-dim); margin-left: auto"></span>
-                    </div>
-                    <button class="btn-action" id="export-btn" style="width: 100%; padding: 0.5rem">
-                        <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 0.3rem">download</span>ダウンロード
-                    </button>
                 </div>
             </div>
         </div>

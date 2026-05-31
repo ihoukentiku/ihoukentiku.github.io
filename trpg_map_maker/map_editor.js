@@ -54,19 +54,11 @@ const App = {
     wallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     wallThickness: 12, // 壁の厚み (px) — シンプルモードの strokeWidth とは別管理
     // ---- 地図モード: 部屋タブ (地面+壁の複合) ----
+    // 部屋のパターン (mode/id/solidColor) と詳細 (offset/rotation/scale) は
+    // 地面ツール (App.groundPattern + groundPatternOffsetX/Y/Rotation/Scale) /
+    // 壁ツール (App.wallPattern + wallPatternOffsetX/Y/Rotation/Scale) と共有する。
     roomTool: 'rect', // 'rect' | 'ellipse' | 'polygon' | 'curve-closed' | 'path' | 'curve'
-    roomGroundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#ffffff' },
-    roomWallPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#000000' },
     roomWallThickness: 12,
-    // 部屋専用のパターン詳細 (地面/壁を個別に管理)
-    roomGroundPatternOffsetX: 0,
-    roomGroundPatternOffsetY: 0,
-    roomGroundPatternRotation: 0,
-    roomGroundPatternScale: 1,
-    roomWallPatternOffsetX: 0,
-    roomWallPatternOffsetY: 0,
-    roomWallPatternRotation: 0,
-    roomWallPatternScale: 1,
     // 部屋専用の影設定 (地面/壁を個別に管理)
     roomGroundShadowEnabled: false,
     roomGroundShadowColor: '#0000008c',
@@ -83,14 +75,14 @@ const App = {
     roomWallStrokeLineJoin: 'miter',
     roomWallStrokeLineCap: 'butt',
     // ---- 地図モード: 装飾タブ ----
-    decorId: null,                       // 選択中の DECORS エントリ id (null = 未選択)
+    decorId: null, // 選択中の DECORS エントリ id (null = 未選択)
     decorGenreId: 'all',
-    decorScale: 1,                       // ユーザー倍率。最終 = DECORS[].scale × decorScale
-    decorRotation: 0,                    // 度
+    decorScale: 1, // ユーザー倍率。最終 = DECORS[].scale × decorScale
+    decorRotation: 0, // 度
     decorFlipX: false,
     decorFlipY: false,
-    decorFill: null,                     // null = 元色維持、'#RRGGBB' = 全 path/shape の fill を上書き
-    decorStroke: null,                   // 同上 (stroke)
+    decorFill: null, // null = 元色維持、'#RRGGBB' = 全 path/shape の fill を上書き
+    decorStroke: null, // 同上 (stroke)
     decorShadowEnabled: false,
     _lastPointer: null, // 直近の canvas 座標カーソル位置 (装飾プレビューの即時再描画に使う)
     // ---- フリーハンド (Fabric brushes 拡張) ----
@@ -112,11 +104,18 @@ const App = {
     shadowOffsetY: 0,
     strokeLineJoin: 'miter', // 'miter' | 'round' | 'bevel' — 折線/多角形/線継ぎ目
     strokeLineCap: 'butt', // 'butt' | 'round' | 'square' — 線の端
-    // ---- パターン共通設定 (地面/壁の Pattern fill/stroke に適用) ----
-    patternOffsetX: 0, // 全パターン共通の追加オフセット (px)
-    patternOffsetY: 0,
-    patternRotation: 0, // 度
-    patternScale: 1, // ユーザー指定のカスタム倍率 (PATTERNS[].scale との積で適用)
+    // ---- 地面 / 壁パターンの詳細設定 (offset/rotation/scale)
+    //   地面: 地面ツールの fill + 部屋ツールの地面 fill が共有
+    //   壁:   壁ツールの stroke + 部屋ツールの壁 stroke が共有
+    //   userScale × PATTERNS[].scale が最終倍率 (PATTERNS[].scale は定義側初期倍率)
+    groundPatternOffsetX: 0,
+    groundPatternOffsetY: 0,
+    groundPatternRotation: 0,
+    groundPatternScale: 1,
+    wallPatternOffsetX: 0,
+    wallPatternOffsetY: 0,
+    wallPatternRotation: 0,
+    wallPatternScale: 1,
     activeTool: 'select',
     cellSize: 72,
     canvas: null,
@@ -127,9 +126,10 @@ const App = {
     strokeWidth: 2,
     strokeDashArray: null, // null=実線, [10,5]=破線, [2,4]=点線
     cornerRadius: 0,
-    gridColor: '#000000ff',
+    gridVisible: true, // グリッド表示 on/off (設定タブのトグル)
+    gridColor: '#535353ff',
     gridLineWidth: 1,
-    gridDashArray: [2, 4], // 点線をデフォルトに
+    gridDashArray: [10, 5], // 破線をデフォルトに
     nextLayerId: 10,
     layerCounters: {}, // 種別ごとのレイヤー連番 { '矩形': 2, 'セル': 1, ... }
     selectedLayerIds: [], // レイヤーパネル上の選択
@@ -194,13 +194,13 @@ const WALL_GENRES = [
 
 const PATTERNS = [
     // scale: パターン定義側の初期倍率 (画像 1px → キャンバス scale px)。
-    //   最終倍率 = (PATTERNS[].scale) × (App.patternScale ユーザー設定値)
+    //   最終倍率 = (PATTERNS[].scale) × (App.groundPatternScale / wallPatternScale ユーザー設定値)
     { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 0.5 },
     { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.5 },
     { id: 'rock', name: '岩', file: '岩.webp', color: '#7a7368', ground: 'cave', wall: 'stone', scale: 0.5 },
     { id: 'rock-moss', name: '岩 (苔)', file: '岩(苔).webp', color: '#6b7a52', ground: 'cave', wall: 'natural', scale: 0.5 },
     { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 0.25 },
-    { id: 'brick', name: 'レンガ', file: 'レンガ.webp', color: '#9a5a3f', ground: 'indoor', wall: 'brick', scale: 0.5 },
+    { id: 'brick', name: 'レンガ', file: 'レンガ.webp', color: '#9a5a3f', ground: 'indoor', wall: 'brick', scale: 0.2 },
     { id: 'forest', name: '森林', file: '森林.webp', color: '#3f6a3a', ground: 'outdoor', wall: null, scale: 0.5 },
 ];
 
@@ -239,75 +239,75 @@ const DECORS = [
     //
     // ---- 間取り図 (ハンドクラフト、白フィル/黒ストロークの真上ビュー) ----
     // ドア
-    { id: 'fp-door',             name: 'ドア',       type: 'svg', file: 'fp-door.svg',             genres: ['floorplan', 'door'], scale: 0.8, anchorX: 'center', anchorY: 'center' },
-    { id: 'fp-door-large',       name: 'ドア (大)',  type: 'svg', file: 'fp-door-large.svg',       genres: ['floorplan', 'door'], scale: 1.6, anchorX: 'center', anchorY: 'center' },
-    { id: 'fp-door-open',        name: '開き戸',     type: 'svg', file: 'fp-door-open.svg',        genres: ['floorplan', 'door'], scale: 0.8, anchorX: 'center',   anchorY: 'bottom' },
-    { id: 'fp-door-double-open', name: '両開き戸',   type: 'svg', file: 'fp-door-double-open.svg', genres: ['floorplan', 'door'], scale: 1.57, anchorX: 'center', anchorY: 'bottom' },
+    { id: 'fp-door', name: 'ドア', type: 'svg', file: 'fp-door.svg', genres: ['floorplan', 'door'], scale: 0.8, anchorX: 'center', anchorY: 'center' },
+    { id: 'fp-door-large', name: 'ドア (大)', type: 'svg', file: 'fp-door-large.svg', genres: ['floorplan', 'door'], scale: 1.6, anchorX: 'center', anchorY: 'center' },
+    { id: 'fp-door-open', name: '開き戸', type: 'svg', file: 'fp-door-open.svg', genres: ['floorplan', 'door'], scale: 0.8, anchorX: 'center', anchorY: 'bottom' },
+    { id: 'fp-door-double-open', name: '両開き戸', type: 'svg', file: 'fp-door-double-open.svg', genres: ['floorplan', 'door'], scale: 1.57, anchorX: 'center', anchorY: 'bottom' },
 
     // ---- game-icons (CC BY 3.0) — スタイル系アイコン ----
     // ドア
-    { id: 'door-simple',  name: 'ドア',         type: 'svg', file: 'door-simple.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'door-arched',  name: 'アーチドア',   type: 'svg', file: 'door-arched.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'double-door',  name: '両開き扉',     type: 'svg', file: 'double-door.svg',  genres: ['door', 'icon'],        scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'door-simple', name: 'ドア', type: 'svg', file: 'door-simple.svg', genres: ['door', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'door-arched', name: 'アーチドア', type: 'svg', file: 'door-arched.svg', genres: ['door', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'double-door', name: '両開き扉', type: 'svg', file: 'double-door.svg', genres: ['door', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 家具
-    { id: 'bed',            name: 'ベッド',       type: 'svg', file: 'bed.svg',             genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'desk',           name: 'デスク',       type: 'svg', file: 'desk.svg',            genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'bookshelf',      name: '本棚',         type: 'svg', file: 'bookshelf.svg',       genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'chest',          name: '宝箱',         type: 'svg', file: 'chest.svg',           genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'barrel',         name: '樽',           type: 'svg', file: 'barrel.svg',          genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'bed', name: 'ベッド', type: 'svg', file: 'bed.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'desk', name: 'デスク', type: 'svg', file: 'desk.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'bookshelf', name: '本棚', type: 'svg', file: 'bookshelf.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'chest', name: '宝箱', type: 'svg', file: 'chest.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'barrel', name: '樽', type: 'svg', file: 'barrel.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 設備系もアイコンとして残す
-    { id: 'fireplace',    name: '暖炉',           type: 'svg', file: 'fireplace.svg',    genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'stairs',       name: '階段',           type: 'svg', file: 'stairs.svg',       genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'escalator',    name: 'エスカレータ',   type: 'svg', file: 'escalator.svg',    genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'ladder',       name: 'はしご',         type: 'svg', file: 'ladder.svg',       genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'fireplace', name: '暖炉', type: 'svg', file: 'fireplace.svg', genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'stairs', name: '階段', type: 'svg', file: 'stairs.svg', genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'escalator', name: 'エスカレータ', type: 'svg', file: 'escalator.svg', genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'ladder', name: 'はしご', type: 'svg', file: 'ladder.svg', genres: ['icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 灯火
-    { id: 'campfire',     name: '焚き火',       type: 'svg', file: 'campfire.svg',     genres: ['light', 'icon'],  scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'campfire', name: '焚き火', type: 'svg', file: 'campfire.svg', genres: ['light', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 自然
-    { id: 'tree-pine',    name: '木',           type: 'svg', file: 'tree-pine.svg',    genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'wood-pile',    name: '薪の山',       type: 'svg', file: 'wood-pile.svg',    genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'tree-pine', name: '木', type: 'svg', file: 'tree-pine.svg', genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'wood-pile', name: '薪の山', type: 'svg', file: 'wood-pile.svg', genres: ['nature', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // その他
-    { id: 'wood-cabin',   name: '小屋',         type: 'svg', file: 'wood-cabin.svg',   genres: ['misc', 'icon'],   scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'wood-cabin', name: '小屋', type: 'svg', file: 'wood-cabin.svg', genres: ['misc', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 日本の地図記号 (openstreetmap/map-icons, PD)
-    { id: 'jp-school',       name: '学校',     type: 'svg', file: 'jp-school.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-university',   name: '大学',     type: 'svg', file: 'jp-university.svg',   genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-hospital',     name: '病院',     type: 'svg', file: 'jp-hospital.svg',     genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-shrine',       name: '神社',     type: 'svg', file: 'jp-shrine.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-temple',       name: '寺',       type: 'svg', file: 'jp-temple.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-cemetery',     name: '墓地',     type: 'svg', file: 'jp-cemetery.svg',     genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-police',       name: '警察署',   type: 'svg', file: 'jp-police.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-koban',        name: '交番',     type: 'svg', file: 'jp-koban.svg',        genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-firebrigade',  name: '消防署',   type: 'svg', file: 'jp-firebrigade.svg',  genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-post',         name: '郵便局',   type: 'svg', file: 'jp-post.svg',         genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-townhall',     name: '市役所',   type: 'svg', file: 'jp-townhall.svg',     genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-court',        name: '裁判所',   type: 'svg', file: 'jp-court.svg',        genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-castle',       name: '城跡',     type: 'svg', file: 'jp-castle.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-museum',       name: '博物館',   type: 'svg', file: 'jp-museum.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-library',      name: '図書館',   type: 'svg', file: 'jp-library.svg',      genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-spa',          name: '温泉',     type: 'svg', file: 'jp-spa.svg',          genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-historical',   name: '史跡',     type: 'svg', file: 'jp-historical.svg',   genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-factory',      name: '工場',     type: 'svg', file: 'jp-factory.svg',      genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-power-plant',  name: '発電所',   type: 'svg', file: 'jp-power-plant.svg',  genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-lighthouse',   name: '灯台',     type: 'svg', file: 'jp-lighthouse.svg',   genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-high-tower',   name: '電波塔',   type: 'svg', file: 'jp-high-tower.svg',   genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-rice-field',   name: '田',       type: 'svg', file: 'jp-rice-field.svg',   genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-high-school',     name: '高校',         type: 'svg', file: 'jp-high-school.svg',     genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-town-office',     name: '町村役場',     type: 'svg', file: 'jp-town-office.svg',     genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-met-observatory', name: '気象台',       type: 'svg', file: 'jp-met-observatory.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-sdf',             name: '自衛隊',       type: 'svg', file: 'jp-sdf.svg',             genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-fishing-port',    name: '漁港',         type: 'svg', file: 'jp-fishing-port.svg',    genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-port',            name: '港',           type: 'svg', file: 'jp-port.svg',            genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-mine',            name: '採鉱地',       type: 'svg', file: 'jp-mine.svg',            genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-quarry',          name: '採石場',       type: 'svg', file: 'jp-quarry.svg',          genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-field',           name: '畑',           type: 'svg', file: 'jp-field.svg',           genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-orchard',         name: '果樹園',       type: 'svg', file: 'jp-orchard.svg',         genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-tea',             name: '茶畑',         type: 'svg', file: 'jp-tea.svg',             genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-broadleaf',       name: '広葉樹林',     type: 'svg', file: 'jp-broadleaf.svg',       genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-conifer',         name: '針葉樹林',     type: 'svg', file: 'jp-conifer.svg',         genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-bamboo',          name: '竹林',         type: 'svg', file: 'jp-bamboo.svg',          genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-monument',        name: '記念碑',       type: 'svg', file: 'jp-monument.svg',        genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-chimney',         name: '煙突',         type: 'svg', file: 'jp-chimney.svg',         genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-tower',           name: '塔',           type: 'svg', file: 'jp-tower.svg',           genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-windmill',        name: '風車',         type: 'svg', file: 'jp-windmill.svg',        genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-school', name: '学校', type: 'svg', file: 'jp-school.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-university', name: '大学', type: 'svg', file: 'jp-university.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-hospital', name: '病院', type: 'svg', file: 'jp-hospital.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-shrine', name: '神社', type: 'svg', file: 'jp-shrine.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-temple', name: '寺', type: 'svg', file: 'jp-temple.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-cemetery', name: '墓地', type: 'svg', file: 'jp-cemetery.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-police', name: '警察署', type: 'svg', file: 'jp-police.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-koban', name: '交番', type: 'svg', file: 'jp-koban.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-firebrigade', name: '消防署', type: 'svg', file: 'jp-firebrigade.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-post', name: '郵便局', type: 'svg', file: 'jp-post.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-townhall', name: '市役所', type: 'svg', file: 'jp-townhall.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-court', name: '裁判所', type: 'svg', file: 'jp-court.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-castle', name: '城跡', type: 'svg', file: 'jp-castle.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-museum', name: '博物館', type: 'svg', file: 'jp-museum.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-library', name: '図書館', type: 'svg', file: 'jp-library.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-spa', name: '温泉', type: 'svg', file: 'jp-spa.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-historical', name: '史跡', type: 'svg', file: 'jp-historical.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-factory', name: '工場', type: 'svg', file: 'jp-factory.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-power-plant', name: '発電所', type: 'svg', file: 'jp-power-plant.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-lighthouse', name: '灯台', type: 'svg', file: 'jp-lighthouse.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-high-tower', name: '電波塔', type: 'svg', file: 'jp-high-tower.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-rice-field', name: '田', type: 'svg', file: 'jp-rice-field.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-high-school', name: '高校', type: 'svg', file: 'jp-high-school.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-town-office', name: '町村役場', type: 'svg', file: 'jp-town-office.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-met-observatory', name: '気象台', type: 'svg', file: 'jp-met-observatory.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-sdf', name: '自衛隊', type: 'svg', file: 'jp-sdf.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-fishing-port', name: '漁港', type: 'svg', file: 'jp-fishing-port.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-port', name: '港', type: 'svg', file: 'jp-port.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-mine', name: '採鉱地', type: 'svg', file: 'jp-mine.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-quarry', name: '採石場', type: 'svg', file: 'jp-quarry.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-field', name: '畑', type: 'svg', file: 'jp-field.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-orchard', name: '果樹園', type: 'svg', file: 'jp-orchard.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-tea', name: '茶畑', type: 'svg', file: 'jp-tea.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-broadleaf', name: '広葉樹林', type: 'svg', file: 'jp-broadleaf.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-conifer', name: '針葉樹林', type: 'svg', file: 'jp-conifer.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-bamboo', name: '竹林', type: 'svg', file: 'jp-bamboo.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-monument', name: '記念碑', type: 'svg', file: 'jp-monument.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-chimney', name: '煙突', type: 'svg', file: 'jp-chimney.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-tower', name: '塔', type: 'svg', file: 'jp-tower.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-windmill', name: '風車', type: 'svg', file: 'jp-windmill.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
 ];
 
 /** id から装飾定義を取得する。無ければ null。 */
@@ -336,10 +336,10 @@ function decorsForGenre(genreId) {
  * のどれを「配置クリック点・スナップ点・回転中心」にするかを SVG/画像ごとに指定する。
  */
 function decorAnchorToOriginX(anchorX) {
-    return (anchorX === 'left' || anchorX === 'right') ? anchorX : 'center';
+    return anchorX === 'left' || anchorX === 'right' ? anchorX : 'center';
 }
 function decorAnchorToOriginY(anchorY) {
-    return (anchorY === 'top' || anchorY === 'bottom') ? anchorY : 'center';
+    return anchorY === 'top' || anchorY === 'bottom' ? anchorY : 'center';
 }
 
 /** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。 */
@@ -535,11 +535,8 @@ function updateFillStrokeVisibility() {
     // タイトル「フィル / ストローク」は色行が出てる時だけ意味があるので隠す/出す
     setDisp('fill-stroke-title', showFillColor || showStrokeColor);
 
-    // スナップ設定: 描画系サブツール (シンプル/地面/壁) で表示。セルは grid 単位なので不要
-    const snapSubtools = ['rect', 'ellipse', 'line', 'path', 'polygon', 'curve', 'curve-closed'];
-    setDisp('snap-sec', snapSubtools.includes(sub));
-    // パターン共通設定: 地面/壁モードで表示 (部屋は地面/壁サブセクションに個別UIを持つ)
-    setDisp('pattern-transform-sec', isGround || isWall);
+    // スナップ設定は設定タブにのみ存在 (prop-group の表示切替で自然に管理されるため setDisp 不要)
+    // パターン詳細は各 prop-group 内に個別に持つので setDisp 不要
     // 影セクション: シンプル/地面/壁/装飾で表示 (部屋は専用トグルを prop-group 内に持つ)
     const isDecorTool = App.activeTool === 'decor';
     setDisp('shadow-sec', isSimpleDraw || isGround || isWall || isDecorTool);
@@ -554,10 +551,13 @@ function refreshShadowUI() {
     const cb = document.getElementById('shadow-enabled');
     if (!cb) return;
     cb.checked =
-        App.activeTool === 'ground' ? !!App.groundShadowEnabled
-        : App.activeTool === 'wall' ? !!App.wallShadowEnabled
-        : App.activeTool === 'decor' ? !!App.decorShadowEnabled
-        : !!App.simpleShadowEnabled;
+        App.activeTool === 'ground'
+            ? !!App.groundShadowEnabled
+            : App.activeTool === 'wall'
+              ? !!App.wallShadowEnabled
+              : App.activeTool === 'decor'
+                ? !!App.decorShadowEnabled
+                : !!App.simpleShadowEnabled;
 }
 
 /* ================================================================
@@ -872,33 +872,30 @@ function initCanvas() {
                             top = Math.min(d.startY, pt.y);
                         const subtool = activeSubtool();
                         if (App.activeTool === 'room') {
-                            addRoom(
-                                '部屋_' + (subtool === 'rect' ? '矩形' : '楕円'),
-                                (st) => {
-                                    // stroke を持つ壁のみオフセット補正 (fabric は bbox に stroke を含むため)。
-                                    // 地面 (strokeWidth=0) はオフセット 0 で純粋な矩形/楕円のまま。
-                                    const hsw = (st.strokeWidth || 0) / 2;
-                                    return subtool === 'rect'
-                                        ? new fabric.Rect({
-                                              left: left - hsw,
-                                              top: top - hsw,
-                                              width: w,
-                                              height: h,
-                                              rx: App.cornerRadius,
-                                              ry: App.cornerRadius,
-                                              ...st,
-                                              objectCaching: false,
-                                          })
-                                        : new fabric.Ellipse({
-                                              left: left - hsw,
-                                              top: top - hsw,
-                                              rx: w / 2,
-                                              ry: h / 2,
-                                              ...st,
-                                              objectCaching: false,
-                                          });
-                                }
-                            );
+                            addRoom('部屋_' + (subtool === 'rect' ? '矩形' : '楕円'), (st) => {
+                                // stroke を持つ壁のみオフセット補正 (fabric は bbox に stroke を含むため)。
+                                // 地面 (strokeWidth=0) はオフセット 0 で純粋な矩形/楕円のまま。
+                                const hsw = (st.strokeWidth || 0) / 2;
+                                return subtool === 'rect'
+                                    ? new fabric.Rect({
+                                          left: left - hsw,
+                                          top: top - hsw,
+                                          width: w,
+                                          height: h,
+                                          rx: App.cornerRadius,
+                                          ry: App.cornerRadius,
+                                          ...st,
+                                          objectCaching: false,
+                                      })
+                                    : new fabric.Ellipse({
+                                          left: left - hsw,
+                                          top: top - hsw,
+                                          rx: w / 2,
+                                          ry: h / 2,
+                                          ...st,
+                                          objectCaching: false,
+                                      });
+                            });
                         } else {
                             const hsw = style.strokeWidth / 2;
                             const commonStroke = {
@@ -1324,9 +1321,14 @@ function initCanvas() {
         }
         if (App._cellStrokeActive) {
             const cat = App._cellStrokeCategory === 'ground' ? '地面_セル' : 'セル';
-            const layer = App._cellStrokeCategory === 'ground'
-                ? getMapLayers().reverse().find((o) => o._isCellLayer && o._isGroundLayer && App.selectedLayerIds.includes(o._layerId))
-                : getMapLayers().reverse().find((o) => o._isCellLayer && !o._isGroundLayer && App.selectedLayerIds.includes(o._layerId));
+            const layer =
+                App._cellStrokeCategory === 'ground'
+                    ? getMapLayers()
+                          .reverse()
+                          .find((o) => o._isCellLayer && o._isGroundLayer && App.selectedLayerIds.includes(o._layerId))
+                    : getMapLayers()
+                          .reverse()
+                          .find((o) => o._isCellLayer && !o._isGroundLayer && App.selectedLayerIds.includes(o._layerId));
             App._cellStrokeActive = false;
             App._cellStrokeCategory = null;
             if (layer) commitCellLayer(layer);
@@ -1512,14 +1514,16 @@ function _initGridRenderer() {
             wb = wt + ch / zoom;
 
         const ctx = App.canvas.getContext();
-        ctx.save();
-        ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
-        ctx.strokeStyle = App.gridColor;
-        ctx.lineWidth = App.gridLineWidth;
-        ctx.setLineDash(App.gridDashArray || []);
-        // グリッド線描画は gridType ごとに差し替え可能 — GridAdapter に委譲
-        ga().drawGridLines(ctx, { wl, wt, wr, wb, zoom });
-        ctx.restore();
+        if (App.gridVisible !== false) {
+            ctx.save();
+            ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+            ctx.strokeStyle = App.gridColor;
+            ctx.lineWidth = App.gridLineWidth;
+            ctx.setLineDash(App.gridDashArray || []);
+            // グリッド線描画は gridType ごとに差し替え可能 — GridAdapter に委譲
+            ga().drawGridLines(ctx, { wl, wt, wr, wb, zoom });
+            ctx.restore();
+        }
 
         // 出力モード: キャンバス全体を暗く、選択範囲だけ明るく
         if (App._exportMode) {
@@ -1690,7 +1694,9 @@ function getCssVarColor(name, fallback) {
     try {
         const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
         return v || fallback;
-    } catch (_) { return fallback; }
+    } catch (_) {
+        return fallback;
+    }
 }
 
 /** target に応じて表示するアクション一覧を返す。 */
@@ -1728,14 +1734,16 @@ function shapeToWorldRings(obj) {
     const off = obj.pathOffset || { x: 0, y: 0 };
     const t = obj.type;
     if (t === 'rect') {
-        const w2 = obj.width / 2, h2 = obj.height / 2;
+        const w2 = obj.width / 2,
+            h2 = obj.height / 2;
         return [[apply(-w2, -h2), apply(w2, -h2), apply(w2, h2), apply(-w2, h2)]];
     }
     if (t === 'polygon' || t === 'polyline') {
         return [obj.points.map((p) => apply(p.x - off.x, p.y - off.y))];
     }
     if (t === 'ellipse') {
-        const N = 64; const pts = [];
+        const N = 64;
+        const pts = [];
         for (let i = 0; i < N; i++) {
             const a = (i * 2 * Math.PI) / N;
             pts.push(apply(Math.cos(a) * obj.rx, Math.sin(a) * obj.ry));
@@ -1743,7 +1751,8 @@ function shapeToWorldRings(obj) {
         return [pts];
     }
     if (t === 'circle') {
-        const N = 64; const pts = [];
+        const N = 64;
+        const pts = [];
         for (let i = 0; i < N; i++) {
             const a = (i * 2 * Math.PI) / N;
             pts.push(apply(Math.cos(a) * obj.radius, Math.sin(a) * obj.radius));
@@ -1758,22 +1767,28 @@ function pathToRings(obj, off, apply) {
     const cmds = obj.path || [];
     const rings = [];
     let cur = null;
-    let curLx = 0, curLy = 0;
-    let startLx = 0, startLy = 0;
+    let curLx = 0,
+        curLy = 0;
+    let startLx = 0,
+        startLy = 0;
     const N = BOOL_CURVE_SAMPLES;
-    const pushPt = (lx, ly) => { cur.push(apply(lx - off.x, ly - off.y)); curLx = lx; curLy = ly; };
+    const pushPt = (lx, ly) => {
+        cur.push(apply(lx - off.x, ly - off.y));
+        curLx = lx;
+        curLy = ly;
+    };
     const sampleQuad = (p0, p1, p2) => {
         for (let i = 1; i <= N; i++) {
-            const t = i / N, u = 1 - t;
-            pushPt(u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0],
-                   u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]);
+            const t = i / N,
+                u = 1 - t;
+            pushPt(u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]);
         }
     };
     const sampleCubic = (p0, p1, p2, p3) => {
         for (let i = 1; i <= N; i++) {
-            const t = i / N, u = 1 - t;
-            pushPt(u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0],
-                   u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]);
+            const t = i / N,
+                u = 1 - t;
+            pushPt(u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]);
         }
     };
     for (const c of cmds) {
@@ -1781,7 +1796,8 @@ function pathToRings(obj, off, apply) {
         if (op === 'M' || op === 'm') {
             if (cur && cur.length >= 3) rings.push(cur);
             cur = [];
-            startLx = c[1]; startLy = c[2];
+            startLx = c[1];
+            startLy = c[2];
             pushPt(startLx, startLy);
         } else if (op === 'L' || op === 'l') {
             pushPt(c[1], c[2]);
@@ -1792,7 +1808,8 @@ function pathToRings(obj, off, apply) {
         } else if (op === 'Z' || op === 'z') {
             if (cur && cur.length >= 3) rings.push(cur);
             cur = null;
-            curLx = startLx; curLy = startLy;
+            curLx = startLx;
+            curLy = startLy;
         }
     }
     if (cur && cur.length >= 3) rings.push(cur);
@@ -1985,7 +2002,7 @@ function getActionsForTarget(t) {
     const isActiveSel = t.type === 'activeSelection';
     const actions = [];
     if (isActiveSel) {
-        const objs = (typeof t.getObjects === 'function') ? t.getObjects() : [];
+        const objs = typeof t.getObjects === 'function' ? t.getObjects() : [];
         if (!objs.some((o) => o._isCellLayer || o._isTerrainLayer || o._isFreehandLayer)) {
             actions.push({ icon: 'create_new_folder', title: 'グループ化', onClick: () => groupSelected() });
         }
@@ -1995,8 +2012,24 @@ function getActionsForTarget(t) {
     // 全選択タイプ共通の操作
     actions.push({ icon: 'content_copy', title: '複製', onClick: (tt) => duplicateActive(tt) });
     actions.push({ icon: t.lockMovementX ? 'lock' : 'lock_open', title: 'ロック切替', onClick: (tt) => toggleLockActive(tt) });
-    actions.push({ icon: 'flip_to_front', title: '最前面へ', onClick: (tt) => { App.canvas.bringToFront(tt); App.canvas.renderAll(); pushHistory('最前面へ'); } });
-    actions.push({ icon: 'flip_to_back', title: '最背面へ', onClick: (tt) => { App.canvas.sendToBack(tt); App.canvas.renderAll(); pushHistory('最背面へ'); } });
+    actions.push({
+        icon: 'flip_to_front',
+        title: '最前面へ',
+        onClick: (tt) => {
+            App.canvas.bringToFront(tt);
+            App.canvas.renderAll();
+            pushHistory('最前面へ');
+        },
+    });
+    actions.push({
+        icon: 'flip_to_back',
+        title: '最背面へ',
+        onClick: (tt) => {
+            App.canvas.sendToBack(tt);
+            App.canvas.renderAll();
+            pushHistory('最背面へ');
+        },
+    });
     actions.push({ icon: 'delete', title: '削除', onClick: (tt) => deleteActive(tt) });
     return actions;
 }
@@ -2018,7 +2051,7 @@ function toggleLockActive(t) {
 /** 削除: activeSelection なら子全部、それ以外は単体。 */
 function deleteActive(t) {
     if (!t) return;
-    const targets = (t.type === 'activeSelection' && typeof t.getObjects === 'function') ? t.getObjects().slice() : [t];
+    const targets = t.type === 'activeSelection' && typeof t.getObjects === 'function' ? t.getObjects().slice() : [t];
     targets.forEach((o) => App.canvas.remove(o));
     App.canvas.discardActiveObject();
     App.selectedLayerIds = [];
@@ -2031,7 +2064,7 @@ function deleteActive(t) {
 /** 複製: cloneAsync で位置をずらしてレイヤー化。 */
 function duplicateActive(t) {
     if (!t) return;
-    const targets = (t.type === 'activeSelection' && typeof t.getObjects === 'function') ? t.getObjects().slice() : [t];
+    const targets = t.type === 'activeSelection' && typeof t.getObjects === 'function' ? t.getObjects().slice() : [t];
     const newObjs = [];
     let pending = targets.length;
     targets.forEach((o) => {
@@ -2165,14 +2198,15 @@ function actionBarHitIndex(localX, actions) {
     ];
     const boolActionsForTarget = (t) => {
         if (!t || t.type !== 'activeSelection') return [];
-        const objs = (typeof t.getObjects === 'function') ? t.getObjects() : [];
+        const objs = typeof t.getObjects === 'function' ? t.getObjects() : [];
         const usable = objs.filter(isBooleanTarget);
         if (usable.length < 2) return [];
         // 同一カテゴリでなければブール演算不可
         const cat = boolCategory(usable[0]);
         if (!usable.every((o) => boolCategory(o) === cat)) return [];
         return boolActions.map((a) => ({
-            icon: a.icon, title: a.title,
+            icon: a.icon,
+            title: a.title,
             onClick: () => performBooleanOp(a.op),
         }));
     };
@@ -2337,7 +2371,9 @@ function patchFreehandBrush(brush) {
 function getOrCreateFreehandLayer() {
     const selected = App.canvas.getObjects().find((o) => o._isFreehandLayer && App.selectedLayerIds.includes(o._layerId));
     if (selected) return selected;
-    const existing = getMapLayers().reverse().find((o) => o._isFreehandLayer);
+    const existing = getMapLayers()
+        .reverse()
+        .find((o) => o._isFreehandLayer);
     if (existing) return existing;
     return createFreehandLayer();
 }
@@ -2603,7 +2639,9 @@ function getEditablePatternTargets(active) {
 }
 
 /** kind が地面側か (fill 編集) か壁側か (stroke 編集) を判定。 */
-function isPatternKindFill(kind) { return kind === 'ground' || kind === 'room-ground'; }
+function isPatternKindFill(kind) {
+    return kind === 'ground' || kind === 'room-ground';
+}
 
 /** state を target に適用 (fill/stroke を作り直す)。 */
 function applyPatternStateToTarget(target, kind, state) {
@@ -2611,13 +2649,9 @@ function applyPatternStateToTarget(target, kind, state) {
     const fillSide = isPatternKindFill(kind);
     const def = state.mode === 'pattern' ? getPatternDef(state.id) : null;
     if (fillSide) {
-        target.set('fill', state.mode === 'solid'
-            ? (state.solidColor || '#888888')
-            : getPatternFill(state.id, state.solidColor));
+        target.set('fill', state.mode === 'solid' ? state.solidColor || '#888888' : getPatternFill(state.id, state.solidColor));
     } else {
-        target.set('stroke', state.mode === 'solid'
-            ? (state.solidColor || '#333333')
-            : getStrokePatternFill(state.id, state.solidColor));
+        target.set('stroke', state.mode === 'solid' ? state.solidColor || '#333333' : getStrokePatternFill(state.id, state.solidColor));
     }
     // パターン定義が変わったら _patternScale を「現在の userScale * 新 def.scale」に再計算
     // (mode=solid 時は既存値を保持。直接 _patternScale を弄っているユーザー入力は別フローで上書き)
@@ -2636,7 +2670,11 @@ function applyPatternStateToTarget(target, kind, state) {
 function destroySelInfoPickrs() {
     const root = document.getElementById('sel-info');
     if (!root) return;
-    (root._pickrs || []).forEach((p) => { try { p.destroyAndRemove(); } catch (_) {} });
+    (root._pickrs || []).forEach((p) => {
+        try {
+            p.destroyAndRemove();
+        } catch (_) {}
+    });
     root._pickrs = [];
 }
 
@@ -2690,8 +2728,10 @@ function updateSelectionInfo() {
     const editable = getEditablePatternTargets(active);
     if (editable.length > 0) {
         const byKind = {};
-        editable.forEach((e) => { (byKind[e.kind] = byKind[e.kind] || []).push(e); });
-        const LABELS = { 'ground': '地面', 'wall': '壁', 'room-ground': '部屋の地面', 'room-wall': '部屋の壁' };
+        editable.forEach((e) => {
+            (byKind[e.kind] = byKind[e.kind] || []).push(e);
+        });
+        const LABELS = { ground: '地面', wall: '壁', 'room-ground': '部屋の地面', 'room-wall': '部屋の壁' };
         Object.entries(byKind).forEach(([kind, entries]) => {
             info.appendChild(buildSelPatternSection(kind, LABELS[kind], entries, info, sectionIndex++ === 0));
         });
@@ -2769,7 +2809,7 @@ function buildSelPatternSection(kind, label, entries, infoRoot, isFirst) {
         // 各 target の現 def.scale × userScale を _patternScale に保存
         entries.forEach((e) => {
             const eState = e.target._patternState;
-            const eDef = (eState && eState.mode === 'pattern') ? getPatternDef(eState.id) : null;
+            const eDef = eState && eState.mode === 'pattern' ? getPatternDef(eState.id) : null;
             const eDefScale = eDef?.scale || 1;
             e.target._patternScale = eDefScale * userScale;
         });
@@ -2778,19 +2818,25 @@ function buildSelPatternSection(kind, label, entries, infoRoot, isFirst) {
     });
     sec.querySelector('.sel-pat-offx').addEventListener('input', function () {
         const v = parseFloat(this.value) || 0;
-        entries.forEach((e) => { e.target._patternOffsetX = v; });
+        entries.forEach((e) => {
+            e.target._patternOffsetX = v;
+        });
         refreshTransform();
         pushHistoryDebounced(label + 'のオフセットXを変更');
     });
     sec.querySelector('.sel-pat-offy').addEventListener('input', function () {
         const v = parseFloat(this.value) || 0;
-        entries.forEach((e) => { e.target._patternOffsetY = v; });
+        entries.forEach((e) => {
+            e.target._patternOffsetY = v;
+        });
         refreshTransform();
         pushHistoryDebounced(label + 'のオフセットYを変更');
     });
     sec.querySelector('.sel-pat-rot').addEventListener('input', function () {
         const v = parseFloat(this.value) || 0;
-        entries.forEach((e) => { e.target._patternRotation = v; });
+        entries.forEach((e) => {
+            e.target._patternRotation = v;
+        });
         refreshTransform();
         pushHistoryDebounced(label + 'の回転を変更');
     });
@@ -2845,7 +2891,7 @@ function buildSelShadowSection(active, infoRoot, isFirst) {
         const bl = parseFloat(sec.querySelector('.sel-shadow-blur').value) || 0;
         const ox = parseFloat(sec.querySelector('.sel-shadow-offx').value) || 0;
         const oy = parseFloat(sec.querySelector('.sel-shadow-offy').value) || 0;
-        const buildShadow = () => on ? new fabric.Shadow({ color: currentColor, blur: bl, offsetX: ox, offsetY: oy, affectStroke: true }) : null;
+        const buildShadow = () => (on ? new fabric.Shadow({ color: currentColor, blur: bl, offsetX: ox, offsetY: oy, affectStroke: true }) : null);
         // 部屋グループは子の地面/壁にそれぞれ影を持たせる必要があるので展開して適用
         active.forEach((o) => {
             if (o._isRoomGroup && typeof o.getObjects === 'function') {
@@ -3109,12 +3155,12 @@ function commitCellLayer(layer) {
         const fill = entryToFill(g.sample);
         const path = new fabric.Path(d, {
             fill,
-            stroke: null,         // 輪郭融合済みなので AA 隙間対策の縁取りは不要
+            stroke: null, // 輪郭融合済みなので AA 隙間対策の縁取りは不要
             strokeWidth: 0,
             objectCaching: false,
             selectable: false,
             evented: false,
-            fillRule: 'evenodd',  // 穴付き領域に対応
+            fillRule: 'evenodd', // 穴付き領域に対応
         });
         // パターン世界アンカー: snapshotWorldPosition 後 applyPatternTransformOnObj
         snapshotWorldPosition(path);
@@ -3133,7 +3179,10 @@ function commitCellLayer(layer) {
 
 /** save 用に _cellData を配列化する。toJSON 直前に layer._cellEntries にセット。 */
 function syncCellEntries(layer) {
-    if (!layer || !layer._cellData) { layer._cellEntries = []; return; }
+    if (!layer || !layer._cellData) {
+        layer._cellEntries = [];
+        return;
+    }
     layer._cellEntries = Array.from(layer._cellData.values());
 }
 
@@ -3178,16 +3227,21 @@ function makeGroundCellEntry(col, row) {
     }
     const def = getPatternDef(s.id);
     const initScale = def?.scale ?? 1;
-    const patOffX = App.patternOffsetX || 0;
-    const patOffY = App.patternOffsetY || 0;
-    const patRot = App.patternRotation || 0;
-    const patScale = initScale * (App.patternScale ?? 1);
+    // セルは常に地面ツールの一部 (activeTool === 'ground') なので地面側の詳細設定を使用
+    const patOffX = App.groundPatternOffsetX || 0;
+    const patOffY = App.groundPatternOffsetY || 0;
+    const patRot = App.groundPatternRotation || 0;
+    const patScale = initScale * (App.groundPatternScale ?? 1);
     return {
-        col, row,
+        col,
+        row,
         fillKey: `pattern:${s.id}|${patOffX},${patOffY}|${patRot}|${patScale}`,
         mode: 'pattern',
         patternId: s.id,
-        patOffX, patOffY, patRot, patScale,
+        patOffX,
+        patOffY,
+        patRot,
+        patScale,
     };
 }
 
@@ -3213,7 +3267,10 @@ function fillCells(col, row, layer, _unused) {
     const adapter = ga();
 
     // bbox: 既存セル (col, row) の最小/最大
-    let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
+    let minC = Infinity,
+        maxC = -Infinity,
+        minR = Infinity,
+        maxR = -Infinity;
     for (const e of layer._cellData.values()) {
         if (e.col < minC) minC = e.col;
         if (e.col > maxC) maxC = e.col;
@@ -3226,12 +3283,13 @@ function fillCells(col, row, layer, _unused) {
     }
 
     // 新エントリ生成 (地面 or シンプル)
-    const newEntryAt = (c, r) => layer._isGroundLayer
-        ? makeGroundCellEntry(c, r)
-        : (() => {
-            const col2 = rgba(App.fillColor, App.fillOpacity);
-            return { col: c, row: r, fillKey: 'solid:' + col2, mode: 'solid', solidColor: col2 };
-        })();
+    const newEntryAt = (c, r) =>
+        layer._isGroundLayer
+            ? makeGroundCellEntry(c, r)
+            : (() => {
+                  const col2 = rgba(App.fillColor, App.fillOpacity);
+                  return { col: c, row: r, fillKey: 'solid:' + col2, mode: 'solid', solidColor: col2 };
+              })();
     const sample = newEntryAt(col, row);
     const newFillKey = sample.fillKey;
 
@@ -3257,7 +3315,10 @@ function fillCells(col, row, layer, _unused) {
         }
         for (const [nc, nr] of adapter.cellNeighbors(c, r)) {
             const k = adapter.cellKey(nc, nr);
-            if (!visited.has(k)) { visited.add(k); queue.push([nc, nr]); }
+            if (!visited.has(k)) {
+                visited.add(k);
+                queue.push([nc, nr]);
+            }
         }
     }
 
@@ -3321,16 +3382,19 @@ function getPatternFill(id, fallback) {
 
 /**
  * ストローク用の Pattern fill 値を返す。
- * 通常版 (getPatternFill) との違い: source 画像を PATTERNS[].scale × App.patternScale 分だけ
+ * 通常版 (getPatternFill) との違い: source 画像を PATTERNS[].scale × userScale 分だけ
  * 事前にダウンスケールした canvas に差し替える。
  *
  * 理由: fabric.Pattern の patternTransform に scale を入れると、ストロークの場合 fabric が
  * ctx.transform 経由で適用する経路を取り、ストローク幾何 (lineWidth) まで scale 倍されてしまう。
  * → ズーム時に壁が想定より細くなる。フィルは pattern 座標系内で閉じるので影響しない。
  * 事前縮小 + patternTransform に scale を含めない、で回避する。
+ * @param {string} id - パターン id
+ * @param {string} fallback - フォールバック色
+ * @param {number} userScale - ユーザー指定倍率 (= App.wallPatternScale 等)
  */
 const _strokeScaledSourceCache = new Map(); // 'id@scale' → HTMLCanvasElement
-function getStrokePatternFill(id, fallback) {
+function getStrokePatternFill(id, fallback, userScale) {
     const def = getPatternDef(id);
     if (!def) return fallback || '#888888';
     const cached = _patternImageCache.get(id);
@@ -3338,7 +3402,7 @@ function getStrokePatternFill(id, fallback) {
         if (!cached) loadPatternImage(id);
         return def.color || fallback || '#888888';
     }
-    const totalScale = (def.scale ?? 1) * (App.patternScale ?? 1);
+    const totalScale = (def.scale ?? 1) * (userScale ?? 1);
     if (totalScale === 1) return new fabric.Pattern({ source: cached.img, repeat: 'repeat' });
     const key = `${id}@${totalScale}`;
     let scaled = _strokeScaledSourceCache.get(key);
@@ -3361,11 +3425,11 @@ function getGroundFill() {
     return getPatternFill(s.id, s.solidColor);
 }
 
-/** App.wallPattern (solid / pattern) から stroke 値を返す。 */
+/** App.wallPattern (solid / pattern) から stroke 値を返す。倍率は App.wallPatternScale。 */
 function getWallStroke() {
     const s = App.wallPattern;
     if (s.mode === 'solid') return s.solidColor || '#333333';
-    return getStrokePatternFill(s.id, s.solidColor);
+    return getStrokePatternFill(s.id, s.solidColor, App.wallPatternScale);
 }
 
 /**
@@ -3377,7 +3441,9 @@ function fillKeyFor(state) {
     if (state.mode === 'solid') return 'solid:' + (state.solidColor || '');
     return 'pattern:' + (state.id || '');
 }
-function getGroundFillKey() { return fillKeyFor(App.groundPattern); }
+function getGroundFillKey() {
+    return fillKeyFor(App.groundPattern);
+}
 
 /**
  * activeTool=='ground'|'wall' のとき、選択中のサブツールを返す。
@@ -3397,32 +3463,24 @@ function activeSubtool() {
     return App.activeTool;
 }
 
-/** App.roomGroundPattern → fill 値 (solid/pattern)。 */
-function getRoomGroundFill() {
-    const s = App.roomGroundPattern;
-    if (!s || s.mode === 'solid') return s?.solidColor || '#9b8c70';
-    return getPatternFill(s.id, s.solidColor);
-}
-/** App.roomWallPattern → stroke 値 (solid/pattern)。 */
-function getRoomWallStroke() {
-    const s = App.roomWallPattern;
-    if (!s || s.mode === 'solid') return s?.solidColor || '#5a5a5a';
-    return getStrokePatternFill(s.id, s.solidColor);
-}
+// 部屋ツールの fill/stroke は getGroundFill / getWallStroke を再利用する
+// (パターン状態を groundPattern / wallPattern に統一したため)。
+const getRoomGroundFill = getGroundFill;
+const getRoomWallStroke = getWallStroke;
 
 /**
  * 部屋の子オブジェクト (地面/壁) にパターン変換用のスナップショットを書き込む。
- * snapshotPatternSettings の部屋版 — kind に応じて roomGroundPattern / roomWallPattern を参照する。
+ * snapshotPatternSettings の部屋版 — kind に応じて groundPattern / wallPattern を参照する。
  */
 function snapshotRoomPatternSettings(obj, kind) {
     if (!obj) return;
-    const state = kind === 'wall' ? App.roomWallPattern : App.roomGroundPattern;
+    const state = kind === 'wall' ? App.wallPattern : App.groundPattern;
     const def = getPatternDef(state?.id);
     const initScale = def?.scale ?? 1;
-    const offX = kind === 'wall' ? App.roomWallPatternOffsetX : App.roomGroundPatternOffsetX;
-    const offY = kind === 'wall' ? App.roomWallPatternOffsetY : App.roomGroundPatternOffsetY;
-    const rot = kind === 'wall' ? App.roomWallPatternRotation : App.roomGroundPatternRotation;
-    const userScale = kind === 'wall' ? App.roomWallPatternScale : App.roomGroundPatternScale;
+    const offX = kind === 'wall' ? App.wallPatternOffsetX : App.groundPatternOffsetX;
+    const offY = kind === 'wall' ? App.wallPatternOffsetY : App.groundPatternOffsetY;
+    const rot = kind === 'wall' ? App.wallPatternRotation : App.groundPatternRotation;
+    const userScale = kind === 'wall' ? App.wallPatternScale : App.groundPatternScale;
     obj.set({
         _patternOffsetX: offX || 0,
         _patternOffsetY: offY || 0,
@@ -3548,20 +3606,24 @@ function loadDecorAsset(id) {
         });
     } else {
         // image
-        fabric.Image.fromURL(DECOR_DIR_IMAGE + def.file, (img) => {
-            if (!img) {
-                _decorCache.set(id, { state: 'error' });
-                return;
-            }
-            _decorCache.set(id, {
-                state: 'ready',
-                baseObj: img,
-                originalColors: null,
-                baseWidth: img.width,
-                baseHeight: img.height,
-            });
-            App.canvas?.requestRenderAll();
-        }, { crossOrigin: 'anonymous' });
+        fabric.Image.fromURL(
+            DECOR_DIR_IMAGE + def.file,
+            (img) => {
+                if (!img) {
+                    _decorCache.set(id, { state: 'error' });
+                    return;
+                }
+                _decorCache.set(id, {
+                    state: 'ready',
+                    baseObj: img,
+                    originalColors: null,
+                    baseWidth: img.width,
+                    baseHeight: img.height,
+                });
+                App.canvas?.requestRenderAll();
+            },
+            { crossOrigin: 'anonymous' }
+        );
     }
 }
 
@@ -3573,7 +3635,10 @@ function loadDecorAsset(id) {
  */
 function createDecorInstance(id, opts, cb) {
     const def = getDecorDef(id);
-    if (!def) { cb && cb(null); return; }
+    if (!def) {
+        cb && cb(null);
+        return;
+    }
     const cached = _decorCache.get(id);
     if (!cached || cached.state !== 'ready') {
         if (!cached) loadDecorAsset(id);
@@ -3616,7 +3681,7 @@ function createDecorInstance(id, opts, cb) {
         // - 複数要素の SVG → fabric.Group になるので getObjects() で子を走査
         // - 単一要素の SVG → fabric.Path などの単体オブジェクトになるので自身に適用
         if (def.type === 'svg') {
-            const children = (typeof clone.getObjects === 'function') ? clone.getObjects() : [clone];
+            const children = typeof clone.getObjects === 'function' ? clone.getObjects() : [clone];
             children.forEach((child, i) => {
                 const orig = cached.originalColors?.[i] || {};
                 const newFill = opts.fill ?? orig.fill;
@@ -3645,7 +3710,8 @@ function decorPlacementCenter(ptr) {
 /** 現在の App.decor* 設定で配置用 opts を組み立てる。 */
 function currentDecorOpts(centerX, centerY, preview = false) {
     return {
-        centerX, centerY,
+        centerX,
+        centerY,
         scale: App.decorScale ?? 1,
         rotation: App.decorRotation || 0,
         flipX: !!App.decorFlipX,
@@ -3726,7 +3792,9 @@ function mountDecorPicker(root) {
         const img = document.createElement('img');
         img.src = src;
         img.style.cssText = 'position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;';
-        img.onerror = () => { img.style.display = 'none'; };
+        img.onerror = () => {
+            img.style.display = 'none';
+        };
         t.appendChild(img);
         const lbl = document.createElement('div');
         lbl.className = 'pp-label';
@@ -3742,7 +3810,9 @@ function mountDecorPicker(root) {
             App._suppressDecorPickr = true;
             App._decorFillPickr?.setColor('#222222', true);
             App._decorStrokePickr?.setColor('#000000', true);
-            setTimeout(() => { App._suppressDecorPickr = false; }, 0);
+            setTimeout(() => {
+                App._suppressDecorPickr = false;
+            }, 0);
             loadDecorAsset(d.id);
             mountDecorPicker(root);
             refreshDecorColorSection();
@@ -3864,15 +3934,31 @@ function snapshotPatternSettings(obj) {
     // 現在の activeTool に対応するパターン定義から初期倍率を取得 → ユーザー倍率と掛けて保存
     const def = currentPatternDef();
     const initScale = def?.scale ?? 1;
-    // 選択ツールからの後編集のため、mode/id/solidColor/genreId も保存しておく
+    // 選択ツールに応じて ground / wall それぞれの詳細設定 (オフセット/回転/倍率) を読む。
+    // セル塗りや矩形/楕円等の地面ツール → ground 系。壁ツール → wall 系。
     let stateSnapshot = null;
-    if (App.activeTool === 'ground') stateSnapshot = { ...App.groundPattern };
-    else if (App.activeTool === 'wall') stateSnapshot = { ...App.wallPattern };
+    let offX = 0,
+        offY = 0,
+        rot = 0,
+        userScale = 1;
+    if (App.activeTool === 'ground') {
+        stateSnapshot = { ...App.groundPattern };
+        offX = App.groundPatternOffsetX;
+        offY = App.groundPatternOffsetY;
+        rot = App.groundPatternRotation;
+        userScale = App.groundPatternScale ?? 1;
+    } else if (App.activeTool === 'wall') {
+        stateSnapshot = { ...App.wallPattern };
+        offX = App.wallPatternOffsetX;
+        offY = App.wallPatternOffsetY;
+        rot = App.wallPatternRotation;
+        userScale = App.wallPatternScale ?? 1;
+    }
     obj.set({
-        _patternOffsetX: App.patternOffsetX || 0,
-        _patternOffsetY: App.patternOffsetY || 0,
-        _patternRotation: App.patternRotation || 0,
-        _patternScale: initScale * (App.patternScale ?? 1),
+        _patternOffsetX: offX || 0,
+        _patternOffsetY: offY || 0,
+        _patternRotation: rot || 0,
+        _patternScale: initScale * userScale,
         ...(stateSnapshot ? { _patternState: stateSnapshot } : {}),
     });
 }
@@ -3896,21 +3982,16 @@ function normalizePatternState(state) {
 /**
  * オブジェクトの fill / stroke に Pattern がついていれば、その offsetX/Y/transform を
  * 「世界 (0,0) アンカー (top-level shape のみ) + obj に保存されたオフセット/回転」で更新する。
- * グローバル App.patternOffsetX/Y/Rotation は新規作成時に snapshotPatternSettings で
- * obj にコピーされるため、既存オブジェクトはここを通っても見た目が変わらない。
+ * グローバル App.groundPatternOffsetX/Y/Rotation / wallPatternOffsetX/Y/Rotation は
+ * 新規作成時に snapshotPatternSettings で obj にコピーされるため、既存オブジェクトは
+ * ここを通っても見た目が変わらない。
  *
  * セル (group の子) は obj.left が group 内相対座標なので world アンカー計算をスキップし、
  * obj._patternOffsetX/Y だけ適用する (タイルサイズ = cellSize なら隣接セルが自然に揃う)。
  */
 function applyPatternOrigin(obj) {
     if (!obj) return;
-    applyPatternTransformOnObj(
-        obj,
-        obj._patternOffsetX || 0,
-        obj._patternOffsetY || 0,
-        obj._patternRotation || 0,
-        obj._patternScale ?? 1,
-    );
+    applyPatternTransformOnObj(obj, obj._patternOffsetX || 0, obj._patternOffsetY || 0, obj._patternRotation || 0, obj._patternScale ?? 1);
 }
 
 /**
@@ -3931,52 +4012,70 @@ function snapshotWorldPosition(obj) {
 function applyPatternOriginLive(obj) {
     if (!obj) return;
     if (App.activeTool === 'room') {
-        // 部屋プレビュー: fill (地面パターン) と stroke (壁パターン) で別々の初期 scale を持つため個別適用
-        const userScale = App.patternScale ?? 1;
-        const gScale = (getPatternDef(App.roomGroundPattern?.id)?.scale ?? 1) * userScale;
-        const wScale = (getPatternDef(App.roomWallPattern?.id)?.scale ?? 1) * userScale;
+        // 部屋プレビュー: 単一の Rect/Ellipse に fill (地面パターン) と stroke (壁パターン) を併用する。
+        // 確定後は地面 (left=L, strokeWidth=0) / 壁 (left=L-hsw, strokeWidth=W) の 2 個に分離される。
+        // プレビューの rect.left = L-hsw、最終地面の left = L。
+        // applyPatternTransformParts は offsetX = -refLeft + fillP.offX を設定するため、
+        // プレビューは -(L-hsw) + 0 = -L+hsw、最終地面は -L + 0 = -L となり、プレビューの方が
+        // +hsw だけ右に寄ったオフセットを取る → パターン画像が右下にシフトして見える。
+        // → 地面側 fill のみ -hsw 補正して最終位置と一致させる。壁 (stroke) はプレビュー rect の
+        //    位置と最終壁の位置が一致するため補正不要。
+        const hsw = (obj.strokeWidth || 0) / 2;
+        const gScale = (getPatternDef(App.groundPattern?.id)?.scale ?? 1) * (App.groundPatternScale ?? 1);
+        const wScale = (getPatternDef(App.wallPattern?.id)?.scale ?? 1) * (App.wallPatternScale ?? 1);
         applyPatternTransformParts(
             obj,
-            App.patternOffsetX || 0,
-            App.patternOffsetY || 0,
-            App.patternRotation || 0,
-            gScale,
-            wScale,
+            { offX: (App.groundPatternOffsetX || 0) - hsw, offY: (App.groundPatternOffsetY || 0) - hsw, deg: App.groundPatternRotation || 0, scale: gScale },
+            { offX: App.wallPatternOffsetX || 0, offY: App.wallPatternOffsetY || 0, deg: App.wallPatternRotation || 0, scale: wScale }
         );
         return;
     }
     const def = currentPatternDef();
     const initScale = def?.scale ?? 1;
-    applyPatternTransformOnObj(
-        obj,
-        App.patternOffsetX || 0,
-        App.patternOffsetY || 0,
-        App.patternRotation || 0,
-        initScale * (App.patternScale ?? 1),
-    );
+    let offX, offY, deg, userScale;
+    if (App.activeTool === 'wall') {
+        offX = App.wallPatternOffsetX || 0;
+        offY = App.wallPatternOffsetY || 0;
+        deg = App.wallPatternRotation || 0;
+        userScale = App.wallPatternScale ?? 1;
+    } else {
+        // ground または他 (デフォルト)
+        offX = App.groundPatternOffsetX || 0;
+        offY = App.groundPatternOffsetY || 0;
+        deg = App.groundPatternRotation || 0;
+        userScale = App.groundPatternScale ?? 1;
+    }
+    applyPatternTransformOnObj(obj, offX, offY, deg, initScale * userScale);
 }
 
-/** fill と stroke に別 scale を適用する版 (部屋プレビュー用)。 */
-function applyPatternTransformParts(obj, baseOffX, baseOffY, deg, fillScale, strokeScale) {
-    const refLeft = (obj._worldLeft !== undefined) ? obj._worldLeft : (obj.left || 0);
-    const refTop = (obj._worldTop !== undefined) ? obj._worldTop : (obj.top || 0);
-    const offX = -refLeft + baseOffX;
-    const offY = -refTop + baseOffY;
-    const r = (deg * Math.PI) / 180;
-    const cos = Math.cos(r), sin = Math.sin(r);
-    const makeT = (s) => (s === 1 && deg === 0) ? null : [s * cos, s * sin, -s * sin, s * cos, 0, 0];
+/**
+ * fill と stroke に別のオフセット/回転/倍率を適用する版 (部屋プレビュー用)。
+ * @param {fabric.Object} obj
+ * @param {{offX:number, offY:number, deg:number, scale:number}} fillP - 地面パターン (fill) 用
+ * @param {{offX:number, offY:number, deg:number, scale:number}} strokeP - 壁パターン (stroke) 用
+ */
+function applyPatternTransformParts(obj, fillP, strokeP) {
+    const refLeft = obj._worldLeft !== undefined ? obj._worldLeft : obj.left || 0;
+    const refTop = obj._worldTop !== undefined ? obj._worldTop : obj.top || 0;
     let changed = false;
     if (obj.fill && typeof fabric !== 'undefined' && obj.fill instanceof fabric.Pattern) {
-        obj.fill.offsetX = offX;
-        obj.fill.offsetY = offY;
-        obj.fill.patternTransform = makeT(fillScale);
+        const r = (fillP.deg * Math.PI) / 180;
+        const cos = Math.cos(r),
+            sin = Math.sin(r);
+        const s = fillP.scale;
+        obj.fill.offsetX = -refLeft + fillP.offX;
+        obj.fill.offsetY = -refTop + fillP.offY;
+        obj.fill.patternTransform = s === 1 && fillP.deg === 0 ? null : [s * cos, s * sin, -s * sin, s * cos, 0, 0];
         changed = true;
     }
     if (obj.stroke && typeof fabric !== 'undefined' && obj.stroke instanceof fabric.Pattern) {
-        obj.stroke.offsetX = offX;
-        obj.stroke.offsetY = offY;
-        // ストロークでは scale を patternTransform に入れない (上記同様)。scale は事前に source 画像に焼き込み。
-        obj.stroke.patternTransform = (deg === 0) ? null : [Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180), -Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180), 0, 0];
+        const r = (strokeP.deg * Math.PI) / 180;
+        const cos = Math.cos(r),
+            sin = Math.sin(r);
+        obj.stroke.offsetX = -refLeft + strokeP.offX;
+        obj.stroke.offsetY = -refTop + strokeP.offY;
+        // ストロークでは scale を patternTransform に入れない (getStrokePatternFill で焼き込み済み)
+        obj.stroke.patternTransform = strokeP.deg === 0 ? null : [cos, sin, -sin, cos, 0, 0];
         changed = true;
     }
     if (changed) obj.dirty = true;
@@ -3985,17 +4084,18 @@ function applyPatternTransformParts(obj, baseOffX, baseOffY, deg, fillScale, str
 /** fill / stroke に Pattern があれば offset と patternTransform (scale * rotation) を反映する。 */
 function applyPatternTransformOnObj(obj, baseOffX, baseOffY, deg, scale) {
     // _worldLeft があれば優先 (group の子は addWithUpdate 後に obj.left がグループ相対になるため)
-    const refLeft = (obj._worldLeft !== undefined) ? obj._worldLeft : (obj.left || 0);
-    const refTop = (obj._worldTop !== undefined) ? obj._worldTop : (obj.top || 0);
+    const refLeft = obj._worldLeft !== undefined ? obj._worldLeft : obj.left || 0;
+    const refTop = obj._worldTop !== undefined ? obj._worldTop : obj.top || 0;
     const worldOffX = -refLeft;
     const worldOffY = -refTop;
     const offX = worldOffX + baseOffX;
     const offY = worldOffY + baseOffY;
     const s = scale || 1;
     const r = (deg * Math.PI) / 180;
-    const cos = Math.cos(r), sin = Math.sin(r);
+    const cos = Math.cos(r),
+        sin = Math.sin(r);
     // 倍率が 1 かつ回転が 0 なら transform 不要 (null)
-    const transform = (s === 1 && deg === 0) ? null : [s * cos, s * sin, -s * sin, s * cos, 0, 0];
+    const transform = s === 1 && deg === 0 ? null : [s * cos, s * sin, -s * sin, s * cos, 0, 0];
     let changed = false;
     if (obj.fill && typeof fabric !== 'undefined' && obj.fill instanceof fabric.Pattern) {
         obj.fill.offsetX = offX;
@@ -4009,7 +4109,7 @@ function applyPatternTransformOnObj(obj, baseOffX, baseOffY, deg, scale) {
         // ストロークでは patternTransform に scale を入れない (fabric が ctx.transform で適用するため
         // 線幅が崩れる)。scale は getStrokePatternFill で source 画像側に焼き込み済み。
         // 回転のみ patternTransform に反映する。
-        obj.stroke.patternTransform = (deg === 0) ? null : [cos, sin, -sin, cos, 0, 0];
+        obj.stroke.patternTransform = deg === 0 ? null : [cos, sin, -sin, cos, 0, 0];
         changed = true;
     }
     if (changed) obj.dirty = true;
@@ -4211,7 +4311,9 @@ function renderPatternPickerContent(root, opts) {
         thumb.src = makePatternThumbUrl(p);
         thumb.alt = '';
         thumb.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-        thumb.onerror = () => { tile.remove(); };
+        thumb.onerror = () => {
+            tile.remove();
+        };
         tile.appendChild(thumb);
         const lbl = document.createElement('div');
         lbl.className = 'pp-label';
@@ -4251,24 +4353,20 @@ function mountPatternPicker(root, opts) {
         el: triggerEl,
         theme: 'nano',
         default: state0.solidColor || '#888888',
-        defaultRepresentation: 'HEX',
-        components: { preview: true, opacity: false, hue: true, interaction: { input: true, save: false } },
+        defaultRepresentation: 'HEXA',
+        components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
     });
-    // opacity 無しなので HEX (6桁) を強制
-    if (pickr.setColorRepresentation) pickr.setColorRepresentation('HEX');
     pickr.on('change', (c, _src, instance) => {
         if (!c) return;
         // refreshPatternPickers から setColor を呼んだだけのときは無視
-        // (Pickr は silent=true でも内部状態の差異で 'change' を発火することがある)。
-        // これがないと、復元時に mode='pattern' が 'solid' に上書きされて
-        // UI とデータが食い違う。
         if (root._suppressColorChange) return;
-        const hex = c.toHEXA().toString().slice(0, 7);
-        opts.setState({ ...opts.getState(), mode: 'solid', solidColor: hex });
+        // alpha 込みの 8 桁 HEXA を保存 (#RRGGBBAA)
+        const hexa = c.toHEXA().toString();
+        opts.setState({ ...opts.getState(), mode: 'solid', solidColor: hexa });
         instance.applyColor(true);
-        // 単色タイルのスウォッチも同期
+        // 単色タイルのスウォッチも同期 (透明度を表現するため CSS color として直接使う)
         const sw = root.querySelector('.pp-tile-solid .pp-solid-swatch');
-        if (sw) sw.style.background = hex;
+        if (sw) sw.style.background = hexa;
     });
     attachEyedropper(pickr);
     root._pickr = pickr;
@@ -4294,7 +4392,9 @@ function refreshPatternPickers() {
         if (groundRoot._pickr) {
             groundRoot._suppressColorChange = true;
             groundRoot._pickr.setColor(App.groundPattern.solidColor || '#888888', true);
-            setTimeout(() => { groundRoot._suppressColorChange = false; }, 0);
+            setTimeout(() => {
+                groundRoot._suppressColorChange = false;
+            }, 0);
         }
     }
     const wallRoot = document.getElementById('wall-pattern-picker');
@@ -4312,26 +4412,30 @@ function refreshPatternPickers() {
         if (wallRoot._pickr) {
             wallRoot._suppressColorChange = true;
             wallRoot._pickr.setColor(App.wallPattern.solidColor || '#888888', true);
-            setTimeout(() => { wallRoot._suppressColorChange = false; }, 0);
+            setTimeout(() => {
+                wallRoot._suppressColorChange = false;
+            }, 0);
         }
     }
-    // 部屋: 地面 / 壁の 2 つを並べる
+    // 部屋: 地面 / 壁の 2 つを並べる (地面ツール/壁ツールと同じ App.groundPattern / wallPattern を共有)
     const roomGroundRoot = document.getElementById('room-ground-pattern-picker');
     if (roomGroundRoot) {
         mountPatternPicker(roomGroundRoot, {
             category: 'ground',
             patterns: PATTERNS,
             genres: GROUND_GENRES,
-            getState: () => App.roomGroundPattern,
+            getState: () => App.groundPattern,
             setState: (s) => {
-                App.roomGroundPattern = s;
-                pushHistoryDebounced('部屋・地面パターンを変更');
+                App.groundPattern = s;
+                pushHistoryDebounced('地面パターンを変更');
             },
         });
         if (roomGroundRoot._pickr) {
             roomGroundRoot._suppressColorChange = true;
-            roomGroundRoot._pickr.setColor(App.roomGroundPattern.solidColor || '#9b8c70', true);
-            setTimeout(() => { roomGroundRoot._suppressColorChange = false; }, 0);
+            roomGroundRoot._pickr.setColor(App.groundPattern.solidColor || '#9b8c70', true);
+            setTimeout(() => {
+                roomGroundRoot._suppressColorChange = false;
+            }, 0);
         }
     }
     const roomWallRoot = document.getElementById('room-wall-pattern-picker');
@@ -4340,19 +4444,65 @@ function refreshPatternPickers() {
             category: 'wall',
             patterns: PATTERNS,
             genres: WALL_GENRES,
-            getState: () => App.roomWallPattern,
+            getState: () => App.wallPattern,
             setState: (s) => {
-                App.roomWallPattern = s;
-                pushHistoryDebounced('部屋・壁パターンを変更');
+                App.wallPattern = s;
+                pushHistoryDebounced('壁パターンを変更');
             },
         });
         if (roomWallRoot._pickr) {
             roomWallRoot._suppressColorChange = true;
-            roomWallRoot._pickr.setColor(App.roomWallPattern.solidColor || '#5a5a5a', true);
-            setTimeout(() => { roomWallRoot._suppressColorChange = false; }, 0);
+            roomWallRoot._pickr.setColor(App.wallPattern.solidColor || '#5a5a5a', true);
+            setTimeout(() => {
+                roomWallRoot._suppressColorChange = false;
+            }, 0);
         }
     }
 }
+
+/**
+ * 地面パターン詳細 input (地面タブと部屋タブの地面側) を App.groundPattern* と同期する。
+ * 片方のタブで値を変更したらもう片方の同じ入力欄にも反映するために使う。
+ */
+function syncGroundPatternDetailUI() {
+    const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = v;
+    };
+    setVal('ground-pattern-offset-x', App.groundPatternOffsetX);
+    setVal('ground-pattern-offset-y', App.groundPatternOffsetY);
+    setVal('ground-pattern-rotation', App.groundPatternRotation);
+    setVal('ground-pattern-scale', Math.round((App.groundPatternScale ?? 1) * 100));
+    setVal('room-ground-pattern-offset-x', App.groundPatternOffsetX);
+    setVal('room-ground-pattern-offset-y', App.groundPatternOffsetY);
+    setVal('room-ground-pattern-rotation', App.groundPatternRotation);
+    setVal('room-ground-pattern-scale', Math.round((App.groundPatternScale ?? 1) * 100));
+}
+
+/** 壁パターン詳細 input (壁タブと部屋タブの壁側) を App.wallPattern* と同期する。 */
+function syncWallPatternDetailUI() {
+    const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if (el && document.activeElement !== el) el.value = v;
+    };
+    setVal('wall-pattern-offset-x', App.wallPatternOffsetX);
+    setVal('wall-pattern-offset-y', App.wallPatternOffsetY);
+    setVal('wall-pattern-rotation', App.wallPatternRotation);
+    setVal('wall-pattern-scale', Math.round((App.wallPatternScale ?? 1) * 100));
+    setVal('room-wall-pattern-offset-x', App.wallPatternOffsetX);
+    setVal('room-wall-pattern-offset-y', App.wallPatternOffsetY);
+    setVal('room-wall-pattern-rotation', App.wallPatternRotation);
+    setVal('room-wall-pattern-scale', Math.round((App.wallPatternScale ?? 1) * 100));
+}
+
+/** 地面/壁の同期を一括で行う (復元時等)。 */
+function refreshPatternDetailUI() {
+    syncGroundPatternDetailUI();
+    syncWallPatternDetailUI();
+}
+
+// 部屋タブのみを同期する別名 (UI 文脈用の薄ラッパー)。地面タブ→部屋タブの片方向同期に使う。
+const syncRoomPatternDetailUI = refreshPatternDetailUI;
 
 /**
  * 編集モード (シンプル/地図) を切替える。
@@ -4398,6 +4548,29 @@ function refreshPropGroupVisibility() {
         if (cellBlock && cellHome && cellBlock.parentElement !== cellHome) {
             cellHome.appendChild(cellBlock);
         }
+    }
+    // 影セクション: 地面/壁モードのときは prop-group 内の shadow-mount へ挿入、それ以外はホーム位置に戻す。
+    mountShadowSecForActiveTool();
+}
+
+/**
+ * グローバル #shadow-sec を、現在の activeTool に応じて適切な配置先へ移動する。
+ * - ground: .shadow-mount[data-shadow-mount="ground"] に挿入
+ * - wall:   .shadow-mount[data-shadow-mount="wall"] に挿入
+ * - それ以外: #shadow-home (#prop-panel 末尾の元位置) に戻す
+ */
+function mountShadowSecForActiveTool() {
+    const shadowSec = document.getElementById('shadow-sec');
+    if (!shadowSec) return;
+    const home = document.getElementById('shadow-home');
+    if (App.activeTool === 'ground') {
+        const m = document.querySelector('.shadow-mount[data-shadow-mount="ground"]');
+        if (m && shadowSec.parentElement !== m) m.appendChild(shadowSec);
+    } else if (App.activeTool === 'wall') {
+        const m = document.querySelector('.shadow-mount[data-shadow-mount="wall"]');
+        if (m && shadowSec.parentElement !== m) m.appendChild(shadowSec);
+    } else if (home && shadowSec.parentElement !== home) {
+        home.appendChild(shadowSec);
     }
 }
 
@@ -4456,7 +4629,9 @@ function setActiveTool(toolName) {
         App.canvas.isDrawingMode = true;
         setFreehandBrush(App.freehandBrush);
         // セル同様、最上位のフリーハンドレイヤーを自動選択 (無ければ新規作成は最初の path:created に委ねる)
-        const fl = getMapLayers().reverse().find((o) => o._isFreehandLayer);
+        const fl = getMapLayers()
+            .reverse()
+            .find((o) => o._isFreehandLayer);
         if (fl && !App.selectedLayerIds.includes(fl._layerId)) {
             App.selectedLayerIds = [fl._layerId];
             renderLayerList();
@@ -4839,17 +5014,15 @@ function buildSaveData() {
         wallPattern: App.wallPattern,
         wallThickness: App.wallThickness,
         roomTool: App.roomTool,
-        roomGroundPattern: App.roomGroundPattern,
-        roomWallPattern: App.roomWallPattern,
         roomWallThickness: App.roomWallThickness,
-        roomGroundPatternOffsetX: App.roomGroundPatternOffsetX,
-        roomGroundPatternOffsetY: App.roomGroundPatternOffsetY,
-        roomGroundPatternRotation: App.roomGroundPatternRotation,
-        roomGroundPatternScale: App.roomGroundPatternScale,
-        roomWallPatternOffsetX: App.roomWallPatternOffsetX,
-        roomWallPatternOffsetY: App.roomWallPatternOffsetY,
-        roomWallPatternRotation: App.roomWallPatternRotation,
-        roomWallPatternScale: App.roomWallPatternScale,
+        groundPatternOffsetX: App.groundPatternOffsetX,
+        groundPatternOffsetY: App.groundPatternOffsetY,
+        groundPatternRotation: App.groundPatternRotation,
+        groundPatternScale: App.groundPatternScale,
+        wallPatternOffsetX: App.wallPatternOffsetX,
+        wallPatternOffsetY: App.wallPatternOffsetY,
+        wallPatternRotation: App.wallPatternRotation,
+        wallPatternScale: App.wallPatternScale,
         roomGroundShadowEnabled: App.roomGroundShadowEnabled,
         roomGroundShadowColor: App.roomGroundShadowColor,
         roomGroundShadowBlur: App.roomGroundShadowBlur,
@@ -4878,13 +5051,18 @@ function buildSaveData() {
         freehandOpacity: App.freehandOpacity,
         freehandDecimation: App.freehandDecimation,
         freehandPressure: App.freehandPressure,
+        gridVisible: App.gridVisible,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
         gridDashArray: App.gridDashArray,
         nextLayerId: App.nextLayerId,
         layerCounters: App.layerCounters,
         viewportTransform: App.canvas.viewportTransform.slice(),
-        canvas: (App.canvas.getObjects().forEach((o) => { if (o._isCellLayer) syncCellEntries(o); }), App.canvas.toJSON(SAVE_CUSTOM_PROPS)),
+        canvas:
+            (App.canvas.getObjects().forEach((o) => {
+                if (o._isCellLayer) syncCellEntries(o);
+            }),
+            App.canvas.toJSON(SAVE_CUSTOM_PROPS)),
     };
 }
 
@@ -4903,17 +5081,15 @@ function restoreSaveData(data) {
     if (data.wallTool) App.wallTool = data.wallTool;
     if (data.wallPattern) App.wallPattern = data.wallPattern;
     if (data.roomTool) App.roomTool = data.roomTool;
-    if (data.roomGroundPattern) App.roomGroundPattern = data.roomGroundPattern;
-    if (data.roomWallPattern) App.roomWallPattern = data.roomWallPattern;
     if (typeof data.roomWallThickness === 'number') App.roomWallThickness = data.roomWallThickness;
-    if (typeof data.roomGroundPatternOffsetX === 'number') App.roomGroundPatternOffsetX = data.roomGroundPatternOffsetX;
-    if (typeof data.roomGroundPatternOffsetY === 'number') App.roomGroundPatternOffsetY = data.roomGroundPatternOffsetY;
-    if (typeof data.roomGroundPatternRotation === 'number') App.roomGroundPatternRotation = data.roomGroundPatternRotation;
-    if (typeof data.roomGroundPatternScale === 'number') App.roomGroundPatternScale = data.roomGroundPatternScale;
-    if (typeof data.roomWallPatternOffsetX === 'number') App.roomWallPatternOffsetX = data.roomWallPatternOffsetX;
-    if (typeof data.roomWallPatternOffsetY === 'number') App.roomWallPatternOffsetY = data.roomWallPatternOffsetY;
-    if (typeof data.roomWallPatternRotation === 'number') App.roomWallPatternRotation = data.roomWallPatternRotation;
-    if (typeof data.roomWallPatternScale === 'number') App.roomWallPatternScale = data.roomWallPatternScale;
+    if (typeof data.groundPatternOffsetX === 'number') App.groundPatternOffsetX = data.groundPatternOffsetX;
+    if (typeof data.groundPatternOffsetY === 'number') App.groundPatternOffsetY = data.groundPatternOffsetY;
+    if (typeof data.groundPatternRotation === 'number') App.groundPatternRotation = data.groundPatternRotation;
+    if (typeof data.groundPatternScale === 'number') App.groundPatternScale = data.groundPatternScale;
+    if (typeof data.wallPatternOffsetX === 'number') App.wallPatternOffsetX = data.wallPatternOffsetX;
+    if (typeof data.wallPatternOffsetY === 'number') App.wallPatternOffsetY = data.wallPatternOffsetY;
+    if (typeof data.wallPatternRotation === 'number') App.wallPatternRotation = data.wallPatternRotation;
+    if (typeof data.wallPatternScale === 'number') App.wallPatternScale = data.wallPatternScale;
     if (typeof data.roomGroundShadowEnabled === 'boolean') App.roomGroundShadowEnabled = data.roomGroundShadowEnabled;
     if (typeof data.roomGroundShadowColor === 'string') App.roomGroundShadowColor = data.roomGroundShadowColor;
     if (typeof data.roomGroundShadowBlur === 'number') App.roomGroundShadowBlur = data.roomGroundShadowBlur;
@@ -4939,8 +5115,6 @@ function restoreSaveData(data) {
     // 旧版で保存された未知パターン ID は単色にフォールバックして UI と実状態の食い違いを防ぐ
     normalizePatternState(App.groundPattern);
     normalizePatternState(App.wallPattern);
-    normalizePatternState(App.roomGroundPattern);
-    normalizePatternState(App.roomWallPattern);
     if (typeof data.wallThickness === 'number') App.wallThickness = data.wallThickness;
     const wt = document.getElementById('wall-thickness');
     if (wt) wt.value = App.wallThickness;
@@ -4950,16 +5124,8 @@ function restoreSaveData(data) {
     if (rgs) rgs.checked = !!App.roomGroundShadowEnabled;
     const rws = document.getElementById('room-wall-shadow-enabled');
     if (rws) rws.checked = !!App.roomWallShadowEnabled;
-    // 部屋・パターン詳細 input 復元
-    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    setVal('room-ground-pattern-offset-x', App.roomGroundPatternOffsetX);
-    setVal('room-ground-pattern-offset-y', App.roomGroundPatternOffsetY);
-    setVal('room-ground-pattern-rotation', App.roomGroundPatternRotation);
-    setVal('room-ground-pattern-scale', Math.round((App.roomGroundPatternScale ?? 1) * 100));
-    setVal('room-wall-pattern-offset-x', App.roomWallPatternOffsetX);
-    setVal('room-wall-pattern-offset-y', App.roomWallPatternOffsetY);
-    setVal('room-wall-pattern-rotation', App.roomWallPatternRotation);
-    setVal('room-wall-pattern-scale', Math.round((App.roomWallPatternScale ?? 1) * 100));
+    // 地面/壁パターン詳細 input 復元 (地面タブ / 壁タブ / 部屋タブの両方を同期)
+    refreshPatternDetailUI();
     // 部屋・影詳細 input 復元
     setVal('room-ground-shadow-blur', App.roomGroundShadowBlur);
     setVal('room-ground-shadow-offset-x', App.roomGroundShadowOffsetX);
@@ -4968,7 +5134,10 @@ function restoreSaveData(data) {
     setVal('room-wall-shadow-offset-x', App.roomWallShadowOffsetX);
     setVal('room-wall-shadow-offset-y', App.roomWallShadowOffsetY);
     // 部屋・壁ストロークスタイル input 復元
-    const setSelect = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    const setSelect = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v;
+    };
     setSelect('room-wall-stroke-line-join', App.roomWallStrokeLineJoin);
     setSelect('room-wall-stroke-line-cap', App.roomWallStrokeLineCap);
     // dashArray から radio へ復元 (App.roomWallStrokeDashArray の値が dashed/dotted... のどれに該当するか)
@@ -4997,15 +5166,20 @@ function restoreSaveData(data) {
     if (fdEl) fdEl.value = App.freehandDecimation;
     const fpEl = document.getElementById('freehand-pressure');
     if (fpEl) fpEl.checked = App.freehandPressure;
-    App.gridColor = data.gridColor || '#000000ff';
+    App.gridVisible = data.gridVisible !== false;
+    const gvEl = document.getElementById('grid-visible');
+    if (gvEl) gvEl.checked = App.gridVisible;
+    App.gridColor = data.gridColor || '#535353ff';
     App.gridLineWidth = data.gridLineWidth || 1;
-    // 新規マップ (= 未保存の data.gridDashArray が undefined) は点線をデフォルトに。
+    // 新規マップ (= 未保存の data.gridDashArray が undefined) は破線をデフォルトに。
     // 明示的に null (実線) で保存されたマップは尊重するため、!== undefined をチェック。
-    App.gridDashArray = data.gridDashArray !== undefined ? data.gridDashArray : [2, 4];
-    // ロード値に合わせて radio button も同期
-    const styleId = App.gridDashArray === null ? 'gs-solid'
-        : (App.gridDashArray && App.gridDashArray[0] === 2) ? 'gs-dot'
-        : 'gs-dash';
+    App.gridDashArray = data.gridDashArray !== undefined ? data.gridDashArray : [10, 5];
+    // ロード値に合わせて radio button も同期 (dashdot/longdash も判定)
+    let styleId = 'gs-dash';
+    if (App.gridDashArray === null) styleId = 'gs-solid';
+    else if (Array.isArray(App.gridDashArray)) {
+        if (App.gridDashArray[0] === 2 && App.gridDashArray[1] === 4) styleId = 'gs-dot';
+    }
     const styleEl = document.getElementById(styleId);
     if (styleEl) styleEl.checked = true;
     App.nextLayerId = data.nextLayerId || 10;
@@ -5020,7 +5194,10 @@ function restoreSaveData(data) {
     App.canvas.loadFromJSON(data.canvas, function () {
         if (data.viewportTransform) App.canvas.setViewportTransform(data.viewportTransform);
         // 古い保存ファイルに焼き付いたプレビュー (isPreview) を念のため除去
-        App.canvas.getObjects().filter((o) => o.isPreview).forEach((o) => App.canvas.remove(o));
+        App.canvas
+            .getObjects()
+            .filter((o) => o.isPreview)
+            .forEach((o) => App.canvas.remove(o));
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
@@ -5043,16 +5220,23 @@ function restoreSaveData(data) {
         document.querySelectorAll('#wall-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.wallTool === App.wallTool));
         document.querySelectorAll('#room-tool-tiles .tool-tile').forEach((t) => t.classList.toggle('active', t.dataset.roomTool === App.roomTool));
         refreshPatternPickers();
+        refreshPatternDetailUI();
         // 装飾 UI 同期
         mountDecorPicker(document.getElementById('decor-picker'));
         refreshDecorColorSection();
-        const dscEl = document.getElementById('decor-scale'); if (dscEl) dscEl.value = Math.round((App.decorScale ?? 1) * 100);
-        const drotEl = document.getElementById('decor-rotation'); if (drotEl) drotEl.value = App.decorRotation || 0;
-        const dfxEl = document.getElementById('decor-flip-x'); if (dfxEl) dfxEl.checked = !!App.decorFlipX;
-        const dfyEl = document.getElementById('decor-flip-y'); if (dfyEl) dfyEl.checked = !!App.decorFlipY;
+        const dscEl = document.getElementById('decor-scale');
+        if (dscEl) dscEl.value = Math.round((App.decorScale ?? 1) * 100);
+        const drotEl = document.getElementById('decor-rotation');
+        if (drotEl) drotEl.value = App.decorRotation || 0;
+        const dfxEl = document.getElementById('decor-flip-x');
+        if (dfxEl) dfxEl.checked = !!App.decorFlipX;
+        const dfyEl = document.getElementById('decor-flip-y');
+        if (dfyEl) dfyEl.checked = !!App.decorFlipY;
         // 装飾影 on/off は共通 #shadow-enabled (refreshShadowUI で同期)
         // 保存済み装飾レイヤーの参照する SVG/画像を再ロード (キャッシュは空)
-        App.canvas.getObjects().forEach((o) => { if (o._isDecorLayer && o._decorId) loadDecorAsset(o._decorId); });
+        App.canvas.getObjects().forEach((o) => {
+            if (o._isDecorLayer && o._decorId) loadDecorAsset(o._decorId);
+        });
         // フリーハンドブラシタイル & 実ブラシも復元後の App.freehandBrush に同期
         document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((t) => t.classList.toggle('active', t.dataset.freehandBrush === App.freehandBrush));
         if (App.canvas?.isDrawingMode) setFreehandBrush(App.freehandBrush);
@@ -5225,7 +5409,9 @@ function serializeHistorySnapshot() {
     // toJSON 前にプレビュー (isPreview) を除去 — 装飾プレビューが履歴に焼き付くのを防ぐ
     removePreview();
     // toJSON 前に _cellData → _cellEntries を同期 (永続化されるのは _cellEntries 側)
-    App.canvas.getObjects().forEach((o) => { if (o._isCellLayer) syncCellEntries(o); });
+    App.canvas.getObjects().forEach((o) => {
+        if (o._isCellLayer) syncCellEntries(o);
+    });
     return JSON.stringify({
         canvas: App.canvas.toJSON(SAVE_CUSTOM_PROPS),
         nextLayerId: App.nextLayerId,
@@ -5300,7 +5486,10 @@ function restoreHistorySnapshot(snapshot, displayName) {
 
     App.canvas.loadFromJSON(data.canvas, () => {
         // 履歴に焼き付いたプレビューを除去
-        App.canvas.getObjects().filter((o) => o.isPreview).forEach((o) => App.canvas.remove(o));
+        App.canvas
+            .getObjects()
+            .filter((o) => o.isPreview)
+            .forEach((o) => App.canvas.remove(o));
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
@@ -5443,9 +5632,9 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         // 30°/45°/60°/90° 系全てを通過する一覧 (重複除去・昇順)
         const stops = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
-        const cur = ((App.decorRotation || 0) % 360 + 360) % 360;
+        const cur = (((App.decorRotation || 0) % 360) + 360) % 360;
         const next = stops.find((a) => a > cur + 0.5);
-        App.decorRotation = (next !== undefined) ? next : 0;
+        App.decorRotation = next !== undefined ? next : 0;
         const rotEl = document.getElementById('decor-rotation');
         if (rotEl) rotEl.value = App.decorRotation;
         refreshDecorPreview();
@@ -5491,12 +5680,19 @@ document.addEventListener('keydown', (e) => {
         removePreview();
         if (App.activeTool === 'room') {
             const pts = App._polygonPoints.slice();
-            addRoom('部屋_多角形', (st) => new fabric.Polygon(pts.map((p) => ({ x: p.x, y: p.y })), {
-                ...st,
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-            }));
+            addRoom(
+                '部屋_多角形',
+                (st) =>
+                    new fabric.Polygon(
+                        pts.map((p) => ({ x: p.x, y: p.y })),
+                        {
+                            ...st,
+                            selectable: false,
+                            evented: false,
+                            objectCaching: false,
+                        }
+                    )
+            );
         } else {
             const style = getCurrentDrawStyle();
             addCategoryLayer(
@@ -5632,7 +5828,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ツールバー (ツールボタン)
     document.querySelectorAll('#toolbar .tb-btn[data-tool]').forEach((btn) => {
-        btn.addEventListener('click', () => setActiveTool(btn.dataset.tool));
+        btn.addEventListener('click', () => {
+            // 画像ツールは選択モードを変えず、ファイル選択ダイアログを即起動する
+            if (btn.dataset.tool === 'image') {
+                document.getElementById('image-upload')?.click();
+                return;
+            }
+            setActiveTool(btn.dataset.tool);
+        });
     });
 
     document.getElementById('tb-export')?.addEventListener('click', () => {
@@ -5679,7 +5882,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="stroke-style"]').forEach((r) =>
         r.addEventListener('change', () => {
             // 壁モード時は wallThickness ベース、それ以外は strokeWidth ベース
-            const w = (App.activeTool === 'wall') ? (App.wallThickness || 12) : (App.strokeWidth || 0);
+            const w = App.activeTool === 'wall' ? App.wallThickness || 12 : App.strokeWidth || 0;
             App.strokeDashArray = getDashArray(r.value, w);
             if (App.activeTool === 'select') {
                 const targets = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
@@ -5704,6 +5907,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // グリッド設定
+    document.getElementById('grid-visible')?.addEventListener('change', function () {
+        App.gridVisible = this.checked;
+        drawGrid();
+        pushHistoryDebounced('グリッド表示を変更');
+    });
     document.getElementById('grid-line-width').addEventListener('input', function () {
         App.gridLineWidth = parseInt(this.value) || 1;
         drawGrid();
@@ -5895,33 +6103,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---- 部屋: パターン詳細 / 影 / 壁ストロークの各入力 ----
-    // パターン詳細 (地面)
+    // パターン詳細 (地面) — App.groundPattern* を更新 (地面タブと共有)
     document.getElementById('room-ground-pattern-offset-x')?.addEventListener('input', function () {
-        App.roomGroundPatternOffsetX = parseInt(this.value) || 0;
+        App.groundPatternOffsetX = parseInt(this.value) || 0;
+        syncGroundPatternDetailUI();
     });
     document.getElementById('room-ground-pattern-offset-y')?.addEventListener('input', function () {
-        App.roomGroundPatternOffsetY = parseInt(this.value) || 0;
+        App.groundPatternOffsetY = parseInt(this.value) || 0;
+        syncGroundPatternDetailUI();
     });
     document.getElementById('room-ground-pattern-rotation')?.addEventListener('input', function () {
-        App.roomGroundPatternRotation = parseInt(this.value) || 0;
+        App.groundPatternRotation = parseInt(this.value) || 0;
+        syncGroundPatternDetailUI();
     });
     document.getElementById('room-ground-pattern-scale')?.addEventListener('input', function () {
         const v = parseFloat(this.value);
-        App.roomGroundPatternScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+        App.groundPatternScale = isFinite(v) && v > 0 ? v / 100 : 1;
+        syncGroundPatternDetailUI();
     });
-    // パターン詳細 (壁)
+    // パターン詳細 (壁) — App.wallPattern* を更新 (壁タブと共有)
     document.getElementById('room-wall-pattern-offset-x')?.addEventListener('input', function () {
-        App.roomWallPatternOffsetX = parseInt(this.value) || 0;
+        App.wallPatternOffsetX = parseInt(this.value) || 0;
+        syncWallPatternDetailUI();
     });
     document.getElementById('room-wall-pattern-offset-y')?.addEventListener('input', function () {
-        App.roomWallPatternOffsetY = parseInt(this.value) || 0;
+        App.wallPatternOffsetY = parseInt(this.value) || 0;
+        syncWallPatternDetailUI();
     });
     document.getElementById('room-wall-pattern-rotation')?.addEventListener('input', function () {
-        App.roomWallPatternRotation = parseInt(this.value) || 0;
+        App.wallPatternRotation = parseInt(this.value) || 0;
+        syncWallPatternDetailUI();
     });
     document.getElementById('room-wall-pattern-scale')?.addEventListener('input', function () {
         const v = parseFloat(this.value);
-        App.roomWallPatternScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+        App.wallPatternScale = isFinite(v) && v > 0 ? v / 100 : 1;
+        syncWallPatternDetailUI();
     });
     // 影詳細 (地面) — チェックボックスは上で別ハンドラ
     document.getElementById('room-ground-shadow-blur')?.addEventListener('input', function () {
@@ -5969,7 +6185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('decor-scale')?.addEventListener('input', function () {
         const v = parseFloat(this.value);
-        App.decorScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+        App.decorScale = isFinite(v) && v > 0 ? v / 100 : 1;
         refreshDecorPreview();
     });
     const rotInput = document.getElementById('decor-rotation');
@@ -5995,7 +6211,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const dfEl = document.getElementById('decor-fill-picker');
     if (dfEl && typeof Pickr !== 'undefined') {
         App._decorFillPickr = Pickr.create({
-            el: dfEl, theme: 'nano', default: '#222222', defaultRepresentation: 'HEXA',
+            el: dfEl,
+            theme: 'nano',
+            default: '#222222',
+            defaultRepresentation: 'HEXA',
             components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
         });
         App._decorFillPickr.on('change', (c, _src, instance) => {
@@ -6009,7 +6228,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const dsEl = document.getElementById('decor-stroke-picker');
     if (dsEl && typeof Pickr !== 'undefined') {
         App._decorStrokePickr = Pickr.create({
-            el: dsEl, theme: 'nano', default: '#000000', defaultRepresentation: 'HEXA',
+            el: dsEl,
+            theme: 'nano',
+            default: '#000000',
+            defaultRepresentation: 'HEXA',
             components: { preview: true, opacity: true, hue: true, interaction: { input: true, save: false } },
         });
         App._decorStrokePickr.on('change', (c, _src, instance) => {
@@ -6021,22 +6243,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // ピッカーの初期 change イベント (default 設定で発火する) を全部消化したら抑制解除
-    setTimeout(() => { App._suppressDecorPickr = false; }, 50);
+    setTimeout(() => {
+        App._suppressDecorPickr = false;
+    }, 50);
 
-    // パターン共通設定 (オフセット/回転) — 値を更新するのみ。新規描画時に snapshot されて適用される
-    document.getElementById('pattern-offset-x')?.addEventListener('input', function () {
-        App.patternOffsetX = parseInt(this.value) || 0;
+    // パターン詳細 (地面 / 壁) — 値を更新するのみ。新規描画時に snapshot されて適用される
+    // 地面タブの入力 → App.groundPattern*
+    document.getElementById('ground-pattern-offset-x')?.addEventListener('input', function () {
+        App.groundPatternOffsetX = parseInt(this.value) || 0;
+        syncRoomPatternDetailUI();
     });
-    document.getElementById('pattern-offset-y')?.addEventListener('input', function () {
-        App.patternOffsetY = parseInt(this.value) || 0;
+    document.getElementById('ground-pattern-offset-y')?.addEventListener('input', function () {
+        App.groundPatternOffsetY = parseInt(this.value) || 0;
+        syncRoomPatternDetailUI();
     });
-    document.getElementById('pattern-rotation')?.addEventListener('input', function () {
-        App.patternRotation = parseInt(this.value) || 0;
+    document.getElementById('ground-pattern-rotation')?.addEventListener('input', function () {
+        App.groundPatternRotation = parseInt(this.value) || 0;
+        syncRoomPatternDetailUI();
     });
-    document.getElementById('pattern-scale')?.addEventListener('input', function () {
-        // UI は % 単位 (100 = 等倍)、内部は倍率 (1.0 = 等倍)
+    document.getElementById('ground-pattern-scale')?.addEventListener('input', function () {
         const v = parseFloat(this.value);
-        App.patternScale = (isFinite(v) && v > 0) ? v / 100 : 1;
+        App.groundPatternScale = isFinite(v) && v > 0 ? v / 100 : 1;
+        syncRoomPatternDetailUI();
+    });
+    // 壁タブの入力 → App.wallPattern*
+    document.getElementById('wall-pattern-offset-x')?.addEventListener('input', function () {
+        App.wallPatternOffsetX = parseInt(this.value) || 0;
+        syncRoomPatternDetailUI();
+    });
+    document.getElementById('wall-pattern-offset-y')?.addEventListener('input', function () {
+        App.wallPatternOffsetY = parseInt(this.value) || 0;
+        syncRoomPatternDetailUI();
+    });
+    document.getElementById('wall-pattern-rotation')?.addEventListener('input', function () {
+        App.wallPatternRotation = parseInt(this.value) || 0;
+        syncRoomPatternDetailUI();
+    });
+    document.getElementById('wall-pattern-scale')?.addEventListener('input', function () {
+        const v = parseFloat(this.value);
+        App.wallPatternScale = isFinite(v) && v > 0 ? v / 100 : 1;
+        syncRoomPatternDetailUI();
     });
 
     // テキストスタイル切替 (ボールド/イタリック/下線/取消線) — 編集中で選択範囲があれば部分適用

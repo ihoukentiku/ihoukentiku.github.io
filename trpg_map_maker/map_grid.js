@@ -99,16 +99,16 @@ GridAdapters.square = {
     },
 
     createCellShape(col, row, fillStyle) {
-        const cs = App.cellSize;
-        return new fabric.Rect({
-            left: col * cs,
-            top: row * cs,
-            width: cs,
-            height: cs,
+        // プレビューと確定 (commitCellLayer) の幾何/座標系を揃えるため、両方とも fabric.Path を使う。
+        // fabric.Rect / Polygon と Path では pathOffset 等の内部処理が異なり、Pattern fill の
+        // ワールド原点アンカー位置がプレビュー <-> 確定で僅かにズレる症状があったため。
+        // fill が Pattern の場合は stroke を同じ参照にしない (applyPatternTransformOnObj で
+        // stroke 用書き換えが fill の patternTransform を上書きしてしまうため)。
+        const isPattern = typeof fabric !== 'undefined' && fillStyle instanceof fabric.Pattern;
+        return new fabric.Path(this.cellSubpath(col, row), {
             fill: fillStyle,
-            // 隣接セル間のアンチエイリアス由来の隙間を埋めるため同色の極細ストロークを引く
-            stroke: fillStyle,
-            strokeWidth: 0.1,
+            stroke: isPattern ? null : fillStyle,
+            strokeWidth: isPattern ? 0 : 0.1,
             selectable: false,
             evented: false,
             objectCaching: false,
@@ -367,10 +367,14 @@ function createHexAdapter(orientation, fit) {
         },
 
         createCellShape(col, row, fillStyle) {
-            const c = hexCenter(col, row);
-            const verts = hexVertices(c.x, c.y);
-            return new fabric.Polygon(verts, {
+            // プレビューと確定 (commitCellLayer) で同じ fabric.Path を使い pathOffset を揃える。
+            // Polygon と Path で内部処理 (pathOffset) が異なり、Pattern fill のワールド原点アンカーが
+            // プレビュー <-> 確定でズレる症状の対策。
+            const isPattern = typeof fabric !== 'undefined' && fillStyle instanceof fabric.Pattern;
+            return new fabric.Path(this.cellSubpath(col, row), {
                 fill: fillStyle,
+                stroke: isPattern ? null : fillStyle,
+                strokeWidth: isPattern ? 0 : 0.1,
                 selectable: false,
                 evented: false,
                 objectCaching: false,
