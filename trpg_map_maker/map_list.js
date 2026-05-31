@@ -233,9 +233,9 @@ async function handleCreate() {
             version: 1,
             cellSize: 72,
             gridType,
-            gridColor: 'rgba(0,0,0,1)',
+            gridColor: '#535353ff',
             gridLineWidth: 1,
-            gridDashArray: [2, 4], // 点線をデフォルトに
+            gridDashArray: [10, 5], // 破線をデフォルトに
             nextLayerId: 10,
             layerCounters: {},
             viewportTransform: null,

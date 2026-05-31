@@ -104,6 +104,12 @@ const App = {
     shadowOffsetY: 0,
     strokeLineJoin: 'miter', // 'miter' | 'round' | 'bevel' — 折線/多角形/線継ぎ目
     strokeLineCap: 'butt', // 'butt' | 'round' | 'square' — 線の端
+    // ---- テキスト専用 (fill/stroke はシンプル描画と独立。線種等は無し) ----
+    textFill: '#000000',
+    textFillOpacity: 1,
+    textStroke: '#ffffff',
+    textStrokeOpacity: 1,
+    textStrokeWidth: 0,
     // ---- 地面 / 壁パターンの詳細設定 (offset/rotation/scale)
     //   地面: 地面ツールの fill + 部屋ツールの地面 fill が共有
     //   壁:   壁ツールの stroke + 部屋ツールの壁 stroke が共有
@@ -488,7 +494,8 @@ function getMapLayers() {
  */
 function updateFillStrokeVisibility() {
     const sub = activeSubtool();
-    const drawSubtools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'text', 'curve', 'curve-closed'];
+    // テキストは独立のフィル/ストローク UI を text prop-group 内に持つので共通から除外
+    const drawSubtools = ['cell', 'rect', 'ellipse', 'line', 'path', 'polygon', 'freehand', 'curve', 'curve-closed'];
     const isGround = App.activeTool === 'ground';
     const isWall = App.activeTool === 'wall';
     const isRoom = App.activeTool === 'room';
@@ -619,7 +626,7 @@ function initPickr() {
         }
     });
 
-    gridPickr = Pickr.create(opts('#grid-color-picker', App.gridColor || '#000000ff'));
+    gridPickr = Pickr.create(opts('#grid-color-picker', App.gridColor || '#535353ff'));
     gridPickr.on('change', (c, _src, instance) => {
         if (!c) return;
         App.gridColor = c.toHEXA().toString(); // #rrggbbaa (alpha 含む hex)
@@ -676,6 +683,36 @@ function initPickr() {
         });
         attachEyedropper(fhp);
     }
+    // テキスト専用のフィル / ストローク ピッカー (シンプル描画とは独立)
+    let tfp = null,
+        tsp = null;
+    const tfEl = document.getElementById('text-fill-picker');
+    if (tfEl) {
+        tfp = Pickr.create(opts('#text-fill-picker', rgba(App.textFill, App.textFillOpacity)));
+        tfp.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.textFill = c.toHEXA().toString().slice(0, 7);
+            App.textFillOpacity = c.toRGBA()[3];
+            instance.applyColor(true);
+            applyTextStyleToActiveText();
+        });
+        attachEyedropper(tfp);
+    }
+    const tsEl = document.getElementById('text-stroke-picker');
+    if (tsEl) {
+        tsp = Pickr.create(opts('#text-stroke-picker', rgba(App.textStroke, App.textStrokeOpacity)));
+        tsp.on('change', (c, _src, instance) => {
+            if (!c) return;
+            App.textStroke = c.toHEXA().toString().slice(0, 7);
+            App.textStrokeOpacity = c.toRGBA()[3];
+            instance.applyColor(true);
+            applyTextStyleToActiveText();
+        });
+        attachEyedropper(tsp);
+    }
+    App._textFillPickr = tfp;
+    App._textStrokePickr = tsp;
+
     // 既存ピッカーにスポイトボタンを追加 (fill / stroke / grid)
     attachEyedropper(fillPickr);
     attachEyedropper(strokePickr);
@@ -702,7 +739,7 @@ function attachEyedropper(pickr) {
     btn.type = 'button';
     btn.className = 'pcr-eyedropper';
     btn.title = '画面から色を抽出 (スポイト)';
-    btn.innerHTML = '<span class="material-symbols-outlined">colorize</span>';
+    btn.innerHTML = '<span class="material-symbols-outlined fill">colorize</span>';
     btn.addEventListener('click', async (e) => {
         e.preventDefault();
         try {
@@ -1050,9 +1087,10 @@ function initCanvas() {
                     splitByGrapheme: false,
                     fontFamily: font,
                     fontSize: size,
-                    fill: rgba(App.fillColor, App.fillOpacity),
-                    stroke: App.strokeWidth > 0 ? rgba(App.strokeColor, App.strokeOpacity) : null,
-                    strokeWidth: App.strokeWidth > 0 ? App.strokeWidth : 0,
+                    fill: rgba(App.textFill, App.textFillOpacity),
+                    stroke: App.textStrokeWidth > 0 ? rgba(App.textStroke, App.textStrokeOpacity) : null,
+                    strokeWidth: App.textStrokeWidth > 0 ? App.textStrokeWidth : 0,
+                    paintFirst: 'stroke', // 縁取りを文字の外側に
                     editable: true,
                     objectCaching: false,
                     _isMapText: true,
@@ -2425,7 +2463,7 @@ function renderLayerList() {
 
         // 可視アイコン
         const vis = document.createElement('span');
-        vis.className = 'material-symbols-outlined';
+        vis.className = 'material-symbols-outlined' + (obj.visible ? '' : ' fill');
         vis.textContent = obj.visible ? 'visibility' : 'visibility_off';
         vis.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -2770,7 +2808,7 @@ function buildSelPatternSection(kind, label, entries, infoRoot, isFirst) {
     const sec = document.createElement('div');
     sec.className = 's-sub-body';
     sec.innerHTML = `
-        <div class="s-sub-ttl${isFirst ? ' first' : ''}"><span class="material-symbols-outlined">palette</span>${label}の${fillSide ? '塗り' : '輪郭'}</div>
+        <div class="s-sub-ttl${isFirst ? ' first' : ''}"><span class="material-symbols-outlined fill">palette</span>${label}の${fillSide ? '塗り' : '輪郭'}</div>
         <div class="sel-pattern-picker pattern-picker"></div>
         <div class="s-sub-section collapsible collapsed">
             <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
@@ -4711,6 +4749,21 @@ function applyTextStyle(styleObj) {
     return true;
 }
 
+/**
+ * App.textFill/textStroke/textStrokeWidth を編集中/選択中のテキストに反映する。
+ * テキストツール時にカラーピッカーや線幅を弄ったときの即時プレビュー用。
+ */
+function applyTextStyleToActiveText() {
+    const styleObj = {
+        fill: rgba(App.textFill, App.textFillOpacity),
+        stroke: App.textStrokeWidth > 0 ? rgba(App.textStroke, App.textStrokeOpacity) : null,
+        strokeWidth: App.textStrokeWidth > 0 ? App.textStrokeWidth : 0,
+    };
+    if (applyTextStyle(styleObj)) {
+        pushHistoryDebounced('文字スタイル変更');
+    }
+}
+
 /** 選択範囲または全体の代表スタイル値を取得する。 */
 function readTextStyle(propKey) {
     const t = getTextStyleTarget();
@@ -5023,6 +5076,11 @@ function buildSaveData() {
         wallPatternOffsetY: App.wallPatternOffsetY,
         wallPatternRotation: App.wallPatternRotation,
         wallPatternScale: App.wallPatternScale,
+        textFill: App.textFill,
+        textFillOpacity: App.textFillOpacity,
+        textStroke: App.textStroke,
+        textStrokeOpacity: App.textStrokeOpacity,
+        textStrokeWidth: App.textStrokeWidth,
         roomGroundShadowEnabled: App.roomGroundShadowEnabled,
         roomGroundShadowColor: App.roomGroundShadowColor,
         roomGroundShadowBlur: App.roomGroundShadowBlur,
@@ -5090,6 +5148,16 @@ function restoreSaveData(data) {
     if (typeof data.wallPatternOffsetY === 'number') App.wallPatternOffsetY = data.wallPatternOffsetY;
     if (typeof data.wallPatternRotation === 'number') App.wallPatternRotation = data.wallPatternRotation;
     if (typeof data.wallPatternScale === 'number') App.wallPatternScale = data.wallPatternScale;
+    if (typeof data.textFill === 'string') App.textFill = data.textFill;
+    if (typeof data.textFillOpacity === 'number') App.textFillOpacity = data.textFillOpacity;
+    if (typeof data.textStroke === 'string') App.textStroke = data.textStroke;
+    if (typeof data.textStrokeOpacity === 'number') App.textStrokeOpacity = data.textStrokeOpacity;
+    if (typeof data.textStrokeWidth === 'number') App.textStrokeWidth = data.textStrokeWidth;
+    // 復元値を UI へ反映
+    if (App._textFillPickr) App._textFillPickr.setColor(rgba(App.textFill, App.textFillOpacity), true);
+    if (App._textStrokePickr) App._textStrokePickr.setColor(rgba(App.textStroke, App.textStrokeOpacity), true);
+    const tswEl = document.getElementById('text-stroke-width');
+    if (tswEl) tswEl.value = App.textStrokeWidth;
     if (typeof data.roomGroundShadowEnabled === 'boolean') App.roomGroundShadowEnabled = data.roomGroundShadowEnabled;
     if (typeof data.roomGroundShadowColor === 'string') App.roomGroundShadowColor = data.roomGroundShadowColor;
     if (typeof data.roomGroundShadowBlur === 'number') App.roomGroundShadowBlur = data.roomGroundShadowBlur;
@@ -5127,6 +5195,10 @@ function restoreSaveData(data) {
     // 地面/壁パターン詳細 input 復元 (地面タブ / 壁タブ / 部屋タブの両方を同期)
     refreshPatternDetailUI();
     // 部屋・影詳細 input 復元
+    const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v;
+    };
     setVal('room-ground-shadow-blur', App.roomGroundShadowBlur);
     setVal('room-ground-shadow-offset-x', App.roomGroundShadowOffsetX);
     setVal('room-ground-shadow-offset-y', App.roomGroundShadowOffsetY);
@@ -5170,7 +5242,10 @@ function restoreSaveData(data) {
     const gvEl = document.getElementById('grid-visible');
     if (gvEl) gvEl.checked = App.gridVisible;
     App.gridColor = data.gridColor || '#535353ff';
+    if (typeof gridPickr !== 'undefined' && gridPickr) gridPickr.setColor(App.gridColor, true);
     App.gridLineWidth = data.gridLineWidth || 1;
+    const glw = document.getElementById('grid-line-width');
+    if (glw) glw.value = App.gridLineWidth;
     // 新規マップ (= 未保存の data.gridDashArray が undefined) は破線をデフォルトに。
     // 明示的に null (実線) で保存されたマップは尊重するため、!== undefined をチェック。
     App.gridDashArray = data.gridDashArray !== undefined ? data.gridDashArray : [10, 5];
@@ -6310,6 +6385,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (applyTextStyle({ fontSize: sz })) {
             pushHistoryDebounced('文字サイズ変更');
         }
+    });
+    // テキスト専用線幅
+    document.getElementById('text-stroke-width')?.addEventListener('input', function () {
+        App.textStrokeWidth = Math.max(0, parseFloat(this.value) || 0);
+        applyTextStyleToActiveText();
     });
     // キーボードショートカット (Ctrl+B / Ctrl+I / Ctrl+U)
     document.addEventListener('keydown', (e) => {

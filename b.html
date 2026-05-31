@@ -20,7 +20,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -654,7 +654,7 @@
                 <div class="blocks-header">
                     <div class="blocks-header-left">
                         <span class="section-label">ブロック</span>
-                        <div class="overlap-warn" id="overlap-warn"><span class="material-symbols-outlined">warning</span>重複あり</div>
+                        <div class="overlap-warn" id="overlap-warn"><span class="material-symbols-outlined fill">warning</span>重複あり</div>
                     </div>
                     <button class="btn-primary" id="btn-add"><span class="material-symbols-outlined">add</span>追加</button>
                 </div>
@@ -1191,7 +1191,7 @@
                 function renderList() {
                     const sorted = [...blocks].sort((a, b) => a.start - b.start);
                     if (!sorted.length) {
-                        blocksList.innerHTML = '<div class="blocks-empty"><span class="material-symbols-outlined">table_chart</span><span>ブロックがありません</span></div>';
+                        blocksList.innerHTML = '<div class="blocks-empty"><span class="material-symbols-outlined fill">table_chart</span><span>ブロックがありません</span></div>';
                         return;
                     }
                     blocksList.innerHTML = '';

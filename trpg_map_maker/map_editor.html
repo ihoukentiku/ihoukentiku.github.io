@@ -23,10 +23,10 @@
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
         <!-- TRPGマップ用拡張フォント (テキストツールで選択可能) -->
         <link
-            href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Klee+One:wght@400;600&family=M+PLUS+Rounded+1c:wght@400;700&family=Yusei+Magic&family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@400;700&family=DotGothic16&family=Cinzel:wght@400;700&family=MedievalSharp&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Aoboshi+One&family=Bebas+Neue&family=Cinzel:wght@400;700&family=Dela+Gothic+One&family=DotGothic16&family=Eater&family=Hina+Mincho&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=M+PLUS+1p:wght@400;700&family=MedievalSharp&family=Mochiy+Pop+One&family=Noto+Serif+JP:wght@400;700&family=Orbitron:wght@400;700&family=Pirata+One&family=Reggae+One&family=Sawarabi+Gothic&family=Sawarabi+Mincho&family=Shippori+Mincho:wght@400;700&family=Special+Elite&family=Stick&family=UnifrakturMaguntia&family=Yomogi&family=Yuji+Boku&family=Yuji+Syuku&family=Yusei+Magic&family=Zen+Kaku+Gothic+New:wght@400;700&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap"
             rel="stylesheet"
         />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
         <link rel="stylesheet" href="../common.css" />
@@ -498,8 +498,11 @@
                 overflow-y: auto;
                 background: var(--bg-card);
                 border-right: 1px solid var(--border);
-                scrollbar-width: thin;
-                scrollbar-color: var(--border-bright) transparent;
+                scrollbar-width: none; /* スクロールは可能だがバーは非表示 */
+                -ms-overflow-style: none;
+            }
+            #prop-panel::-webkit-scrollbar {
+                display: none;
             }
             .s-sec {
                 padding: 0.6rem 0.7rem;
@@ -703,9 +706,17 @@
                 height: 26px;
                 cursor: pointer;
             }
+            /* セレクタリストもパネルのテーマに合わせる (Chromium/Firefox/Safari いずれも option/optgroup の bg/color を尊重) */
             select option {
-                color: #000;
-                background: #fff;
+                color: var(--text);
+                background: var(--bg-card);
+            }
+            select optgroup {
+                color: var(--cyan);
+                background: var(--bg-card);
+                font-weight: 700;
+                font-style: normal;
+                letter-spacing: 0.08em;
             }
             select:focus {
                 outline: none;
@@ -1133,9 +1144,9 @@
         <main id="main">
             <!-- ツールバー -->
             <div id="toolbar">
-                <button class="tb-btn" data-tool="settings" title="設定"><span class="material-symbols-outlined">settings</span><span class="tb-label">設定</span></button>
+                <button class="tb-btn" data-tool="settings" title="設定"><span class="material-symbols-outlined fill">settings</span><span class="tb-label">設定</span></button>
                 <div class="tb-sep"></div>
-                <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined">near_me</span><span class="tb-label">選択</span></button>
+                <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined fill">near_me</span><span class="tb-label">選択</span></button>
                 <!-- シンプルモード専用 -->
                 <button class="tb-btn" data-tool="cell" data-mode="simple" title="セル塗り (B)"><span class="material-symbols-outlined">crossword</span><span class="tb-label">セル</span></button>
                 <button class="tb-btn" data-tool="rect" data-mode="simple" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
@@ -1191,19 +1202,29 @@
                     <div class="s-sec">
                         <div class="s-ttl"><span class="material-symbols-outlined">grid_goldenratio</span>スナップ</div>
                         <div class="f">
-                            <label class="tog"><input type="checkbox" id="snap-enabled" checked /><span class="tl">スナップ有効 <kbd style="font-size: 0.6rem; opacity: 0.5; margin-left: 0.3rem">Shift: 一時無効</kbd></span></label>
+                            <label class="tog"
+                                ><input type="checkbox" id="snap-enabled" checked /><span class="tl"
+                                    >スナップ有効 <kbd style="font-size: 0.6rem; opacity: 0.5; margin-left: 0.3rem">Shift: 一時無効</kbd></span
+                                ></label
+                            >
                         </div>
                         <div id="snap-targets">
-                            <div class="f"><label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label></div>
-                            <div class="f"><label class="tog"><input type="checkbox" id="snap-center" checked /><span class="tl">セル中心</span></label></div>
-                            <div class="f"><label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label></div>
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label>
+                            </div>
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="snap-center" checked /><span class="tl">セル中心</span></label>
+                            </div>
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <!-- 選択ツール -->
                 <div class="prop-group active" data-prop="select">
                     <div class="s-sec">
-                        <div class="s-ttl"><span class="material-symbols-outlined">near_me</span>選択ツール</div>
+                        <div class="s-ttl"><span class="material-symbols-outlined fill">near_me</span>選択ツール</div>
                         <div id="sel-info" class="s-sub-body">
                             <p class="fl" style="opacity: 0.5" id="sel-none">オブジェクトを選択してください</p>
                         </div>
@@ -1367,162 +1388,152 @@
                         </div>
                     </div>
 
-                        <!-- 地面セクション (折りたたみ可) -->
-                        <div class="s-sec collapsible">
-                            <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                            <div class="s-body">
-                                <div class="pattern-picker" id="room-ground-pattern-picker"></div>
+                    <!-- 地面セクション (折りたたみ可) -->
+                    <div class="s-sec collapsible">
+                        <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                        <div class="s-body">
+                            <div class="pattern-picker" id="room-ground-pattern-picker"></div>
 
-                                <div class="s-sub-section collapsible collapsed">
-                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                                    <div class="s-sub-body">
-                                        <div class="f">
-                                            <span class="fl">オフセットX</span>
-                                            <div class="row"><input type="number" id="room-ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">オフセットY</span>
-                                            <div class="row"><input type="number" id="room-ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">回転</span>
-                                            <div class="row">
-                                                <input type="number" id="room-ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span>
-                                            </div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">倍率</span>
-                                            <div class="row">
-                                                <input type="number" id="room-ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
-                                            </div>
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">回転</span>
+                                        <div class="row">
+                                            <input type="number" id="room-ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="s-sub-section collapsible collapsed">
-                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                                    <div class="s-sub-body">
-                                        <div class="f">
-                                            <label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">影を付ける</span></label>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">色</span>
-                                            <div id="room-ground-shadow-color"></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">ぼかし</span>
-                                            <div class="row"><input type="number" id="room-ground-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">オフセットX</span>
-                                            <div class="row">
-                                                <input type="number" id="room-ground-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
-                                            </div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">オフセットY</span>
-                                            <div class="row">
-                                                <input type="number" id="room-ground-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
-                                            </div>
+                                    <div class="f">
+                                        <span class="fl">倍率</span>
+                                        <div class="row">
+                                            <input type="number" id="room-ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 壁セクション (折りたたみ可) -->
-                        <div class="s-sec collapsible">
-                            <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                            <div class="s-body">
-                                <div class="pattern-picker" id="room-wall-pattern-picker"></div>
-
-                                <div class="f">
-                                    <span class="fl">壁の厚み</span>
-                                    <div class="row"><input type="number" id="room-wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
-                                </div>
-                                <div class="f">
-                                    <span class="fl">線種</span>
-                                    <div class="seg">
-                                        <input type="radio" name="room-wall-stroke-style" id="rwss-solid" value="solid" checked /><label for="rwss-solid">実線</label>
-                                        <input type="radio" name="room-wall-stroke-style" id="rwss-dash" value="dashed" /><label for="rwss-dash">破線</label>
-                                        <input type="radio" name="room-wall-stroke-style" id="rwss-dot" value="dotted" /><label for="rwss-dot">点線</label>
-                                        <input type="radio" name="room-wall-stroke-style" id="rwss-dashdot" value="dashdot" /><label for="rwss-dashdot">一点鎖</label>
-                                        <input type="radio" name="room-wall-stroke-style" id="rwss-longdash" value="longdash" /><label for="rwss-longdash">長破線</label>
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">影を付ける</span></label>
                                     </div>
-                                </div>
-                                <div class="f">
-                                    <span class="fl">線継目</span>
-                                    <select id="room-wall-stroke-line-join">
-                                        <option value="miter">角 (miter)</option>
-                                        <option value="round">丸 (round)</option>
-                                        <option value="bevel">面取 (bevel)</option>
-                                    </select>
-                                </div>
-                                <div class="f">
-                                    <span class="fl">線端</span>
-                                    <select id="room-wall-stroke-line-cap">
-                                        <option value="butt">なし (butt)</option>
-                                        <option value="round">丸 (round)</option>
-                                        <option value="square">角 (square)</option>
-                                    </select>
-                                </div>
-
-                                <div class="s-sub-section collapsible collapsed">
-                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                                    <div class="s-sub-body">
-                                        <div class="f">
-                                            <span class="fl">オフセットX</span>
-                                            <div class="row"><input type="number" id="room-wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">オフセットY</span>
-                                            <div class="row"><input type="number" id="room-wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">回転</span>
-                                            <div class="row">
-                                                <input type="number" id="room-wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span>
-                                            </div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">倍率</span>
-                                            <div class="row">
-                                                <input type="number" id="room-wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
-                                            </div>
-                                        </div>
+                                    <div class="f">
+                                        <span class="fl">色</span>
+                                        <div id="room-ground-shadow-color"></div>
                                     </div>
-                                </div>
-
-                                <div class="s-sub-section collapsible collapsed">
-                                    <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                                    <div class="s-sub-body">
-                                        <div class="f">
-                                            <label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">影を付ける</span></label>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">色</span>
-                                            <div id="room-wall-shadow-color"></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">ぼかし</span>
-                                            <div class="row"><input type="number" id="room-wall-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">オフセットX</span>
-                                            <div class="row">
-                                                <input type="number" id="room-wall-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
-                                            </div>
-                                        </div>
-                                        <div class="f">
-                                            <span class="fl">オフセットY</span>
-                                            <div class="row">
-                                                <input type="number" id="room-wall-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span>
-                                            </div>
-                                        </div>
+                                    <div class="f">
+                                        <span class="fl">ぼかし</span>
+                                        <div class="row"><input type="number" id="room-ground-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-ground-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-ground-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- 壁セクション (折りたたみ可) -->
+                    <div class="s-sec collapsible">
+                        <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                        <div class="s-body">
+                            <div class="pattern-picker" id="room-wall-pattern-picker"></div>
+
+                            <div class="f">
+                                <span class="fl">壁の厚み</span>
+                                <div class="row"><input type="number" id="room-wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">線種</span>
+                                <div class="seg">
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-solid" value="solid" checked /><label for="rwss-solid">実線</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-dash" value="dashed" /><label for="rwss-dash">破線</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-dot" value="dotted" /><label for="rwss-dot">点線</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-dashdot" value="dashdot" /><label for="rwss-dashdot">一点鎖</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-longdash" value="longdash" /><label for="rwss-longdash">長破線</label>
+                                </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">線継目</span>
+                                <select id="room-wall-stroke-line-join">
+                                    <option value="miter">角 (miter)</option>
+                                    <option value="round">丸 (round)</option>
+                                    <option value="bevel">面取 (bevel)</option>
+                                </select>
+                            </div>
+                            <div class="f">
+                                <span class="fl">線端</span>
+                                <select id="room-wall-stroke-line-cap">
+                                    <option value="butt">なし (butt)</option>
+                                    <option value="round">丸 (round)</option>
+                                    <option value="square">角 (square)</option>
+                                </select>
+                            </div>
+
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">回転</span>
+                                        <div class="row"><input type="number" id="room-wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">倍率</span>
+                                        <div class="row">
+                                            <input type="number" id="room-wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">影を付ける</span></label>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">色</span>
+                                        <div id="room-wall-shadow-color"></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">ぼかし</span>
+                                        <div class="row"><input type="number" id="room-wall-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-wall-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-wall-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- 地図モード: 装飾 -->
                 <div class="prop-group" data-prop="decor">
@@ -1564,9 +1575,9 @@
                         <div class="tool-tiles" id="freehand-brush-tiles">
                             <div class="tool-tile active" data-freehand-brush="pencil" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
                             <!-- ドット (CircleBrush) は一旦非表示。復活させたい時は下行のコメントを外すだけ
-                            <div class="tool-tile" data-freehand-brush="circle" title="ドット"><span class="material-symbols-outlined">scatter_plot</span><span>ドット</span></div>
+                            <div class="tool-tile" data-freehand-brush="circle" title="ドット"><span class="material-symbols-outlined fill">scatter_plot</span><span>ドット</span></div>
                             -->
-                            <div class="tool-tile" data-freehand-brush="spray" title="スプレー"><span class="material-symbols-outlined">shower</span><span>スプレー</span></div>
+                            <div class="tool-tile" data-freehand-brush="spray" title="スプレー"><span class="material-symbols-outlined fill">shower</span><span>スプレー</span></div>
                             <div class="tool-tile" data-freehand-brush="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
                             <div class="tool-tile" data-freehand-action="add-layer" title="フリーハンドレイヤーを追加">
                                 <span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span>
@@ -1596,18 +1607,54 @@
                         <div class="f">
                             <span class="fl">フォント</span
                             ><select id="text-font">
-                                <option value="Zen Kaku Gothic New">Zen Kaku ゴシック (現代)</option>
-                                <option value="Noto Sans JP">Noto Sans JP</option>
-                                <option value="M PLUS Rounded 1c">M PLUS 丸ゴシック</option>
-                                <option value="Klee One">Klee One (楷書)</option>
-                                <option value="Noto Serif JP">Noto Serif JP (明朝)</option>
-                                <option value="Shippori Mincho B1">しっぽり明朝</option>
-                                <option value="Yusei Magic">Yusei Magic (手書き)</option>
-                                <option value="Dela Gothic One">Dela Gothic (装飾太字)</option>
-                                <option value="DotGothic16">DotGothic16 (ドット)</option>
-                                <option value="Share Tech Mono">Share Tech Mono</option>
-                                <option value="Cinzel">Cinzel (欧文)</option>
-                                <option value="MedievalSharp">MedievalSharp (欧文中世)</option>
+                                <optgroup label="ゴシック">
+                                    <option value="Noto Sans JP">Noto Sans JP</option>
+                                    <option value="Zen Kaku Gothic New">ZEN 角ゴシック New</option>
+                                    <option value="Sawarabi Gothic">さわらびゴシック</option>
+                                    <option value="M PLUS 1p">M PLUS 1p</option>
+                                </optgroup>
+                                <optgroup label="明朝">
+                                    <option value="Noto Serif JP">Noto Serif JP</option>
+                                    <option value="Zen Old Mincho">ZEN オールド明朝</option>
+                                    <option value="Shippori Mincho">しっぽり明朝</option>
+                                    <option value="Sawarabi Mincho">さわらび明朝</option>
+                                    <option value="Hina Mincho">ヒナ明朝</option>
+                                </optgroup>
+                                <optgroup label="丸ゴシック / ポップ">
+                                    <option value="Zen Maru Gothic">ZEN 丸ゴシック</option>
+                                    <option value="Mochiy Pop One">モッチーポップ</option>
+                                    <option value="Reggae One">Reggae One</option>
+                                    <option value="Aoboshi One">あおぼし</option>
+                                </optgroup>
+                                <optgroup label="楷書 / 手書き">
+                                    <option value="Klee One">クレー One</option>
+                                    <option value="Yomogi">よもぎ</option>
+                                    <option value="Zen Kurenaido">ZEN 紅道</option>
+                                    <option value="Yuji Syuku">Yuji Syuku</option>
+                                    <option value="Yuji Boku">Yuji Boku</option>
+                                    <option value="Yusei Magic">油性マジック</option>
+                                </optgroup>
+                                <optgroup label="装飾 / 特殊">
+                                    <option value="Dela Gothic One">デラゴシックワン</option>
+                                    <option value="Kaisei Decol">解星デコール</option>
+                                    <option value="DotGothic16">ドットゴシック 16</option>
+                                    <option value="Stick">Stick</option>
+                                </optgroup>
+                                <optgroup label="欧文 / ファンタジー">
+                                    <option value="Cinzel">Cinzel</option>
+                                    <option value="MedievalSharp">MedievalSharp</option>
+                                    <option value="UnifrakturMaguntia">UnifrakturMaguntia</option>
+                                    <option value="Pirata One">Pirata One</option>
+                                </optgroup>
+                                <optgroup label="欧文 / ホラー・SF">
+                                    <option value="Special Elite">Special Elite</option>
+                                    <option value="Eater">Eater</option>
+                                    <option value="Orbitron">Orbitron</option>
+                                </optgroup>
+                                <optgroup label="欧文 / 等幅・モダン">
+                                    <option value="Share Tech Mono">Share Tech Mono</option>
+                                    <option value="Bebas Neue">Bebas Neue</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="f">
@@ -1625,12 +1672,28 @@
                             </div>
                         </div>
                     </div>
+                    <!-- テキスト専用フィル/ストローク (シンプル描画とは独立) -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined fill">palette</span>色設定</div>
+                        <div class="f">
+                            <span class="fl">フィル</span>
+                            <div id="text-fill-picker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">ストローク</span>
+                            <div id="text-stroke-picker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">線幅</span>
+                            <div class="row"><input type="number" id="text-stroke-width" value="0" min="0" max="100" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                    </div>
                 </div>
                 <!-- 画像 (ツールボタン押下で即起動するためプロパティパネルは不要。input は保持) -->
                 <input type="file" id="image-upload" accept="image/*" style="display: none" />
                 <!-- フィル / ストローク -->
                 <div id="fill-stroke-sec" class="s-sec" style="display: none">
-                    <div class="s-ttl" id="fill-stroke-title"><span class="material-symbols-outlined">palette</span>フィル / ストローク</div>
+                    <div class="s-ttl" id="fill-stroke-title"><span class="material-symbols-outlined fill">palette</span>フィル / ストローク</div>
                     <div class="f" id="fill-color-row">
                         <span class="fl">フィル</span>
                         <div id="fill-color-picker"></div>
@@ -1682,32 +1745,31 @@
                 <!-- 影 ホーム位置 (シンプル/装飾系で使用). 地面/壁モードのときは JS で
                      対応 prop-group 内の .shadow-mount に動的に移される。-->
                 <div id="shadow-home">
-                <div id="shadow-sec" class="s-sec collapsible collapsed" style="display: none">
-                    <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
-                    <div class="s-body">
-                        <div class="f">
-                            <label class="tog"><input type="checkbox" id="shadow-enabled" /><span class="tl">影を付ける</span></label>
-                        </div>
-                        <div class="f">
-                            <span class="fl">色</span>
-                            <div id="shadow-color"></div>
-                        </div>
-                        <div class="f">
-                            <span class="fl">ぼかし</span>
-                            <div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
-                        </div>
-                        <div class="f">
-                            <span class="fl">オフセットX</span>
-                            <div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
-                        </div>
-                        <div class="f">
-                            <span class="fl">オフセットY</span>
-                            <div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                    <div id="shadow-sec" class="s-sec collapsible collapsed" style="display: none">
+                        <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                        <div class="s-body">
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="shadow-enabled" /><span class="tl">影を付ける</span></label>
+                            </div>
+                            <div class="f">
+                                <span class="fl">色</span>
+                                <div id="shadow-color"></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">ぼかし</span>
+                                <div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">オフセットX</span>
+                                <div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">オフセットY</span>
+                                <div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                </div>
-
             </div>
 
             <!-- キャンバス -->

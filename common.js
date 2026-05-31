@@ -39,7 +39,7 @@
             <i class="fab fa-x-twitter" id="icon-x" style="display:none"></i>
           </a>
           <button class="hbtn" id="theme-toggle" aria-label="テーマ切り替え" title="テーマ切り替え">
-            <span class="material-symbols-outlined" id="theme-icon">light_mode</span>
+            <span class="material-symbols-outlined fill" id="theme-icon">light_mode</span>
           </button>
         </nav>
       </div>
