@@ -11,7 +11,7 @@
         twitter: 'https://twitter.com/ihoukentiku',
         github: 'https://github.com/ihoukentiku/ihoukentiku.github.io',
         githubLicense: 'https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE',
-        thirdPartyLicense: 'https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/THIRD_PARTY_LICENSES.md',
+        thirdPartyLicense: 'third-party-licenses.html',
         privacyPolicy: 'privacy-policy.html',
     };
 
@@ -31,7 +31,7 @@
         </a>
         <nav class="header-nav" aria-label="サイトナビゲーション">
           <button class="hbtn" id="btn-guide" aria-label="使い方ガイド" title="使い方ガイド">
-            <span class="material-icons">help_outline</span>
+            <span class="material-symbols-outlined">question_mark</span>
           </button>
           <a class="hbtn" id="btn-twitter" href="${SITE.twitter}" target="_blank"
              rel="noopener noreferrer" aria-label="作者Twitter">
@@ -39,7 +39,7 @@
             <i class="fab fa-x-twitter" id="icon-x" style="display:none"></i>
           </a>
           <button class="hbtn" id="theme-toggle" aria-label="テーマ切り替え" title="テーマ切り替え">
-            <span class="material-icons" id="theme-icon">light_mode</span>
+            <span class="material-symbols-outlined fill" id="theme-icon">light_mode</span>
           </button>
         </nav>
       </div>

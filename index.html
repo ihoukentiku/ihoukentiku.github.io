@@ -20,25 +20,14 @@
         <meta name="twitter:creator" content="@ihoukentiku" />
         <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
 
-        <!-- Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4SJ8S23EC"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag('js', new Date());
-
-            gtag('config', 'G-T4SJ8S23EC');
-        </script>
-
+        <script src="analytics.js"></script>
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 
-        <!-- Material Icons -->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <!-- Material Symbols -->
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
         <!-- Font Awesome -->
         <link
@@ -393,7 +382,7 @@
                 background: var(--cyan-muted);
                 box-shadow: var(--glow-card);
             }
-            .btn-feedback .material-icons {
+            .btn-feedback .material-symbols-outlined {
                 font-size: 1rem;
             }
 
@@ -424,7 +413,7 @@
                 gap: 0.5rem;
                 white-space: nowrap;
             }
-            .section-head-title .material-icons {
+            .section-head-title .material-symbols-outlined {
                 font-size: 1.2em;
                 color: var(--cyan);
             }
@@ -525,7 +514,7 @@
                     box-shadow var(--t),
                     background var(--t);
             }
-            .card-icon-wrap .material-icons {
+            .card-icon-wrap .material-symbols-outlined {
                 font-size: 1.3rem;
                 color: var(--cyan);
                 transition: color var(--t);
@@ -588,7 +577,7 @@
                 letter-spacing: 0.1em;
                 gap: 0.35rem;
             }
-            .card-arrow .material-icons {
+            .card-arrow .material-symbols-outlined {
                 font-size: 1.1rem;
             }
             .tool-card:hover .card-arrow {
@@ -656,13 +645,13 @@
                         <!-- 更新情報カード -->
                         <div class="info-card" role="region" aria-label="最新の更新情報">
                             <div class="info-card-header">
-                                <span class="material-icons info-card-icon">rss_feed</span>
+                                <span class="material-symbols-outlined info-card-icon">rss_feed</span>
                                 <span class="info-card-title">Latest Update</span>
                             </div>
                             <div class="news-latest" id="latest-news"></div>
                             <div class="news-more-link">
                                 <button class="btn-text" id="open-news-modal" aria-label="すべての更新情報を表示">
-                                    <span class="material-icons" style="font-size: 12px">expand_more</span> すべて見る
+                                    <span class="material-symbols-outlined" style="font-size: 12px">expand_more</span> すべて見る
                                 </button>
                             </div>
                         </div>
@@ -670,7 +659,7 @@
                         <!-- フィードバックカード -->
                         <div class="info-card" role="region" aria-label="フィードバック">
                             <div class="info-card-header">
-                                <span class="material-icons info-card-icon">forum</span>
+                                <span class="material-symbols-outlined info-card-icon fill">forum</span>
                                 <span class="info-card-title">Feedback</span>
                             </div>
                             <p class="feedback-desc">バグ報告・機能改善・新ツールのご要望はこちらから。</p>
@@ -681,7 +670,7 @@
                                 rel="noopener noreferrer"
                                 aria-label="要望フォームを開く"
                             >
-                                <span class="material-icons">open_in_new</span>
+                                <span class="material-symbols-outlined">open_in_new</span>
                                 要望フォームへ
                             </a>
                         </div>
@@ -694,7 +683,7 @@
                 <div class="container">
                     <div class="section-head">
                         <h2 class="section-head-title">
-                            <span class="material-icons" aria-hidden="true">terminal</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
                             TOOLS
                         </h2>
                         <div class="section-head-line" aria-hidden="true"></div>
@@ -714,7 +703,7 @@
             <div class="modal">
                 <div class="modal-header">
                     <span class="modal-title" id="news-modal-title">更新情報</span>
-                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body" id="all-news-list" role="log"></div>
             </div>
@@ -726,7 +715,7 @@
             <div class="modal">
                 <div class="modal-header">
                     <span class="modal-title" id="guide-modal-title">使い方ガイド</span>
-                    <button class="modal-close" aria-label="閉じる"><span class="material-icons">close</span></button>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="modal-body" id="guide-content">
                     <div class="guide-body">
@@ -738,19 +727,19 @@
                         <h3>このサイトの使い方</h3>
                         <ul>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: 0px; color: var(--cyan); flex-shrink: 0">open_in_new</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: 0px; color: var(--cyan); flex-shrink: 0">open_in_new</span>
                                 ツールカードをクリックすると、各ツールが開きます。
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--cyan); flex-shrink: 0">devices</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--cyan); flex-shrink: 0">devices</span>
                                 スマートフォン・タブレット・PCのいずれでも動作します。
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--cyan); flex-shrink: 0">edit_note</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--cyan); flex-shrink: 0">edit_note</span>
                                 バグ報告や改善要望は「改善要望フォーム」からお寄せください。
                             </li>
                             <li>
-                                <span class="material-icons" style="font-size: 1rem; vertical-align: -3px; color: var(--cyan); flex-shrink: 0">contrast</span>
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: -3px; color: var(--cyan); flex-shrink: 0">contrast</span>
                                 右上のアイコンでライト/ダークモードを切り替えられます。
                             </li>
                         </ul>
@@ -901,7 +890,7 @@
                     <a class="tool-card" href="${t.url}" rel="noopener noreferrer" aria-label="${t.title}">
                         <div class="card-top">
                         <div class="card-icon-wrap">
-                            <span class="material-icons">${t.icon}</span>
+                            <span class="material-symbols-outlined${['bolt', 'casino', 'groups', 'person_pin'].includes(t.icon) ? ' fill' : ''}">${t.icon}</span>
                         </div>
                         <div>
                             <div class="card-title-en">${t.titleEn}</div>
@@ -913,7 +902,7 @@
                         </div>
                         <div class="card-arrow">
                         <span>OPEN</span>
-                        <span class="material-icons">arrow_forward</span>
+                        <span class="material-symbols-outlined">arrow_forward</span>
                         </div>
                     </a>
                     `

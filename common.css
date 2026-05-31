@@ -1,4 +1,30 @@
 /* ----------------------------------------------------------------
+   Material Symbols
+   css2 形式のフォント読み込み（FILL 軸付き）はヘルパークラスを含まない
+   ため、ここで定義する。.fill を併用した要素は塗りつぶし表示になる。
+---------------------------------------------------------------- */
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+.material-symbols-outlined.fill {
+    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* ----------------------------------------------------------------
    リセット
    ブラウザ差異を吸収する最小限のリセット
 ---------------------------------------------------------------- */
@@ -249,7 +275,7 @@ body::before {
     border-color: var(--border-bright);
     box-shadow: var(--glow-blue);
 }
-.hbtn .material-icons {
+.hbtn .material-symbols-outlined {
     font-size: 1.4rem;
 }
 .hbtn .fa-twitter,
@@ -541,7 +567,7 @@ body::before {
     gap: 0.4rem;
     line-height: 1.5;
 }
-.guide-body ul li span.material-icons {
+.guide-body ul li span.material-symbols-outlined {
     margin-top: 0.2rem;
 }
 

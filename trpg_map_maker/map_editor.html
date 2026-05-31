@@ -1,0 +1,2147 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>マップ編集 | TRPGマップ作成ツール | 違法建築のTRPGラボ</title>
+        <!-- 編集画面は直接 URL でアクセスされる導線が無いため description / OG / Twitter カードは省略 (map_list.html が代表ページ) -->
+        <meta name="robots" content="noindex" />
+        <link rel="icon" href="../favicon.ico" />
+        <script src="../analytics.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <!-- TRPGマップ用拡張フォント (テキストツールで選択可能) -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Aoboshi+One&family=Bebas+Neue&family=Cinzel:wght@400;700&family=Dela+Gothic+One&family=DotGothic16&family=Eater&family=Hina+Mincho&family=Kaisei+Decol:wght@400;700&family=Klee+One:wght@400;600&family=M+PLUS+1p:wght@400;700&family=MedievalSharp&family=Mochiy+Pop+One&family=Noto+Serif+JP:wght@400;700&family=Orbitron:wght@400;700&family=Pirata+One&family=Reggae+One&family=Sawarabi+Gothic&family=Sawarabi+Mincho&family=Shippori+Mincho:wght@400;700&family=Special+Elite&family=Stick&family=UnifrakturMaguntia&family=Yomogi&family=Yuji+Boku&family=Yuji+Syuku&family=Yusei+Magic&family=Zen+Kaku+Gothic+New:wght@400;700&family=Zen+Kurenaido&family=Zen+Maru+Gothic:wght@400;700&family=Zen+Old+Mincho:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/nano.min.css" />
+        <link rel="stylesheet" href="../common.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
+        <style>
+            :root {
+                --page-width: 100%;
+                --toolbar-w: 48px;
+                --prop-w: 260px;
+                --layer-w: 240px;
+                --statusbar-h: 28px;
+                --input-bg: rgba(255, 255, 255, 0.06);
+                --input-bd: rgba(33, 150, 243, 0.3);
+            }
+            [data-theme='light'] {
+                --input-bg: rgba(0, 0, 0, 0.05);
+                --input-bd: rgba(33, 150, 243, 0.4);
+            }
+            html,
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            /* ---- レイアウト ---- */
+            #main {
+                display: grid;
+                grid-template-columns: var(--toolbar-w) var(--prop-w) 1fr var(--layer-w);
+                grid-template-rows: 1fr var(--statusbar-h);
+                height: calc(100dvh - var(--header-h, 60px));
+                overflow: hidden;
+            }
+
+            /* ================================================================
+               編集画面のヘッダー拡張
+               レイアウト (CSS Grid: 3列 auto 1fr auto)
+                 [左] マイマップへ戻るボタン
+                 [中] マップ名 + 保存ステータス  ← justify-content: center で中央寄せ
+                 [右] Undo / Redo
+            ================================================================ */
+            .header-ext {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 0.8rem;
+                margin: 0 0.6rem 0 0.8rem;
+                flex: 1 1 auto; /* header-inner の中で余白を占有 */
+                min-width: 0; /* マップ名の省略 (text-overflow) を有効化 */
+            }
+
+            /* --- 左: マイマップへ戻る (アクセントカラーで主要ナビとして目立たせる) --- */
+            .header-ext .map-back-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.5rem 1rem;
+                font-family: var(--font-mono);
+                font-size: 0.8rem;
+                letter-spacing: 0.08em;
+                color: var(--cyan);
+                background: rgba(0, 229, 255, 0.08);
+                border: 1px solid var(--cyan);
+                border-radius: var(--r);
+                white-space: nowrap;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    box-shadow var(--t);
+            }
+            .header-ext .map-back-btn:hover {
+                background: var(--cyan);
+                color: #02232a;
+                box-shadow: var(--glow-cyan);
+            }
+            .header-ext .map-back-btn .material-symbols-outlined {
+                font-size: 1.1rem;
+            }
+
+            /* --- 中央: マップ名 + 保存ステータス --- */
+            .header-ext .map-center {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.7rem;
+                min-width: 0;
+            }
+            .header-ext .map-name-display {
+                font-size: 1rem;
+                color: var(--text-bright);
+                font-weight: 700;
+                max-width: 360px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .header-ext .save-status {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                color: var(--text-dim);
+                padding: 0.22rem 0.6rem;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                min-width: 78px;
+                text-align: center;
+                flex-shrink: 0;
+                transition:
+                    color var(--t),
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .header-ext .save-status.saved {
+                color: var(--cyan);
+                border-color: rgba(0, 229, 255, 0.25);
+            }
+            .header-ext .save-status.saving {
+                color: #ffb74d;
+                border-color: rgba(255, 183, 77, 0.3);
+            }
+            .header-ext .save-status.dirty {
+                color: var(--text);
+                border-color: rgba(255, 255, 255, 0.15);
+            }
+            .header-ext .save-status.error {
+                color: #ef5350;
+                background: rgba(244, 67, 54, 0.1);
+                border-color: rgba(244, 67, 54, 0.4);
+            }
+
+            /* --- モード切替トグル (シンプル / 地図) — Undo/Redo の左 --- */
+            .mode-toggle {
+                display: inline-flex;
+                align-items: center;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+                margin-right: 0.4rem;
+            }
+            .mode-toggle button {
+                padding: 0.35rem 0.65rem;
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.05em;
+                color: var(--text-dim);
+                background: transparent;
+                cursor: pointer;
+                border: 0;
+                transition:
+                    background var(--t),
+                    color var(--t);
+            }
+            .mode-toggle button + button {
+                border-left: 1px solid var(--input-bd);
+            }
+            .mode-toggle button:hover {
+                color: var(--text-bright);
+                background: rgba(0, 229, 255, 0.08);
+            }
+            .mode-toggle button.active {
+                color: var(--cyan);
+                background: rgba(0, 229, 255, 0.14);
+            }
+
+            /* モードによるツールバー/プロパティパネルの表示切替 */
+            body[data-edit-mode='simple'] .tb-btn[data-mode='map'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='ground'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='wall'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='room'],
+            body[data-edit-mode='simple'] .prop-group[data-prop='decor'] {
+                display: none;
+            }
+            body[data-edit-mode='map'] .tb-btn[data-mode='simple'],
+            body[data-edit-mode='map'] .prop-group[data-prop='cell'],
+            body[data-edit-mode='map'] .prop-group[data-prop='rect'],
+            body[data-edit-mode='map'] .prop-group[data-prop='ellipse'],
+            body[data-edit-mode='map'] .prop-group[data-prop='line'],
+            body[data-edit-mode='map'] .prop-group[data-prop='path'],
+            body[data-edit-mode='map'] .prop-group[data-prop='polygon'],
+            body[data-edit-mode='map'] .prop-group[data-prop='curve'],
+            body[data-edit-mode='map'] .prop-group[data-prop='curve-closed'] {
+                display: none;
+            }
+            /* 地面ツール時にセルサブツールを選ぶと、cell prop-group も同時に active になる (refreshPropGroupVisibility)。
+               ↑ の "map モードで cell prop-group を非表示" を上書きして表示する。 */
+            body[data-edit-mode='map'] .prop-group[data-prop='cell'].active {
+                display: flex;
+            }
+
+            /* --- 右: Undo / Redo --- */
+            .header-ext .map-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            .header-ext .header-icon-btn {
+                width: 36px;
+                height: 32px;
+                display: grid;
+                place-items: center;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text);
+                background: transparent;
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    border-color var(--t),
+                    opacity var(--t);
+            }
+            .header-ext .header-icon-btn:hover:not(:disabled) {
+                background: rgba(0, 229, 255, 0.12);
+                color: var(--cyan);
+                border-color: var(--cyan);
+            }
+            .header-ext .header-icon-btn:disabled {
+                opacity: 0.35;
+                cursor: not-allowed;
+            }
+            .header-ext .header-icon-btn .material-symbols-outlined {
+                font-size: 1.2rem;
+            }
+
+            /* ---- ツールバー ---- */
+            #toolbar {
+                grid-column: 1;
+                grid-row: 1;
+                display: flex;
+                flex-direction: column;
+                background: var(--bg2);
+                border-right: 1px solid var(--border);
+                padding: 4px 0;
+                gap: 2px;
+                overflow-y: auto;
+                scrollbar-width: none;
+            }
+            #toolbar::-webkit-scrollbar {
+                display: none;
+            }
+            .tb-sep {
+                height: 1px;
+                margin: 4px 6px;
+                background: var(--border);
+            }
+            .tb-btn {
+                position: relative;
+                width: var(--toolbar-w);
+                height: 40px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: var(--text);
+                border-radius: 0;
+                transition:
+                    color var(--t),
+                    background var(--t);
+                gap: 1px;
+            }
+            .tb-btn:hover {
+                color: var(--text-bright);
+                background: var(--cyan-muted);
+            }
+            .tb-btn.active {
+                color: var(--cyan);
+                background: rgba(0, 229, 255, 0.12);
+                border-left: 2px solid var(--cyan);
+            }
+            .tb-btn .material-symbols-outlined {
+                font-size: 1.2rem;
+            }
+            .tb-btn .tb-label {
+                font-size: 0.5rem;
+                font-family: var(--font-main);
+                letter-spacing: -0.02em;
+                white-space: nowrap;
+            }
+            /* ツールタイル（高度モードのサブツール選択） */
+            .tool-tiles {
+                display: grid;
+                grid-template-columns: repeat(4, 56px);
+                gap: 5px;
+                margin-bottom: 0.6rem;
+            }
+            .tool-tile {
+                aspect-ratio: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                cursor: pointer;
+                color: var(--text);
+                font-size: 0.55rem;
+                gap: 2px;
+                transition:
+                    background var(--t),
+                    border-color var(--t),
+                    color var(--t);
+                padding: 3px 2px;
+                text-align: center;
+                line-height: 1.2;
+                height: 56px;
+                width: 56px;
+            }
+            .tool-tile:hover {
+                background: var(--cyan-muted);
+                color: var(--text-bright);
+            }
+            .tool-tile.active {
+                background: rgba(0, 229, 255, 0.12);
+                border-color: var(--cyan);
+                color: var(--cyan);
+            }
+            .tool-tile .material-symbols-outlined {
+                font-size: 1.1rem;
+            }
+            .tool-tile .fa-solid,
+            .tool-tile .fa-regular {
+                font-size: 1rem;
+                line-height: 1.1rem;
+            }
+            /* テキストスタイル用ミニタイル — 24x24px、アイコンも小さく */
+            .tool-tile.text-style-mini {
+                width: 24px;
+                height: 24px;
+                padding: 0;
+                aspect-ratio: auto;
+            }
+            .tool-tile.text-style-mini .material-symbols-outlined {
+                font-size: 0.95rem;
+            }
+
+            /* ---- パターン選択 UI (Phase B) ---- */
+            .pattern-picker {
+                margin-top: 0.4rem;
+            }
+            .pp-genres {
+                display: flex;
+                gap: 4px;
+                overflow-x: auto;
+                scrollbar-width: thin;
+                padding-bottom: 4px;
+                margin-bottom: 6px;
+                border-bottom: 1px solid var(--border);
+            }
+            .pp-genres::-webkit-scrollbar {
+                height: 4px;
+            }
+            .pp-genre {
+                flex: 0 0 auto;
+                padding: 3px 8px;
+                font-size: 0.62rem;
+                font-family: var(--font-mono);
+                color: var(--text-dim);
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                cursor: pointer;
+                white-space: nowrap;
+                transition:
+                    background var(--t),
+                    color var(--t),
+                    border-color var(--t);
+            }
+            .pp-genre:hover {
+                color: var(--text-bright);
+                background: var(--cyan-muted);
+            }
+            .pp-genre.active {
+                color: var(--cyan);
+                border-color: var(--cyan);
+                background: rgba(0, 229, 255, 0.1);
+            }
+            /* スクロール用ラッパ — aspect-ratio タイルが max-height 制約で潰れる問題を避けるため
+               スクロールはラッパ側、グリッドは高さ制約なしで自然に積む */
+            .pp-tiles-scroll {
+                max-height: 200px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                padding-right: 2px;
+            }
+            /* 装飾ピッカーはアセット数が多いのでスクロール領域を 2 倍にする */
+            .decor-picker .pp-tiles-scroll {
+                max-height: 400px;
+            }
+            /* 装飾タイルは透過 SVG を見やすくするためチェッカーボード背景 (編集画面背景と同じ色使い) */
+            .decor-picker .pp-tile {
+                background: repeating-conic-gradient(#2b2b2b 0% 25%, #1f1f1f 25% 50%) 0 0 / 12px 12px;
+            }
+            [data-theme='light'] .decor-picker .pp-tile {
+                background: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%) 0 0 / 12px 12px;
+            }
+            .pp-tiles {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 4px;
+            }
+            .pp-tile {
+                aspect-ratio: 1;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+                background-repeat: repeat;
+                background-size: 100% 100%;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t);
+            }
+            .pp-tile:hover {
+                border-color: var(--cyan);
+            }
+            .pp-tile.active {
+                border-color: var(--cyan);
+                box-shadow:
+                    0 0 0 1px var(--cyan),
+                    var(--glow-cyan);
+            }
+            .pp-tile .pp-label {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                font-size: 0.5rem;
+                color: white;
+                text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+                text-align: center;
+                padding: 1px 0;
+                background: rgba(0, 0, 0, 0.35);
+                line-height: 1.1;
+            }
+            .pp-tile-solid {
+                background: repeating-conic-gradient(rgba(255, 255, 255, 0.15) 0% 25%, rgba(0, 0, 0, 0.15) 0% 50%) 0 0 / 12px 12px;
+            }
+            /* ユーザー素材アップロードタイル ("+ 追加") */
+            .pp-tile-add {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-dim);
+                border-style: dashed;
+                background: transparent;
+            }
+            .pp-tile-add:hover {
+                color: var(--cyan);
+                border-color: var(--cyan);
+            }
+            /* ユーザー素材削除ボタン (タイル右上 overlay) */
+            .pp-tile-del {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                width: 18px;
+                height: 18px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                border: 0;
+                border-radius: 3px;
+                background: rgba(0, 0, 0, 0.7);
+                color: #fff;
+                cursor: pointer;
+                z-index: 2;
+            }
+            .pp-tile:hover .pp-tile-del {
+                display: flex;
+            }
+            .pp-tile-del:hover {
+                background: rgba(220, 60, 60, 0.85);
+            }
+            .pp-tile-del .material-symbols-outlined {
+                font-size: 0.85rem;
+            }
+            .pp-tile-solid .pp-solid-swatch {
+                position: absolute;
+                inset: 0;
+            }
+
+            /* 単色モード時に出る色選択行 */
+            .pp-solid-row {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                margin-top: 6px;
+                font-size: 0.65rem;
+                color: var(--text-dim);
+            }
+            .pp-solid-row.hidden {
+                display: none;
+            }
+            .pp-solid-trigger .pickr {
+                width: 100%;
+            }
+
+            /* ---- プロパティパネル ---- */
+            #prop-panel {
+                grid-column: 2;
+                grid-row: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                padding: 0;
+                overflow-y: auto;
+                background: var(--bg-card);
+                border-right: 1px solid var(--border);
+                scrollbar-width: none; /* スクロールは可能だがバーは非表示 */
+                -ms-overflow-style: none;
+            }
+            #prop-panel::-webkit-scrollbar {
+                display: none;
+            }
+            .s-sec {
+                padding: 0.6rem 0.7rem;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .s-sec:last-child {
+                border-bottom: none;
+            }
+            /* セクション内サブヘッダ (例: 部屋の「地面」「壁」、選択パネルの「塗り」「影」)
+               .s-sec と違って padding/border は無く、点線の上ボーダーだけで区切る。 */
+            .s-sub-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.62rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--text);
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding-top: 0.55rem;
+                border-top: 1px dashed var(--border);
+            }
+            .s-sub-ttl > .material-symbols-outlined {
+                font-size: 0.78rem;
+            }
+            .s-sub-ttl.first {
+                padding-top: 0;
+                border-top: none;
+            }
+            /* s-sec 内の汎用 flex 縦コンテナ (sub-section の本体) */
+            .s-sub-body {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            /* 折りたたみ可能なサブセクション (s-sec 内に置く) — s-sec.collapsible と同じパターンの mini 版 */
+            .s-sub-section {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            .s-sub-section.collapsible > .s-sub-ttl {
+                cursor: pointer;
+                user-select: none;
+            }
+            .s-sub-section.collapsible > .s-sub-ttl .s-chevron {
+                margin-left: auto;
+                transition: transform 0.2s ease;
+                transform: rotate(90deg);
+                font-size: 0.9rem;
+            }
+            .s-sub-section.collapsible.collapsed > .s-sub-ttl .s-chevron {
+                transform: rotate(0deg);
+            }
+            .s-sub-section.collapsible > .s-sub-body {
+                overflow: hidden;
+                max-height: 800px;
+                transition:
+                    max-height 0.2s ease,
+                    opacity 0.2s ease;
+                opacity: 1;
+            }
+            .s-sub-section.collapsible.collapsed > .s-sub-body {
+                max-height: 0;
+                opacity: 0;
+            }
+            .s-sub-section.collapsible.collapsed {
+                gap: 0;
+            }
+            #snap-targets.disabled {
+                opacity: 0.3;
+                pointer-events: none;
+            }
+            .terrain-btn {
+                border: 2px solid transparent;
+                border-radius: 3px;
+                padding: 2px 0;
+                font-size: 0.65rem;
+                text-align: center;
+                cursor: pointer;
+                color: var(--text);
+                transition: border-color var(--t);
+                line-height: 1.3;
+                position: relative;
+                overflow: hidden;
+            }
+            .terrain-btn span {
+                position: relative;
+                z-index: 1;
+                text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+            }
+            .terrain-btn.active {
+                border-color: var(--cyan);
+                box-shadow: 0 0 6px var(--glow-cyan);
+            }
+            .s-ttl {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--cyan);
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            .s-ttl .material-symbols-outlined {
+                font-size: 0.88rem;
+            }
+            /* 折りたたみ可能なセクション (パターン / 影) — タイトルクリックで展開/格納 */
+            .s-sec.collapsible > .s-ttl {
+                cursor: pointer;
+                user-select: none;
+            }
+            .s-sec.collapsible > .s-ttl .s-chevron {
+                margin-left: auto;
+                transition: transform 0.2s ease;
+                transform: rotate(90deg); /* 展開時: 下向き */
+            }
+            .s-sec.collapsible.collapsed > .s-ttl .s-chevron {
+                transform: rotate(0deg); /* 折りたたみ時: 右向き */
+            }
+            .s-sec.collapsible > .s-body {
+                overflow: hidden;
+                max-height: 600px;
+                transition:
+                    max-height 0.2s ease,
+                    opacity 0.2s ease;
+                opacity: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            .s-sec.collapsible.collapsed > .s-body {
+                max-height: 0;
+                opacity: 0;
+            }
+            /* 折りたたみ可能セクションは、collapsed のとき gap を消して s-ttl だけになるようにする */
+            .s-sec.collapsible.collapsed {
+                gap: 0;
+            }
+            .f {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+            .f-col {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.3rem;
+            }
+            .fl {
+                font-size: 0.78rem;
+                color: var(--text);
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .unit {
+                font-size: 0.72rem;
+                color: var(--text-dim);
+                flex-shrink: 0;
+            }
+            .row {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
+
+            input[type='number'] {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                color: var(--text-bright);
+                font-family: var(--font-mono);
+                font-size: 1rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                width: 50px;
+                text-align: center;
+                transition:
+                    border-color var(--t),
+                    box-shadow var(--t);
+            }
+            input[type='number']:focus {
+                outline: none;
+                border-color: var(--cyan);
+                box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.12);
+            }
+            select {
+                background: var(--input-bg);
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                /* 現在選択中の表示はテーマ色 (--text)、ドロップダウン項目は黒固定で常に読めるように */
+                color: var(--text);
+                font-family: var(--font-mono);
+                font-size: 0.76rem;
+                padding: 0.15rem 0.35rem;
+                height: 26px;
+                cursor: pointer;
+            }
+            /* セレクタリストもパネルのテーマに合わせる (Chromium/Firefox/Safari いずれも option/optgroup の bg/color を尊重) */
+            select option {
+                color: var(--text);
+                background: var(--bg-card);
+            }
+            select optgroup {
+                color: var(--cyan);
+                background: var(--bg-card);
+                font-weight: 700;
+                font-style: normal;
+                letter-spacing: 0.08em;
+            }
+            select:focus {
+                outline: none;
+                border-color: var(--cyan);
+            }
+
+            .tog {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+                cursor: pointer;
+            }
+            .tog input[type='checkbox'] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 30px;
+                height: 16px;
+                border-radius: 8px;
+                border: 1px solid var(--input-bd);
+                background: var(--input-bg);
+                position: relative;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition:
+                    background var(--t),
+                    border-color var(--t);
+            }
+            .tog input[type='checkbox']::after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--text-dim);
+                top: 2px;
+                left: 2px;
+                transition:
+                    transform var(--t),
+                    background var(--t);
+            }
+            .tog input[type='checkbox']:checked {
+                background: rgba(0, 229, 255, 0.18);
+                border-color: var(--cyan);
+            }
+            .tog input[type='checkbox']:checked::after {
+                background: var(--cyan);
+                transform: translateX(14px);
+            }
+            .tl {
+                font-size: 0.78rem;
+                color: var(--text);
+            }
+
+            .seg {
+                display: flex;
+                border: 1px solid var(--input-bd);
+                border-radius: 4px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .seg input[type='radio'] {
+                display: none;
+            }
+            .seg label {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                padding: 0.15rem 0.42rem;
+                color: var(--text-dim);
+                cursor: pointer;
+                border-right: 1px solid var(--input-bd);
+                transition:
+                    background var(--t),
+                    color var(--t);
+                white-space: nowrap;
+                line-height: 1.6;
+            }
+            .seg label:last-child {
+                border-right: none;
+            }
+            .seg input[type='radio']:checked + label {
+                background: rgba(0, 229, 255, 0.15);
+                color: var(--cyan);
+            }
+
+            input[type='range'] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 3px;
+                border-radius: 2px;
+                background: var(--input-bd);
+                outline: none;
+                cursor: pointer;
+                margin-top: 0.3rem;
+            }
+            input[type='range']::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                box-shadow: 0 0 4px rgba(0, 229, 255, 0.55);
+                cursor: pointer;
+            }
+            input[type='range']::-moz-range-thumb {
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: var(--cyan);
+                border: 2px solid var(--bg2);
+                cursor: pointer;
+            }
+
+            /* ---- Pickr (hex_maker と同じスタイル) ---- */
+            .pickr {
+                display: flex !important;
+                align-items: center;
+            }
+            .pickr .pcr-button {
+                width: 50px !important;
+                height: 20px !important;
+                border-radius: 4px !important;
+                border: 1px solid var(--input-bd) !important;
+                box-shadow: none !important;
+                transition: border-color var(--t) !important;
+            }
+            .pickr .pcr-button:hover {
+                border-color: var(--cyan) !important;
+            }
+            .pcr-app {
+                background: var(--bg3) !important;
+                border-color: var(--border) !important;
+            }
+            .pcr-app .pcr-interaction input {
+                background: var(--input-bg) !important;
+                border: 1px solid var(--input-bd) !important;
+                color: var(--text-bright) !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save {
+                background: var(--blue-mid) !important;
+                color: #fff !important;
+            }
+            .pcr-app .pcr-interaction .pcr-save:hover {
+                background: var(--blue) !important;
+            }
+            /* スポイト (EyeDropper API) — 確定ボタンと同じ並びに差し込む */
+            .pcr-app .pcr-interaction .pcr-eyedropper {
+                margin-top: 0.55em;
+                background: var(--blue-mid);
+                color: #fff;
+                border: 0;
+                border-radius: 3px;
+                padding: 0 0.5rem;
+                margin-left: 0.25rem;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                height: 1.6em;
+                transition: background var(--t);
+            }
+            .pcr-app .pcr-interaction .pcr-eyedropper:hover {
+                background: var(--blue);
+            }
+            .pcr-app .pcr-interaction .pcr-eyedropper .material-symbols-outlined {
+                font-size: 1rem;
+            }
+            [data-theme='light'] .pcr-app {
+                background: #f0f7ff !important;
+            }
+            [data-theme='light'] .pcr-app .pcr-interaction input {
+                background: white !important;
+                color: #1a3a5c !important;
+            }
+
+            .prop-group {
+                display: none;
+            }
+            .prop-group.active {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .btn-action {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.3rem;
+                width: 100%;
+                padding: 0.4rem 0.6rem;
+                background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+                color: #fff;
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                letter-spacing: 0.06em;
+                border: 1px solid rgba(33, 150, 243, 0.45);
+                border-radius: var(--r);
+                cursor: pointer;
+                transition:
+                    background var(--t),
+                    box-shadow var(--t);
+            }
+            .btn-action:hover {
+                background: linear-gradient(135deg, #42a5f5, var(--blue-mid));
+                box-shadow: var(--glow-blue);
+            }
+
+            /* ---- キャンバス ---- */
+            #canvas-area {
+                grid-column: 3;
+                grid-row: 1;
+                position: relative;
+                overflow: hidden;
+                /* カーソルは Fabric の defaultCursor (setActiveTool で設定) に任せる */
+                background-image: repeating-conic-gradient(#2b2b2b 0% 25%, #1f1f1f 25% 50%);
+                background-size: 18px 18px;
+                background-position: 0 0;
+            }
+            [data-theme='light'] #canvas-area {
+                background-image: repeating-conic-gradient(#cccccc 0% 25%, #ffffff 25% 50%);
+            }
+            #canvas-area canvas {
+                display: block;
+            }
+
+            /* ---- レイヤーパネル ---- */
+            #layer-panel {
+                grid-column: 4;
+                grid-row: 1;
+                display: flex;
+                flex-direction: column;
+                background: var(--bg-card);
+                border-left: 1px solid var(--border);
+                overflow: hidden;
+            }
+            .lp-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.5rem 0.6rem;
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .lp-title {
+                font-family: var(--font-mono);
+                font-size: 0.68rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--cyan);
+            }
+            .lp-actions {
+                display: flex;
+                gap: 2px;
+            }
+            .lp-btn {
+                width: 26px;
+                height: 26px;
+                display: grid;
+                place-items: center;
+                border-radius: 4px;
+                color: var(--text-dim);
+                transition:
+                    color var(--t),
+                    background var(--t);
+            }
+            .lp-btn:hover {
+                color: var(--cyan);
+                background: var(--cyan-muted);
+            }
+            .lp-btn .material-symbols-outlined {
+                font-size: 1rem;
+            }
+            #layer-list {
+                flex: 1;
+                overflow-y: auto;
+                padding: 4px;
+                scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
+            }
+
+            .layer-item {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                padding: 0.3rem 0.4rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.75rem;
+                color: var(--text);
+                transition: background var(--t);
+                user-select: none;
+            }
+            .layer-item:hover {
+                background: var(--cyan-muted);
+            }
+            .layer-item.selected {
+                background: rgba(0, 229, 255, 0.12);
+                color: var(--cyan);
+            }
+            .layer-item.drag-over-top {
+                border-top: 2px solid var(--cyan);
+            }
+            .layer-item.drag-over-bottom {
+                border-bottom: 2px solid var(--cyan);
+            }
+            .layer-item .material-symbols-outlined {
+                font-size: 0.9rem;
+                color: var(--text-dim);
+                cursor: pointer;
+            }
+            .layer-item .layer-name {
+                flex: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            /* ロックアイコン (ロック中のレイヤーにのみ表示) */
+            .layer-item .layer-lock-icon {
+                color: #ffb74d;
+                font-size: 0.85rem;
+            }
+            .layer-item .layer-lock-icon:hover {
+                color: var(--cyan);
+            }
+            .layer-item .layer-name-input {
+                flex: 1;
+                background: var(--input-bg);
+                border: 1px solid var(--cyan);
+                border-radius: 3px;
+                color: var(--text-bright);
+                font-size: 0.75rem;
+                padding: 0 0.2rem;
+                outline: none;
+                font-family: inherit;
+            }
+
+            #layer-props {
+                border-top: 1px solid var(--border);
+                padding: 0.5rem 0.6rem;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+            }
+            #layer-props .f {
+                margin-bottom: 0.2rem;
+            }
+
+            /* ---- 右クリックメニュー ---- */
+            #ctx-menu {
+                position: fixed;
+                z-index: 1000;
+                background: var(--bg2);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                padding: 4px 0;
+                min-width: 160px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+                display: none;
+            }
+            #ctx-menu.open {
+                display: block;
+            }
+            .ctx-item {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0.35rem 0.75rem;
+                font-size: 0.75rem;
+                color: var(--text);
+                cursor: pointer;
+                transition: background var(--t);
+            }
+            .ctx-item:hover {
+                background: var(--cyan-muted);
+                color: var(--cyan);
+            }
+            .ctx-item .material-symbols-outlined {
+                font-size: 0.9rem;
+            }
+            .ctx-sep {
+                height: 1px;
+                margin: 4px 0.5rem;
+                background: var(--border);
+            }
+
+            /* ---- ステータスバー ---- */
+            #statusbar {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                display: flex;
+                align-items: center;
+                gap: 1.2rem;
+                padding: 0 0.75rem;
+                background: var(--bg2);
+                border-top: 1px solid var(--border);
+                font-family: var(--font-mono);
+                font-size: 0.65rem;
+                color: var(--text-dim);
+                white-space: nowrap;
+                overflow: hidden;
+            }
+            #statusbar span {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+            }
+            #statusbar .material-symbols-outlined {
+                font-size: 0.8rem;
+            }
+
+            /* 選択オブジェクト情報 */
+            #sel-info .f {
+                margin-bottom: 0.25rem;
+            }
+            #sel-info input[type='number'] {
+                width: 58px;
+            }
+
+            /* ---- 使い方ガイド: アイコン付き定義リスト ---- */
+            .guide-dl {
+                display: grid;
+                grid-template-columns: 1.5rem 1fr;
+                gap: 0.3rem 0.6rem;
+                font-size: 0.88rem;
+                line-height: 1.6;
+            }
+            .guide-dl > .material-symbols-outlined {
+                font-size: 1.05rem;
+                color: var(--cyan);
+                align-self: start;
+                margin-top: 0.15rem;
+            }
+            .guide-dl dt {
+                font-weight: bold;
+                color: var(--text-bright);
+            }
+            .guide-dl dd {
+                margin: 0 0 0.5rem;
+                color: var(--text);
+            }
+            .guide-dl code {
+                font-family: var(--font-mono);
+                font-size: 0.82em;
+                padding: 0.05rem 0.3rem;
+                background: rgba(0, 229, 255, 0.08);
+                border: 1px solid rgba(0, 229, 255, 0.2);
+                border-radius: 3px;
+                color: var(--cyan);
+            }
+            .guide-dl kbd {
+                font-family: var(--font-mono);
+                font-size: 0.82em;
+                padding: 0.05rem 0.4rem;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid var(--border-bright);
+                border-bottom-width: 2px;
+                border-radius: 3px;
+                color: var(--text);
+            }
+        </style>
+    </head>
+    <body>
+        <header id="site-header"></header>
+        <main id="main">
+            <!-- ツールバー -->
+            <div id="toolbar">
+                <button class="tb-btn" data-tool="settings" title="設定"><span class="material-symbols-outlined fill">settings</span><span class="tb-label">設定</span></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined fill">near_me</span><span class="tb-label">選択</span></button>
+                <!-- シンプルモード専用 -->
+                <button class="tb-btn" data-tool="cell" data-mode="simple" title="セル塗り (B)"><span class="material-symbols-outlined">crossword</span><span class="tb-label">セル</span></button>
+                <button class="tb-btn" data-tool="rect" data-mode="simple" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
+                <button class="tb-btn" data-tool="ellipse" data-mode="simple" title="楕円 (E)"><span class="material-symbols-outlined">circle</span><span class="tb-label">楕円</span></button>
+                <button class="tb-btn" data-tool="line" data-mode="simple" title="直線 (L)"><span class="material-symbols-outlined">horizontal_rule</span><span class="tb-label">直線</span></button>
+                <button class="tb-btn" data-tool="path" data-mode="simple" title="折線 (P)"><span class="material-symbols-outlined">timeline</span><span class="tb-label">折線</span></button>
+                <button class="tb-btn" data-tool="polygon" data-mode="simple" title="多角形 (G)"><span class="material-symbols-outlined">pentagon</span><span class="tb-label">多角形</span></button>
+                <button class="tb-btn" data-tool="curve" data-mode="simple" title="曲線 (C)"><span class="material-symbols-outlined">conversion_path</span><span class="tb-label">曲線</span></button>
+                <button class="tb-btn" data-tool="curve-closed" data-mode="simple" title="閉曲線 (Shift+C)">
+                    <span class="material-symbols-outlined">all_inclusive</span><span class="tb-label">閉曲線</span>
+                </button>
+                <!-- 地図モード専用 -->
+                <button class="tb-btn" data-tool="ground" data-mode="map" title="地面"><span class="material-symbols-outlined">landscape</span><span class="tb-label">地面</span></button>
+                <button class="tb-btn" data-tool="wall" data-mode="map" title="壁"><span class="material-symbols-outlined">outdoor_garden</span><span class="tb-label">壁</span></button>
+                <button class="tb-btn" data-tool="room" data-mode="map" title="部屋"><span class="material-symbols-outlined">home</span><span class="tb-label">部屋</span></button>
+                <button class="tb-btn" data-tool="decor" data-mode="map" title="装飾"><span class="material-symbols-outlined">chair</span><span class="tb-label">装飾</span></button>
+                <!-- 両モード共通 -->
+                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-symbols-outlined">title</span><span class="tb-label">文字</span></button>
+                <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-symbols-outlined">image</span><span class="tb-label">画像</span></button>
+                <div class="tb-sep"></div>
+                <button class="tb-btn" id="tb-export" title="画像出力"><span class="material-symbols-outlined">download</span><span class="tb-label">出力</span></button>
+            </div>
+
+            <!-- プロパティパネル -->
+            <div id="prop-panel">
+                <!-- 設定 -->
+                <div class="prop-group" data-prop="settings">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">grid_4x4</span>グリッド</div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="grid-visible" checked /><span class="tl">グリッドを表示</span></label>
+                        </div>
+                        <div class="f">
+                            <span class="fl">色</span>
+                            <div id="grid-color-picker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">太さ</span>
+                            <div class="row"><input type="number" id="grid-line-width" value="1" min="1" max="10" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">線種</span>
+                            <div class="seg">
+                                <input type="radio" name="grid-style" id="gs-solid" value="solid" /><label for="gs-solid">実線</label>
+                                <input type="radio" name="grid-style" id="gs-dash" value="dashed" checked /><label for="gs-dash">破線</label>
+                                <input type="radio" name="grid-style" id="gs-dot" value="dotted" /><label for="gs-dot">点線</label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- スナップ設定 (設定タブにのみ表示) -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">grid_goldenratio</span>スナップ</div>
+                        <div class="f">
+                            <label class="tog"
+                                ><input type="checkbox" id="snap-enabled" checked /><span class="tl"
+                                    >スナップ有効 <kbd style="font-size: 0.6rem; opacity: 0.5; margin-left: 0.3rem">Shift: 一時無効</kbd></span
+                                ></label
+                            >
+                        </div>
+                        <div id="snap-targets">
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="snap-intersection" checked /><span class="tl">交点 (格子点)</span></label>
+                            </div>
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="snap-center" checked /><span class="tl">セル中心</span></label>
+                            </div>
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 選択ツール -->
+                <div class="prop-group active" data-prop="select">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined fill">near_me</span>選択ツール</div>
+                        <div id="sel-info" class="s-sub-body">
+                            <p class="fl" style="opacity: 0.5" id="sel-none">オブジェクトを選択してください</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- セル塗り -->
+                <div class="prop-group" data-prop="cell">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">crossword</span>セル塗り</div>
+                        <div id="cell-tools-block">
+                            <div class="tool-tiles" id="cell-tool-tiles">
+                                <div class="tool-tile active" data-cell-tool="pen" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
+                                <div class="tool-tile" data-cell-tool="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
+                                <div class="tool-tile" data-cell-tool="fill" title="塗りつぶし"><span class="material-symbols-outlined">format_color_fill</span><span>塗潰し</span></div>
+                                <div class="tool-tile" data-cell-action="add-layer" title="セルレイヤーを追加">
+                                    <span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 矩形 -->
+                <div class="prop-group" data-prop="rect">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">crop_square</span>矩形</div>
+                    </div>
+                </div>
+                <!-- 楕円 -->
+                <div class="prop-group" data-prop="ellipse">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">circle</span>楕円</div>
+                    </div>
+                </div>
+                <!-- 直線 -->
+                <div class="prop-group" data-prop="line">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">horizontal_rule</span>直線</div>
+                    </div>
+                </div>
+                <!-- 折線 -->
+                <div class="prop-group" data-prop="path">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">timeline</span>折線 (ポリライン)</div>
+                    </div>
+                </div>
+                <!-- 多角形 -->
+                <div class="prop-group" data-prop="polygon">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">pentagon</span>多角形 (ポリゴン)</div>
+                    </div>
+                </div>
+                <!-- 曲線 -->
+                <div class="prop-group" data-prop="curve">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">conversion_path</span>曲線 (ベジェ)</div>
+                    </div>
+                </div>
+                <!-- 閉曲線 -->
+                <div class="prop-group" data-prop="curve-closed">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">all_inclusive</span>閉曲線 (ベジェ・閉)</div>
+                    </div>
+                </div>
+                <!-- 地図モード: 地面 -->
+                <div class="prop-group" data-prop="ground">
+                    <!-- 地面: ツール選択 (+ セル時は cell-tools-block が JS で挿入) -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面</div>
+                        <div class="tool-tiles" id="ground-tool-tiles">
+                            <div class="tool-tile" data-ground-tool="cell" title="セル塗り"><span class="material-symbols-outlined">crossword</span><span>セル</span></div>
+                            <div class="tool-tile" data-ground-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
+                            <div class="tool-tile" data-ground-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
+                            <div class="tool-tile" data-ground-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
+                            <div class="tool-tile" data-ground-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
+                        </div>
+                    </div>
+                    <!-- パターン -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">texture</span>パターン</div>
+                        <div class="pattern-picker" id="ground-pattern-picker"></div>
+                        <div class="s-sub-section collapsible collapsed">
+                            <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-sub-body">
+                                <div class="f">
+                                    <span class="fl">オフセットX</span>
+                                    <div class="row"><input type="number" id="ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">オフセットY</span>
+                                    <div class="row"><input type="number" id="ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">回転</span>
+                                    <div class="row"><input type="number" id="ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">倍率</span>
+                                    <div class="row"><input type="number" id="ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 影 (グローバル #shadow-sec が JS によって挿入される) -->
+                    <div class="shadow-mount" data-shadow-mount="ground"></div>
+                </div>
+                <!-- 地図モード: 壁 -->
+                <div class="prop-group" data-prop="wall">
+                    <!-- 壁: ツール選択 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁</div>
+                        <div class="tool-tiles" id="wall-tool-tiles">
+                            <div class="tool-tile" data-wall-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
+                            <div class="tool-tile" data-wall-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
+                            <div class="tool-tile" data-wall-tool="line" title="直線"><span class="material-symbols-outlined">horizontal_rule</span><span>直線</span></div>
+                            <div class="tool-tile" data-wall-tool="path" title="折線"><span class="material-symbols-outlined">timeline</span><span>折線</span></div>
+                            <div class="tool-tile" data-wall-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
+                            <div class="tool-tile" data-wall-tool="curve" title="曲線"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
+                            <div class="tool-tile" data-wall-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
+                        </div>
+                    </div>
+                    <!-- パターン -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">texture</span>パターン</div>
+                        <div class="pattern-picker" id="wall-pattern-picker"></div>
+                        <div class="s-sub-section collapsible collapsed">
+                            <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                            <div class="s-sub-body">
+                                <div class="f">
+                                    <span class="fl">オフセットX</span>
+                                    <div class="row"><input type="number" id="wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">オフセットY</span>
+                                    <div class="row"><input type="number" id="wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">回転</span>
+                                    <div class="row"><input type="number" id="wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div>
+                                </div>
+                                <div class="f">
+                                    <span class="fl">倍率</span>
+                                    <div class="row"><input type="number" id="wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 影 (グローバル #shadow-sec が JS によって挿入される) -->
+                    <div class="shadow-mount" data-shadow-mount="wall"></div>
+                </div>
+                <!-- 地図モード: 部屋 -->
+                <div class="prop-group" data-prop="room">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">home</span>部屋</div>
+                        <div class="tool-tiles" id="room-tool-tiles">
+                            <div class="tool-tile" data-room-tool="rect" title="矩形"><span class="material-symbols-outlined">crop_square</span><span>矩形</span></div>
+                            <div class="tool-tile" data-room-tool="ellipse" title="楕円"><span class="material-symbols-outlined">circle</span><span>楕円</span></div>
+                            <div class="tool-tile" data-room-tool="polygon" title="多角形"><span class="material-symbols-outlined">pentagon</span><span>多角形</span></div>
+                            <div class="tool-tile" data-room-tool="curve-closed" title="閉曲線"><span class="material-symbols-outlined">all_inclusive</span><span>閉曲線</span></div>
+                            <div class="tool-tile" data-room-tool="path" title="折線 (自動で閉じる)"><span class="material-symbols-outlined">timeline</span><span>折線</span></div>
+                            <div class="tool-tile" data-room-tool="curve" title="曲線 (自動で閉じる)"><span class="material-symbols-outlined">conversion_path</span><span>曲線</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 地面セクション (折りたたみ可) -->
+                    <div class="s-sec collapsible">
+                        <div class="s-ttl"><span class="material-symbols-outlined">landscape</span>地面<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                        <div class="s-body">
+                            <div class="pattern-picker" id="room-ground-pattern-picker"></div>
+
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-ground-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-ground-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">回転</span>
+                                        <div class="row">
+                                            <input type="number" id="room-ground-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span>
+                                        </div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">倍率</span>
+                                        <div class="row">
+                                            <input type="number" id="room-ground-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <label class="tog"><input type="checkbox" id="room-ground-shadow-enabled" /><span class="tl">影を付ける</span></label>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">色</span>
+                                        <div id="room-ground-shadow-color"></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">ぼかし</span>
+                                        <div class="row"><input type="number" id="room-ground-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-ground-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-ground-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 壁セクション (折りたたみ可) -->
+                    <div class="s-sec collapsible">
+                        <div class="s-ttl"><span class="material-symbols-outlined">outdoor_garden</span>壁<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                        <div class="s-body">
+                            <div class="pattern-picker" id="room-wall-pattern-picker"></div>
+
+                            <div class="f">
+                                <span class="fl">壁の厚み</span>
+                                <div class="row"><input type="number" id="room-wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">線種</span>
+                                <div class="seg">
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-solid" value="solid" checked /><label for="rwss-solid">実線</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-dash" value="dashed" /><label for="rwss-dash">破線</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-dot" value="dotted" /><label for="rwss-dot">点線</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-dashdot" value="dashdot" /><label for="rwss-dashdot">一点鎖</label>
+                                    <input type="radio" name="room-wall-stroke-style" id="rwss-longdash" value="longdash" /><label for="rwss-longdash">長破線</label>
+                                </div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">線継目</span>
+                                <select id="room-wall-stroke-line-join">
+                                    <option value="miter">角 (miter)</option>
+                                    <option value="round">丸 (round)</option>
+                                    <option value="bevel">面取 (bevel)</option>
+                                </select>
+                            </div>
+                            <div class="f">
+                                <span class="fl">線端</span>
+                                <select id="room-wall-stroke-line-cap">
+                                    <option value="butt">なし (butt)</option>
+                                    <option value="round">丸 (round)</option>
+                                    <option value="square">角 (square)</option>
+                                </select>
+                            </div>
+
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">tune</span>パターン詳細<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-wall-pattern-offset-x" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-wall-pattern-offset-y" value="0" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">回転</span>
+                                        <div class="row"><input type="number" id="room-wall-pattern-rotation" value="0" min="-360" max="360" class="custom-spinner" /><span class="unit">°</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">倍率</span>
+                                        <div class="row">
+                                            <input type="number" id="room-wall-pattern-scale" value="100" min="10" max="2000" step="10" class="custom-spinner" /><span class="unit">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="s-sub-section collapsible collapsed">
+                                <div class="s-sub-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                                <div class="s-sub-body">
+                                    <div class="f">
+                                        <label class="tog"><input type="checkbox" id="room-wall-shadow-enabled" checked /><span class="tl">影を付ける</span></label>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">色</span>
+                                        <div id="room-wall-shadow-color"></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">ぼかし</span>
+                                        <div class="row"><input type="number" id="room-wall-shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットX</span>
+                                        <div class="row"><input type="number" id="room-wall-shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                    <div class="f">
+                                        <span class="fl">オフセットY</span>
+                                        <div class="row"><input type="number" id="room-wall-shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 地図モード: 装飾 -->
+                <div class="prop-group" data-prop="decor">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">chair</span>装飾</div>
+                        <div class="decor-picker" id="decor-picker" style="margin-bottom: 0.7rem"></div>
+                        <div class="f">
+                            <span class="fl">サイズ</span>
+                            <div class="row"><input type="number" id="decor-scale" value="100" min="10" max="1000" step="10" class="custom-spinner" /><span class="unit">%</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">回転</span>
+                            <div class="row"><input type="number" id="decor-rotation" value="0" min="-360" max="360" step="1" class="custom-spinner" /><span class="unit">°</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">反転</span>
+                            <div style="display: flex; gap: 0.8rem">
+                                <label class="tog"><input type="checkbox" id="decor-flip-x" /><span class="tl">水平</span></label>
+                                <label class="tog"><input type="checkbox" id="decor-flip-y" /><span class="tl">垂直</span></label>
+                            </div>
+                        </div>
+                        <!-- SVG 選択時のみ表示 -->
+                        <div id="decor-color-sec" style="display: none">
+                            <div class="f" id="decor-fill-row">
+                                <span class="fl">フィル</span>
+                                <div id="decor-fill-picker"></div>
+                            </div>
+                            <div class="f" id="decor-stroke-row">
+                                <span class="fl">ストローク</span>
+                                <div id="decor-stroke-picker"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- フリーハンド (Fabric brushes + 圧力検知 + Shift で直線) -->
+                <div class="prop-group" data-prop="freehand">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">draw</span>フリーハンド</div>
+                        <div class="tool-tiles" id="freehand-brush-tiles">
+                            <div class="tool-tile active" data-freehand-brush="pencil" title="ペン"><span class="material-symbols-outlined">edit</span><span>ペン</span></div>
+                            <!-- ドット (CircleBrush) は一旦非表示。復活させたい時は下行のコメントを外すだけ
+                            <div class="tool-tile" data-freehand-brush="circle" title="ドット"><span class="material-symbols-outlined fill">scatter_plot</span><span>ドット</span></div>
+                            -->
+                            <div class="tool-tile" data-freehand-brush="spray" title="スプレー"><span class="material-symbols-outlined fill">shower</span><span>スプレー</span></div>
+                            <div class="tool-tile" data-freehand-brush="eraser" title="消しゴム"><i class="fa-solid fa-eraser"></i><span>消しゴム</span></div>
+                            <div class="tool-tile" data-freehand-action="add-layer" title="フリーハンドレイヤーを追加">
+                                <span class="material-symbols-outlined">add</span><span>レイヤーを<br />追加</span>
+                            </div>
+                        </div>
+                        <div class="f" id="freehand-color-row">
+                            <span class="fl">色</span>
+                            <div id="freehand-color-picker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">線幅</span>
+                            <div class="row"><input type="number" id="freehand-width" value="3" min="1" max="100" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">平滑化</span>
+                            <div class="row"><input type="number" id="freehand-decimation" value="4" min="0" max="20" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="freehand-pressure" checked /><span class="tl">筆圧検知 (タブレット)</span></label>
+                        </div>
+                    </div>
+                </div>
+                <!-- テキスト -->
+                <div class="prop-group" data-prop="text">
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">title</span>テキスト</div>
+                        <div class="f">
+                            <span class="fl">フォント</span
+                            ><select id="text-font">
+                                <optgroup label="ゴシック">
+                                    <option value="Noto Sans JP">Noto Sans JP</option>
+                                    <option value="Zen Kaku Gothic New">ZEN 角ゴシック New</option>
+                                    <option value="Sawarabi Gothic">さわらびゴシック</option>
+                                    <option value="M PLUS 1p">M PLUS 1p</option>
+                                </optgroup>
+                                <optgroup label="明朝">
+                                    <option value="Noto Serif JP">Noto Serif JP</option>
+                                    <option value="Zen Old Mincho">ZEN オールド明朝</option>
+                                    <option value="Shippori Mincho">しっぽり明朝</option>
+                                    <option value="Sawarabi Mincho">さわらび明朝</option>
+                                    <option value="Hina Mincho">ヒナ明朝</option>
+                                </optgroup>
+                                <optgroup label="丸ゴシック / ポップ">
+                                    <option value="Zen Maru Gothic">ZEN 丸ゴシック</option>
+                                    <option value="Mochiy Pop One">モッチーポップ</option>
+                                    <option value="Reggae One">Reggae One</option>
+                                    <option value="Aoboshi One">あおぼし</option>
+                                </optgroup>
+                                <optgroup label="楷書 / 手書き">
+                                    <option value="Klee One">クレー One</option>
+                                    <option value="Yomogi">よもぎ</option>
+                                    <option value="Zen Kurenaido">ZEN 紅道</option>
+                                    <option value="Yuji Syuku">Yuji Syuku</option>
+                                    <option value="Yuji Boku">Yuji Boku</option>
+                                    <option value="Yusei Magic">油性マジック</option>
+                                </optgroup>
+                                <optgroup label="装飾 / 特殊">
+                                    <option value="Dela Gothic One">デラゴシックワン</option>
+                                    <option value="Kaisei Decol">解星デコール</option>
+                                    <option value="DotGothic16">ドットゴシック 16</option>
+                                    <option value="Stick">Stick</option>
+                                </optgroup>
+                                <optgroup label="欧文 / ファンタジー">
+                                    <option value="Cinzel">Cinzel</option>
+                                    <option value="MedievalSharp">MedievalSharp</option>
+                                    <option value="UnifrakturMaguntia">UnifrakturMaguntia</option>
+                                    <option value="Pirata One">Pirata One</option>
+                                </optgroup>
+                                <optgroup label="欧文 / ホラー・SF">
+                                    <option value="Special Elite">Special Elite</option>
+                                    <option value="Eater">Eater</option>
+                                    <option value="Orbitron">Orbitron</option>
+                                </optgroup>
+                                <optgroup label="欧文 / 等幅・モダン">
+                                    <option value="Share Tech Mono">Share Tech Mono</option>
+                                    <option value="Bebas Neue">Bebas Neue</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="f">
+                            <span class="fl">サイズ</span>
+                            <div class="row"><input type="number" id="text-size" value="48" min="6" max="500" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                        <!-- スタイルトグル (ボールド/イタリック/下線/取消線) — コンパクトサイズ -->
+                        <div class="f" id="text-style-row">
+                            <span class="fl">スタイル</span>
+                            <div id="text-style-tiles" style="display: grid; grid-template-columns: repeat(4, 24px); gap: 3px">
+                                <div class="tool-tile text-style-mini" data-text-style="bold" title="太字 (Ctrl+B)"><span class="material-symbols-outlined">format_bold</span></div>
+                                <div class="tool-tile text-style-mini" data-text-style="italic" title="斜体 (Ctrl+I)"><span class="material-symbols-outlined">format_italic</span></div>
+                                <div class="tool-tile text-style-mini" data-text-style="underline" title="下線 (Ctrl+U)"><span class="material-symbols-outlined">format_underlined</span></div>
+                                <div class="tool-tile text-style-mini" data-text-style="linethrough" title="取り消し線"><span class="material-symbols-outlined">format_strikethrough</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- テキスト専用フィル/ストローク (シンプル描画とは独立) -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined fill">palette</span>色設定</div>
+                        <div class="f">
+                            <span class="fl">フィル</span>
+                            <div id="text-fill-picker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">ストローク</span>
+                            <div id="text-stroke-picker"></div>
+                        </div>
+                        <div class="f">
+                            <span class="fl">線幅</span>
+                            <div class="row"><input type="number" id="text-stroke-width" value="0" min="0" max="100" class="custom-spinner" /><span class="unit">px</span></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 画像 (ツールボタン押下で即起動するためプロパティパネルは不要。input は保持) -->
+                <input type="file" id="image-upload" accept="image/*" style="display: none" />
+                <!-- フィル / ストローク -->
+                <div id="fill-stroke-sec" class="s-sec" style="display: none">
+                    <div class="s-ttl" id="fill-stroke-title"><span class="material-symbols-outlined fill">palette</span>フィル / ストローク</div>
+                    <div class="f" id="fill-color-row">
+                        <span class="fl">フィル</span>
+                        <div id="fill-color-picker"></div>
+                    </div>
+                    <div class="f" id="stroke-color-row">
+                        <span class="fl">ストローク</span>
+                        <div id="stroke-color-picker"></div>
+                    </div>
+                    <div class="f" id="stroke-width-row">
+                        <span class="fl">線幅</span>
+                        <div class="row"><input type="number" id="stroke-width" value="2" min="0" max="100" class="custom-spinner" /><span class="unit">px</span></div>
+                    </div>
+                    <div class="f" id="wall-thickness-row" style="display: none">
+                        <span class="fl">壁の厚み</span>
+                        <div class="row"><input type="number" id="wall-thickness" value="12" min="1" max="200" class="custom-spinner" /><span class="unit">px</span></div>
+                    </div>
+                    <div class="f" id="stroke-style-row">
+                        <span class="fl">線種</span>
+                        <div class="seg">
+                            <input type="radio" name="stroke-style" id="ss-solid" value="solid" checked /><label for="ss-solid">実線</label>
+                            <input type="radio" name="stroke-style" id="ss-dash" value="dashed" /><label for="ss-dash">破線</label>
+                            <input type="radio" name="stroke-style" id="ss-dot" value="dotted" /><label for="ss-dot">点線</label>
+                            <input type="radio" name="stroke-style" id="ss-dashdot" value="dashdot" /><label for="ss-dashdot">一点鎖</label>
+                            <input type="radio" name="stroke-style" id="ss-longdash" value="longdash" /><label for="ss-longdash">長破線</label>
+                        </div>
+                    </div>
+                    <div class="f" id="stroke-line-join-row">
+                        <span class="fl">線継目</span>
+                        <select id="stroke-line-join">
+                            <option value="miter">角 (miter)</option>
+                            <option value="round">丸 (round)</option>
+                            <option value="bevel">面取 (bevel)</option>
+                        </select>
+                    </div>
+                    <div class="f" id="stroke-line-cap-row">
+                        <span class="fl">線端</span>
+                        <select id="stroke-line-cap">
+                            <option value="butt">なし (butt)</option>
+                            <option value="round">丸 (round)</option>
+                            <option value="square">角 (square)</option>
+                        </select>
+                    </div>
+                    <div class="f" id="corner-radius-row">
+                        <span class="fl">角丸</span>
+                        <div class="row"><input type="number" id="corner-radius" value="0" min="0" max="500" class="custom-spinner" /><span class="unit">px</span></div>
+                    </div>
+                </div>
+
+                <!-- 影 ホーム位置 (シンプル/装飾系で使用). 地面/壁モードのときは JS で
+                     対応 prop-group 内の .shadow-mount に動的に移される。-->
+                <div id="shadow-home">
+                    <div id="shadow-sec" class="s-sec collapsible collapsed" style="display: none">
+                        <div class="s-ttl"><span class="material-symbols-outlined">shadow</span>影<span class="s-chevron material-symbols-outlined">chevron_right</span></div>
+                        <div class="s-body">
+                            <div class="f">
+                                <label class="tog"><input type="checkbox" id="shadow-enabled" /><span class="tl">影を付ける</span></label>
+                            </div>
+                            <div class="f">
+                                <span class="fl">色</span>
+                                <div id="shadow-color"></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">ぼかし</span>
+                                <div class="row"><input type="number" id="shadow-blur" value="8" min="0" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">オフセットX</span>
+                                <div class="row"><input type="number" id="shadow-offset-x" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                            <div class="f">
+                                <span class="fl">オフセットY</span>
+                                <div class="row"><input type="number" id="shadow-offset-y" value="0" min="-50" max="50" class="custom-spinner" /><span class="unit">px</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- キャンバス -->
+            <div id="canvas-area"><canvas id="main-canvas"></canvas></div>
+
+            <!-- レイヤーパネル -->
+            <div id="layer-panel">
+                <div class="lp-header">
+                    <span class="lp-title">Layers</span>
+                    <div class="lp-actions">
+                        <button class="lp-btn" id="layer-add" title="レイヤー追加"><span class="material-symbols-outlined">add</span></button>
+                        <button class="lp-btn" id="layer-group" title="グループ化 / 解除 (Ctrl+G / Ctrl+Shift+G)"><span class="material-symbols-outlined">folder</span></button>
+                        <button class="lp-btn" id="layer-delete" title="削除"><span class="material-symbols-outlined">delete_outline</span></button>
+                    </div>
+                </div>
+                <div id="layer-list"></div>
+                <div id="layer-props">
+                    <div class="f"><span class="fl">不透明度</span><span class="unit" id="layer-opacity-val">100%</span></div>
+                    <input type="range" id="layer-opacity" value="1" min="0" max="1" step="0.01" />
+                    <div class="f" style="margin-top: 0.6rem">
+                        <span class="fl">ブレンド</span>
+                        <select id="layer-blend">
+                            <optgroup label="基本">
+                                <option value="source-over">通常</option>
+                                <option value="source-atop">上重ね</option>
+                                <option value="destination-out">切り抜き</option>
+                                <option value="source-in">共通部分</option>
+                                <option value="xor">XOR</option>
+                            </optgroup>
+                            <optgroup label="明暗">
+                                <option value="multiply">乗算</option>
+                                <option value="screen">スクリーン</option>
+                                <option value="overlay">オーバーレイ</option>
+                                <option value="darken">暗比較</option>
+                                <option value="lighten">明比較</option>
+                                <option value="color-dodge">覆い焼き</option>
+                                <option value="color-burn">焼き込み</option>
+                                <option value="hard-light">ハード</option>
+                                <option value="soft-light">ソフト</option>
+                            </optgroup>
+                            <optgroup label="差分・色">
+                                <option value="difference">差分</option>
+                                <option value="exclusion">除外</option>
+                                <option value="hue">色相</option>
+                                <option value="saturation">彩度</option>
+                                <option value="color">カラー</option>
+                                <option value="luminosity">輝度</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ステータスバー -->
+            <div id="statusbar">
+                <span><span class="material-symbols-outlined">mouse</span><span id="sb-coord">0, 0</span></span>
+                <span><span class="material-symbols-outlined">search</span><span id="sb-zoom">100%</span></span>
+                <span><span class="material-symbols-outlined">grid_4x4</span><span id="sb-grid">50px</span></span>
+                <span id="sb-selection"></span>
+                <span id="sb-last-action" style="margin-left: auto; opacity: 0.8"></span>
+            </div>
+        </main>
+
+        <!-- 右クリックメニュー -->
+        <div id="ctx-menu">
+            <div class="ctx-item" data-action="rename"><span class="material-symbols-outlined">edit</span>名前を変更</div>
+            <div class="ctx-item" data-action="duplicate"><span class="material-symbols-outlined">content_copy</span>複製</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" data-action="bring-front"><span class="material-symbols-outlined">flip_to_front</span>最前面へ</div>
+            <div class="ctx-item" data-action="send-back"><span class="material-symbols-outlined">flip_to_back</span>最背面へ</div>
+            <div class="ctx-sep"></div>
+            <div class="ctx-item" data-action="lock"><span class="material-symbols-outlined">lock</span>ロック</div>
+            <div class="ctx-item" data-action="delete"><span class="material-symbols-outlined">delete</span>削除</div>
+        </div>
+
+        <!-- 出力モーダル -->
+        <div class="modal-overlay" id="export-modal">
+            <div class="modal" style="max-width: 960px; width: 92vw">
+                <div class="modal-header">
+                    <span class="modal-title">画像出力</span><button class="modal-close" onclick="IKLab.closeModal('export-modal')"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div class="modal-body" style="padding: 1rem">
+                    <!-- 左: 設定縦並び / 右: プレビュー -->
+                    <div style="display: grid; grid-template-columns: 220px 1fr; gap: 1rem; align-items: start">
+                        <div class="export-settings" style="display: flex; flex-direction: column; gap: 0.7rem">
+                            <div class="f" style="margin: 0; flex-direction: column; align-items: flex-start; gap: 0.3rem">
+                                <span class="fl">形式</span>
+                                <div class="seg">
+                                    <input type="radio" name="export-format" id="ef-png" value="png" checked /><label for="ef-png">PNG</label
+                                    ><input type="radio" name="export-format" id="ef-jpeg" value="jpeg" /><label for="ef-jpeg">JPEG</label
+                                    ><input type="radio" name="export-format" id="ef-svg" value="svg" /><label for="ef-svg">SVG</label>
+                                </div>
+                            </div>
+                            <div class="f" style="margin: 0; flex-direction: column; align-items: flex-start; gap: 0.3rem">
+                                <span class="fl">背景</span>
+                                <div class="seg">
+                                    <input type="radio" name="export-bg" id="eb-trans" value="transparent" checked /><label for="eb-trans">透明</label
+                                    ><input type="radio" name="export-bg" id="eb-white" value="white" /><label for="eb-white">白</label>
+                                </div>
+                            </div>
+                            <label class="tog" style="margin: 0"><input type="checkbox" id="export-grid" checked /><span class="tl">グリッド</span></label>
+                            <div class="f" style="margin: 0; flex-direction: column; align-items: flex-start; gap: 0.3rem">
+                                <span class="fl">セル解像度</span>
+                                <div class="row"><input type="number" id="export-cell-px" value="50" min="10" max="500" step="10" class="custom-spinner" /><span class="unit">px/セル</span></div>
+                            </div>
+                            <span id="export-output-size" style="font-size: 0.65rem; color: var(--text-dim)"></span>
+                            <button class="btn-action" id="export-btn" style="width: 100%; padding: 0.5rem; margin-top: auto">
+                                <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 0.3rem">download</span>ダウンロード
+                            </button>
+                        </div>
+                        <div>
+                            <div style="text-align: center; margin-bottom: 0.6rem">
+                                <div
+                                    id="export-preview-wrap"
+                                    style="
+                                        display: inline-block;
+                                        background: repeating-conic-gradient(#444 0% 25%, #555 25% 50%);
+                                        background-size: 12px 12px;
+                                        border-radius: 4px;
+                                        overflow: hidden;
+                                        line-height: 0;
+                                    "
+                                >
+                                    <img id="export-preview-img" style="max-width: min(700px, 70vw); max-height: 60vh; display: block" />
+                                </div>
+                            </div>
+                            <div id="export-modal-info" style="text-align: center; font-size: 0.72rem; color: var(--text-dim)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 使い方ガイド モーダル ====== -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="modal" style="max-width: 760px">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <h3>編集モード</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">draw</span>
+                            <div>
+                                <dt>シンプル</dt>
+                                <dd>矩形・楕円・直線・折線・多角形・曲線・閉曲線・セル塗りなど、汎用的な図形ツールでマップを描くモード。ヘッダーのトグルで切替。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">map</span>
+                            <div>
+                                <dt>地図</dt>
+                                <dd>地面 / 壁 / 部屋 / 装飾 のタブに分かれ、テクスチャパターンや SVG スタンプを使った本格的な TRPG マップ向けモード。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>シンプルモードのツール</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">crop_square</span>
+                            <div>
+                                <dt>矩形 / 楕円 (R / E)</dt>
+                                <dd>1 クリック目で開始点、2 クリック目で対角を確定。塗り色・線色・線幅・角丸を設定パネルで指定。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">horizontal_rule</span>
+                            <div>
+                                <dt>直線 / 折線 / 多角形 / 曲線 (L / P / G / C / Shift+C)</dt>
+                                <dd>クリックで頂点追加 → Enter で確定 / Esc でキャンセル。多角形と閉曲線は 3 点以上で閉じる。スナップ点 (頂点/中点) に吸着。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">crossword</span>
+                            <div>
+                                <dt>セル塗り (B)</dt>
+                                <dd>ペン / 消しゴム / 塗りつぶしの 3 モード。グリッドのマス単位で塗る。同色は自動でまとまった面として描かれる。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">draw</span>
+                            <div>
+                                <dt>フリーハンド (D)</dt>
+                                <dd>マウスドラッグでブラシ描画。ブラシ種 (鉛筆 / 円 / スプレー / 消しゴム) や線幅・色・筆圧感度を設定可能。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>地図モードのツール</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">landscape</span>
+                            <div>
+                                <dt>地面</dt>
+                                <dd>セル / 矩形 / 楕円 / 多角形 / 閉曲線 で床面を塗ります。パターン (草・水・石畳など) または単色を選択。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">outdoor_garden</span>
+                            <div>
+                                <dt>壁</dt>
+                                <dd>矩形 / 楕円 / 直線 / 折線 / 多角形 / 曲線 / 閉曲線 で壁を線として描画。太さとパターンを設定可能。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">home</span>
+                            <div>
+                                <dt>部屋</dt>
+                                <dd>矩形 / 楕円 / 多角形 / 閉曲線 を描くと「地面 + 外周壁」がセットで生成されてグループ化。地面と壁のパターンは独立設定可。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">chair</span>
+                            <div>
+                                <dt>装飾</dt>
+                                <dd>家具・ドア・木・地図記号などの SVG / 画像スタンプを配置。SVG はピッカーで色変更、サイズ・回転・反転も自由。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>パターン・装飾</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">texture</span>
+                            <div>
+                                <dt>パターン選択</dt>
+                                <dd>各タブのパターンピッカーでテクスチャを選択。「単色」ピックでカラー指定も可。パターン詳細でオフセット・回転・倍率を微調整。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">upload</span>
+                            <div>
+                                <dt>ユーザー素材アップロード</dt>
+                                <dd>パターン / 装飾の「ユーザー」ジャンルにある「＋」タイルから PNG / JPG / WebP / SVG を追加。マップごとに保存され、次回もそのまま使えます。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>レイヤー / 選択</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">layers</span>
+                            <div>
+                                <dt>レイヤーパネル</dt>
+                                <dd>右側のパネルでオブジェクト一覧を確認、表示/非表示・並び替え・名前変更・削除。ダブルクリックで名前編集。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">folder</span>
+                            <div>
+                                <dt>グループ化 (Ctrl+G / Ctrl+Shift+G)</dt>
+                                <dd>選択ツールで複数選択 → 選択枠上のフォルダボタンまたは Ctrl+G でグループ化。Ctrl+Shift+G で解除。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">join_full</span>
+                            <div>
+                                <dt>ブール演算</dt>
+                                <dd>同種の図形を 2 つ以上選択 → 選択枠上のバーで「合体 / 交差 / 差 / 排他」を実行。複雑な形を効率的に作れます。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">opacity</span>
+                            <div>
+                                <dt>不透明度 / ブレンド</dt>
+                                <dd>レイヤーパネルから個別に不透明度・ブレンドモード (通常 / 上重ね / 切り抜き / XOR / 乗算など多数) を設定。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>保存と出力</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">save</span>
+                            <div>
+                                <dt>自動保存</dt>
+                                <dd>編集中は約 2.5 秒間隔で IndexedDB に自動保存。ヘッダーの「保存済み / 編集中…」表示で状態を確認できます。Ctrl+S で即時保存 + サムネ再生成。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">download</span>
+                            <div>
+                                <dt>画像出力</dt>
+                                <dd>ツールバーの「出力」を押して範囲をドラッグ → PNG / JPEG / SVG でダウンロード。背景の透明 / 白、グリッド表示、解像度を選択可。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">undo</span>
+                            <div>
+                                <dt>Undo / Redo</dt>
+                                <dd>Ctrl+Z で取消、Ctrl+Shift+Z または Ctrl+Y でやり直し。最大 50 ステップ保持。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>主要ショートカット</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">keyboard</span>
+                            <div>
+                                <dt>編集</dt>
+                                <dd>
+                                    <code>Ctrl+Z</code> / <code>Ctrl+Shift+Z</code> 取消・やり直し<br />
+                                    <code>Ctrl+S</code> 即時保存<br />
+                                    <code>Ctrl+G</code> / <code>Ctrl+Shift+G</code> グループ化 / 解除<br />
+                                    <code>Delete</code> 選択削除
+                                </dd>
+                            </div>
+                            <span class="material-symbols-outlined">ads_click</span>
+                            <div>
+                                <dt>ツール切替 (シンプルモード)</dt>
+                                <dd>
+                                    <code>V</code> 選択 / <code>B</code> セル / <code>R</code> 矩形 / <code>E</code> 楕円 / <code>L</code> 直線<br />
+                                    <code>P</code> 折線 / <code>G</code> 多角形 / <code>C</code> 曲線 / <code>Shift+C</code> 閉曲線<br />
+                                    <code>D</code> フリーハンド / <code>T</code> テキスト / <code>I</code> 画像
+                                </dd>
+                            </div>
+                            <span class="material-symbols-outlined">pan_tool</span>
+                            <div>
+                                <dt>キャンバス操作</dt>
+                                <dd>
+                                    <kbd>Space</kbd> ドラッグで移動 / マウスホイールでズーム<br />
+                                    <kbd>Shift</kbd> 押下中はスナップ一時無効
+                                </dd>
+                            </div>
+                        </dl>
+                        <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="../common.js"></script>
+        <script src="map_storage.js"></script>
+        <script src="map_grid.js"></script>
+        <script src="map_editor.js"></script>
+    </body>
+</html>
