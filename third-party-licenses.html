@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>サードパーティライセンス | 違法建築のTRPGラボ</title>
+        <meta name="description" content="違法建築のTRPGラボで利用しているサードパーティ製ライブラリ・フォント・素材のライセンスとクレジット情報をまとめたページです。" />
+        <link rel="icon" href="favicon.ico" />
+
+        <script src="analytics.js"></script>
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+        <!-- Material Symbols -->
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+
+        <link rel="stylesheet" href="common.css" />
+
+        <style>
+            /* privacy-policy.html と同じ骨格を流用 */
+            .cr-hero {
+                position: relative;
+                z-index: 10;
+                padding: clamp(2.5rem, 7vw, 4rem) 0 clamp(1.5rem, 4vw, 2.5rem);
+                border-bottom: 1px solid var(--border);
+            }
+            .cr-eyebrow {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.18em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                margin-bottom: 0.6rem;
+            }
+            .cr-hero h1 {
+                font-size: clamp(1.3rem, 3.5vw, 1.9rem);
+                font-weight: 700;
+                color: var(--text-bright);
+                letter-spacing: 0.04em;
+            }
+            .cr-hero h1 span {
+                font-family: var(--font-mono);
+                color: var(--cyan);
+                font-size: 0.75em;
+                display: block;
+                margin-bottom: 0.2rem;
+            }
+            .cr-updated {
+                margin-top: 0.75rem;
+                font-family: var(--font-mono);
+                font-size: 0.72rem;
+                color: var(--text-dim);
+            }
+
+            .cr-doc {
+                position: relative;
+                z-index: 10;
+                max-width: 880px;
+                padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
+                margin: 0 auto;
+            }
+
+            /* 目次 (アンカー) */
+            .cr-toc {
+                margin-bottom: clamp(1.5rem, 4vw, 2.4rem);
+                padding: 0.9rem 1.1rem;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+            }
+            .cr-toc ul {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem 1rem;
+                font-size: 0.78rem;
+            }
+            .cr-toc a {
+                color: var(--blue-light);
+                font-family: var(--font-mono);
+                letter-spacing: 0.05em;
+            }
+            .cr-toc a:hover {
+                color: var(--cyan);
+            }
+
+            .cr-section {
+                margin-bottom: clamp(1.75rem, 4vw, 2.5rem);
+            }
+            .cr-section h2 {
+                font-family: var(--font-mono);
+                font-size: clamp(0.85rem, 1.9vw, 1rem);
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--blue-light);
+                padding-left: 0.75rem;
+                border-left: 3px solid var(--blue);
+                margin-bottom: 1rem;
+            }
+            .cr-section h3 {
+                font-family: var(--font-mono);
+                font-size: 0.78rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--cyan-dim, var(--text-dim));
+                margin: 1.25rem 0 0.5rem;
+            }
+            .cr-section p {
+                font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+                line-height: 1.85;
+                color: var(--text);
+                margin-bottom: 0.7rem;
+            }
+            .cr-section a {
+                color: var(--blue-light);
+                border-bottom: 1px solid transparent;
+                transition: color var(--t), border-color var(--t);
+            }
+            .cr-section a:hover {
+                color: var(--cyan);
+                border-bottom-color: var(--cyan);
+            }
+
+            /* 各クレジットエントリ */
+            .cr-entry {
+                margin: 0.6rem 0 1rem;
+                padding-left: 0.9rem;
+                border-left: 1px dashed var(--border);
+            }
+            .cr-entry .cr-name {
+                font-weight: 700;
+                color: var(--text-bright);
+                font-size: 0.95rem;
+            }
+            .cr-entry .cr-meta {
+                display: block;
+                margin-top: 0.15rem;
+                font-size: 0.78rem;
+                color: var(--text-dim);
+                line-height: 1.6;
+            }
+            .cr-entry .cr-meta .cr-tag {
+                display: inline-block;
+                padding: 0.05rem 0.45rem;
+                margin-right: 0.4rem;
+                background: rgba(0, 229, 255, 0.08);
+                border: 1px solid rgba(0, 229, 255, 0.25);
+                border-radius: 3px;
+                color: var(--cyan);
+                font-family: var(--font-mono);
+                font-size: 0.66rem;
+                letter-spacing: 0.06em;
+            }
+
+            /* テーブル (装飾素材一覧用) */
+            .cr-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 0.5rem 0 1rem;
+                font-size: 0.78rem;
+            }
+            .cr-table th,
+            .cr-table td {
+                padding: 0.35rem 0.6rem;
+                text-align: left;
+                border-bottom: 1px solid var(--border);
+                vertical-align: top;
+            }
+            .cr-table th {
+                font-family: var(--font-mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.08em;
+                color: var(--text-dim);
+                text-transform: uppercase;
+                font-weight: 500;
+            }
+            .cr-table tr:last-child td {
+                border-bottom: 0;
+            }
+            .cr-table-wrap {
+                overflow-x: auto;
+                margin: 0.5rem 0 1rem;
+            }
+
+            .cr-fontlist {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 0.3rem 0.8rem;
+                padding-left: 0.5rem;
+                font-size: 0.82rem;
+                color: var(--text);
+            }
+            .cr-fontlist span {
+                font-family: var(--font-mono);
+                color: var(--text-dim);
+                font-size: 0.72rem;
+                margin-left: 0.4rem;
+            }
+
+            .cr-divider {
+                border: none;
+                border-top: 1px solid var(--border);
+                margin: clamp(1.5rem, 3vw, 2rem) 0;
+            }
+
+            .cr-note {
+                padding: 0.8rem 1rem;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                font-size: 0.82rem;
+                color: var(--text-dim);
+                line-height: 1.7;
+            }
+
+            .cr-copyright {
+                margin-top: 1.5rem;
+                padding: 1rem 1.1rem;
+                background: rgba(0, 229, 255, 0.04);
+                border: 1px solid rgba(0, 229, 255, 0.15);
+                border-radius: var(--r);
+            }
+            .cr-copyright p {
+                margin: 0.3rem 0;
+                font-size: 0.85rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <header id="site-header"></header>
+
+        <main>
+            <!-- ヒーロー帯 -->
+            <div class="cr-hero">
+                <div class="container">
+                    <p class="cr-eyebrow">Legal Document</p>
+                    <h1>
+                        <span>Third-Party Licenses</span>
+                        サードパーティライセンス
+                    </h1>
+                    <p class="cr-updated">最終更新日: 2026-05-31</p>
+                </div>
+            </div>
+
+            <article class="cr-doc" aria-label="クレジット本文">
+                <nav class="cr-toc" aria-label="目次">
+                    <ul>
+                        <li><a href="#libraries">ライブラリ</a></li>
+                        <li><a href="#icons">アイコン</a></li>
+                        <li><a href="#fonts">フォント</a></li>
+                        <li><a href="#decors">装飾スタンプ素材</a></li>
+                        <li><a href="#patterns">パターン素材</a></li>
+                        <li><a href="#bgm">音源</a></li>
+                        <li><a href="#analytics">アナリティクス</a></li>
+                        <li><a href="#copyright">著作権表記</a></li>
+                    </ul>
+                </nav>
+
+                <!-- ライブラリ -->
+                <section id="libraries" class="cr-section">
+                    <h2>ライブラリ (JavaScript / CSS)</h2>
+                    <div class="cr-entry">
+                        <span class="cr-name">Fabric.js</span>
+                        <span class="cr-meta">
+                            <span class="cr-tag">MIT</span>
+                            © Fabric.js contributors —
+                            <a href="https://fabricjs.com/" target="_blank" rel="noopener">公式</a> /
+                            <a href="https://github.com/fabricjs/fabric.js/blob/master/LICENSE" target="_blank" rel="noopener">ライセンス全文</a>
+                        </span>
+                    </div>
+                    <div class="cr-entry">
+                        <span class="cr-name">Pickr (Simonwep/pickr)</span>
+                        <span class="cr-meta">
+                            <span class="cr-tag">MIT</span>
+                            © Simon Reinisch —
+                            <a href="https://simonwep.github.io/pickr/" target="_blank" rel="noopener">公式</a> /
+                            <a href="https://github.com/Simonwep/pickr/blob/master/LICENSE" target="_blank" rel="noopener">ライセンス全文</a>
+                        </span>
+                    </div>
+                    <div class="cr-entry">
+                        <span class="cr-name">polygon-clipping</span>
+                        <span class="cr-meta">
+                            <span class="cr-tag">MIT</span>
+                            © Mike Fogel —
+                            <a href="https://github.com/mfogel/polygon-clipping" target="_blank" rel="noopener">GitHub</a> /
+                            <a href="https://github.com/mfogel/polygon-clipping/blob/master/LICENSE" target="_blank" rel="noopener">ライセンス全文</a>
+                        </span>
+                    </div>
+                </section>
+
+                <!-- アイコン -->
+                <section id="icons" class="cr-section">
+                    <h2>アイコンセット</h2>
+                    <div class="cr-entry">
+                        <span class="cr-name">Material Symbols (Outlined)</span>
+                        <span class="cr-meta">
+                            <span class="cr-tag">Apache 2.0</span>
+                            © Google —
+                            <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">公式</a> /
+                            <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">ライセンス全文</a>
+                        </span>
+                    </div>
+                    <div class="cr-entry">
+                        <span class="cr-name">Font Awesome Free 6.5.1</span>
+                        <span class="cr-meta">
+                            <span class="cr-tag">CC BY 4.0 (icons)</span><span class="cr-tag">MIT (code)</span>
+                            © Fonticons, Inc. —
+                            <a href="https://fontawesome.com/" target="_blank" rel="noopener">公式</a> /
+                            <a href="https://fontawesome.com/license/free" target="_blank" rel="noopener">ライセンス全文</a>
+                        </span>
+                    </div>
+                </section>
+
+                <!-- フォント -->
+                <section id="fonts" class="cr-section">
+                    <h2>Webフォント</h2>
+                    <p>
+                        以下のフォントはすべて <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> から配信されており、各々
+                        <a href="https://openfontlicense.org/" target="_blank" rel="noopener">SIL Open Font License 1.1</a>
+                        または同等のオープンライセンスでライセンスされています。
+                    </p>
+
+                    <h3>日本語 / ゴシック</h3>
+                    <div class="cr-fontlist">
+                        <div>Noto Sans JP</div>
+                        <div>Zen Kaku Gothic New</div>
+                        <div>Sawarabi Gothic</div>
+                        <div>M PLUS 1p</div>
+                    </div>
+
+                    <h3>日本語 / 明朝</h3>
+                    <div class="cr-fontlist">
+                        <div>Noto Serif JP</div>
+                        <div>Zen Old Mincho</div>
+                        <div>Shippori Mincho</div>
+                        <div>Sawarabi Mincho</div>
+                        <div>Hina Mincho</div>
+                    </div>
+
+                    <h3>日本語 / 丸ゴシック・ポップ</h3>
+                    <div class="cr-fontlist">
+                        <div>Zen Maru Gothic</div>
+                        <div>Mochiy Pop One</div>
+                        <div>Reggae One</div>
+                        <div>Aoboshi One</div>
+                    </div>
+
+                    <h3>日本語 / 楷書・手書き</h3>
+                    <div class="cr-fontlist">
+                        <div>Klee One</div>
+                        <div>Yomogi</div>
+                        <div>Zen Kurenaido</div>
+                        <div>Yuji Syuku</div>
+                        <div>Yuji Boku</div>
+                        <div>Yusei Magic</div>
+                    </div>
+
+                    <h3>日本語 / 装飾・特殊</h3>
+                    <div class="cr-fontlist">
+                        <div>Dela Gothic One</div>
+                        <div>Kaisei Decol</div>
+                        <div>DotGothic16</div>
+                        <div>Stick</div>
+                    </div>
+
+                    <h3>欧文 / ファンタジー</h3>
+                    <div class="cr-fontlist">
+                        <div>Cinzel</div>
+                        <div>MedievalSharp</div>
+                        <div>UnifrakturMaguntia</div>
+                        <div>Pirata One</div>
+                    </div>
+
+                    <h3>欧文 / ホラー・SF</h3>
+                    <div class="cr-fontlist">
+                        <div>Special Elite</div>
+                        <div>Eater</div>
+                        <div>Orbitron</div>
+                    </div>
+
+                    <h3>欧文 / 等幅・モダン</h3>
+                    <div class="cr-fontlist">
+                        <div>Share Tech Mono</div>
+                        <div>Bebas Neue</div>
+                    </div>
+                </section>
+
+                <!-- 装飾スタンプ素材 -->
+                <section id="decors" class="cr-section">
+                    <h2>装飾スタンプ素材</h2>
+
+                    <h3>game-icons.net</h3>
+                    <p>
+                        TRPGマップ作成ツールの装飾スタンプ (`decors/svg/` 内の一部) は
+                        <a href="https://game-icons.net/" target="_blank" rel="noopener">game-icons.net</a>
+                        からのアセットを加工して使用しています。ライセンス:
+                        <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>。
+                        加工内容: 元 SVG の背景 path (黒地) を削除し、本体の <code>fill="#fff"</code> を <code>fill="#505050"</code> に変更。
+                    </p>
+                    <div class="cr-table-wrap">
+                        <table class="cr-table">
+                            <thead>
+                                <tr>
+                                    <th>収録ファイル</th>
+                                    <th>作者</th>
+                                    <th>元アイコン名</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>door-simple.svg</td><td>Delapouite</td><td>door</td></tr>
+                                <tr><td>door-arched.svg</td><td>Delapouite</td><td>arabic-door</td></tr>
+                                <tr><td>double-door.svg</td><td>Delapouite</td><td>closed-doors</td></tr>
+                                <tr><td>bed.svg</td><td>Delapouite</td><td>bed</td></tr>
+                                <tr><td>desk.svg</td><td>Delapouite</td><td>desk</td></tr>
+                                <tr><td>bookshelf.svg</td><td>Delapouite</td><td>bookshelf</td></tr>
+                                <tr><td>chest.svg</td><td>Delapouite</td><td>chest</td></tr>
+                                <tr><td>barrel.svg</td><td>Delapouite</td><td>barrel</td></tr>
+                                <tr><td>fireplace.svg</td><td>Delapouite</td><td>fireplace</td></tr>
+                                <tr><td>stairs.svg</td><td>Delapouite</td><td>3d-stairs</td></tr>
+                                <tr><td>escalator.svg</td><td>Delapouite</td><td>escalator</td></tr>
+                                <tr><td>ladder.svg</td><td>Delapouite</td><td>ladder</td></tr>
+                                <tr><td>campfire.svg</td><td>Lorc</td><td>campfire</td></tr>
+                                <tr><td>tree-pine.svg</td><td>Lorc</td><td>pine-tree</td></tr>
+                                <tr><td>wood-pile.svg</td><td>Delapouite</td><td>wood-pile</td></tr>
+                                <tr><td>wood-cabin.svg</td><td>Delapouite</td><td>wood-cabin</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>日本の地図記号 (openstreetmap/map-icons)</h3>
+                    <p>
+                        <code>jp-*.svg</code> の日本の地図記号は
+                        <a href="https://github.com/openstreetmap/map-icons" target="_blank" rel="noopener">openstreetmap/map-icons</a>
+                        の <code>japan/</code> ディレクトリから取得しました。ライセンス: パブリックドメイン相当 (PD-style)。
+                        加工内容: 背景 <code>&lt;rect fill="white"&gt;</code> を削除し、stroke / fill を black に統一 (white / none は保持)。
+                    </p>
+                    <div class="cr-table-wrap">
+                        <table class="cr-table">
+                            <thead><tr><th>収録ファイル</th><th>元アイコン</th></tr></thead>
+                            <tbody>
+                                <tr><td>jp-school.svg</td><td>education/school/junior_high.svg</td></tr>
+                                <tr><td>jp-university.svg</td><td>education/university.svg</td></tr>
+                                <tr><td>jp-hospital.svg</td><td>health/hospital.svg</td></tr>
+                                <tr><td>jp-shrine.svg</td><td>incomming/Shrine.svg</td></tr>
+                                <tr><td>jp-temple.svg</td><td>incomming/Temple.svg</td></tr>
+                                <tr><td>jp-cemetery.svg</td><td>religion/cemetery.svg</td></tr>
+                                <tr><td>jp-police.svg</td><td>incomming/Police_station.svg</td></tr>
+                                <tr><td>jp-koban.svg</td><td>incomming/Koban.svg</td></tr>
+                                <tr><td>jp-firebrigade.svg</td><td>public/firebrigade.svg</td></tr>
+                                <tr><td>jp-post.svg</td><td>public/post_office.svg</td></tr>
+                                <tr><td>jp-townhall.svg</td><td>public/administration/townhall.svg</td></tr>
+                                <tr><td>jp-court.svg</td><td>public/administration/court_of_law.svg</td></tr>
+                                <tr><td>jp-castle.svg</td><td>sightseeing/castle.svg</td></tr>
+                                <tr><td>jp-museum.svg</td><td>sightseeing/museum.svg</td></tr>
+                                <tr><td>jp-library.svg</td><td>shopping/rental/library.svg</td></tr>
+                                <tr><td>jp-spa.svg</td><td>incomming/Spa.svg</td></tr>
+                                <tr><td>jp-historical.svg</td><td>incomming/Historical_site.svg</td></tr>
+                                <tr><td>jp-factory.svg</td><td>incomming/Factory.svg</td></tr>
+                                <tr><td>jp-power-plant.svg</td><td>incomming/Power_plant.svg</td></tr>
+                                <tr><td>jp-lighthouse.svg</td><td>misc/landmark/lighthouse.svg</td></tr>
+                                <tr><td>jp-high-tower.svg</td><td>incomming/High_Tower.svg</td></tr>
+                                <tr><td>jp-rice-field.svg</td><td>incomming/Rice_field.svg</td></tr>
+                                <tr><td>jp-high-school.svg</td><td>incomming/High_school.svg</td></tr>
+                                <tr><td>jp-town-office.svg</td><td>incomming/Town_or_Village_Office.svg</td></tr>
+                                <tr><td>jp-met-observatory.svg</td><td>incomming/Meteorological_observatory.svg</td></tr>
+                                <tr><td>jp-sdf.svg</td><td>incomming/the_Self-Defense_Forces.svg</td></tr>
+                                <tr><td>jp-fishing-port.svg</td><td>incomming/Fishing_port.svg</td></tr>
+                                <tr><td>jp-port.svg</td><td>incomming/Important_port.svg</td></tr>
+                                <tr><td>jp-mine.svg</td><td>incomming/Mine.svg</td></tr>
+                                <tr><td>jp-quarry.svg</td><td>incomming/Quarry.svg</td></tr>
+                                <tr><td>jp-field.svg</td><td>incomming/Field.svg</td></tr>
+                                <tr><td>jp-orchard.svg</td><td>incomming/Orchard.svg</td></tr>
+                                <tr><td>jp-tea.svg</td><td>incomming/Tea_plantation.svg</td></tr>
+                                <tr><td>jp-broadleaf.svg</td><td>incomming/Broadleaf_trees.svg</td></tr>
+                                <tr><td>jp-conifer.svg</td><td>incomming/Coniferous_trees.svg</td></tr>
+                                <tr><td>jp-bamboo.svg</td><td>incomming/Bamboo_grove.svg</td></tr>
+                                <tr><td>jp-monument.svg</td><td>sightseeing/monument.svg</td></tr>
+                                <tr><td>jp-chimney.svg</td><td>misc/landmark/chimney.svg</td></tr>
+                                <tr><td>jp-tower.svg</td><td>misc/landmark/tower.svg</td></tr>
+                                <tr><td>jp-windmill.svg</td><td>misc/landmark/windmill.svg</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>間取り図系 SVG (fp-*)</h3>
+                    <p>
+                        <code>fp-door.svg</code> / <code>fp-door-large.svg</code> / <code>fp-door-open.svg</code> /
+                        <code>fp-door-double-open.svg</code> は当サイト管理者 (ihoukentiku) が制作。
+                    </p>
+                </section>
+
+                <!-- パターン素材 -->
+                <section id="patterns" class="cr-section">
+                    <h2>パターン素材</h2>
+                    <p>
+                        <code>trpg_map_maker/patterns/full/</code> 内のパターン画像 (grass / water / レンガ / 岩 / 岩(苔) / 森林 / 石畳 / 木板) は
+                        OpenAI 画像生成モデル (GPT Image 2) を用いて当サイト管理者が生成・編集した素材です。
+                        <a href="https://openai.com/policies/terms-of-use" target="_blank" rel="noopener">OpenAI の利用規約</a>
+                        に従い、生成された画像の権利は生成者 (ihoukentiku) に帰属します。
+                    </p>
+                </section>
+
+                <!-- 音源 -->
+                <section id="bgm" class="cr-section">
+                    <h2>音源 (BGM)</h2>
+                    <div class="cr-entry">
+                        <span class="cr-name">nc301652</span>
+                        <span class="cr-meta">
+                            作曲: 耳木兎ノオト —
+                            <a href="https://commons.nicovideo.jp/works/nc301652" target="_blank" rel="noopener">ニコニ・コモンズ</a>
+                        </span>
+                    </div>
+                </section>
+
+                <!-- アナリティクス -->
+                <section id="analytics" class="cr-section">
+                    <h2>アナリティクス</h2>
+                    <div class="cr-entry">
+                        <span class="cr-name">Google Analytics (gtag.js)</span>
+                        <span class="cr-meta">
+                            © Google — 本番ホスト (ihoukentiku.github.io) のみで利用。詳細は
+                            <a href="privacy-policy.html">プライバシーポリシー</a> 参照。
+                        </span>
+                    </div>
+                </section>
+
+                <hr class="cr-divider" />
+
+                <!-- 著作権表記 -->
+                <section id="copyright" class="cr-section">
+                    <h2>著作権表記</h2>
+                    <div class="cr-copyright">
+                        <p>&copy; 2025 違法建築 (ihoukentiku)</p>
+                        <p>
+                            本サイトのコード本体は
+                            <a href="https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+                            の下で公開されています。
+                        </p>
+                        <p>
+                            サイト管理者が制作した素材 (間取り図 SVG / AI 生成パターン画像 / 各ツールのデザイン等) の権利は当サイト管理者に帰属します。
+                            個人利用の範囲で TRPG セッション内でのご利用は自由です。商用・再配布等の利用については
+                            <a href="https://twitter.com/ihoukentiku" target="_blank" rel="noopener">@ihoukentiku</a> までお問い合わせください。
+                        </p>
+                    </div>
+                </section>
+
+                <div class="cr-note">
+                    本ページに掲載漏れ・誤記等のお気づきの点がありましたら、ご連絡いただけますと幸いです。
+                </div>
+            </article>
+        </main>
+
+        <footer class="site-footer" aria-label="サイトフッター">
+            <div class="container"></div>
+        </footer>
+
+        <!-- 使い方ガイド Modal -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-modal-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="guide-content"></div>
+            </div>
+        </div>
+
+        <script src="common.js"></script>
+    </body>
+</html>

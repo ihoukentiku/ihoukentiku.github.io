@@ -3,20 +3,10 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>TRPGマップ作成ツール | 違法建築のTRPGラボ</title>
-        <meta name="description" content="TRPGのマップをブラウザ上で作成できるツール。スクエア/ヘクスグリッド対応。洞窟・屋内・屋外を自由にデザインし、画像として出力できます。" />
-        <meta name="author" content="違法建築" />
+        <title>マップ編集 | TRPGマップ作成ツール | 違法建築のTRPGラボ</title>
+        <!-- 編集画面は直接 URL でアクセスされる導線が無いため description / OG / Twitter カードは省略 (map_list.html が代表ページ) -->
+        <meta name="robots" content="noindex" />
         <link rel="icon" href="../favicon.ico" />
-        <meta property="og:url" content="https://ihoukentiku.github.io/trpg_map_maker/map_editor.html" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="TRPGマップ作成ツール | 違法建築のTRPGラボ" />
-        <meta property="og:description" content="TRPGのマップをブラウザ上で作成できるツール。スクエア/ヘクスグリッド対応。" />
-        <meta property="og:site_name" content="違法建築のTRPGラボ" />
-        <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@ihoukentiku" />
-        <meta name="twitter:creator" content="@ihoukentiku" />
-        <meta name="twitter:image" content="https://ihoukentiku.github.io/ogp-image.png" />
         <script src="../analytics.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -465,6 +455,46 @@
             }
             .pp-tile-solid {
                 background: repeating-conic-gradient(rgba(255, 255, 255, 0.15) 0% 25%, rgba(0, 0, 0, 0.15) 0% 50%) 0 0 / 12px 12px;
+            }
+            /* ユーザー素材アップロードタイル ("+ 追加") */
+            .pp-tile-add {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-dim);
+                border-style: dashed;
+                background: transparent;
+            }
+            .pp-tile-add:hover {
+                color: var(--cyan);
+                border-color: var(--cyan);
+            }
+            /* ユーザー素材削除ボタン (タイル右上 overlay) */
+            .pp-tile-del {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                width: 18px;
+                height: 18px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                border: 0;
+                border-radius: 3px;
+                background: rgba(0, 0, 0, 0.7);
+                color: #fff;
+                cursor: pointer;
+                z-index: 2;
+            }
+            .pp-tile:hover .pp-tile-del {
+                display: flex;
+            }
+            .pp-tile-del:hover {
+                background: rgba(220, 60, 60, 0.85);
+            }
+            .pp-tile-del .material-symbols-outlined {
+                font-size: 0.85rem;
             }
             .pp-tile-solid .pp-solid-swatch {
                 position: absolute;
@@ -1136,6 +1166,48 @@
             }
             #sel-info input[type='number'] {
                 width: 58px;
+            }
+
+            /* ---- 使い方ガイド: アイコン付き定義リスト ---- */
+            .guide-dl {
+                display: grid;
+                grid-template-columns: 1.5rem 1fr;
+                gap: 0.3rem 0.6rem;
+                font-size: 0.88rem;
+                line-height: 1.6;
+            }
+            .guide-dl > .material-symbols-outlined {
+                font-size: 1.05rem;
+                color: var(--cyan);
+                align-self: start;
+                margin-top: 0.15rem;
+            }
+            .guide-dl dt {
+                font-weight: bold;
+                color: var(--text-bright);
+            }
+            .guide-dl dd {
+                margin: 0 0 0.5rem;
+                color: var(--text);
+            }
+            .guide-dl code {
+                font-family: var(--font-mono);
+                font-size: 0.82em;
+                padding: 0.05rem 0.3rem;
+                background: rgba(0, 229, 255, 0.08);
+                border: 1px solid rgba(0, 229, 255, 0.2);
+                border-radius: 3px;
+                color: var(--cyan);
+            }
+            .guide-dl kbd {
+                font-family: var(--font-mono);
+                font-size: 0.82em;
+                padding: 0.05rem 0.4rem;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid var(--border-bright);
+                border-bottom-width: 2px;
+                border-radius: 3px;
+                color: var(--text);
             }
         </style>
     </head>
@@ -1845,16 +1917,6 @@
             <div class="ctx-item" data-action="delete"><span class="material-symbols-outlined">delete</span>削除</div>
         </div>
 
-        <!-- モーダル -->
-        <div class="modal-overlay" id="guide-modal">
-            <div class="modal">
-                <div class="modal-header">
-                    <span class="modal-title">使い方ガイド</span><button class="modal-close" onclick="IKLab.closeModal('guide-modal')"><span class="material-symbols-outlined">close</span></button>
-                </div>
-                <div class="modal-body"><p>準備中です。</p></div>
-            </div>
-        </div>
-
         <!-- 出力モーダル -->
         <div class="modal-overlay" id="export-modal">
             <div class="modal" style="max-width: 960px; width: 92vw">
@@ -1908,6 +1970,170 @@
                             </div>
                             <div id="export-modal-info" style="text-align: center; font-size: 0.72rem; color: var(--text-dim)"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 使い方ガイド モーダル ====== -->
+        <div class="modal-overlay" id="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+            <div class="modal" style="max-width: 760px">
+                <div class="modal-header">
+                    <span class="modal-title" id="guide-title">使い方ガイド</span>
+                    <button class="modal-close" aria-label="閉じる"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="guide-body" id="guide-content">
+                        <h3>編集モード</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">draw</span>
+                            <div>
+                                <dt>シンプル</dt>
+                                <dd>矩形・楕円・直線・折線・多角形・曲線・閉曲線・セル塗りなど、汎用的な図形ツールでマップを描くモード。ヘッダーのトグルで切替。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">map</span>
+                            <div>
+                                <dt>地図</dt>
+                                <dd>地面 / 壁 / 部屋 / 装飾 のタブに分かれ、テクスチャパターンや SVG スタンプを使った本格的な TRPG マップ向けモード。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>シンプルモードのツール</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">crop_square</span>
+                            <div>
+                                <dt>矩形 / 楕円 (R / E)</dt>
+                                <dd>1 クリック目で開始点、2 クリック目で対角を確定。塗り色・線色・線幅・角丸を設定パネルで指定。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">horizontal_rule</span>
+                            <div>
+                                <dt>直線 / 折線 / 多角形 / 曲線 (L / P / G / C / Shift+C)</dt>
+                                <dd>クリックで頂点追加 → Enter で確定 / Esc でキャンセル。多角形と閉曲線は 3 点以上で閉じる。スナップ点 (頂点/中点) に吸着。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">crossword</span>
+                            <div>
+                                <dt>セル塗り (B)</dt>
+                                <dd>ペン / 消しゴム / 塗りつぶしの 3 モード。グリッドのマス単位で塗る。同色は自動でまとまった面として描かれる。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">draw</span>
+                            <div>
+                                <dt>フリーハンド (D)</dt>
+                                <dd>マウスドラッグでブラシ描画。ブラシ種 (鉛筆 / 円 / スプレー / 消しゴム) や線幅・色・筆圧感度を設定可能。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>地図モードのツール</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">landscape</span>
+                            <div>
+                                <dt>地面</dt>
+                                <dd>セル / 矩形 / 楕円 / 多角形 / 閉曲線 で床面を塗ります。パターン (草・水・石畳など) または単色を選択。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">outdoor_garden</span>
+                            <div>
+                                <dt>壁</dt>
+                                <dd>矩形 / 楕円 / 直線 / 折線 / 多角形 / 曲線 / 閉曲線 で壁を線として描画。太さとパターンを設定可能。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">home</span>
+                            <div>
+                                <dt>部屋</dt>
+                                <dd>矩形 / 楕円 / 多角形 / 閉曲線 を描くと「地面 + 外周壁」がセットで生成されてグループ化。地面と壁のパターンは独立設定可。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">chair</span>
+                            <div>
+                                <dt>装飾</dt>
+                                <dd>家具・ドア・木・地図記号などの SVG / 画像スタンプを配置。SVG はピッカーで色変更、サイズ・回転・反転も自由。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>パターン・装飾</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">texture</span>
+                            <div>
+                                <dt>パターン選択</dt>
+                                <dd>各タブのパターンピッカーでテクスチャを選択。「単色」ピックでカラー指定も可。パターン詳細でオフセット・回転・倍率を微調整。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">upload</span>
+                            <div>
+                                <dt>ユーザー素材アップロード</dt>
+                                <dd>パターン / 装飾の「ユーザー」ジャンルにある「＋」タイルから PNG / JPG / WebP / SVG を追加。マップごとに保存され、次回もそのまま使えます。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>レイヤー / 選択</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">layers</span>
+                            <div>
+                                <dt>レイヤーパネル</dt>
+                                <dd>右側のパネルでオブジェクト一覧を確認、表示/非表示・並び替え・名前変更・削除。ダブルクリックで名前編集。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">folder</span>
+                            <div>
+                                <dt>グループ化 (Ctrl+G / Ctrl+Shift+G)</dt>
+                                <dd>選択ツールで複数選択 → 選択枠上のフォルダボタンまたは Ctrl+G でグループ化。Ctrl+Shift+G で解除。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">join_full</span>
+                            <div>
+                                <dt>ブール演算</dt>
+                                <dd>同種の図形を 2 つ以上選択 → 選択枠上のバーで「合体 / 交差 / 差 / 排他」を実行。複雑な形を効率的に作れます。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">opacity</span>
+                            <div>
+                                <dt>不透明度 / ブレンド</dt>
+                                <dd>レイヤーパネルから個別に不透明度・ブレンドモード (通常 / 上重ね / 切り抜き / XOR / 乗算など多数) を設定。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>保存と出力</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">save</span>
+                            <div>
+                                <dt>自動保存</dt>
+                                <dd>編集中は約 2.5 秒間隔で IndexedDB に自動保存。ヘッダーの「保存済み / 編集中…」表示で状態を確認できます。Ctrl+S で即時保存 + サムネ再生成。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">download</span>
+                            <div>
+                                <dt>画像出力</dt>
+                                <dd>ツールバーの「出力」を押して範囲をドラッグ → PNG / JPEG / SVG でダウンロード。背景の透明 / 白、グリッド表示、解像度を選択可。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">undo</span>
+                            <div>
+                                <dt>Undo / Redo</dt>
+                                <dd>Ctrl+Z で取消、Ctrl+Shift+Z または Ctrl+Y でやり直し。最大 50 ステップ保持。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>主要ショートカット</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">keyboard</span>
+                            <div>
+                                <dt>編集</dt>
+                                <dd>
+                                    <code>Ctrl+Z</code> / <code>Ctrl+Shift+Z</code> 取消・やり直し<br />
+                                    <code>Ctrl+S</code> 即時保存<br />
+                                    <code>Ctrl+G</code> / <code>Ctrl+Shift+G</code> グループ化 / 解除<br />
+                                    <code>Delete</code> 選択削除
+                                </dd>
+                            </div>
+                            <span class="material-symbols-outlined">ads_click</span>
+                            <div>
+                                <dt>ツール切替 (シンプルモード)</dt>
+                                <dd>
+                                    <code>V</code> 選択 / <code>B</code> セル / <code>R</code> 矩形 / <code>E</code> 楕円 / <code>L</code> 直線<br />
+                                    <code>P</code> 折線 / <code>G</code> 多角形 / <code>C</code> 曲線 / <code>Shift+C</code> 閉曲線<br />
+                                    <code>D</code> フリーハンド / <code>T</code> テキスト / <code>I</code> 画像
+                                </dd>
+                            </div>
+                            <span class="material-symbols-outlined">pan_tool</span>
+                            <div>
+                                <dt>キャンバス操作</dt>
+                                <dd>
+                                    <kbd>Space</kbd> ドラッグで移動 / マウスホイールでズーム<br />
+                                    <kbd>Shift</kbd> 押下中はスナップ一時無効
+                                </dd>
+                            </div>
+                        </dl>
+                        <!-- ↓ common.js の buildGuideLinks() がここにリンクブロックを追加する -->
                     </div>
                 </div>
             </div>

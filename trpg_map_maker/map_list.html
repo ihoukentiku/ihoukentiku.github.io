@@ -3,14 +3,17 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>マイマップ | TRPGマップ作成ツール | 違法建築のTRPGラボ</title>
-        <meta name="description" content="保存したTRPGマップの一覧。新規作成・複製・JSON入出力に対応。" />
+        <title>TRPGマップ作成ツール | 違法建築のTRPGラボ</title>
+        <meta
+            name="description"
+            content="ブラウザだけで動く TRPG 用マップ作成ツール。スクエア / ヘクスマップに対応。間取り図の作成にも最適。地面・壁・部屋・装飾のテクスチャパターン、フリーハンド・テキスト・画像挿入、自動保存、PNG/JPEG/SVG 出力に対応。ココフォリア等のオンセツールでも使えます。"
+        />
         <meta name="author" content="違法建築" />
         <link rel="icon" href="../favicon.ico" />
         <meta property="og:url" content="https://ihoukentiku.github.io/trpg_map_maker/map_list.html" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="マイマップ | TRPGマップ作成ツール | 違法建築のTRPGラボ" />
-        <meta property="og:description" content="保存したTRPGマップの一覧。" />
+        <meta property="og:title" content="TRPGマップ作成ツール | 違法建築のTRPGラボ" />
+        <meta property="og:description" content="ブラウザだけで動く TRPG マップ作成ツール。スクエア/ヘクス対応・テクスチャパターン・装飾スタンプ・PNG/SVG 出力。" />
         <meta property="og:site_name" content="違法建築のTRPGラボ" />
         <meta property="og:image" content="https://ihoukentiku.github.io/ogp-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -91,6 +94,43 @@
             }
             .action-btn .material-symbols-outlined {
                 font-size: 1rem;
+            }
+
+            /* ---- ツール概要 (intro) ---- */
+            .intro {
+                margin: 0 0 1.6rem;
+                padding: 1.1rem 1.2rem;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                line-height: 1.75;
+                font-size: 0.88rem;
+                color: var(--text);
+            }
+            .intro p {
+                margin: 0 0 0.6rem;
+            }
+            .intro p:last-child {
+                margin-bottom: 0;
+            }
+            .intro .intro-features {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 0.4rem 1rem;
+                margin-top: 0.7rem;
+                padding-top: 0.7rem;
+                border-top: 1px dashed var(--border);
+                font-size: 0.78rem;
+                color: var(--text-dim);
+            }
+            .intro .intro-features div {
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+            .intro .intro-features .material-symbols-outlined {
+                font-size: 0.95rem;
+                color: var(--cyan);
             }
 
             .map-grid {
@@ -385,6 +425,27 @@
             <h1 class="page-title">TRPGマップ作成ツール</h1>
             <p class="page-subtitle">TRPG MAP MAKER</p>
 
+            <section class="intro" aria-label="ツール概要">
+                <p>
+                    ブラウザだけで動く、TRPG セッション用のマップ作成ツールです。スクエア /
+                    ヘクスマップに対応し、シンプルな図形描画から地面・壁・部屋・装飾を組み合わせた間取り図/屋外マップまで作成できます。
+                </p>
+                <p>
+                    作成したマップはブラウザに自動保存。複数マップを並行管理でき、JSON で出力すれば他端末へ持ち運びも可能です。完成したマップは PNG / JPEG / SVG でダウンロードでき、ココフォリア等の TRPG
+                    セッションツールで使えます。
+                </p>
+                <div class="intro-features">
+                    <div><span class="material-symbols-outlined">grid_on</span>スクエア / ヘクス両対応</div>
+                    <div><span class="material-symbols-outlined">layers</span>シンプル / 地図モード切替</div>
+                    <div><span class="material-symbols-outlined">texture</span>パターン素材 + ユーザー画像</div>
+                    <div><span class="material-symbols-outlined">chair</span>家具・地図記号スタンプ</div>
+                    <div><span class="material-symbols-outlined">edit</span>フリーハンド / テキスト / 画像</div>
+                    <div><span class="material-symbols-outlined">undo</span>Undo / Redo / 自動保存</div>
+                    <div><span class="material-symbols-outlined">join_full</span>ブール演算・グループ化</div>
+                    <div><span class="material-symbols-outlined">download</span>PNG / JPEG / SVG 出力</div>
+                </div>
+            </section>
+
             <div class="action-bar">
                 <button class="action-btn" id="btn-new"><span class="material-symbols-outlined">add</span>新規マップ</button>
                 <button class="action-btn secondary" id="btn-import"><span class="material-symbols-outlined">file_upload</span>JSONから読込</button>
@@ -466,6 +527,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
 
         <script src="../common.js"></script>

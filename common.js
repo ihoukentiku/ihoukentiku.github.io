@@ -11,7 +11,7 @@
         twitter: 'https://twitter.com/ihoukentiku',
         github: 'https://github.com/ihoukentiku/ihoukentiku.github.io',
         githubLicense: 'https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/LICENSE',
-        thirdPartyLicense: 'https://github.com/ihoukentiku/ihoukentiku.github.io/blob/main/THIRD_PARTY_LICENSES.md',
+        thirdPartyLicense: 'third-party-licenses.html',
         privacyPolicy: 'privacy-policy.html',
     };
 

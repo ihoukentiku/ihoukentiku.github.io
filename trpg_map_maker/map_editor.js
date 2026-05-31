@@ -75,6 +75,12 @@ const App = {
     roomWallStrokeLineJoin: 'miter',
     roomWallStrokeLineCap: 'butt',
     // ---- 地図モード: 装飾タブ ----
+    // ---- ユーザーアップロード素材 (per-map: 保存データに同梱) ----
+    // userPatterns[]: { id, name, type:'raster'|'svg', dataUrl:string, color:string, scale:number }
+    //   ground / wall 両方の「ユーザー」ジャンルに表示される
+    // userDecors[]: { id, name, type:'raster'|'svg', dataUrl:string, scale:number, anchorX, anchorY }
+    userPatterns: [],
+    userDecors: [],
     decorId: null, // 選択中の DECORS エントリ id (null = 未選択)
     decorGenreId: 'all',
     decorScale: 1, // ユーザー倍率。最終 = DECORS[].scale × decorScale
@@ -186,33 +192,41 @@ const PATTERN_DIR_THUMB = 'patterns/thumb/';
 
 const GROUND_GENRES = [
     { id: 'all', name: '全て' },
+    { id: 'user', name: 'ユーザー' },
     { id: 'indoor', name: '屋内' },
     { id: 'outdoor', name: '屋外' },
-    { id: 'cave', name: '洞窟' },
 ];
 const WALL_GENRES = [
     { id: 'all', name: '全て' },
+    { id: 'user', name: 'ユーザー' },
     { id: 'stone', name: '石壁' },
     { id: 'wood', name: '木壁' },
-    { id: 'brick', name: 'レンガ' },
-    { id: 'natural', name: '自然' },
 ];
 
 const PATTERNS = [
     // scale: パターン定義側の初期倍率 (画像 1px → キャンバス scale px)。
     //   最終倍率 = (PATTERNS[].scale) × (App.groundPatternScale / wallPatternScale ユーザー設定値)
-    { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 0.5 },
-    { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.5 },
-    { id: 'rock', name: '岩', file: '岩.webp', color: '#7a7368', ground: 'cave', wall: 'stone', scale: 0.5 },
-    { id: 'rock-moss', name: '岩 (苔)', file: '岩(苔).webp', color: '#6b7a52', ground: 'cave', wall: 'natural', scale: 0.5 },
+    { id: 'grass', name: '草原', file: 'grass.webp', color: '#4a8c3f', ground: 'outdoor', wall: null, scale: 0.4 },
+    { id: 'water', name: '水面', file: 'water.webp', color: '#5ba3cf', ground: 'outdoor', wall: null, scale: 0.4 },
+    { id: 'rock', name: '岩', file: '岩.webp', color: '#7a7368', ground: 'cave', wall: 'stone', scale: 0.4 },
+    { id: 'rock-moss', name: '岩 (苔)', file: '岩(苔).webp', color: '#6b7a52', ground: 'cave', wall: 'natural', scale: 0.4 },
     { id: 'wood-plank', name: '木板', file: '木板.webp', color: '#8a6a3f', ground: 'indoor', wall: 'wood', scale: 0.25 },
-    { id: 'brick', name: 'レンガ', file: 'レンガ.webp', color: '#9a5a3f', ground: 'indoor', wall: 'brick', scale: 0.2 },
-    { id: 'forest', name: '森林', file: '森林.webp', color: '#3f6a3a', ground: 'outdoor', wall: null, scale: 0.5 },
+    { id: 'brick', name: 'レンガ', file: 'レンガ.webp', color: '#9a5a3f', ground: 'indoor', wall: 'stone', scale: 0.2 },
+    { id: 'cobblestone', name: '石畳', file: '石畳.webp', color: '#7a7368', ground: 'outdoor', wall: 'stone', scale: 0.4 },
+    { id: 'forest', name: '森林', file: '森林.webp', color: '#3f6a3a', ground: 'outdoor', wall: null, scale: 0.4 },
 ];
 
-/** id からパターン定義を取得する。無ければ null。 */
+/** id からパターン定義を取得する。組み込みパターン → ユーザー素材の順で検索。無ければ null。 */
 function getPatternDef(id) {
-    return PATTERNS.find((p) => p.id === id) || null;
+    return PATTERNS.find((p) => p.id === id) || (App.userPatterns || []).find((p) => p.id === id) || null;
+}
+
+/** id がユーザー素材か判定 */
+function isUserPattern(id) {
+    return (App.userPatterns || []).some((p) => p.id === id);
+}
+function isUserDecor(id) {
+    return (App.userDecors || []).some((d) => d.id === id);
 }
 
 /* ================================================================
@@ -227,15 +241,10 @@ const DECOR_DIR_THUMB = 'decors/thumb/';
 
 const DECOR_GENRES = [
     { id: 'all', name: '全て' },
+    { id: 'user', name: 'ユーザー' },
     { id: 'floorplan', name: '間取り図' },
-    { id: 'icon', name: 'アイコン' },
-    { id: 'furniture', name: '家具' },
-    { id: 'door', name: 'ドア' },
-    { id: 'nature', name: '自然' },
-    { id: 'light', name: '灯火' },
-
     { id: 'jp-symbol', name: '地図記号' },
-    { id: 'misc', name: 'その他' },
+    { id: 'icon', name: 'アイコン' },
 ];
 
 const DECORS = [
@@ -274,51 +283,51 @@ const DECORS = [
     // その他
     { id: 'wood-cabin', name: '小屋', type: 'svg', file: 'wood-cabin.svg', genres: ['misc', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 日本の地図記号 (openstreetmap/map-icons, PD)
-    { id: 'jp-school', name: '学校', type: 'svg', file: 'jp-school.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-university', name: '大学', type: 'svg', file: 'jp-university.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-hospital', name: '病院', type: 'svg', file: 'jp-hospital.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-shrine', name: '神社', type: 'svg', file: 'jp-shrine.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-temple', name: '寺', type: 'svg', file: 'jp-temple.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-cemetery', name: '墓地', type: 'svg', file: 'jp-cemetery.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-police', name: '警察署', type: 'svg', file: 'jp-police.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-koban', name: '交番', type: 'svg', file: 'jp-koban.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-firebrigade', name: '消防署', type: 'svg', file: 'jp-firebrigade.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-post', name: '郵便局', type: 'svg', file: 'jp-post.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-townhall', name: '市役所', type: 'svg', file: 'jp-townhall.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-court', name: '裁判所', type: 'svg', file: 'jp-court.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-castle', name: '城跡', type: 'svg', file: 'jp-castle.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-museum', name: '博物館', type: 'svg', file: 'jp-museum.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-library', name: '図書館', type: 'svg', file: 'jp-library.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-spa', name: '温泉', type: 'svg', file: 'jp-spa.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-historical', name: '史跡', type: 'svg', file: 'jp-historical.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-factory', name: '工場', type: 'svg', file: 'jp-factory.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-power-plant', name: '発電所', type: 'svg', file: 'jp-power-plant.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-lighthouse', name: '灯台', type: 'svg', file: 'jp-lighthouse.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-high-tower', name: '電波塔', type: 'svg', file: 'jp-high-tower.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-rice-field', name: '田', type: 'svg', file: 'jp-rice-field.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-high-school', name: '高校', type: 'svg', file: 'jp-high-school.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-town-office', name: '町村役場', type: 'svg', file: 'jp-town-office.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-met-observatory', name: '気象台', type: 'svg', file: 'jp-met-observatory.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-sdf', name: '自衛隊', type: 'svg', file: 'jp-sdf.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-fishing-port', name: '漁港', type: 'svg', file: 'jp-fishing-port.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-port', name: '港', type: 'svg', file: 'jp-port.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-mine', name: '採鉱地', type: 'svg', file: 'jp-mine.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-quarry', name: '採石場', type: 'svg', file: 'jp-quarry.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-field', name: '畑', type: 'svg', file: 'jp-field.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-orchard', name: '果樹園', type: 'svg', file: 'jp-orchard.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-tea', name: '茶畑', type: 'svg', file: 'jp-tea.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-broadleaf', name: '広葉樹林', type: 'svg', file: 'jp-broadleaf.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-conifer', name: '針葉樹林', type: 'svg', file: 'jp-conifer.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-bamboo', name: '竹林', type: 'svg', file: 'jp-bamboo.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-monument', name: '記念碑', type: 'svg', file: 'jp-monument.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-chimney', name: '煙突', type: 'svg', file: 'jp-chimney.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-tower', name: '塔', type: 'svg', file: 'jp-tower.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
-    { id: 'jp-windmill', name: '風車', type: 'svg', file: 'jp-windmill.svg', genres: ['jp-symbol', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-school', name: '学校', type: 'svg', file: 'jp-school.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-university', name: '大学', type: 'svg', file: 'jp-university.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-hospital', name: '病院', type: 'svg', file: 'jp-hospital.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-shrine', name: '神社', type: 'svg', file: 'jp-shrine.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-temple', name: '寺', type: 'svg', file: 'jp-temple.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-cemetery', name: '墓地', type: 'svg', file: 'jp-cemetery.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-police', name: '警察署', type: 'svg', file: 'jp-police.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-koban', name: '交番', type: 'svg', file: 'jp-koban.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-firebrigade', name: '消防署', type: 'svg', file: 'jp-firebrigade.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-post', name: '郵便局', type: 'svg', file: 'jp-post.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-townhall', name: '市役所', type: 'svg', file: 'jp-townhall.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-court', name: '裁判所', type: 'svg', file: 'jp-court.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-castle', name: '城跡', type: 'svg', file: 'jp-castle.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-museum', name: '博物館', type: 'svg', file: 'jp-museum.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-library', name: '図書館', type: 'svg', file: 'jp-library.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-spa', name: '温泉', type: 'svg', file: 'jp-spa.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-historical', name: '史跡', type: 'svg', file: 'jp-historical.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-factory', name: '工場', type: 'svg', file: 'jp-factory.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-power-plant', name: '発電所', type: 'svg', file: 'jp-power-plant.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-lighthouse', name: '灯台', type: 'svg', file: 'jp-lighthouse.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-high-tower', name: '電波塔', type: 'svg', file: 'jp-high-tower.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-rice-field', name: '田', type: 'svg', file: 'jp-rice-field.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-high-school', name: '高校', type: 'svg', file: 'jp-high-school.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-town-office', name: '町村役場', type: 'svg', file: 'jp-town-office.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-met-observatory', name: '気象台', type: 'svg', file: 'jp-met-observatory.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-sdf', name: '自衛隊', type: 'svg', file: 'jp-sdf.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-fishing-port', name: '漁港', type: 'svg', file: 'jp-fishing-port.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-port', name: '港', type: 'svg', file: 'jp-port.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-mine', name: '採鉱地', type: 'svg', file: 'jp-mine.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-quarry', name: '採石場', type: 'svg', file: 'jp-quarry.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-field', name: '畑', type: 'svg', file: 'jp-field.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-orchard', name: '果樹園', type: 'svg', file: 'jp-orchard.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-tea', name: '茶畑', type: 'svg', file: 'jp-tea.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-broadleaf', name: '広葉樹林', type: 'svg', file: 'jp-broadleaf.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-conifer', name: '針葉樹林', type: 'svg', file: 'jp-conifer.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-bamboo', name: '竹林', type: 'svg', file: 'jp-bamboo.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-monument', name: '記念碑', type: 'svg', file: 'jp-monument.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-chimney', name: '煙突', type: 'svg', file: 'jp-chimney.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-tower', name: '塔', type: 'svg', file: 'jp-tower.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    { id: 'jp-windmill', name: '風車', type: 'svg', file: 'jp-windmill.svg', genres: ['jp-symbol'], scale: 1, anchorX: 'center', anchorY: 'center' },
 ];
 
-/** id から装飾定義を取得する。無ければ null。 */
+/** id から装飾定義を取得する。組み込み → ユーザー素材の順で検索。無ければ null。 */
 function getDecorDef(id) {
-    return DECORS.find((d) => d.id === id) || null;
+    return DECORS.find((d) => d.id === id) || (App.userDecors || []).find((d) => d.id === id) || null;
 }
 
 /** 装飾の所属ジャンル一覧を返す (新形式 genres[] と旧形式 genre 両対応)。 */
@@ -328,10 +337,13 @@ function decorGenres(d) {
     return [];
 }
 
-/** 指定ジャンル ID で装飾をフィルタする。'all' は全件。1 装飾が複数ジャンルに属するケースに対応。 */
+/** 指定ジャンル ID で装飾をフィルタする。'all' は組み込み + ユーザー全件。 */
 function decorsForGenre(genreId) {
-    if (!genreId || genreId === 'all') return DECORS;
-    return DECORS.filter((d) => decorGenres(d).includes(genreId));
+    const user = App.userDecors || [];
+    const all = [...DECORS, ...user];
+    if (!genreId || genreId === 'all') return all;
+    if (genreId === 'user') return user;
+    return all.filter((d) => decorGenres(d).includes(genreId));
 }
 
 /**
@@ -348,9 +360,9 @@ function decorAnchorToOriginY(anchorY) {
     return anchorY === 'top' || anchorY === 'bottom' ? anchorY : 'center';
 }
 
-/** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。 */
+/** 指定カテゴリ ('ground' | 'wall') で使えるパターンだけ抽出する。ユーザー素材は両方に出る。 */
 function patternsForCategory(category) {
-    return PATTERNS.filter((p) => p[category]);
+    return [...PATTERNS.filter((p) => p[category]), ...(App.userPatterns || [])];
 }
 
 /* ================================================================
@@ -2825,7 +2837,7 @@ function buildSelPatternSection(kind, label, entries, infoRoot, isFirst) {
     const pickerRoot = sec.querySelector('.sel-pattern-picker');
     mountPatternPicker(pickerRoot, {
         category,
-        patterns: PATTERNS,
+        patterns: patternsForCategory(category),
         genres,
         getState: () => sharedState,
         setState: (s) => {
@@ -3385,7 +3397,7 @@ const _patternImageCache = new Map(); // id → { state: 'loading'|'ready'|'erro
  */
 function loadPatternImage(id) {
     const def = getPatternDef(id);
-    if (!def || !def.file) return;
+    if (!def) return;
     const cached = _patternImageCache.get(id);
     if (cached) return; // loading / ready / error いずれも再試行しない
     _patternImageCache.set(id, { state: 'loading' });
@@ -3397,7 +3409,8 @@ function loadPatternImage(id) {
     img.onerror = () => {
         _patternImageCache.set(id, { state: 'error' });
     };
-    img.src = PATTERN_DIR_FULL + def.file;
+    // ユーザー素材は dataUrl を直接 src に。組み込みは patterns/full/{file} を読む
+    img.src = def.dataUrl || (def.file ? PATTERN_DIR_FULL + def.file : '');
 }
 
 /**
@@ -3625,44 +3638,45 @@ function loadDecorAsset(id) {
     const cached = _decorCache.get(id);
     if (cached) return;
     _decorCache.set(id, { state: 'loading' });
-    if (def.type === 'svg') {
-        fabric.loadSVGFromURL(DECOR_DIR_SVG + def.file, (objects, options) => {
-            if (!objects || objects.length === 0) {
-                _decorCache.set(id, { state: 'error' });
-                return;
-            }
-            // 元色を path 単位で保存 (色変更時の参照、リセット用)
-            const originalColors = objects.map((o) => ({ fill: o.fill, stroke: o.stroke }));
-            const group = fabric.util.groupSVGElements(objects, options);
-            _decorCache.set(id, {
-                state: 'ready',
-                baseObj: group,
-                originalColors,
-                baseWidth: group.width * (group.scaleX || 1),
-                baseHeight: group.height * (group.scaleY || 1),
-            });
-            App.canvas?.requestRenderAll();
+    const onSvgReady = (objects, options) => {
+        if (!objects || objects.length === 0) {
+            _decorCache.set(id, { state: 'error' });
+            return;
+        }
+        const originalColors = objects.map((o) => ({ fill: o.fill, stroke: o.stroke }));
+        const group = fabric.util.groupSVGElements(objects, options);
+        _decorCache.set(id, {
+            state: 'ready',
+            baseObj: group,
+            originalColors,
+            baseWidth: group.width * (group.scaleX || 1),
+            baseHeight: group.height * (group.scaleY || 1),
         });
+        App.canvas?.requestRenderAll();
+    };
+    const onImageReady = (img) => {
+        if (!img) {
+            _decorCache.set(id, { state: 'error' });
+            return;
+        }
+        _decorCache.set(id, {
+            state: 'ready',
+            baseObj: img,
+            originalColors: null,
+            baseWidth: img.width,
+            baseHeight: img.height,
+        });
+        App.canvas?.requestRenderAll();
+    };
+    if (def.type === 'svg') {
+        // ユーザー素材は rawSvg を直接パース、組み込みは URL から fetch
+        if (def.rawSvg) fabric.loadSVGFromString(def.rawSvg, onSvgReady);
+        else if (def.dataUrl) fabric.loadSVGFromURL(def.dataUrl, onSvgReady);
+        else fabric.loadSVGFromURL(DECOR_DIR_SVG + def.file, onSvgReady);
     } else {
-        // image
-        fabric.Image.fromURL(
-            DECOR_DIR_IMAGE + def.file,
-            (img) => {
-                if (!img) {
-                    _decorCache.set(id, { state: 'error' });
-                    return;
-                }
-                _decorCache.set(id, {
-                    state: 'ready',
-                    baseObj: img,
-                    originalColors: null,
-                    baseWidth: img.width,
-                    baseHeight: img.height,
-                });
-                App.canvas?.requestRenderAll();
-            },
-            { crossOrigin: 'anonymous' }
-        );
+        // raster: ユーザー素材は dataUrl、組み込みは decors/image/{file}
+        const src = def.dataUrl || DECOR_DIR_IMAGE + def.file;
+        fabric.Image.fromURL(src, onImageReady, { crossOrigin: 'anonymous' });
     }
 }
 
@@ -3822,12 +3836,24 @@ function mountDecorPicker(root) {
     scroll.className = 'pp-tiles-scroll';
     const tiles = document.createElement('div');
     tiles.className = 'pp-tiles';
+    // 「全て」タブの場合は先頭に「+追加」タイル
+    if (App.decorGenreId === 'all') {
+        const addAll = document.createElement('div');
+        addAll.className = 'pp-tile pp-tile-add';
+        addAll.title = 'ユーザー装飾を追加';
+        addAll.innerHTML = '<span class="material-symbols-outlined" style="font-size:1.6rem">add</span>';
+        addAll.addEventListener('click', () => openDecorUploadDialog());
+        tiles.appendChild(addAll);
+    }
     decorsForGenre(App.decorGenreId).forEach((d) => {
         const t = document.createElement('div');
         t.className = 'pp-tile' + (d.id === App.decorId ? ' active' : '');
         t.title = d.name;
-        // サムネ: SVG は file 直接、画像は thumb があれば優先
-        const src = d.type === 'svg' ? DECOR_DIR_SVG + d.file : DECOR_DIR_THUMB + d.file;
+        // サムネ src 判定:
+        //   ユーザー素材: d.dataUrl を直接使用
+        //   組み込み SVG: decors/svg/{file} (SVG はそのまま <img> に表示可)
+        //   組み込み画像: decors/thumb/{file}
+        const src = d.dataUrl ? d.dataUrl : d.type === 'svg' ? DECOR_DIR_SVG + d.file : DECOR_DIR_THUMB + d.file;
         const img = document.createElement('img');
         img.src = src;
         img.style.cssText = 'position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;';
@@ -3841,9 +3867,6 @@ function mountDecorPicker(root) {
         t.appendChild(lbl);
         t.addEventListener('click', () => {
             App.decorId = d.id;
-            // 装飾を切り替えたら色上書きはリセット (元の SVG 色に戻す)。
-            // ピッカー本体の表示色も視覚的に元色っぽい既定 (#222 / #000) に戻すが、
-            // change イベントが走ると App.decorFill/Stroke が再設定されてしまうので suppress。
             App.decorFill = null;
             App.decorStroke = null;
             App._suppressDecorPickr = true;
@@ -3858,8 +3881,30 @@ function mountDecorPicker(root) {
             refreshDecorPreview();
             pushHistoryDebounced('装飾を選択');
         });
+        // ユーザー素材タイルには削除ボタン overlay
+        if (isUserDecor(d.id)) {
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'pp-tile-del';
+            del.title = '一覧から削除';
+            del.innerHTML = '<span class="material-symbols-outlined">close</span>';
+            del.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteUserDecor(d.id);
+            });
+            t.appendChild(del);
+        }
         tiles.appendChild(t);
     });
+    // ユーザータブには末尾に「+追加」タイル (全てタブでは先頭に既に置いた)
+    if (App.decorGenreId === 'user') {
+        const add = document.createElement('div');
+        add.className = 'pp-tile pp-tile-add';
+        add.title = 'ユーザー装飾を追加';
+        add.innerHTML = '<span class="material-symbols-outlined" style="font-size:1.6rem">add</span>';
+        add.addEventListener('click', () => openDecorUploadDialog());
+        tiles.appendChild(add);
+    }
     scroll.appendChild(tiles);
     root.appendChild(scroll);
 }
@@ -4274,11 +4319,173 @@ function setGridType(type) {
    左上は「単色」タイル (App.fillColor を使う)。Solid と Pattern のどちらでも選択可能。
 ================================================================ */
 /**
- * パターン定義からサムネ画像 URL を返す (patterns/thumb/{file})。
- * 画像が存在しない場合は <img> の onerror でタイルを非表示にする (renderPatternPickerContent 内で処理)。
+ * パターン定義からサムネ画像 URL を返す。
+ * - 組み込み: patterns/thumb/{file} (左上 200×200 を切り出して縮小した静的サムネを別途生成して配置する想定)
+ * - ユーザー素材: dataUrl をそのまま
+ * 帯域節約のためサムネはランタイム生成ではなく静的ファイルを使う。
  */
 function makePatternThumbUrl(def) {
+    if (def.dataUrl) return def.dataUrl;
     return PATTERN_DIR_THUMB + def.file;
+}
+
+/* ================================================================
+   ユーザーアップロード素材ヘルパー
+   - ファイル選択 → 種別判定 → dataUrl 化 → App.userPatterns/userDecors に push
+   - SVG は <script> やイベントハンドラを除去して XSS リスクを下げる
+================================================================ */
+const USER_ASSET_MAX_BYTES = 4 * 1024 * 1024; // 4 MB / 個
+
+/** 短いユニーク id を生成 (user-pat-xxxx / user-dec-xxxx) */
+function genUserAssetId(prefix) {
+    return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** SVG 文字列から <script> や on* イベント属性、javascript: URL を除去する簡易サニタイザ */
+function sanitizeSvgString(svgText) {
+    let s = String(svgText);
+    s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
+    s = s.replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
+    s = s.replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+    s = s.replace(/javascript:/gi, '');
+    return s;
+}
+
+/**
+ * File を読み込んで「raster: dataUrl」「svg: dataUrl (data:image/svg+xml;base64,...)」に変換する。
+ * @param {File} file
+ * @returns {Promise<{type:'raster'|'svg', dataUrl:string, rawSvg?:string} | null>}
+ */
+async function readUserAssetFile(file) {
+    if (!file) return null;
+    if (file.size > USER_ASSET_MAX_BYTES) {
+        setTransientStatus(`ファイルが大きすぎます (上限 ${Math.round(USER_ASSET_MAX_BYTES / 1024 / 1024)}MB)`);
+        return null;
+    }
+    const isSvg = file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
+    if (isSvg) {
+        const text = await file.text();
+        const cleaned = sanitizeSvgString(text);
+        const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(cleaned)));
+        return { type: 'svg', dataUrl, rawSvg: cleaned };
+    }
+    // ラスタ (png/jpg/webp/gif)
+    const dataUrl = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+    return { type: 'raster', dataUrl };
+}
+
+/** ファイルを開いて App.userPatterns に追加する。 */
+async function uploadUserPattern(file) {
+    const parsed = await readUserAssetFile(file);
+    if (!parsed) return;
+    const name = file.name.replace(/\.[^.]+$/, '').slice(0, 24) || 'パターン';
+    const def = {
+        id: genUserAssetId('user-pat'),
+        name,
+        type: parsed.type,
+        dataUrl: parsed.dataUrl,
+        color: '#888888',
+        scale: 0.5,
+        ground: 'user',
+        wall: 'user',
+    };
+    App.userPatterns.push(def);
+    refreshPatternPickers();
+    pushHistory(`ユーザーパターンを追加: ${name}`);
+}
+
+/** id 指定でユーザーパターンを削除。使用中の場合は単色に戻す。 */
+function deleteUserPattern(id) {
+    const idx = (App.userPatterns || []).findIndex((p) => p.id === id);
+    if (idx < 0) return;
+    const name = App.userPatterns[idx].name;
+    if (!confirm(`パターン「${name}」を削除しますか？ (使用中のオブジェクトは単色に戻ります)`)) return;
+    App.userPatterns.splice(idx, 1);
+    _patternImageCache.delete(id);
+    // 現在の選択がこの id ならクリア
+    if (App.groundPattern?.id === id) App.groundPattern = { ...App.groundPattern, mode: 'solid', id: null };
+    if (App.wallPattern?.id === id) App.wallPattern = { ...App.wallPattern, mode: 'solid', id: null };
+    refreshPatternPickers();
+    pushHistory(`ユーザーパターンを削除: ${name}`);
+}
+
+/** ファイル選択ダイアログを開いてユーザーパターンをアップロード */
+function openPatternUploadDialog() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
+    inp.multiple = true;
+    inp.addEventListener('change', async () => {
+        for (const f of inp.files || []) {
+            try {
+                await uploadUserPattern(f);
+            } catch (e) {
+                console.error(e);
+                setTransientStatus('パターン読み込みに失敗しました');
+            }
+        }
+    });
+    inp.click();
+}
+
+/** ファイルを開いて App.userDecors に追加。SVG は rawSvg も保持 (色変更対応のため fabric.loadSVGFromString が必要)。 */
+async function uploadUserDecor(file) {
+    const parsed = await readUserAssetFile(file);
+    if (!parsed) return;
+    const name = file.name.replace(/\.[^.]+$/, '').slice(0, 24) || '装飾';
+    const def = {
+        id: genUserAssetId('user-dec'),
+        name,
+        type: parsed.type,
+        dataUrl: parsed.dataUrl,
+        rawSvg: parsed.rawSvg || null, // SVG: 色変更時に loadSVGFromString で再パース可能に
+        scale: 1,
+        anchorX: 'center',
+        anchorY: 'center',
+        genres: ['user'],
+    };
+    App.userDecors.push(def);
+    // 即時ロードしてキャッシュに置く (装飾ピッカーのサムネ表示と即時使用のため)
+    loadDecorAsset(def.id);
+    if (typeof mountDecorPicker === 'function') mountDecorPicker(document.getElementById('decor-picker'));
+    pushHistory(`ユーザー装飾を追加: ${name}`);
+}
+
+/** id 指定でユーザー装飾を削除。使用中のレイヤーには影響しない (画像/SVG は埋め込み済みのため)。 */
+function deleteUserDecor(id) {
+    const idx = (App.userDecors || []).findIndex((d) => d.id === id);
+    if (idx < 0) return;
+    const name = App.userDecors[idx].name;
+    if (!confirm(`装飾「${name}」を一覧から削除しますか？ (既に配置したものはそのまま残ります)`)) return;
+    App.userDecors.splice(idx, 1);
+    _decorCache.delete(id);
+    if (App.decorId === id) App.decorId = null;
+    if (typeof mountDecorPicker === 'function') mountDecorPicker(document.getElementById('decor-picker'));
+    pushHistory(`ユーザー装飾を削除: ${name}`);
+}
+
+/** ファイル選択ダイアログを開いてユーザー装飾をアップロード */
+function openDecorUploadDialog() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg';
+    inp.multiple = true;
+    inp.addEventListener('change', async () => {
+        for (const f of inp.files || []) {
+            try {
+                await uploadUserDecor(f);
+            } catch (e) {
+                console.error(e);
+                setTransientStatus('装飾読み込みに失敗しました');
+            }
+        }
+    });
+    inp.click();
 }
 
 /**
@@ -4333,19 +4540,27 @@ function renderPatternPickerContent(root, opts) {
             updatePatternSolidRow(root, opts);
         });
         tilesEl.appendChild(solid);
+        // 全てタブでは「+追加」タイルを単色の直後に
+        const addAll = document.createElement('div');
+        addAll.className = 'pp-tile pp-tile-add';
+        addAll.title = 'ユーザーパターンを追加';
+        addAll.innerHTML = '<span class="material-symbols-outlined" style="font-size:1.6rem">add</span>';
+        addAll.addEventListener('click', () => openPatternUploadDialog());
+        tilesEl.appendChild(addAll);
     }
 
     // パターンタイル (フィルタ済み)。opts.category ('ground' | 'wall') 側のジャンルでフィルタ。
+    // ユーザー素材は ground='user' / wall='user' で常に対象、ジャンル 'user' で絞り込み。
     const cat = opts.category;
     const filtered = opts.patterns.filter((p) => {
-        if (!p[cat]) return false;
-        return genreId === 'all' || p[cat] === genreId;
+        if (p[cat] !== 'user' && !p[cat]) return false;
+        if (genreId === 'all') return true;
+        return p[cat] === genreId;
     });
     filtered.forEach((p) => {
         const tile = document.createElement('div');
         tile.className = 'pp-tile' + (state.mode === 'pattern' && state.id === p.id ? ' active' : '');
         tile.title = p.name;
-        // サムネ <img> を直接埋めて onerror で要素ごと隠す (画像未配置は非表示)
         const thumb = document.createElement('img');
         thumb.src = makePatternThumbUrl(p);
         thumb.alt = '';
@@ -4363,8 +4578,31 @@ function renderPatternPickerContent(root, opts) {
             renderPatternPickerContent(root, opts);
             updatePatternSolidRow(root, opts);
         });
+        // ユーザー素材には削除ボタンを overlay
+        if (isUserPattern(p.id)) {
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'pp-tile-del';
+            del.title = '削除';
+            del.innerHTML = '<span class="material-symbols-outlined">close</span>';
+            del.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteUserPattern(p.id);
+            });
+            tile.appendChild(del);
+        }
         tilesEl.appendChild(tile);
     });
+
+    // ユーザータブには「+追加」タイルを末尾に (全てタブでは単色直後に既に置いた)
+    if (genreId === 'user') {
+        const add = document.createElement('div');
+        add.className = 'pp-tile pp-tile-add';
+        add.title = 'ユーザーパターンを追加';
+        add.innerHTML = '<span class="material-symbols-outlined" style="font-size:1.6rem">add</span>';
+        add.addEventListener('click', () => openPatternUploadDialog());
+        tilesEl.appendChild(add);
+    }
     content.appendChild(tilesScroll);
 }
 
@@ -4420,7 +4658,7 @@ function refreshPatternPickers() {
     if (groundRoot) {
         mountPatternPicker(groundRoot, {
             category: 'ground',
-            patterns: PATTERNS,
+            patterns: patternsForCategory('ground'),
             genres: GROUND_GENRES,
             getState: () => App.groundPattern,
             setState: (s) => {
@@ -4440,7 +4678,7 @@ function refreshPatternPickers() {
     if (wallRoot) {
         mountPatternPicker(wallRoot, {
             category: 'wall',
-            patterns: PATTERNS,
+            patterns: patternsForCategory('wall'),
             genres: WALL_GENRES,
             getState: () => App.wallPattern,
             setState: (s) => {
@@ -4461,7 +4699,7 @@ function refreshPatternPickers() {
     if (roomGroundRoot) {
         mountPatternPicker(roomGroundRoot, {
             category: 'ground',
-            patterns: PATTERNS,
+            patterns: patternsForCategory('ground'),
             genres: GROUND_GENRES,
             getState: () => App.groundPattern,
             setState: (s) => {
@@ -4481,7 +4719,7 @@ function refreshPatternPickers() {
     if (roomWallRoot) {
         mountPatternPicker(roomWallRoot, {
             category: 'wall',
-            patterns: PATTERNS,
+            patterns: patternsForCategory('wall'),
             genres: WALL_GENRES,
             getState: () => App.wallPattern,
             setState: (s) => {
@@ -5082,6 +5320,8 @@ function buildSaveData() {
         textStroke: App.textStroke,
         textStrokeOpacity: App.textStrokeOpacity,
         textStrokeWidth: App.textStrokeWidth,
+        userPatterns: App.userPatterns || [],
+        userDecors: App.userDecors || [],
         roomGroundShadowEnabled: App.roomGroundShadowEnabled,
         roomGroundShadowColor: App.roomGroundShadowColor,
         roomGroundShadowBlur: App.roomGroundShadowBlur,
@@ -5154,6 +5394,8 @@ function restoreSaveData(data) {
     if (typeof data.textStroke === 'string') App.textStroke = data.textStroke;
     if (typeof data.textStrokeOpacity === 'number') App.textStrokeOpacity = data.textStrokeOpacity;
     if (typeof data.textStrokeWidth === 'number') App.textStrokeWidth = data.textStrokeWidth;
+    App.userPatterns = Array.isArray(data.userPatterns) ? data.userPatterns : [];
+    App.userDecors = Array.isArray(data.userDecors) ? data.userDecors : [];
     // 復元値を UI へ反映
     if (App._textFillPickr) App._textFillPickr.setColor(rgba(App.textFill, App.textFillOpacity), true);
     if (App._textStrokePickr) App._textStrokePickr.setColor(rgba(App.textStroke, App.textStrokeOpacity), true);
@@ -5313,6 +5555,10 @@ function restoreSaveData(data) {
         App.canvas.getObjects().forEach((o) => {
             if (o._isDecorLayer && o._decorId) loadDecorAsset(o._decorId);
         });
+        // ユーザー装飾も事前ロード (ピッカーから即配置できるように)
+        (App.userDecors || []).forEach((d) => loadDecorAsset(d.id));
+        // ユーザーパターンも事前ロード (即プレビュー反映)
+        (App.userPatterns || []).forEach((p) => loadPatternImage(p.id));
         // フリーハンドブラシタイル & 実ブラシも復元後の App.freehandBrush に同期
         document.querySelectorAll('#freehand-brush-tiles .tool-tile[data-freehand-brush]').forEach((t) => t.classList.toggle('active', t.dataset.freehandBrush === App.freehandBrush));
         if (App.canvas?.isDrawingMode) setFreehandBrush(App.freehandBrush);
