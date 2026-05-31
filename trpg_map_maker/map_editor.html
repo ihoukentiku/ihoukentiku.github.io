@@ -1789,25 +1789,35 @@
                 <div id="layer-props">
                     <div class="f"><span class="fl">不透明度</span><span class="unit" id="layer-opacity-val">100%</span></div>
                     <input type="range" id="layer-opacity" value="1" min="0" max="1" step="0.01" />
-                    <div class="f">
+                    <div class="f" style="margin-top: 0.6rem">
                         <span class="fl">ブレンド</span>
                         <select id="layer-blend">
-                            <option value="source-over">通常</option>
-                            <option value="multiply">乗算</option>
-                            <option value="screen">スクリーン</option>
-                            <option value="overlay">オーバーレイ</option>
-                            <option value="darken">比較 (暗)</option>
-                            <option value="lighten">比較 (明)</option>
-                            <option value="color-dodge">覆い焼き</option>
-                            <option value="color-burn">焼き込み</option>
-                            <option value="hard-light">ハードライト</option>
-                            <option value="soft-light">ソフトライト</option>
-                            <option value="difference">差の絶対値</option>
-                            <option value="exclusion">除外</option>
-                            <option value="hue">色相</option>
-                            <option value="saturation">彩度</option>
-                            <option value="color">カラー</option>
-                            <option value="luminosity">輝度</option>
+                            <optgroup label="基本">
+                                <option value="source-over">通常</option>
+                                <option value="source-atop">上重ね</option>
+                                <option value="destination-out">切り抜き</option>
+                                <option value="source-in">共通部分</option>
+                                <option value="xor">XOR</option>
+                            </optgroup>
+                            <optgroup label="明暗">
+                                <option value="multiply">乗算</option>
+                                <option value="screen">スクリーン</option>
+                                <option value="overlay">オーバーレイ</option>
+                                <option value="darken">暗比較</option>
+                                <option value="lighten">明比較</option>
+                                <option value="color-dodge">覆い焼き</option>
+                                <option value="color-burn">焼き込み</option>
+                                <option value="hard-light">ハード</option>
+                                <option value="soft-light">ソフト</option>
+                            </optgroup>
+                            <optgroup label="差分・色">
+                                <option value="difference">差分</option>
+                                <option value="exclusion">除外</option>
+                                <option value="hue">色相</option>
+                                <option value="saturation">彩度</option>
+                                <option value="color">カラー</option>
+                                <option value="luminosity">輝度</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>

@@ -1614,7 +1614,7 @@ function _initGridRenderer() {
  * @param {string} typeName - 種別名 (例: '矩形', 'セル')。連番に使われる。
  * @param {fabric.Object} obj
  */
-function addLayerObject(typeName, obj) {
+function addLayerObject(typeName, obj, opts = {}) {
     const id = App.nextLayerId++;
     App.layerCounters[typeName] = (App.layerCounters[typeName] || 0) + 1;
     obj.set({
@@ -1640,7 +1640,8 @@ function addLayerObject(typeName, obj) {
     App.selectedLayerIds = [id];
     renderLayerList();
     App.canvas.renderAll();
-    pushHistory(`${typeName}を追加`);
+    // 呼び出し側が独自に履歴を積む場合 (ブール演算等) はここをスキップして二重登録を避ける
+    if (!opts.skipHistory) pushHistory(`${typeName}を追加`);
 }
 
 /**
@@ -1722,10 +1723,10 @@ const ACTION_ICON_SIZE = 24;
 const ACTION_ICON_GAP = 6;
 const ACTION_PAD = 8;
 const ACTION_BAR_HEIGHT = 32;
-const ACTION_BAR_OFFSET_Y = -42;
+const ACTION_BAR_OFFSET_Y = -32;
 // 回転ハンドル (上中央, offsetY -40) との重なりを避けるため、アクションバーは右に逃がす。
-// 5アクション時の半幅 ≒ 80px。100 px 右へ寄せれば左端は中央から +20px となりハンドルを十分回避。
-const ACTION_BAR_OFFSET_X = 100;
+// 5アクション時の半幅 ≒ 80px。150 px 右へ寄せれば左端は中央から +70px となりハンドルを十分回避。
+const ACTION_BAR_OFFSET_X = 120;
 
 /** CSS 変数 --text の値を取得 (canvas 描画用)。フォールバックあり。 */
 function getCssVarColor(name, fallback) {
@@ -1940,7 +1941,7 @@ function performBooleanOp(op) {
     const zIndex = App.canvas.getObjects().indexOf(src);
     App.canvas.remove(...objs);
     const opLabel = { union: '合体', intersection: '交差', difference: '差', xor: '排他' }[op] || op;
-    addLayerObject(opLabel, path);
+    addLayerObject(opLabel, path, { skipHistory: true });
     if (zIndex >= 0) App.canvas.moveTo(path, zIndex);
     App.canvas.setActiveObject(path);
     App.canvas.renderAll();
@@ -2026,7 +2027,7 @@ function performBooleanOpRoom(op, rooms) {
     group.set({ _isRoomGroup: true, objectCaching: false, subTargetCheck: false });
     App.canvas.discardActiveObject();
     const opLabel = { union: '合体', intersection: '交差', difference: '差', xor: '排他' }[op] || op;
-    addLayerObject(opLabel + '_部屋', group);
+    addLayerObject(opLabel + '_部屋', group, { skipHistory: true });
     if (zIndex >= 0) App.canvas.moveTo(group, zIndex);
     App.canvas.setActiveObject(group);
     App.canvas.renderAll();
