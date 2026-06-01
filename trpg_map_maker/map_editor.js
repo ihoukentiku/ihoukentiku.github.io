@@ -23,19 +23,12 @@
                 <span class="save-status saved" id="save-status">保存済み</span>
             </div>
             <div class="map-actions">
-                <div class="mode-toggle" role="group" aria-label="編集モード切替">
-                    <button type="button" data-mode="simple" class="active" title="シンプルモード">シンプル</button>
-                    <button type="button" data-mode="map" title="地図モード">地図</button>
-                </div>
                 <button id="undo-btn" class="header-icon-btn" disabled title="元に戻す (Ctrl+Z)"><span class="material-symbols-outlined">undo</span></button>
                 <button id="redo-btn" class="header-icon-btn" disabled title="やり直し (Ctrl+Shift+Z)"><span class="material-symbols-outlined">redo</span></button>
             </div>
         `;
         ext.querySelector('#undo-btn').addEventListener('click', () => undo());
         ext.querySelector('#redo-btn').addEventListener('click', () => redo());
-        ext.querySelectorAll('.mode-toggle button').forEach((btn) => {
-            btn.addEventListener('click', () => setEditMode(btn.dataset.mode));
-        });
         nav.parentNode.insertBefore(ext, nav);
     };
     wait();
@@ -46,7 +39,7 @@
 ================================================================ */
 const App = {
     gridType: 'square',
-    editMode: 'simple', // 'simple' | 'map' — シンプル/地図モードの切替 (per-map で保存)
+    editMode: 'simple', // [非推奨] 旧シンプル/地図モード。統合済みで未使用。保存互換のため残置
     // ---- 地図モード: 地面/壁タブの状態 (Phase B) ----
     groundTool: 'cell', // 'cell' | 'rect'
     groundPattern: { mode: 'solid', id: null, genreId: 'all', solidColor: '#ffffff' }, // mode: 'solid' | 'pattern'
@@ -176,6 +169,7 @@ const App = {
     mapName: '', // マップ名 (ヘッダー表示用)
     mapCreatedAt: null, // ISO 文字列
     // ---- 自動保存 ----
+    autoSaveEnabled: true, // 設定トグル (localStorage 永続)。false で自動保存停止 (手動 Ctrl+S は可)
     _autoSaveTimer: null,
     _saveStatus: 'saved', // 'saved' | 'dirty' | 'saving' | 'error'
 };
@@ -1650,12 +1644,12 @@ function makeDimLabel(text, x, y, angle = 0) {
         top: y,
         originX: 'center',
         originY: 'center',
-        fontSize: 13 / z,
+        fontSize: 20 / z, // HUD文字サイズ
         fontFamily: 'monospace',
         fontWeight: 'bold',
         fill: '#ffffff',
         stroke: '#000000',
-        strokeWidth: 3 / z, // 黒の縁取り (背景を問わず視認可能に)
+        strokeWidth: 4 / z, // 黒の縁取り (文字サイズに比例)
         paintFirst: 'stroke',
         angle,
         selectable: false,
@@ -5171,22 +5165,6 @@ function refreshPatternDetailUI() {
 const syncRoomPatternDetailUI = refreshPatternDetailUI;
 
 /**
- * 編集モード (シンプル/地図) を切替える。
- * body[data-edit-mode] を更新して CSS でツールバー/プロパティパネルの表示切替を行い、
- * activeTool を 'select' にリセットする (新モードで非表示のツールが選択された状態を防ぐため)。
- * トグル UI の active 状態も同期する。
- * @param {'simple'|'map'} mode
- */
-function setEditMode(mode) {
-    if (mode !== 'simple' && mode !== 'map') return;
-    App.editMode = mode;
-    document.body.setAttribute('data-edit-mode', mode);
-    document.querySelectorAll('.mode-toggle [data-mode]').forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
-    setActiveTool('select');
-    pushHistory(mode === 'simple' ? 'シンプルモードへ切替' : '地図モードへ切替');
-}
-
-/**
  * アクティブツールを切替える。描画途中の状態 (_drawing, _pathPoints 等) を全てリセットし、
  * ツールバー / プロパティパネル / canvas の selectable・evented・isDrawingMode を更新する。
  * セルツール選択時は最上位セルレイヤーを自動選択、フリーハンド時はブラシ設定を反映。
@@ -5769,7 +5747,7 @@ function restoreSaveData(data) {
     App._isRestoring = true;
     App.cellSize = data.cellSize || 72;
     App.gridType = data.gridType || 'square';
-    setEditMode(data.editMode === 'map' ? 'map' : 'simple');
+    setActiveTool('select'); // モード統合: 読み込み時はツールを選択にリセット
     if (data.groundTool) App.groundTool = data.groundTool;
     if (data.groundPattern) App.groundPattern = data.groundPattern;
     if (data.wallTool) App.wallTool = data.wallTool;
@@ -6064,6 +6042,7 @@ function scheduleAutoSave() {
     if (!App.mapId) return;
     if (App._isRestoring) return;
     setSaveStatus('dirty');
+    if (!App.autoSaveEnabled) return; // 自動保存オフ: 未保存(dirty)表示のみ、保存はしない
     if (App._autoSaveTimer) clearTimeout(App._autoSaveTimer);
     App._autoSaveTimer = setTimeout(() => {
         App._autoSaveTimer = null;
@@ -6703,6 +6682,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('snap-center')?.addEventListener('change', function () {
         App.snapCenter = this.checked;
     });
+    // 自動保存トグル (localStorage 永続の全体設定)
+    const autoSaveEl = document.getElementById('auto-save-enabled');
+    if (autoSaveEl) {
+        const saved = localStorage.getItem('trpg_autoSaveEnabled');
+        App.autoSaveEnabled = saved === null ? true : saved === 'true';
+        autoSaveEl.checked = App.autoSaveEnabled;
+        autoSaveEl.addEventListener('change', function () {
+            App.autoSaveEnabled = this.checked;
+            try {
+                localStorage.setItem('trpg_autoSaveEnabled', String(this.checked));
+            } catch (_) {}
+            // オンに戻した時に未保存があれば保存をスケジュール
+            if (this.checked && App._saveStatus !== 'saved') scheduleAutoSave();
+        });
+    }
     document.getElementById('snap-midpoint')?.addEventListener('change', function () {
         App.snapMidpoint = this.checked;
     });
@@ -7150,8 +7144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!e.target.closest('#layer-list') && !e.target.closest('.canvas-container')) hideContextMenu();
     });
 
-    // 初期モード/ツール適用
-    document.body.setAttribute('data-edit-mode', App.editMode);
+    // 初期ツール適用
     setActiveTool('select');
 
     // Undo/Redo ボタン初期状態

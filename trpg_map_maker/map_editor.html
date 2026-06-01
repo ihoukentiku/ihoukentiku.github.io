@@ -148,65 +148,6 @@
                 border-color: rgba(244, 67, 54, 0.4);
             }
 
-            /* --- モード切替トグル (シンプル / 地図) — Undo/Redo の左 --- */
-            .mode-toggle {
-                display: inline-flex;
-                align-items: center;
-                border: 1px solid var(--input-bd);
-                border-radius: 4px;
-                overflow: hidden;
-                margin-right: 0.4rem;
-            }
-            .mode-toggle button {
-                padding: 0.35rem 0.65rem;
-                font-family: var(--font-mono);
-                font-size: 0.68rem;
-                letter-spacing: 0.05em;
-                color: var(--text-dim);
-                background: transparent;
-                cursor: pointer;
-                border: 0;
-                transition:
-                    background var(--t),
-                    color var(--t);
-            }
-            .mode-toggle button + button {
-                border-left: 1px solid var(--input-bd);
-            }
-            .mode-toggle button:hover {
-                color: var(--text-bright);
-                background: rgba(0, 229, 255, 0.08);
-            }
-            .mode-toggle button.active {
-                color: var(--cyan);
-                background: rgba(0, 229, 255, 0.14);
-            }
-
-            /* モードによるツールバー/プロパティパネルの表示切替 */
-            body[data-edit-mode='simple'] .tb-btn[data-mode='map'],
-            body[data-edit-mode='simple'] .prop-group[data-prop='ground'],
-            body[data-edit-mode='simple'] .prop-group[data-prop='wall'],
-            body[data-edit-mode='simple'] .prop-group[data-prop='room'],
-            body[data-edit-mode='simple'] .prop-group[data-prop='decor'] {
-                display: none;
-            }
-            body[data-edit-mode='map'] .tb-btn[data-mode='simple'],
-            body[data-edit-mode='map'] .prop-group[data-prop='cell'],
-            body[data-edit-mode='map'] .prop-group[data-prop='rect'],
-            body[data-edit-mode='map'] .prop-group[data-prop='ellipse'],
-            body[data-edit-mode='map'] .prop-group[data-prop='line'],
-            body[data-edit-mode='map'] .prop-group[data-prop='path'],
-            body[data-edit-mode='map'] .prop-group[data-prop='polygon'],
-            body[data-edit-mode='map'] .prop-group[data-prop='curve'],
-            body[data-edit-mode='map'] .prop-group[data-prop='curve-closed'] {
-                display: none;
-            }
-            /* 地面ツール時にセルサブツールを選ぶと、cell prop-group も同時に active になる (refreshPropGroupVisibility)。
-               ↑ の "map モードで cell prop-group を非表示" を上書きして表示する。 */
-            body[data-edit-mode='map'] .prop-group[data-prop='cell'].active {
-                display: flex;
-            }
-
             /* --- 右: Undo / Redo --- */
             .header-ext .map-actions {
                 display: flex;
@@ -1244,7 +1185,8 @@
                 <button class="tb-btn" data-tool="settings" title="設定"><span class="material-symbols-outlined fill">settings</span><span class="tb-label">設定</span></button>
                 <div class="tb-sep"></div>
                 <button class="tb-btn active" data-tool="select" title="選択 (V)"><span class="material-symbols-outlined fill">near_me</span><span class="tb-label">選択</span></button>
-                <!-- シンプルモード専用 -->
+                <div class="tb-sep"></div>
+                <!-- 基本図形 -->
                 <button class="tb-btn" data-tool="cell" data-mode="simple" title="セル塗り (B)"><span class="material-symbols-outlined">crossword</span><span class="tb-label">セル</span></button>
                 <button class="tb-btn" data-tool="rect" data-mode="simple" title="矩形 (R)"><span class="material-symbols-outlined">crop_square</span><span class="tb-label">矩形</span></button>
                 <button class="tb-btn" data-tool="ellipse" data-mode="simple" title="楕円 (E)"><span class="material-symbols-outlined">circle</span><span class="tb-label">楕円</span></button>
@@ -1255,14 +1197,15 @@
                 <button class="tb-btn" data-tool="curve-closed" data-mode="simple" title="閉曲線 (Shift+C)">
                     <span class="material-symbols-outlined">all_inclusive</span><span class="tb-label">閉曲線</span>
                 </button>
-                <!-- 地図モード専用 -->
+                <div class="tb-sep"></div>
+                <!-- 地図 -->
                 <button class="tb-btn" data-tool="ground" data-mode="map" title="地面"><span class="material-symbols-outlined">landscape</span><span class="tb-label">地面</span></button>
                 <button class="tb-btn" data-tool="wall" data-mode="map" title="壁"><span class="material-symbols-outlined">outdoor_garden</span><span class="tb-label">壁</span></button>
                 <button class="tb-btn" data-tool="room" data-mode="map" title="部屋"><span class="material-symbols-outlined">home</span><span class="tb-label">部屋</span></button>
                 <button class="tb-btn" data-tool="decor" data-mode="map" title="装飾"><span class="material-symbols-outlined">chair</span><span class="tb-label">装飾</span></button>
-                <!-- 両モード共通 -->
-                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
                 <div class="tb-sep"></div>
+                <!-- 共通 -->
+                <button class="tb-btn" data-tool="freehand" title="フリーハンド (D)"><span class="material-symbols-outlined">draw</span><span class="tb-label">自由線</span></button>
                 <button class="tb-btn" data-tool="text" title="テキスト (T)"><span class="material-symbols-outlined">title</span><span class="tb-label">文字</span></button>
                 <button class="tb-btn" data-tool="image" title="画像 (I)"><span class="material-symbols-outlined">image</span><span class="tb-label">画像</span></button>
                 <div class="tb-sep"></div>
@@ -1315,6 +1258,13 @@
                             <div class="f">
                                 <label class="tog"><input type="checkbox" id="snap-midpoint" checked /><span class="tl">辺の中点</span></label>
                             </div>
+                        </div>
+                    </div>
+                    <!-- 自動保存 -->
+                    <div class="s-sec">
+                        <div class="s-ttl"><span class="material-symbols-outlined">save</span>保存</div>
+                        <div class="f">
+                            <label class="tog"><input type="checkbox" id="auto-save-enabled" checked /><span class="tl">自動保存</span></label>
                         </div>
                     </div>
                 </div>
