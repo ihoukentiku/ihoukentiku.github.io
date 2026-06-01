@@ -271,6 +271,11 @@ const DECORS = [
     { id: 'bed-single', name: 'ベッド(S)', type: 'svg', file: 'bed_single.svg', genres: ['floorplan'], scale: 2, anchorX: 'center', anchorY: 'center' },
     { id: 'bed-double', name: 'ベッド(D)', type: 'svg', file: 'bed_double.svg', genres: ['floorplan'], scale: 2, anchorX: 'center', anchorY: 'center' },
     { id: 'bed-queen', name: 'ベッド(Q)', type: 'svg', file: 'bed_queen.svg', genres: ['floorplan'], scale: 2, anchorX: 'center', anchorY: 'center' },
+    // 間取り図スタイルの家具 (本体は白塗り+黒線)。scale = SVG長辺 / 720 で実寸に揃える。
+    { id: 'chair', name: '椅子', type: 'svg', file: 'chair.svg', genres: ['floorplan'], scale: 0.6, anchorX: 'center', anchorY: 'center' },
+    { id: 'toilet', name: 'トイレ', type: 'svg', file: 'toilet.svg', genres: ['floorplan'], scale: 0.8, anchorX: 'center', anchorY: 'center' },
+    { id: 'table-4', name: 'テーブル4', type: 'svg', file: 'table_4.svg', genres: ['floorplan'], scale: 1.7, anchorX: 'center', anchorY: 'center' },
+    { id: 'table-chair-6', name: 'テーブル6', type: 'svg', file: 'table_chair_6.svg', genres: ['floorplan'], scale: 1.9, anchorX: 'center', anchorY: 'center' },
     { id: 'desk', name: 'デスク', type: 'svg', file: 'desk.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     { id: 'bookshelf', name: '本棚', type: 'svg', file: 'bookshelf.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     { id: 'chest', name: '宝箱', type: 'svg', file: 'chest.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
