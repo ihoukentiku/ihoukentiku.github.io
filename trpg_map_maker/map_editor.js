@@ -2391,9 +2391,111 @@ function drawActionBar(ctx, cx, cy, actions, iconColor) {
     ctx.textBaseline = 'middle';
     let xCursor = -half + ACTION_PAD + ACTION_ICON_SIZE / 2;
     for (let i = 0; i < actions.length; i++) {
-        ctx.fillText(actions[i].icon, xCursor, 1);
+        const a = actions[i];
+        if (typeof a.draw === 'function') {
+            a.draw(ctx, xCursor, 1, ACTION_ICON_SIZE, iconColor); // カスタムベクターアイコン (例: ブール演算)
+        } else {
+            ctx.fillText(a.icon, xCursor, 1); // フォントアイコン (Material Symbols)
+        }
         xCursor += ACTION_ICON_SIZE + ACTION_ICON_GAP;
     }
+    ctx.restore();
+}
+
+/**
+ * ブール演算アイコンを2つの重なる円 (Venn 図) で描く (canvas 直描き)。
+ * スペース節約のため左下・右上に斜め配置。塗り領域を op ごとに変え、輪郭は常に2円を描く。
+ *   union(和): 両円すべて / intersection(積): 重なりのみ /
+ *   difference(差): 左下円から重なりを除外 / xor(排他的和): 重なり以外
+ */
+function drawBoolIcon(ctx, cx, cy, size, color, op) {
+    const rr = size * 0.26;
+    const off = rr * 0.38; // 中心オフセット小さめ → 円を深く重ねる
+    const ax = cx - off,
+        ay = cy + off; // 左下の円
+    const bx = cx + off,
+        by = cy - off; // 右上の円
+    // moveTo を入れて円を独立サブパスにする (円同士をつなぐ線を作らない)
+    const arc = (x, y) => {
+        ctx.moveTo(x + rr, y);
+        ctx.arc(x, y, rr, 0, Math.PI * 2);
+    };
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, size * 0.07);
+    // 指定円 (x,y) の「外側」だけにクリップする (大きな矩形 + 円を evenodd)
+    const clipOutside = (x, y) => {
+        ctx.beginPath();
+        ctx.rect(cx - size, cy - size, size * 2, size * 2);
+        arc(x, y);
+        ctx.clip('evenodd');
+    };
+
+    if (op === 'difference') {
+        // 左下(A)=削る側 / 右上(B)=削られる側。塗りも B の輪郭も「A の外側」に限定し、
+        // 削る側 A の中に B の弧が出ないようにする (= A の内部はクリーンな円)。
+        ctx.save();
+        clipOutside(ax, ay);
+        ctx.beginPath();
+        arc(bx, by);
+        ctx.fill(); // B \ A を塗り
+        ctx.beginPath();
+        arc(bx, by);
+        ctx.stroke(); // B の輪郭も A の外側だけ
+        ctx.restore();
+        ctx.beginPath(); // 削る側 A は完全な円の輪郭
+        arc(ax, ay);
+        ctx.stroke();
+        ctx.restore();
+        return;
+    }
+
+    if (op === 'xor') {
+        // 和 − 重なり。重なり(穴)には塗りも輪郭も出さないため、各円の輪郭を「相手の外側」だけに描く。
+        ctx.beginPath();
+        arc(ax, ay);
+        arc(bx, by);
+        ctx.fill('evenodd'); // 塗り: 和 − 重なり
+        ctx.save();
+        clipOutside(bx, by); // B の外側
+        ctx.beginPath();
+        arc(ax, ay);
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        clipOutside(ax, ay); // A の外側
+        ctx.beginPath();
+        arc(bx, by);
+        ctx.stroke();
+        ctx.restore();
+        ctx.restore();
+        return;
+    }
+
+    // 塗り (union / intersection)
+    if (op === 'union') {
+        ctx.beginPath();
+        arc(ax, ay);
+        arc(bx, by);
+        ctx.fill('nonzero');
+    } else if (op === 'intersection') {
+        ctx.save();
+        ctx.beginPath();
+        arc(ax, ay);
+        ctx.clip();
+        ctx.beginPath();
+        arc(bx, by);
+        ctx.fill();
+        ctx.restore();
+    }
+    // 輪郭 (2円フル)
+    ctx.beginPath();
+    arc(ax, ay);
+    ctx.stroke();
+    ctx.beginPath();
+    arc(bx, by);
+    ctx.stroke();
     ctx.restore();
 }
 
@@ -2463,10 +2565,10 @@ function actionBarHitIndex(localX, actions) {
     // ブール演算バー (アクションバーの更に上に独立配置、2+ の対象図形が選ばれているときだけ表示)
     const BOOL_BAR_OFFSET_Y = ACTION_BAR_OFFSET_Y - (ACTION_BAR_HEIGHT + 6);
     const boolActions = [
-        { icon: 'join_full', title: '合体 (union)', op: 'union' },
-        { icon: 'join_inner', title: '交差 (intersection)', op: 'intersection' },
-        { icon: 'masked_transitions', title: '差 (difference)', op: 'difference' },
-        { icon: 'compare', title: '排他 (xor)', op: 'xor' },
+        { op: 'union', title: '合体 (union)' },
+        { op: 'intersection', title: '交差 (intersection)' },
+        { op: 'difference', title: '差 (difference)' },
+        { op: 'xor', title: '排他 (xor)' },
     ];
     const boolActionsForTarget = (t) => {
         if (!t || t.type !== 'activeSelection') return [];
@@ -2477,7 +2579,7 @@ function actionBarHitIndex(localX, actions) {
         const cat = boolCategory(usable[0]);
         if (!usable.every((o) => boolCategory(o) === cat)) return [];
         return boolActions.map((a) => ({
-            icon: a.icon,
+            draw: (ctx, x, y, s, col) => drawBoolIcon(ctx, x, y, s, col, a.op),
             title: a.title,
             onClick: () => performBooleanOp(a.op),
         }));
