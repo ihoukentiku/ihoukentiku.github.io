@@ -527,7 +527,8 @@ function roundedPolyPath(points, closed, r) {
             p2: { x: V.x + (anx / dn) * t, y: V.y + (any / dn) * t },
         };
     };
-    if (closed) {
+    if (closed === true) {
+        // 多角形: 全頂点を丸めて閉じる
         const c = [];
         for (let i = 0; i < n; i++) c.push(trim(P[i], P[(i - 1 + n) % n], P[(i + 1) % n]));
         let d = `M ${f(c[0].p2.x)} ${f(c[0].p2.y)}`;
@@ -537,13 +538,15 @@ function roundedPolyPath(points, closed, r) {
         d += ` L ${f(c[0].p1.x)} ${f(c[0].p1.y)} Q ${f(P[0].x)} ${f(P[0].y)} ${f(c[0].p2.x)} ${f(c[0].p2.y)} Z`;
         return d;
     }
-    // 開いた折線: 端点 (0, n-1) は丸めない
+    // 開いた折線 (closed=false) / 塗り用に閉じる (closed='fill'):
+    // どちらも端点 (0, n-1) は丸めず内部頂点のみ丸める。'fill' は末尾を直線で閉じる (Z)。
     let d = `M ${f(P[0].x)} ${f(P[0].y)}`;
     for (let i = 1; i < n - 1; i++) {
         const t = trim(P[i], P[i - 1], P[i + 1]);
         d += ` L ${f(t.p1.x)} ${f(t.p1.y)} Q ${f(P[i].x)} ${f(P[i].y)} ${f(t.p2.x)} ${f(t.p2.y)}`;
     }
     d += ` L ${f(P[n - 1].x)} ${f(P[n - 1].y)}`;
+    if (closed === 'fill') d += ' Z'; // 端点・閉じ部は丸めずに直線で閉じる (折れ線部屋の地面用)
     return d;
 }
 /**
@@ -1363,7 +1366,8 @@ function initCanvas() {
                 strokeWidth: _previewStyle.strokeWidth,
                 strokeDashArray: _previewStyle.strokeDashArray,
                 ..._previewStrokeMod,
-                fill: '',
+                // 部屋ツールでは地面塗りもプレビュー (塗りは暗黙クローズ、線は開いたまま)
+                fill: App.activeTool === 'room' ? _previewStyle.fill : '',
                 selectable: false,
                 evented: false,
                 isPreview: true,
@@ -1418,7 +1422,8 @@ function initCanvas() {
                     strokeWidth: _previewStyle.strokeWidth,
                     strokeDashArray: _previewStyle.strokeDashArray,
                     ..._previewStrokeMod,
-                    fill: closed ? _previewStyle.fillSoft || _previewStyle.fill : '',
+                    // 部屋ツールでは開曲線でも地面塗りをプレビュー (塗りは暗黙クローズ)
+                    fill: App.activeTool === 'room' ? _previewStyle.fill : closed ? _previewStyle.fillSoft || _previewStyle.fill : '',
                     selectable: false,
                     evented: false,
                     isPreview: true,
@@ -6357,8 +6362,8 @@ document.addEventListener('keydown', (e) => {
                     const rd = roundedPolyPath(pts, false, App.cornerRadius);
                     return rd ? new fabric.Path(rd, { ...st, fill: '', objectCaching: false }) : new fabric.Polyline(pts, { ...st, fill: '', objectCaching: false });
                 }
-                // 地面: 閉じた塗り
-                const rd = roundedPolyPath(pts, true, App.cornerRadius);
+                // 地面: 内部頂点のみ丸め、開いた部分(端点)は丸めず直線で閉じる ('fill')
+                const rd = roundedPolyPath(pts, 'fill', App.cornerRadius);
                 return rd ? new fabric.Path(rd, { ...st, objectCaching: false }) : new fabric.Polygon(pts, { ...st, objectCaching: false });
             });
         } else {
