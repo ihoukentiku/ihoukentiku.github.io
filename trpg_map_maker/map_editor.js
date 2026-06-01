@@ -135,7 +135,7 @@ const App = {
     fillOpacity: 1,
     strokeColor: '#000000',
     strokeOpacity: 1,
-    strokeWidth: 2,
+    strokeWidth: 4,
     strokeDashArray: null, // null=実線, [10,5]=破線, [2,4]=点線
     cornerRadius: 0,
     ellipseMode: 'bbox', // 楕円の作図方法: 'bbox'=2点(枠)で内接楕円 / 'center'=中心→半径で正円
@@ -496,6 +496,57 @@ function buildClosedBezierPath(pts) {
     d += ' Z';
     return d;
 }
+
+/**
+ * 折線/多角形の頂点列を、各頂点を半径 r で丸めた SVG パス文字列に変換する (角丸=フィレット)。
+ * - r<=0 または点が3未満なら null (呼び出し側は素の Polyline/Polygon を使う)。
+ * - closed=true: 多角形 (全頂点を丸める / Z で閉じる)、false: 折線 (端点は丸めず内部頂点のみ)。
+ * - 丸めは「頂点を制御点とする二次ベジェ」による簡易フィレット。
+ *   トリム距離は半径 r を隣接辺の半分でクランプ (鋭角や短辺でも破綻しない)。
+ * @param {{x:number,y:number}[]} points 頂点列 (world座標)
+ * @param {boolean} closed
+ * @param {number} r 角丸半径(px)
+ * @returns {string|null} SVG パス文字列 (fabric.Path 用) / 該当なしは null
+ */
+function roundedPolyPath(points, closed, r) {
+    const P = points;
+    const n = P ? P.length : 0;
+    if (n < 3 || !(r > 0)) return null;
+    const f = (v) => v.toFixed(2);
+    const len = (vx, vy) => Math.hypot(vx, vy) || 1;
+    // 頂点 i の、prev 方向のトリム点 p1 と next 方向のトリム点 p2 を求める
+    const trim = (V, prev, next) => {
+        const apx = prev.x - V.x,
+            apy = prev.y - V.y,
+            anx = next.x - V.x,
+            any = next.y - V.y;
+        const dp = len(apx, apy),
+            dn = len(anx, any);
+        const t = Math.min(r, dp / 2, dn / 2);
+        return {
+            p1: { x: V.x + (apx / dp) * t, y: V.y + (apy / dp) * t },
+            p2: { x: V.x + (anx / dn) * t, y: V.y + (any / dn) * t },
+        };
+    };
+    if (closed) {
+        const c = [];
+        for (let i = 0; i < n; i++) c.push(trim(P[i], P[(i - 1 + n) % n], P[(i + 1) % n]));
+        let d = `M ${f(c[0].p2.x)} ${f(c[0].p2.y)}`;
+        for (let i = 1; i < n; i++) {
+            d += ` L ${f(c[i].p1.x)} ${f(c[i].p1.y)} Q ${f(P[i].x)} ${f(P[i].y)} ${f(c[i].p2.x)} ${f(c[i].p2.y)}`;
+        }
+        d += ` L ${f(c[0].p1.x)} ${f(c[0].p1.y)} Q ${f(P[0].x)} ${f(P[0].y)} ${f(c[0].p2.x)} ${f(c[0].p2.y)} Z`;
+        return d;
+    }
+    // 開いた折線: 端点 (0, n-1) は丸めない
+    let d = `M ${f(P[0].x)} ${f(P[0].y)}`;
+    for (let i = 1; i < n - 1; i++) {
+        const t = trim(P[i], P[i - 1], P[i + 1]);
+        d += ` L ${f(t.p1.x)} ${f(t.p1.y)} Q ${f(P[i].x)} ${f(P[i].y)} ${f(t.p2.x)} ${f(t.p2.y)}`;
+    }
+    d += ` L ${f(P[n - 1].x)} ${f(P[n - 1].y)}`;
+    return d;
+}
 /**
  * キャンバス上のオブジェクトのうち「ユーザー編集対象のレイヤー」だけを z 順 (低→高) で返す。
  * プレビューやスナップマーカーなどの一時オブジェクトは除外される。
@@ -535,7 +586,8 @@ function updateFillStrokeVisibility() {
     let showStrokeWidth = isSimpleDraw && !isFreehand;
     // 線継目 / 線端: 壁モードでも有効 (厚みを持つ壁ストロークに効く)
     let showStrokeJoinCap = (showStrokeWidth || showWallThickness) && !isFreehand;
-    let showRadius = sub === 'rect';
+    // 角丸: 矩形 + 折線/多角形 (フィレット) の作図で表示
+    let showRadius = sub === 'rect' || sub === 'path' || sub === 'polygon';
     // 楕円モード切替 (枠 / 中心→半径): 楕円サブツールの作図中のみ表示 (選択時は不要)
     let showEllipseMode = sub === 'ellipse';
     if (isSelect) {
@@ -1306,7 +1358,8 @@ function initCanvas() {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
             removePreview();
-            const __polyPreview = new fabric.Polyline([...App._pathPoints, pt], {
+            const __pathPrevPts = [...App._pathPoints, pt];
+            const __pathPrevStyle = {
                 stroke: _previewStyle.stroke,
                 strokeWidth: _previewStyle.strokeWidth,
                 strokeDashArray: _previewStyle.strokeDashArray,
@@ -1316,7 +1369,9 @@ function initCanvas() {
                 evented: false,
                 isPreview: true,
                 objectCaching: false,
-            });
+            };
+            const __pathRd = roundedPolyPath(__pathPrevPts, false, App.cornerRadius); // 角丸プレビュー
+            const __polyPreview = __pathRd ? new fabric.Path(__pathRd, __pathPrevStyle) : new fabric.Polyline(__pathPrevPts, __pathPrevStyle);
             applyPatternOriginLive(__polyPreview);
             App.canvas.add(__polyPreview);
             const _lpp = App._pathPoints[App._pathPoints.length - 1];
@@ -1329,7 +1384,8 @@ function initCanvas() {
             const raw = snapToGrid(ptr.x, ptr.y) || ptr;
             const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
             removePreview();
-            const __polygonPreview = new fabric.Polygon([...App._polygonPoints, pt], {
+            const __polyPrevPts = [...App._polygonPoints, pt];
+            const __polyPrevStyle = {
                 stroke: _previewStyle.stroke,
                 strokeWidth: _previewStyle.strokeWidth,
                 strokeDashArray: _previewStyle.strokeDashArray,
@@ -1339,7 +1395,9 @@ function initCanvas() {
                 evented: false,
                 isPreview: true,
                 objectCaching: false,
-            });
+            };
+            const __polyRd = roundedPolyPath(__polyPrevPts, true, App.cornerRadius); // 角丸プレビュー
+            const __polygonPreview = __polyRd ? new fabric.Path(__polyRd, __polyPrevStyle) : new fabric.Polygon(__polyPrevPts, __polyPrevStyle);
             applyPatternOriginLive(__polygonPreview);
             App.canvas.add(__polygonPreview);
             const _lgp = App._polygonPoints[App._polygonPoints.length - 1];
@@ -6307,27 +6365,31 @@ document.addEventListener('keydown', (e) => {
             addRoom('部屋_折線', (st) => {
                 const isWall = (st.strokeWidth || 0) > 0;
                 if (isWall) {
-                    return new fabric.Polyline(pts, { ...st, fill: '', objectCaching: false });
+                    // 壁: 開いた線 (端点は丸めない)
+                    const rd = roundedPolyPath(pts, false, App.cornerRadius);
+                    return rd ? new fabric.Path(rd, { ...st, fill: '', objectCaching: false }) : new fabric.Polyline(pts, { ...st, fill: '', objectCaching: false });
                 }
-                return new fabric.Polygon(pts, { ...st, objectCaching: false });
+                // 地面: 閉じた塗り
+                const rd = roundedPolyPath(pts, true, App.cornerRadius);
+                return rd ? new fabric.Path(rd, { ...st, objectCaching: false }) : new fabric.Polygon(pts, { ...st, objectCaching: false });
             });
         } else {
             const style = getCurrentDrawStyle();
-            addCategoryLayer(
-                style.namePrefix + '折線',
-                new fabric.Polyline(App._pathPoints, {
-                    stroke: style.stroke,
-                    strokeWidth: style.strokeWidth,
-                    strokeDashArray: style.strokeDashArray,
-                    strokeLineJoin: style.strokeLineJoin || 'miter',
-                    strokeLineCap: style.strokeLineCap || 'butt',
-                    fill: '',
-                    selectable: false,
-                    evented: false,
-                    objectCaching: false,
-                }),
-                style.flag
-            );
+            const common = {
+                stroke: style.stroke,
+                strokeWidth: style.strokeWidth,
+                strokeDashArray: style.strokeDashArray,
+                strokeLineJoin: style.strokeLineJoin || 'miter',
+                strokeLineCap: style.strokeLineCap || 'butt',
+                fill: '',
+                selectable: false,
+                evented: false,
+                objectCaching: false,
+            };
+            // 角丸 (App.cornerRadius>0) なら頂点をフィレットした Path、そうでなければ素の Polyline
+            const rd = roundedPolyPath(App._pathPoints, false, App.cornerRadius);
+            const obj = rd ? new fabric.Path(rd, common) : new fabric.Polyline(App._pathPoints, common);
+            addCategoryLayer(style.namePrefix + '折線', obj, style.flag);
         }
         App._pathPoints = [];
         e.preventDefault();
@@ -6336,37 +6398,29 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && App._polygonPoints.length >= 3 && activeSubtool() === 'polygon') {
         removePreview();
         if (App.activeTool === 'room') {
-            const pts = App._polygonPoints.slice();
-            addRoom(
-                '部屋_多角形',
-                (st) =>
-                    new fabric.Polygon(
-                        pts.map((p) => ({ x: p.x, y: p.y })),
-                        {
-                            ...st,
-                            selectable: false,
-                            evented: false,
-                            objectCaching: false,
-                        }
-                    )
-            );
+            const pts = App._polygonPoints.map((p) => ({ x: p.x, y: p.y }));
+            addRoom('部屋_多角形', (st) => {
+                const opt = { ...st, selectable: false, evented: false, objectCaching: false };
+                const rd = roundedPolyPath(pts, true, App.cornerRadius);
+                return rd ? new fabric.Path(rd, opt) : new fabric.Polygon(pts, opt);
+            });
         } else {
             const style = getCurrentDrawStyle();
-            addCategoryLayer(
-                style.namePrefix + '多角形',
-                new fabric.Polygon(App._polygonPoints, {
-                    stroke: style.stroke,
-                    strokeWidth: style.strokeWidth,
-                    strokeDashArray: style.strokeDashArray,
-                    strokeLineJoin: style.strokeLineJoin || 'miter',
-                    strokeLineCap: style.strokeLineCap || 'butt',
-                    fill: style.fill,
-                    selectable: false,
-                    evented: false,
-                    objectCaching: false,
-                }),
-                style.flag
-            );
+            const common = {
+                stroke: style.stroke,
+                strokeWidth: style.strokeWidth,
+                strokeDashArray: style.strokeDashArray,
+                strokeLineJoin: style.strokeLineJoin || 'miter',
+                strokeLineCap: style.strokeLineCap || 'butt',
+                fill: style.fill,
+                selectable: false,
+                evented: false,
+                objectCaching: false,
+            };
+            // 角丸 (App.cornerRadius>0) なら頂点をフィレットした Path、そうでなければ素の Polygon
+            const rd = roundedPolyPath(App._polygonPoints, true, App.cornerRadius);
+            const obj = rd ? new fabric.Path(rd, common) : new fabric.Polygon(App._polygonPoints, common);
+            addCategoryLayer(style.namePrefix + '多角形', obj, style.flag);
         }
         App._polygonPoints = [];
         e.preventDefault();
