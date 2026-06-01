@@ -1966,45 +1966,35 @@
                 </div>
                 <div class="modal-body">
                     <div class="guide-body" id="guide-content">
-                        <h3>編集モード</h3>
+                        <h3>ツールバー</h3>
                         <dl class="guide-dl">
-                            <span class="material-symbols-outlined">draw</span>
+                            <span class="material-symbols-outlined">build</span>
                             <div>
-                                <dt>シンプル</dt>
-                                <dd>矩形・楕円・直線・折線・多角形・曲線・閉曲線・セル塗りなど、汎用的な図形ツールでマップを描くモード。ヘッダーのトグルで切替。</dd>
-                            </div>
-                            <span class="material-symbols-outlined">map</span>
-                            <div>
-                                <dt>地図</dt>
-                                <dd>地面 / 壁 / 部屋 / 装飾 のタブに分かれ、テクスチャパターンや SVG スタンプを使った本格的な TRPG マップ向けモード。</dd>
+                                <dt>1 つのツールバーに統合</dt>
+                                <dd>全ツールを「基本図形 / 地図 / 共通」のセクションに区切って配置。以前の「シンプル / 地図」モード切替は廃止し、どのツールもいつでも使えます。</dd>
                             </div>
                         </dl>
 
-                        <h3>シンプルモードのツール</h3>
+                        <h3>基本図形ツール</h3>
                         <dl class="guide-dl">
-                            <span class="material-symbols-outlined">crop_square</span>
-                            <div>
-                                <dt>矩形 / 楕円 (R / E)</dt>
-                                <dd>1 クリック目で開始点、2 クリック目で対角を確定。塗り色・線色・線幅・角丸を設定パネルで指定。</dd>
-                            </div>
-                            <span class="material-symbols-outlined">horizontal_rule</span>
-                            <div>
-                                <dt>直線 / 折線 / 多角形 / 曲線 (L / P / G / C / Shift+C)</dt>
-                                <dd>クリックで頂点追加 → Enter で確定 / Esc でキャンセル。多角形と閉曲線は 3 点以上で閉じる。スナップ点 (頂点/中点) に吸着。</dd>
-                            </div>
                             <span class="material-symbols-outlined">crossword</span>
                             <div>
                                 <dt>セル塗り (B)</dt>
                                 <dd>ペン / 消しゴム / 塗りつぶしの 3 モード。グリッドのマス単位で塗る。同色は自動でまとまった面として描かれる。</dd>
                             </div>
-                            <span class="material-symbols-outlined">draw</span>
+                            <span class="material-symbols-outlined">crop_square</span>
                             <div>
-                                <dt>フリーハンド (D)</dt>
-                                <dd>マウスドラッグでブラシ描画。ブラシ種 (鉛筆 / 円 / スプレー / 消しゴム) や線幅・色・筆圧感度を設定可能。</dd>
+                                <dt>矩形 / 楕円 (R / E)</dt>
+                                <dd>1 クリック目で開始点、2 クリック目で対角を確定。楕円は「枠 / 中心→半径 (正円)」を設定パネルで切替可。塗り色・線色・線幅・角丸を指定。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">timeline</span>
+                            <div>
+                                <dt>直線 / 折線 / 多角形 / 曲線 / 閉曲線 (L / P / G / C / Shift+C)</dt>
+                                <dd>クリックで頂点追加 → Enter で確定 / Esc でキャンセル。折線・多角形は設定パネルの「角丸」で角を丸められます。スナップ点 (頂点 / 中点) に吸着。</dd>
                             </div>
                         </dl>
 
-                        <h3>地図モードのツール</h3>
+                        <h3>地図ツール</h3>
                         <dl class="guide-dl">
                             <span class="material-symbols-outlined">landscape</span>
                             <div>
@@ -2024,7 +2014,40 @@
                             <span class="material-symbols-outlined">chair</span>
                             <div>
                                 <dt>装飾</dt>
-                                <dd>家具・ドア・木・地図記号などの SVG / 画像スタンプを配置。SVG はピッカーで色変更、サイズ・回転・反転も自由。</dd>
+                                <dd>家具 (ベッド・椅子・机・トイレ・テーブル等)・ドア・木・地図記号などの SVG / 画像スタンプを配置。SVG はピッカーで色変更、サイズ・回転・反転も自由。間取り図の家具は実寸スケールで揃えてあります。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>共通ツール</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">draw</span>
+                            <div>
+                                <dt>フリーハンド (D)</dt>
+                                <dd>マウスドラッグでブラシ描画。ブラシ種 (鉛筆 / 円 / スプレー / 消しゴム) や線幅・色・筆圧感度を設定可能。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">title</span>
+                            <div>
+                                <dt>テキスト / 画像 (T / I)</dt>
+                                <dd>テキストは書式 (太字・斜体・下線・取消線) を部分適用可。画像は読み込んで配置・拡縮できます。</dd>
+                            </div>
+                        </dl>
+
+                        <h3>作図の便利機能</h3>
+                        <dl class="guide-dl">
+                            <span class="material-symbols-outlined">square_foot</span>
+                            <div>
+                                <dt>計測表示 (HUD)</dt>
+                                <dd>作図中、図形に沿って寸法を表示。矩形 / 楕円は縦横のマス数、正円は半径、直線 / 折線 / 多角形は長さ・角度・縦横マス数、曲線は制御点とマス数。マスを数えずに作図できます。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">rounded_corner</span>
+                            <div>
+                                <dt>角丸 (フィレット)</dt>
+                                <dd>矩形に加え、折線・多角形も設定パネルの「角丸」で角を丸められます。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">grid_goldenratio</span>
+                            <div>
+                                <dt>スナップ</dt>
+                                <dd>交点 (格子点) / セル中心 / 辺の中点に吸着。設定パネルで対象を切替。<kbd>Shift</kbd> 押下中は一時無効。移動時のスナップはオブジェクト中心が基準です。</dd>
                             </div>
                         </dl>
 
@@ -2049,10 +2072,15 @@
                                 <dt>レイヤーパネル</dt>
                                 <dd>右側のパネルでオブジェクト一覧を確認、表示/非表示・並び替え・名前変更・削除。ダブルクリックで名前編集。</dd>
                             </div>
+                            <span class="material-symbols-outlined">content_copy</span>
+                            <div>
+                                <dt>アクションバー</dt>
+                                <dd>選択枠の上に表示。複製 (複製元のすぐ上に配置) / 表示・非表示 / ロック / 最前面・最背面 / 削除。複数選択時はグループ化やブール演算も。</dd>
+                            </div>
                             <span class="material-symbols-outlined">folder</span>
                             <div>
                                 <dt>グループ化 (Ctrl+G / Ctrl+Shift+G)</dt>
-                                <dd>選択ツールで複数選択 → 選択枠上のフォルダボタンまたは Ctrl+G でグループ化。Ctrl+Shift+G で解除。</dd>
+                                <dd>選択ツールで複数選択 → アクションバーのフォルダボタンまたは Ctrl+G でグループ化。Ctrl+Shift+G で解除。</dd>
                             </div>
                             <span class="material-symbols-outlined">join_full</span>
                             <div>
@@ -2063,6 +2091,11 @@
                             <div>
                                 <dt>不透明度 / ブレンド</dt>
                                 <dd>レイヤーパネルから個別に不透明度・ブレンドモード (通常 / 上重ね / 切り抜き / XOR / 乗算など多数) を設定。</dd>
+                            </div>
+                            <span class="material-symbols-outlined">content_cut</span>
+                            <div>
+                                <dt>グループ内だけ切り抜き</dt>
+                                <dd>「切り抜き」などのブレンドはそのままだと下の全レイヤーに効きますが、対象をグループ化するとグループ内だけに限定できます。</dd>
                             </div>
                         </dl>
 
@@ -2099,7 +2132,7 @@
                             </div>
                             <span class="material-symbols-outlined">ads_click</span>
                             <div>
-                                <dt>ツール切替 (シンプルモード)</dt>
+                                <dt>ツール切替</dt>
                                 <dd>
                                     <code>V</code> 選択 / <code>B</code> セル / <code>R</code> 矩形 / <code>E</code> 楕円 / <code>L</code> 直線<br />
                                     <code>P</code> 折線 / <code>G</code> 多角形 / <code>C</code> 曲線 / <code>Shift+C</code> 閉曲線<br />
