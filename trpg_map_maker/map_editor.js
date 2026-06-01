@@ -270,6 +270,7 @@ const DECORS = [
     { id: 'toilet', name: 'トイレ', type: 'svg', file: 'toilet.svg', genres: ['floorplan'], scale: 0.8, anchorX: 'center', anchorY: 'center' },
     { id: 'table-4', name: 'テーブル4', type: 'svg', file: 'table_4.svg', genres: ['floorplan'], scale: 1.7, anchorX: 'center', anchorY: 'center' },
     { id: 'table-chair-6', name: 'テーブル6', type: 'svg', file: 'table_chair_6.svg', genres: ['floorplan'], scale: 1.9, anchorX: 'center', anchorY: 'center' },
+    { id: 'kitchen', name: 'キッチン', type: 'svg', file: 'kitchen.svg', genres: ['floorplan'], scale: 2.7, anchorX: 'center', anchorY: 'center' },
     { id: 'desk', name: 'デスク', type: 'svg', file: 'desk.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     { id: 'bookshelf', name: '本棚', type: 'svg', file: 'bookshelf.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     { id: 'chest', name: '宝箱', type: 'svg', file: 'chest.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
@@ -6308,6 +6309,19 @@ function setTransientStatus(msg) {
 /* ================================================================
    キーボードショートカット
 ================================================================ */
+// R / Shift+R 回転で通過する角度ストップ (30/45/60/90 系を網羅・昇順)
+const ROTATE_STOPS = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
+/** 現在角度 cur(度) から次の回転ストップを返す。reverse=true で逆回り。端は循環。 */
+function nextRotateStop(cur, reverse) {
+    const c = (((cur || 0) % 360) + 360) % 360;
+    if (reverse) {
+        const prev = [...ROTATE_STOPS].reverse().find((a) => a < c - 0.5);
+        return prev !== undefined ? prev : ROTATE_STOPS[ROTATE_STOPS.length - 1];
+    }
+    const next = ROTATE_STOPS.find((a) => a > c + 0.5);
+    return next !== undefined ? next : ROTATE_STOPS[0];
+}
+
 document.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
     const key = e.key.toLowerCase(),
@@ -6335,14 +6349,10 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    // 装飾ツール: R キーで「30°, 45°, 60°, 90° の倍数」を通る位置に順次移動
+    // 装飾ツール: R で次の角度ストップ、Shift+R で逆回り
     if (App.activeTool === 'decor' && key === 'r' && !ctrl && !e.altKey) {
         e.preventDefault();
-        // 30°/45°/60°/90° 系全てを通過する一覧 (重複除去・昇順)
-        const stops = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
-        const cur = (((App.decorRotation || 0) % 360) + 360) % 360;
-        const next = stops.find((a) => a > cur + 0.5);
-        App.decorRotation = next !== undefined ? next : 0;
+        App.decorRotation = nextRotateStop(App.decorRotation || 0, e.shiftKey);
         const rotEl = document.getElementById('decor-rotation');
         if (rotEl) rotEl.value = App.decorRotation;
         refreshDecorPreview();
@@ -6496,6 +6506,25 @@ document.addEventListener('keydown', (e) => {
         App._lineStart = null;
         App._drawing = null;
         return;
+    }
+
+    // 選択オブジェクトの回転: R で次の角度ストップ、Shift+R で逆回り (オブジェクト中心まわり)。
+    // 何も選択していなければ下のツールショートカット (R=矩形) にフォールスルー。
+    if (key === 'r' && !ctrl && !e.altKey && App.activeTool !== 'decor') {
+        const obj = App.canvas.getActiveObject();
+        if (obj) {
+            e.preventDefault();
+            if (!obj.lockRotation) {
+                const center = obj.getCenterPoint();
+                obj.set('angle', nextRotateStop(obj.angle || 0, e.shiftKey));
+                obj.setPositionByOrigin(center, 'center', 'center');
+                obj.setCoords();
+                App.canvas.renderAll();
+                updateSelectionInfo();
+                pushHistory('回転');
+            }
+            return;
+        }
     }
 
     if (e.shiftKey && key === 'c') {
