@@ -1265,6 +1265,9 @@ function initCanvas() {
                 applyPatternOriginLive(preview);
                 App.canvas.add(preview);
             }
+            // 計測HUD: 中心モード楕円は半径、それ以外は外接 W×H
+            if (centerMode) addRadiusDims(d.startX, d.startY, pt.x, pt.y);
+            else addBoxDims(left, top, w, h);
             App.canvas.renderAll();
         }
 
@@ -1294,6 +1297,7 @@ function initCanvas() {
             });
             applyPatternOriginLive(__linePreview);
             App.canvas.add(__linePreview);
+            addSegmentDims(x1, y1, x2, y2); // 計測HUD: 長さ・角度・ΔX×ΔY
             App.canvas.renderAll();
         }
 
@@ -1315,6 +1319,8 @@ function initCanvas() {
             });
             applyPatternOriginLive(__polyPreview);
             App.canvas.add(__polyPreview);
+            const _lpp = App._pathPoints[App._pathPoints.length - 1];
+            addSegmentDims(_lpp.x, _lpp.y, pt.x, pt.y); // 計測HUD: 直前の頂点からのセグメント
             App.canvas.renderAll();
         }
 
@@ -1336,6 +1342,8 @@ function initCanvas() {
             });
             applyPatternOriginLive(__polygonPreview);
             App.canvas.add(__polygonPreview);
+            const _lgp = App._polygonPoints[App._polygonPoints.length - 1];
+            addSegmentDims(_lgp.x, _lgp.y, pt.x, pt.y); // 計測HUD: 直前の頂点からのセグメント
             App.canvas.renderAll();
         }
 
@@ -1362,6 +1370,10 @@ function initCanvas() {
                 applyPatternOriginLive(__curvePreview);
                 App.canvas.add(__curvePreview);
             }
+            const _lcp = App._curvePoints[App._curvePoints.length - 1];
+            // 曲線: 長さ・角度は出さず、ΔX×ΔY のみ + 過去の制御点とその連結線をプレビュー
+            addSegmentDims(_lcp.x, _lcp.y, pt.x, pt.y, false);
+            addControlPolygon(App._curvePoints, pt, closed);
             App.canvas.renderAll();
         }
 
@@ -1556,6 +1568,147 @@ function removePreview() {
         .getObjects()
         .filter((o) => o.isPreview)
         .forEach((o) => App.canvas.remove(o));
+}
+
+/* ================================================================
+   計測HUD — 作図プレビューに沿って寸法 (セル数 / 半径 / 角度・長さ) を表示する。
+   生成するラベル/補助線は isPreview フラグ付きなので removePreview で自動除去される。
+================================================================ */
+/** px をセル数の文字列に変換 (整数ならそのまま、端数は小数1桁)。 */
+function fmtCells(px) {
+    const v = px / (App.cellSize || 72);
+    return Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1);
+}
+/** 画面上で一定サイズの寸法ラベル (白フィル・黒ストローク)。world座標 x,y 中心, angle度。 */
+function makeDimLabel(text, x, y, angle = 0) {
+    const z = App.canvas.getZoom() || 1;
+    return new fabric.Text(text, {
+        left: x,
+        top: y,
+        originX: 'center',
+        originY: 'center',
+        fontSize: 13 / z,
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeWidth: 3 / z, // 黒の縁取り (背景を問わず視認可能に)
+        paintFirst: 'stroke',
+        angle,
+        selectable: false,
+        evented: false,
+        objectCaching: false,
+        isPreview: true,
+    });
+}
+/** プレビュー用の細線 (黒ハロー + 白) を1本追加。背景を問わず見えるよう2重描き。 */
+function addCadSeg(x1, y1, x2, y2, dashed = false) {
+    const z = App.canvas.getZoom() || 1;
+    const seg = (w, col) =>
+        new fabric.Line([x1, y1, x2, y2], {
+            stroke: col,
+            strokeWidth: w / z,
+            strokeLineCap: 'round',
+            strokeDashArray: dashed ? [6 / z, 4 / z] : null,
+            selectable: false,
+            evented: false,
+            objectCaching: false,
+            isPreview: true,
+        });
+    App.canvas.add(seg(3, 'rgba(0,0,0,0.85)'));
+    App.canvas.add(seg(1, '#ffffff'));
+}
+/** 水平寸法線 (両端に垂直バー) + ラベルを y の高さに描く (CAD 風)。 */
+function addDimH(x1, x2, y, label) {
+    if (Math.abs(x2 - x1) < 1) return;
+    const z = App.canvas.getZoom() || 1;
+    const t = 6 / z;
+    addCadSeg(x1, y, x2, y);
+    addCadSeg(x1, y - t, x1, y + t);
+    addCadSeg(x2, y - t, x2, y + t);
+    App.canvas.add(makeDimLabel(label, (x1 + x2) / 2, y - 9 / z, 0));
+}
+/** 垂直寸法線 (両端に水平バー) + ラベルを x の位置に描く (CAD 風)。 */
+function addDimV(y1, y2, x, label) {
+    if (Math.abs(y2 - y1) < 1) return;
+    const z = App.canvas.getZoom() || 1;
+    const t = 6 / z;
+    addCadSeg(x, y1, x, y2);
+    addCadSeg(x - t, y1, x + t, y1);
+    addCadSeg(x - t, y2, x + t, y2);
+    App.canvas.add(makeDimLabel(label, x - 9 / z, (y1 + y2) / 2, -90));
+}
+/** 外接ボックス W×H を CAD 寸法線 (上辺=幅 / 左辺=高さ) で表示。 */
+function addBoxDims(left, top, w, h) {
+    if (w < 1 && h < 1) return;
+    const gap = 16 / (App.canvas.getZoom() || 1); // 図形の外側へ逃がす距離
+    addDimH(left, left + w, top - gap, fmtCells(w));
+    addDimV(top, top + h, left - gap, fmtCells(h));
+}
+/** 正円: 中心→ポインタの半径補助線 + 半径ラベル (セル数)。 */
+function addRadiusDims(cx, cy, px, py) {
+    const r = Math.hypot(px - cx, py - cy);
+    if (r < 1) return;
+    addCadSeg(cx, cy, px, py, true);
+    App.canvas.add(makeDimLabel('r ' + fmtCells(r), (cx + px) / 2, (cy + py) / 2, 0));
+}
+/**
+ * 線分 (前の点→現在点) の計測表示。
+ * ΔX×ΔY は矩形と同じ CAD 寸法線で。withLenAngle=true ならセグメントに沿って長さ・角度も。
+ */
+function addSegmentDims(x1, y1, x2, y2, withLenAngle = true) {
+    const dx = x2 - x1,
+        dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 1) return;
+    // ΔX×ΔY: 矩形と同じ寸法線 (セグメントの外接ボックス基準)
+    addBoxDims(Math.min(x1, x2), Math.min(y1, y2), Math.abs(dx), Math.abs(dy));
+    if (!withLenAngle) return;
+    // 長さ・角度: セグメントに沿って (数学系 右=0°, 上=+, 0..360)
+    const z = App.canvas.getZoom() || 1;
+    let ang = (Math.atan2(-dy, dx) * 180) / Math.PI;
+    ang = Math.round(((ang % 360) + 360) % 360);
+    let ta = (Math.atan2(dy, dx) * 180) / Math.PI;
+    if (ta > 90) ta -= 180;
+    else if (ta < -90) ta += 180;
+    const off = 12 / z;
+    const mx = (x1 + x2) / 2 + (dy / len) * off;
+    const my = (y1 + y2) / 2 + (-dx / len) * off;
+    App.canvas.add(makeDimLabel(`${fmtCells(len)}マス ∠${ang}°`, mx, my, ta));
+}
+/** 曲線: 過去の制御点 (白丸マーカー) とそれを順につなぐ直線をプレビュー表示。
+ *  closed=true なら最後 (マウス位置) から最初の点へも破線でつなぎループを閉じる。 */
+function addControlPolygon(points, currentPt, closed = false) {
+    if (!points || points.length === 0) return;
+    const z = App.canvas.getZoom() || 1;
+    const all = currentPt ? [...points, currentPt] : points;
+    for (let i = 0; i < all.length - 1; i++) {
+        addCadSeg(all[i].x, all[i].y, all[i + 1].x, all[i + 1].y, true); // 制御点をつなぐ破線
+    }
+    // 閉曲線: 末尾 (= マウス位置) から先頭へ戻る破線
+    if (closed && all.length >= 2) {
+        const last = all[all.length - 1];
+        addCadSeg(last.x, last.y, all[0].x, all[0].y, true);
+    }
+    const rad = 4 / z;
+    points.forEach((p) => {
+        App.canvas.add(
+            new fabric.Circle({
+                left: p.x,
+                top: p.y,
+                originX: 'center',
+                originY: 'center',
+                radius: rad,
+                fill: '#ffffff',
+                stroke: '#000000',
+                strokeWidth: 1.5 / z,
+                selectable: false,
+                evented: false,
+                objectCaching: false,
+                isPreview: true,
+            })
+        );
+    });
 }
 
 /* ================================================================
@@ -2100,6 +2253,7 @@ function getActionsForTarget(t) {
     }
     // 全選択タイプ共通の操作
     actions.push({ icon: 'content_copy', title: '複製', onClick: (tt) => duplicateActive(tt) });
+    actions.push({ icon: t.visible ? 'visibility' : 'visibility_off', title: '表示/非表示', onClick: (tt) => toggleVisibilityActive(tt) });
     actions.push({ icon: t.lockMovementX ? 'lock' : 'lock_open', title: 'ロック切替', onClick: (tt) => toggleLockActive(tt) });
     actions.push({
         icon: 'flip_to_front',
@@ -2139,6 +2293,25 @@ function toggleLockActive(t) {
     pushHistory(lock ? 'ロック' : 'ロック解除');
 }
 
+/** 表示/非表示トグル: activeSelection なら子全部、それ以外は単体。 */
+function toggleVisibilityActive(t) {
+    if (!t) return;
+    const vis = !t.visible;
+    if (t.type === 'activeSelection' && typeof t.getObjects === 'function') {
+        t.getObjects().forEach((o) => o.set({ visible: vis }));
+    }
+    t.set({ visible: vis });
+    // 非表示にすると選択ハンドルごと消えるため選択は解除しておく
+    if (!vis) {
+        App.canvas.discardActiveObject();
+        App.selectedLayerIds = [];
+    }
+    App.canvas.renderAll();
+    renderLayerList();
+    updateSelectionInfo();
+    pushHistory(vis ? '表示' : '非表示');
+}
+
 /** 削除: activeSelection なら子全部、それ以外は単体。 */
 function deleteActive(t) {
     if (!t) return;
@@ -2160,10 +2333,16 @@ function duplicateActive(t) {
     let pending = targets.length;
     targets.forEach((o) => {
         o.clone((cloned) => {
-            cloned.set({ left: (cloned.left || 0) + 20, top: (cloned.top || 0) + 20 });
-            addLayerObject((o._layerName || '要素') + ' コピー', cloned);
+            // ずらし量は半セル。中途半端な px だとスナップ点 (交点/セル中心) から外れて座標がずれるため。
+            const dupOffset = (App.cellSize || 72) / 2;
+            cloned.set({ left: (cloned.left || 0) + dupOffset, top: (cloned.top || 0) + dupOffset });
+            addLayerObject((o._layerName || '要素') + ' コピー', cloned, { skipHistory: true });
+            // 最前面ではなく複製元のすぐ上に配置する (addLayerObject は最前面に積むので移動し直す)
+            const srcIdx = App.canvas.getObjects().indexOf(o);
+            if (srcIdx >= 0) App.canvas.moveTo(cloned, srcIdx + 1);
             newObjs.push(cloned);
             if (--pending === 0) {
+                renderLayerList();
                 App.canvas.discardActiveObject();
                 if (newObjs.length === 1) App.canvas.setActiveObject(newObjs[0]);
                 else if (newObjs.length > 1) {
@@ -2516,7 +2695,7 @@ function renderLayerList() {
 
         // 可視アイコン
         const vis = document.createElement('span');
-        vis.className = 'material-symbols-outlined' + (obj.visible ? '' : ' fill');
+        vis.className = 'material-symbols-outlined' + (obj.visible ? ' fill' : '');
         vis.textContent = obj.visible ? 'visibility' : 'visibility_off';
         vis.addEventListener('click', (e) => {
             e.stopPropagation();
