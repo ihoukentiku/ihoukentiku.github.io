@@ -1872,7 +1872,9 @@ function groupSelected() {
         _layerName: `グループ${App.layerCounters['グループ']}`,
         selectable: true,
         evented: true,
-        objectCaching: false,
+        // [#4] グループ内でブレンド(切り抜き等)を完結させる。noScaleCache:false で zoom 毎に再キャッシュ。
+        objectCaching: true,
+        noScaleCache: false,
     });
     App.canvas.setActiveObject(group);
     App.selectedLayerIds = [id];
@@ -2227,7 +2229,7 @@ function performBooleanOpRoom(op, rooms) {
     const sel = new fabric.ActiveSelection([ground, wall], { canvas: App.canvas });
     App.canvas.setActiveObject(sel);
     const group = sel.toGroup();
-    group.set({ _isRoomGroup: true, objectCaching: false, subTargetCheck: false });
+    group.set({ _isRoomGroup: true, objectCaching: false, subTargetCheck: false }); // 部屋はキャッシュ無効 (影崩れ回避)
     App.canvas.discardActiveObject();
     const opLabel = { union: '合体', intersection: '交差', difference: '差', xor: '排他' }[op] || op;
     addLayerObject(opLabel + '_部屋', group, { skipHistory: true });
@@ -2462,8 +2464,8 @@ function actionBarHitIndex(localX, actions) {
     const BOOL_BAR_OFFSET_Y = ACTION_BAR_OFFSET_Y - (ACTION_BAR_HEIGHT + 6);
     const boolActions = [
         { icon: 'join_full', title: '合体 (union)', op: 'union' },
-        { icon: 'join_left', title: '交差 (intersection)', op: 'intersection' },
-        { icon: 'difference', title: '差 (difference)', op: 'difference' },
+        { icon: 'join_inner', title: '交差 (intersection)', op: 'intersection' },
+        { icon: 'masked_transitions', title: '差 (difference)', op: 'difference' },
         { icon: 'compare', title: '排他 (xor)', op: 'xor' },
     ];
     const boolActionsForTarget = (t) => {
@@ -2653,9 +2655,10 @@ function createFreehandLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // セル同様、グループ全体に1つの影を落とすため & 消しゴム (destination-out) を
-        // このレイヤー内だけに効かせるためにキャッシュを有効化
-        objectCaching: false,
+        // [#4] グループ全体に1つの影 & 消しゴム(destination-out)をこのレイヤー内だけに効かせる。
+        // noScaleCache:false で zoom 毎に再キャッシュ → ジャギー/ボケなし。
+        objectCaching: true,
+        noScaleCache: false,
         _isFreehandLayer: true,
     });
     addLayerObject('フリーハンド', group);
@@ -3216,10 +3219,11 @@ function createCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // 統一シャドウのため group キャッシュを有効化。
-        // noScaleCache: false にしないと、デフォルト挙動 (1x で焼いて拡大表示) で
-        // ズーム時にビットマップが伸びてジャギーになる。false なら現在の zoom に応じて毎回再キャッシュ。
-        objectCaching: false,
+        // [#4 テスト] グループ単位キャッシュを有効化。
+        // 目的: 消しゴム(destination-out)等のブレンドをこのレイヤーのキャッシュ内に閉じ込め、
+        //       他レイヤーまで消えるのを防ぐ。
+        // noScaleCache:false で現在の zoom に応じて毎回再キャッシュ → ジャギー/ボケなし。
+        objectCaching: true,
         noScaleCache: false,
         _isCellLayer: true,
         _cellData: new Map(),
@@ -3279,10 +3283,10 @@ function createGroundCellLayer() {
     const group = new fabric.Group([], {
         selectable: false,
         evented: false,
-        // 統一シャドウのため group キャッシュを有効化。
-        // noScaleCache: false にしないと、デフォルト挙動 (1x で焼いて拡大表示) で
-        // ズーム時にビットマップが伸びてジャギーになる。false なら現在の zoom に応じて毎回再キャッシュ。
-        objectCaching: false,
+        // [#4 テスト] グループ単位キャッシュを有効化 (createCellLayer と同じ理由)。
+        // 消しゴム(destination-out)等のブレンドをこのレイヤーのキャッシュ内に閉じ込める。
+        // noScaleCache:false で zoom 毎に再キャッシュ → ジャギー/ボケなし。
+        objectCaching: true,
         noScaleCache: false,
         _isCellLayer: true,
         _isGroundLayer: true,
@@ -3831,6 +3835,7 @@ function addRoom(typeName, makeShape) {
     const group = sel.toGroup();
     group.set({
         _isRoomGroup: true,
+        // 部屋はブレンド分離が不要 & キャッシュ化すると影が崩れるためキャッシュ無効のまま。
         objectCaching: false,
         subTargetCheck: false,
     });
@@ -5744,13 +5749,14 @@ function restoreSaveData(data) {
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
-                // 新規作成時 (createCellLayer / createGroundCellLayer) と同じ設定にして挙動を揃える。
-                obj.set({ objectCaching: false, noScaleCache: false });
+                // [#4] 生成時 (createCellLayer / createGroundCellLayer) と同じくキャッシュ有効で復元する
+                obj.set({ objectCaching: true, noScaleCache: false });
                 // _cellEntries (シリアライズ済み配列) から _cellData Map を復元 → commit で Path 再生成
                 rebuildCellDataFromEntries(obj, adapter);
                 commitCellLayer(obj);
             }
             if (obj._isRoomGroup && obj.type === 'group') {
+                // 部屋はキャッシュ無効のまま復元 (影崩れ回避)
                 obj.set({ objectCaching: false, noScaleCache: false });
                 if (typeof obj.getObjects === 'function') {
                     obj.getObjects().forEach((c) => c.set({ objectCaching: false, noScaleCache: false }));
@@ -6040,11 +6046,13 @@ function restoreHistorySnapshot(snapshot, displayName) {
         const adapter = ga();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
-                obj.set({ objectCaching: false, noScaleCache: false });
+                // [#4 テスト] 生成時 (createCellLayer) と同じくキャッシュ有効で復元する
+                obj.set({ objectCaching: true, noScaleCache: false });
                 rebuildCellDataFromEntries(obj, adapter);
                 commitCellLayer(obj);
             }
             if (obj._isRoomGroup && obj.type === 'group') {
+                // 部屋はキャッシュ無効のまま復元 (影崩れ回避)
                 obj.set({ objectCaching: false, noScaleCache: false });
                 if (typeof obj.getObjects === 'function') {
                     obj.getObjects().forEach((c) => c.set({ objectCaching: false, noScaleCache: false }));
