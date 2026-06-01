@@ -362,12 +362,20 @@
                 gap: 4px;
                 overflow-x: auto;
                 scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
                 padding-bottom: 4px;
                 margin-bottom: 6px;
                 border-bottom: 1px solid var(--border);
             }
             .pp-genres::-webkit-scrollbar {
                 height: 4px;
+            }
+            .pp-genres::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .pp-genres::-webkit-scrollbar-thumb {
+                background: var(--border-bright);
+                border-radius: 4px;
             }
             .pp-genre {
                 flex: 0 0 auto;
@@ -400,7 +408,24 @@
                 max-height: 200px;
                 overflow-y: auto;
                 scrollbar-width: thin;
+                scrollbar-color: var(--border-bright) transparent;
                 padding-right: 2px;
+            }
+            .pp-tiles-scroll::-webkit-scrollbar {
+                width: 8px;
+            }
+            .pp-tiles-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .pp-tiles-scroll::-webkit-scrollbar-thumb {
+                background: var(--border-bright);
+                border-radius: 4px;
+                border: 2px solid transparent;
+                background-clip: padding-box;
+            }
+            .pp-tiles-scroll::-webkit-scrollbar-thumb:hover {
+                background: var(--cyan);
+                background-clip: padding-box;
             }
             /* 装飾ピッカーはアセット数が多いのでスクロール領域を 2 倍にする */
             .decor-picker .pp-tiles-scroll {
@@ -1811,6 +1836,13 @@
                     <div class="f" id="corner-radius-row">
                         <span class="fl">角丸</span>
                         <div class="row"><input type="number" id="corner-radius" value="0" min="0" max="500" class="custom-spinner" /><span class="unit">px</span></div>
+                    </div>
+                    <div class="f" id="ellipse-mode-row" style="display: none">
+                        <span class="fl">作図</span>
+                        <div class="seg">
+                            <input type="radio" name="ellipse-mode" id="em-bbox" value="bbox" checked /><label for="em-bbox" title="2点(枠)で内接楕円">枠</label>
+                            <input type="radio" name="ellipse-mode" id="em-center" value="center" /><label for="em-center" title="中心→半径で正円">中心→半径</label>
+                        </div>
                     </div>
                 </div>
 

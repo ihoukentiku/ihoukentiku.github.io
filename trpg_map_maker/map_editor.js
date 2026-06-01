@@ -138,6 +138,7 @@ const App = {
     strokeWidth: 2,
     strokeDashArray: null, // null=実線, [10,5]=破線, [2,4]=点線
     cornerRadius: 0,
+    ellipseMode: 'bbox', // 楕円の作図方法: 'bbox'=2点(枠)で内接楕円 / 'center'=中心→半径で正円
     gridVisible: true, // グリッド表示 on/off (設定タブのトグル)
     gridColor: '#535353ff',
     gridLineWidth: 1,
@@ -266,6 +267,10 @@ const DECORS = [
     { id: 'double-door', name: '両開き扉', type: 'svg', file: 'double-door.svg', genres: ['door', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     // 家具
     { id: 'bed', name: 'ベッド', type: 'svg', file: 'bed.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
+    // 間取り図スタイルのベッド (本体+枕+掛布)。最長辺(長さ方向) が約2セルになる scale を初期値に。
+    { id: 'bed-single', name: 'ベッド(S)', type: 'svg', file: 'bed_single.svg', genres: ['floorplan'], scale: 2, anchorX: 'center', anchorY: 'center' },
+    { id: 'bed-double', name: 'ベッド(D)', type: 'svg', file: 'bed_double.svg', genres: ['floorplan'], scale: 2, anchorX: 'center', anchorY: 'center' },
+    { id: 'bed-queen', name: 'ベッド(Q)', type: 'svg', file: 'bed_queen.svg', genres: ['floorplan'], scale: 2, anchorX: 'center', anchorY: 'center' },
     { id: 'desk', name: 'デスク', type: 'svg', file: 'desk.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     { id: 'bookshelf', name: '本棚', type: 'svg', file: 'bookshelf.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
     { id: 'chest', name: '宝箱', type: 'svg', file: 'chest.svg', genres: ['furniture', 'icon'], scale: 1, anchorX: 'center', anchorY: 'center' },
@@ -531,11 +536,14 @@ function updateFillStrokeVisibility() {
     // 線継目 / 線端: 壁モードでも有効 (厚みを持つ壁ストロークに効く)
     let showStrokeJoinCap = (showStrokeWidth || showWallThickness) && !isFreehand;
     let showRadius = sub === 'rect';
+    // 楕円モード切替 (枠 / 中心→半径): 楕円サブツールの作図中のみ表示 (選択時は不要)
+    let showEllipseMode = sub === 'ellipse';
     if (isSelect) {
         const activeObjs = App.canvas.getActiveObjects().filter((o) => o._isMapLayer && !o._isCellLayer && !o._isTerrainLayer);
         showFillColor = showStrokeColor = showStrokeStyle = showStrokeWidth = activeObjs.length > 0;
         showStrokeJoinCap = activeObjs.length > 0;
         showRadius = activeObjs.some((o) => o.type === 'rect');
+        showEllipseMode = false;
     }
 
     const setDisp = (id, show) => {
@@ -548,8 +556,9 @@ function updateFillStrokeVisibility() {
     setDisp('wall-thickness-row', showWallThickness);
     setDisp('stroke-style-row', showStrokeStyle);
     setDisp('corner-radius-row', showRadius);
+    setDisp('ellipse-mode-row', showEllipseMode);
     // セクション全体は中に何か出てれば表示
-    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showWallThickness || showStrokeStyle || showRadius || showStrokeJoinCap;
+    const anyRow = showFillColor || showStrokeColor || showStrokeWidth || showWallThickness || showStrokeStyle || showRadius || showStrokeJoinCap || showEllipseMode;
     setDisp('fill-stroke-sec', anyRow);
     // タイトル「フィル / ストローク」は色行が出てる時だけ意味があるので隠す/出す
     setDisp('fill-stroke-title', showFillColor || showStrokeColor);
@@ -912,13 +921,26 @@ function initCanvas() {
                 } else {
                     // 2クリック目: 確定
                     const d = App._drawing;
-                    const w = Math.abs(pt.x - d.startX),
+                    // 楕円かつ中心モードのとき: 1クリック目=中心、2クリック目=円周上の点 → 正円。
+                    // それ以外 (矩形 / 枠モード楕円): 2点を対角とする外接矩形に内接。
+                    // 中心モードは「中心からの半径 r」を bbox 換算 (2r×2r, left=中心-r) して
+                    // 以降の生成コードをそのまま再利用する。
+                    const centerMode = activeSubtool() === 'ellipse' && App.ellipseMode === 'center';
+                    let w, h, left, top;
+                    if (centerMode) {
+                        const r = Math.round(Math.hypot(pt.x - d.startX, pt.y - d.startY));
+                        w = h = r * 2;
+                        left = d.startX - r;
+                        top = d.startY - r;
+                    } else {
+                        w = Math.abs(pt.x - d.startX);
                         h = Math.abs(pt.y - d.startY);
+                        left = Math.min(d.startX, pt.x);
+                        top = Math.min(d.startY, pt.y);
+                    }
                     if (w > 2 && h > 2) {
                         removePreview();
                         const style = getCurrentDrawStyle();
-                        const left = Math.min(d.startX, pt.x),
-                            top = Math.min(d.startY, pt.y);
                         const subtool = activeSubtool();
                         if (App.activeTool === 'room') {
                             addRoom('部屋_' + (subtool === 'rect' ? '矩形' : '楕円'), (st) => {
@@ -1189,10 +1211,20 @@ function initCanvas() {
         if (App._drawing && (_sub === 'rect' || _sub === 'ellipse')) {
             const pt = snapToGrid(ptr.x, ptr.y) || ptr;
             const d = App._drawing;
-            const left = Math.min(d.startX, pt.x),
+            // 中心モード楕円: 中心(d) からポインタまでを半径とする正円プレビュー
+            const centerMode = _sub === 'ellipse' && App.ellipseMode === 'center';
+            let left, top, w, h;
+            if (centerMode) {
+                const r = Math.round(Math.hypot(pt.x - d.startX, pt.y - d.startY));
+                w = h = r * 2;
+                left = d.startX - r;
+                top = d.startY - r;
+            } else {
+                left = Math.min(d.startX, pt.x);
                 top = Math.min(d.startY, pt.y);
-            const w = Math.abs(pt.x - d.startX),
+                w = Math.abs(pt.x - d.startX);
                 h = Math.abs(pt.y - d.startY);
+            }
             removePreview();
             if (w > 0 || h > 0) {
                 const hsw = _previewStyle.strokeWidth / 2;
@@ -1471,8 +1503,11 @@ function initCanvas() {
             return;
         }
         if (App.snapEnabled) {
-            const snapped = snapToGrid(obj.left, obj.top);
-            if (snapped) obj.set({ left: snapped.x, top: snapped.y });
+            // 左上 (left/top) ではなくオブジェクト中心を基準にスナップする。
+            // 左上基準だとストローク幅の分だけ見た目がグリッドからずれるため。
+            const c = obj.getCenterPoint();
+            const snapped = snapToGrid(c.x, c.y);
+            if (snapped) obj.setPositionByOrigin(new fabric.Point(snapped.x, snapped.y), 'center', 'center');
         }
         // 移動中もパターン原点を維持 (世界 (0,0) アンカー)
         applyPatternOrigin(obj);
@@ -1648,8 +1683,11 @@ function addLayerObject(typeName, obj, opts = {}) {
     applyShadowAtCreate(obj);
     // フリーハンド等、既にcanvas上にある場合はadd不要
     if (!App.canvas.getObjects().includes(obj)) App.canvas.add(obj);
-    // 新規レイヤーをパネル上でハイライト（canvasのactive化はしない — 現ツールの操作性を維持）
-    App.selectedLayerIds = [id];
+    // 新規作成オブジェクトはハイライトしない。
+    // canvas の active 化をしない (現ツールの操作性を維持) ため、ハイライトだけ付けると
+    // Fabric 上は未選択のまま → 不透明度/ブレンド/削除が効かず紛らわしい。
+    // 編集したい場合はレイヤーパネルでクリックして選択する運用にする。
+    App.selectedLayerIds = [];
     renderLayerList();
     App.canvas.renderAll();
     // 呼び出し側が独自に履歴を積む場合 (ブール演算等) はここをスキップして二重登録を避ける
@@ -2069,6 +2107,7 @@ function getActionsForTarget(t) {
         onClick: (tt) => {
             App.canvas.bringToFront(tt);
             App.canvas.renderAll();
+            renderLayerList();
             pushHistory('最前面へ');
         },
     });
@@ -2078,6 +2117,7 @@ function getActionsForTarget(t) {
         onClick: (tt) => {
             App.canvas.sendToBack(tt);
             App.canvas.renderAll();
+            renderLayerList();
             pushHistory('最背面へ');
         },
     });
@@ -4881,6 +4921,12 @@ function setActiveTool(toolName) {
     // プロパティパネル: data-prop グループを切替
     refreshPropGroupVisibility();
 
+    // 地面/壁/部屋ツールはパターン状態 (App.groundPattern / App.wallPattern) を共有するため、
+    // ツール切替の都度ピッカー UI と詳細入力を App 状態へ再同期する。
+    // (片方のタブで変更しても、もう片方のタブの DOM は再描画されず古いまま残るのを防ぐ)
+    refreshPatternPickers();
+    refreshPatternDetailUI();
+
     // シンプルモードの描画ツールと同様、地図モードのタブも canvas オブジェクト選択は無効
     const isSelect = toolName === 'select' || toolName === 'settings';
     App.canvas.selection = isSelect;
@@ -6227,6 +6273,15 @@ document.addEventListener('DOMContentLoaded', () => {
             pushHistoryDebounced('角丸を変更');
         }
     });
+
+    // 楕円の作図モード (枠 / 中心→半径)
+    document.querySelectorAll('input[name="ellipse-mode"]').forEach((r) =>
+        r.addEventListener('change', function () {
+            App.ellipseMode = this.value; // 'bbox' | 'center'
+            // 作図途中なら状態をリセット (中心モードと枠モードで _drawing の意味が変わるため)
+            resetDrawingState();
+        })
+    );
 
     // グリッド設定
     document.getElementById('grid-visible')?.addEventListener('change', function () {
