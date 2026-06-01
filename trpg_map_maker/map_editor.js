@@ -6076,7 +6076,9 @@ function setSaveStatus(status) {
 
 document.addEventListener('DOMContentLoaded', () => {
     // 離脱時に確実に保存 (サムネ込み)。非同期だが多くのブラウザで処理される。
+    // 自動保存オフ時は離脱時も保存しない (完全オフ。保存は手動 Ctrl+S のみ)。
     window.addEventListener('beforeunload', () => {
+        if (!App.autoSaveEnabled) return;
         if (App._autoSaveTimer || App._saveStatus !== 'saved') {
             flushSaveNow(true);
         }
