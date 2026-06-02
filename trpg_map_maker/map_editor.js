@@ -5581,12 +5581,46 @@ function updateExportOutputSize() {
  * SVG は canvas.toSVG で出力する。canvas の dimensions / viewportTransform / 背景は
  * 一時的に書き換え、終了時に必ず復元する。
  */
+/**
+ * 出力範囲 r (px) からセル数 {n, m} を求める。ファイル名 (NxM) 用。
+ * - square: 1セル=cellSize。n=横セル数, m=縦セル数。
+ * - hex 整合(-fit): ココフォリア用に 1ヘクス=4セル(2×2)。1セル=cellSize/2 換算 → n=2*横, m=2*縦。
+ * - hex 通常: 実際のヘクス列/行数で数える (staggered な軸では 0.5 が出るので 0.5刻み)。
+ *     flat-top  → 横の列ピッチ cs√3/2, 縦の行ピッチ cs   → n=2w/(cs√3), m=h/cs
+ *     pointy-top→ 横の列ピッチ cs,     縦の行ピッチ cs√3/2 → n=w/cs, m=2h/(cs√3)
+ */
+function exportCellDims(r) {
+    const cs = App.cellSize || 72;
+    const gt = App.gridType || 'square';
+    const half = (v) => Math.round(v * 2) / 2; // 0.5 刻みに丸め
+    if (!gt.startsWith('hex')) {
+        return { n: Math.round(r.w / cs), m: Math.round(r.h / cs) };
+    }
+    if (gt.endsWith('-fit')) {
+        return { n: Math.round((2 * r.w) / cs), m: Math.round((2 * r.h) / cs) };
+    }
+    const SQ3 = Math.sqrt(3);
+    if (gt.includes('flat')) {
+        return { n: half((2 * r.w) / (cs * SQ3)), m: half(r.h / cs) };
+    }
+    return { n: half(r.w / cs), m: half((2 * r.h) / (cs * SQ3)) };
+}
+
+/** セル数 {n,m} を "NxM" 文字列に (整数はそのまま、0.5 は小数1桁)。空なら ''。 */
+function exportDimSuffix(r) {
+    const d = exportCellDims(r);
+    if (!d || !(d.n > 0) || !(d.m > 0)) return '';
+    const fmt = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+    return `_${fmt(d.n)}x${fmt(d.m)}`;
+}
+
 function handleExport() {
     const r = App._exportRect;
     if (!r || r.w < 1 || r.h < 1) {
         alert('出力範囲を指定してください');
         return;
     }
+    const dimSuffix = exportDimSuffix(r); // 例: "_8x6"
 
     const fmt = document.querySelector('input[name="export-format"]:checked').value;
     const bg = document.querySelector('input[name="export-bg"]:checked').value;
@@ -5617,7 +5651,7 @@ function handleExport() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'trpg-map.svg';
+        a.download = `trpg-map${dimSuffix}.svg`;
         a.click();
         URL.revokeObjectURL(url);
     } else {
@@ -5627,7 +5661,7 @@ function handleExport() {
         const dataURL = App.canvas.getElement().toDataURL(mimeType, quality);
         const a = document.createElement('a');
         a.href = dataURL;
-        a.download = `trpg-map.${fmt === 'jpeg' ? 'jpg' : 'png'}`;
+        a.download = `trpg-map${dimSuffix}.${fmt === 'jpeg' ? 'jpg' : 'png'}`;
         a.click();
     }
 
