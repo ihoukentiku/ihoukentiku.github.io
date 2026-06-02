@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 20">
+  <!-- fp-door(大) と同サイズの枠 + 中央縦線 (ドア由来) -->
+  <rect x="1.5" y="1.5" width="157" height="17" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
+  <line x1="80" y1="1.5" x2="80" y2="18.5" stroke="#000000" stroke-width="1"/>
+  <!-- 引き違い: 2枚のサッシを上下トラックにずらし、中央で重ねる -->
+  <line x1="1.5" y1="7" x2="86" y2="7" stroke="#000000" stroke-width="1"/>
+  <line x1="74" y1="13" x2="158.5" y2="13" stroke="#000000" stroke-width="1"/>
+</svg>
