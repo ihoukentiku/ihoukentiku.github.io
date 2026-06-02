@@ -96,6 +96,20 @@
                 font-size: 1rem;
             }
 
+            /* ---- ツール概要 (intro) ---- */
+            .intro {
+                margin: 0 0 1.4rem;
+                line-height: 1.75;
+                font-size: 0.9rem;
+                color: var(--text-dim);
+            }
+            .intro p {
+                margin: 0 0 0.55rem;
+            }
+            .intro p:last-child {
+                margin-bottom: 0;
+            }
+
             .map-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -387,6 +401,14 @@
         <main class="list-main">
             <h1 class="page-title">TRPGマップエディタ</h1>
             <p class="page-subtitle">TRPG MAP MAKER</p>
+
+            <section class="intro">
+                <p>
+                    ブラウザだけで TRPG のマップが描けるツールです。マス目に沿って地面・壁・部屋を引き、ベッドや机などの家具スタンプを置くだけ。スクエアもヘクスも対応しています。描いたマップは PNG / JPEG / SVG
+                    で書き出して、ココフォリアなどのオンラインセッションツールにそのまま持ち込めます。
+                </p>
+                <p>データはブラウザに自動保存されるので、続きはいつでも再開できます。下の「新規マップ」から始めてください。</p>
+            </section>
 
             <div class="action-bar">
                 <button class="action-btn" id="btn-new"><span class="material-symbols-outlined">add</span>新規マップ</button>
