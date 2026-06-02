@@ -941,6 +941,53 @@
                 /* タッチ/ペン操作をブラウザのスクロール・ズームに奪われないようにする */
                 touch-action: none;
             }
+            /* 折線/多角形/曲線の確定・取消バー (タッチでEnter/Escの代わり) */
+            #draw-finish-bar {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                z-index: 40;
+                display: flex;
+                gap: 8px;
+                padding: 6px;
+                border-radius: 10px;
+                background: rgba(10, 18, 26, 0.92);
+                border: 1px solid var(--cyan);
+                box-shadow: var(--glow-card);
+            }
+            #draw-finish-bar button {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 9px 18px;
+                font-family: var(--font-mono);
+                font-size: 0.82rem;
+                border-radius: 6px;
+                cursor: pointer;
+                border: 1px solid var(--border-bright);
+                background: transparent;
+                color: var(--text);
+            }
+            #draw-finish-bar button .material-symbols-outlined {
+                font-size: 1.15rem;
+            }
+            #draw-finish-cancel:hover {
+                background: var(--cyan-muted);
+                color: var(--cyan);
+                border-color: var(--cyan);
+            }
+            #draw-finish-ok {
+                background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
+                color: #fff;
+                border-color: rgba(33, 150, 243, 0.5);
+            }
+            #draw-finish-ok:hover:not(:disabled) {
+                background: linear-gradient(135deg, #42a5f5, var(--blue-mid));
+            }
+            #draw-finish-ok:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
 
             /* ---- レイヤーパネル ---- */
             #layer-panel {
@@ -1826,7 +1873,14 @@
             </div>
 
             <!-- キャンバス -->
-            <div id="canvas-area"><canvas id="main-canvas"></canvas></div>
+            <div id="canvas-area">
+                <canvas id="main-canvas"></canvas>
+                <!-- 折線/多角形/曲線の確定・取消 (タッチでEnter/Escの代わり)。作図中のみ表示 -->
+                <div id="draw-finish-bar" style="display: none">
+                    <button id="draw-finish-cancel" type="button" title="取消 (Esc)"><span class="material-symbols-outlined">close</span>取消</button>
+                    <button id="draw-finish-ok" type="button" title="確定 (Enter)"><span class="material-symbols-outlined">check</span>確定</button>
+                </div>
+            </div>
 
             <!-- レイヤーパネル -->
             <div id="layer-panel">

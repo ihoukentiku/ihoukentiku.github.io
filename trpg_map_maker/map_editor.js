@@ -1188,12 +1188,14 @@ function initCanvas() {
                 const raw = snapToGrid(ptr.x, ptr.y) || ptr;
                 const pt = snapToEditPoints(ptr.x, ptr.y, App._pathPoints) || raw;
                 App._pathPoints.push({ x: pt.x, y: pt.y });
+                updateDrawFinishBar();
                 break;
             }
             case 'polygon': {
                 const raw = snapToGrid(ptr.x, ptr.y) || ptr;
                 const pt = snapToEditPoints(ptr.x, ptr.y, App._polygonPoints) || raw;
                 App._polygonPoints.push({ x: pt.x, y: pt.y });
+                updateDrawFinishBar();
                 break;
             }
             case 'curve':
@@ -1201,6 +1203,7 @@ function initCanvas() {
                 const raw = snapToGrid(ptr.x, ptr.y) || ptr;
                 const pt = snapToEditPoints(ptr.x, ptr.y, App._curvePoints) || raw;
                 App._curvePoints.push({ x: pt.x, y: pt.y });
+                updateDrawFinishBar();
                 break;
             }
             case 'cell': {
@@ -5284,6 +5287,7 @@ function resetDrawingState() {
     App._pathPoints = [];
     App._polygonPoints = [];
     App._curvePoints = [];
+    if (typeof updateDrawFinishBar === 'function') updateDrawFinishBar();
     App.canvas?.requestRenderAll();
 }
 
@@ -5294,6 +5298,7 @@ function setActiveTool(toolName) {
     App._pathPoints = [];
     App._polygonPoints = [];
     App._curvePoints = [];
+    if (typeof updateDrawFinishBar === 'function') updateDrawFinishBar();
     App._exportMode = false;
     App._exportDrag = null;
     App._exportRect = null;
@@ -6389,6 +6394,137 @@ function setTransientStatus(msg) {
 }
 
 /* ================================================================
+   折線/多角形/曲線の確定・取消 (Enter/Esc と画面ボタン共通)
+================================================================ */
+/** 進行中の折線/多角形/曲線を確定する。確定したら true、対象が無ければ false。 */
+function finishMultiPointDraw() {
+    const sub = activeSubtool();
+    if (sub === 'path' && App._pathPoints.length >= 2) {
+        removePreview();
+        if (App.activeTool === 'room') {
+            const pts = App._pathPoints.map((p) => ({ x: p.x, y: p.y }));
+            addRoom('部屋_折線', (st) => {
+                const isWall = (st.strokeWidth || 0) > 0;
+                if (isWall) {
+                    const rd = roundedPolyPath(pts, false, App.cornerRadius);
+                    return rd ? new fabric.Path(rd, { ...st, fill: '', objectCaching: false }) : new fabric.Polyline(pts, { ...st, fill: '', objectCaching: false });
+                }
+                const rd = roundedPolyPath(pts, 'fill', App.cornerRadius);
+                return rd ? new fabric.Path(rd, { ...st, objectCaching: false }) : new fabric.Polygon(pts, { ...st, objectCaching: false });
+            });
+        } else {
+            const style = getCurrentDrawStyle();
+            const common = { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDashArray: style.strokeDashArray, strokeLineJoin: style.strokeLineJoin || 'miter', strokeLineCap: style.strokeLineCap || 'butt', fill: '', selectable: false, evented: false, objectCaching: false };
+            const rd = roundedPolyPath(App._pathPoints, false, App.cornerRadius);
+            const obj = rd ? new fabric.Path(rd, common) : new fabric.Polyline(App._pathPoints, common);
+            addCategoryLayer(style.namePrefix + '折線', obj, style.flag);
+        }
+        App._pathPoints = [];
+        updateDrawFinishBar();
+        return true;
+    }
+    if (sub === 'polygon' && App._polygonPoints.length >= 3) {
+        removePreview();
+        if (App.activeTool === 'room') {
+            const pts = App._polygonPoints.map((p) => ({ x: p.x, y: p.y }));
+            addRoom('部屋_多角形', (st) => {
+                const opt = { ...st, selectable: false, evented: false, objectCaching: false };
+                const rd = roundedPolyPath(pts, true, App.cornerRadius);
+                return rd ? new fabric.Path(rd, opt) : new fabric.Polygon(pts, opt);
+            });
+        } else {
+            const style = getCurrentDrawStyle();
+            const common = { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDashArray: style.strokeDashArray, strokeLineJoin: style.strokeLineJoin || 'miter', strokeLineCap: style.strokeLineCap || 'butt', fill: style.fill, selectable: false, evented: false, objectCaching: false };
+            const rd = roundedPolyPath(App._polygonPoints, true, App.cornerRadius);
+            const obj = rd ? new fabric.Path(rd, common) : new fabric.Polygon(App._polygonPoints, common);
+            addCategoryLayer(style.namePrefix + '多角形', obj, style.flag);
+        }
+        App._polygonPoints = [];
+        updateDrawFinishBar();
+        return true;
+    }
+    if (sub === 'curve' && App._curvePoints.length >= 2) {
+        removePreview();
+        const d = buildBezierPath(App._curvePoints);
+        if (d) {
+            if (App.activeTool === 'room') {
+                addRoom('部屋_曲線', (st) => {
+                    const isWall = (st.strokeWidth || 0) > 0;
+                    return isWall ? new fabric.Path(d, { ...st, fill: '', objectCaching: false }) : new fabric.Path(d, { ...st, objectCaching: false });
+                });
+            } else {
+                const style = getCurrentDrawStyle();
+                addCategoryLayer(
+                    style.namePrefix + '曲線',
+                    new fabric.Path(d, { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDashArray: style.strokeDashArray, strokeLineJoin: style.strokeLineJoin || 'miter', strokeLineCap: style.strokeLineCap || 'butt', fill: '', objectCaching: false }),
+                    style.flag
+                );
+            }
+        }
+        App._curvePoints = [];
+        updateDrawFinishBar();
+        return true;
+    }
+    if (sub === 'curve-closed' && App._curvePoints.length >= 3) {
+        removePreview();
+        const d = buildClosedBezierPath(App._curvePoints);
+        if (d) {
+            if (App.activeTool === 'room') {
+                addRoom('部屋_閉曲線', (st) => new fabric.Path(d, { ...st, objectCaching: false }));
+            } else {
+                const style = getCurrentDrawStyle();
+                addCategoryLayer(
+                    style.namePrefix + '閉曲線',
+                    new fabric.Path(d, { stroke: style.stroke, strokeWidth: style.strokeWidth, strokeDashArray: style.strokeDashArray, strokeLineJoin: style.strokeLineJoin || 'miter', strokeLineCap: style.strokeLineCap || 'butt', fill: style.fill, objectCaching: false }),
+                    style.flag
+                );
+            }
+        }
+        App._curvePoints = [];
+        updateDrawFinishBar();
+        return true;
+    }
+    return false;
+}
+
+/** 進行中の折線/多角形/曲線/直線/矩形などの作図状態を破棄する。 */
+function cancelMultiPointDraw() {
+    removePreview();
+    App._pathPoints = [];
+    App._polygonPoints = [];
+    App._curvePoints = [];
+    App._lineStart = null;
+    App._drawing = null;
+    updateDrawFinishBar();
+    App.canvas?.requestRenderAll();
+}
+
+/** 多点作図の進行状況に応じて画面の「確定 / 取消」バーの表示と確定ボタンの有効状態を更新する。 */
+function updateDrawFinishBar() {
+    const bar = document.getElementById('draw-finish-bar');
+    if (!bar) return;
+    const sub = activeSubtool();
+    let active = false;
+    let canFinish = false;
+    if (sub === 'path') {
+        active = App._pathPoints.length > 0;
+        canFinish = App._pathPoints.length >= 2;
+    } else if (sub === 'polygon') {
+        active = App._polygonPoints.length > 0;
+        canFinish = App._polygonPoints.length >= 3;
+    } else if (sub === 'curve') {
+        active = App._curvePoints.length > 0;
+        canFinish = App._curvePoints.length >= 2;
+    } else if (sub === 'curve-closed') {
+        active = App._curvePoints.length > 0;
+        canFinish = App._curvePoints.length >= 3;
+    }
+    bar.style.display = active ? 'flex' : 'none';
+    const ok = document.getElementById('draw-finish-ok');
+    if (ok) ok.disabled = !canFinish;
+}
+
+/* ================================================================
    キーボードショートカット
 ================================================================ */
 // R / Shift+R 回転で通過する角度ストップ (30/45/60/90 系を網羅・昇順)
@@ -6441,134 +6577,7 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    if (e.key === 'Enter' && activeSubtool() === 'path' && App._pathPoints.length >= 2) {
-        removePreview();
-        if (App.activeTool === 'room') {
-            // 部屋 (折線): 地面は閉じた塗り (Polygon)、壁は開いた線 (Polyline)。
-            // 「一部だけ壁の無い部屋」を表現するため、壁は最後の点と最初の点を結ばずに残す。
-            const pts = App._pathPoints.map((p) => ({ x: p.x, y: p.y }));
-            addRoom('部屋_折線', (st) => {
-                const isWall = (st.strokeWidth || 0) > 0;
-                if (isWall) {
-                    // 壁: 開いた線 (端点は丸めない)
-                    const rd = roundedPolyPath(pts, false, App.cornerRadius);
-                    return rd ? new fabric.Path(rd, { ...st, fill: '', objectCaching: false }) : new fabric.Polyline(pts, { ...st, fill: '', objectCaching: false });
-                }
-                // 地面: 内部頂点のみ丸め、開いた部分(端点)は丸めず直線で閉じる ('fill')
-                const rd = roundedPolyPath(pts, 'fill', App.cornerRadius);
-                return rd ? new fabric.Path(rd, { ...st, objectCaching: false }) : new fabric.Polygon(pts, { ...st, objectCaching: false });
-            });
-        } else {
-            const style = getCurrentDrawStyle();
-            const common = {
-                stroke: style.stroke,
-                strokeWidth: style.strokeWidth,
-                strokeDashArray: style.strokeDashArray,
-                strokeLineJoin: style.strokeLineJoin || 'miter',
-                strokeLineCap: style.strokeLineCap || 'butt',
-                fill: '',
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-            };
-            // 角丸 (App.cornerRadius>0) なら頂点をフィレットした Path、そうでなければ素の Polyline
-            const rd = roundedPolyPath(App._pathPoints, false, App.cornerRadius);
-            const obj = rd ? new fabric.Path(rd, common) : new fabric.Polyline(App._pathPoints, common);
-            addCategoryLayer(style.namePrefix + '折線', obj, style.flag);
-        }
-        App._pathPoints = [];
-        e.preventDefault();
-        return;
-    }
-    if (e.key === 'Enter' && App._polygonPoints.length >= 3 && activeSubtool() === 'polygon') {
-        removePreview();
-        if (App.activeTool === 'room') {
-            const pts = App._polygonPoints.map((p) => ({ x: p.x, y: p.y }));
-            addRoom('部屋_多角形', (st) => {
-                const opt = { ...st, selectable: false, evented: false, objectCaching: false };
-                const rd = roundedPolyPath(pts, true, App.cornerRadius);
-                return rd ? new fabric.Path(rd, opt) : new fabric.Polygon(pts, opt);
-            });
-        } else {
-            const style = getCurrentDrawStyle();
-            const common = {
-                stroke: style.stroke,
-                strokeWidth: style.strokeWidth,
-                strokeDashArray: style.strokeDashArray,
-                strokeLineJoin: style.strokeLineJoin || 'miter',
-                strokeLineCap: style.strokeLineCap || 'butt',
-                fill: style.fill,
-                selectable: false,
-                evented: false,
-                objectCaching: false,
-            };
-            // 角丸 (App.cornerRadius>0) なら頂点をフィレットした Path、そうでなければ素の Polygon
-            const rd = roundedPolyPath(App._polygonPoints, true, App.cornerRadius);
-            const obj = rd ? new fabric.Path(rd, common) : new fabric.Polygon(App._polygonPoints, common);
-            addCategoryLayer(style.namePrefix + '多角形', obj, style.flag);
-        }
-        App._polygonPoints = [];
-        e.preventDefault();
-        return;
-    }
-    if (e.key === 'Enter' && App._curvePoints.length >= 2 && activeSubtool() === 'curve') {
-        removePreview();
-        const d = buildBezierPath(App._curvePoints);
-        if (d) {
-            if (App.activeTool === 'room') {
-                // 部屋 (曲線): 同じ open path "d" を使い、ground は fill (Canvas が暗黙閉じ)、wall は stroke のみで開いたまま描く。
-                addRoom('部屋_曲線', (st) => {
-                    const isWall = (st.strokeWidth || 0) > 0;
-                    if (isWall) {
-                        return new fabric.Path(d, { ...st, fill: '', objectCaching: false });
-                    }
-                    return new fabric.Path(d, { ...st, objectCaching: false });
-                });
-            } else {
-                const style = getCurrentDrawStyle();
-                addCategoryLayer(
-                    style.namePrefix + '曲線',
-                    new fabric.Path(d, {
-                        stroke: style.stroke,
-                        strokeWidth: style.strokeWidth,
-                        strokeDashArray: style.strokeDashArray,
-                        strokeLineJoin: style.strokeLineJoin || 'miter',
-                        strokeLineCap: style.strokeLineCap || 'butt',
-                        fill: '',
-                        objectCaching: false,
-                    }),
-                    style.flag
-                );
-            }
-        }
-        App._curvePoints = [];
-        e.preventDefault();
-        return;
-    }
-    if (e.key === 'Enter' && App._curvePoints.length >= 3 && activeSubtool() === 'curve-closed') {
-        removePreview();
-        const d = buildClosedBezierPath(App._curvePoints);
-        if (d) {
-            if (App.activeTool === 'room') {
-                addRoom('部屋_閉曲線', (st) => new fabric.Path(d, { ...st, objectCaching: false }));
-            } else {
-                const style = getCurrentDrawStyle();
-                addCategoryLayer(
-                    style.namePrefix + '閉曲線',
-                    new fabric.Path(d, {
-                        stroke: style.stroke,
-                        strokeWidth: style.strokeWidth,
-                        strokeDashArray: style.strokeDashArray,
-                        strokeLineJoin: style.strokeLineJoin || 'miter',
-                        strokeLineCap: style.strokeLineCap || 'butt',
-                        fill: style.fill,
-                        objectCaching: false,
-                    }),
-                    style.flag
-                );
-            }
-        }
-        App._curvePoints = [];
+    if (e.key === 'Enter' && finishMultiPointDraw()) {
         e.preventDefault();
         return;
     }
@@ -6581,12 +6590,7 @@ document.addEventListener('keydown', (e) => {
             App.canvas.requestRenderAll();
             return;
         }
-        removePreview();
-        App._pathPoints = [];
-        App._polygonPoints = [];
-        App._curvePoints = [];
-        App._lineStart = null;
-        App._drawing = null;
+        cancelMultiPointDraw();
         return;
     }
 
@@ -6786,6 +6790,10 @@ document.addEventListener('DOMContentLoaded', () => {
         App.freehandDecimation = parseInt(this.value) || 0;
         syncFreehandBrushProps();
     });
+
+    // 折線/多角形/曲線の確定・取消ボタン (タッチで Enter/Esc の代わり)
+    document.getElementById('draw-finish-ok')?.addEventListener('click', () => finishMultiPointDraw());
+    document.getElementById('draw-finish-cancel')?.addEventListener('click', () => cancelMultiPointDraw());
 
     // スナップ設定
     document.getElementById('snap-enabled')?.addEventListener('change', function () {
