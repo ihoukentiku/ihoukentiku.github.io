@@ -938,6 +938,8 @@
             }
             #canvas-area canvas {
                 display: block;
+                /* タッチ/ペン操作をブラウザのスクロール・ズームに奪われないようにする */
+                touch-action: none;
             }
 
             /* ---- レイヤーパネル ---- */

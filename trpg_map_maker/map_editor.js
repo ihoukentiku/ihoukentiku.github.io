@@ -84,6 +84,9 @@ const App = {
     decorStroke: null, // 同上 (stroke)
     decorShadowEnabled: false,
     _lastPointer: null, // 直近の canvas 座標カーソル位置 (装飾プレビューの即時再描画に使う)
+    _lastPointerType: null, // 直近 PointerEvent の pointerType ('pen'|'touch'|'mouse')
+    _lastPointerPressure: 0, // 直近 PointerEvent の筆圧 (0..1)。Fabric はマウスイベント発火で pressure を持たないため別取得
+    _abortFreehand: false, // 2本指ジェスチャ等で進行中フリーハンドを破棄するフラグ
     // ---- フリーハンド (Fabric brushes 拡張) ----
     freehandBrush: 'pencil', // 'pencil' | 'circle' | 'spray' | 'eraser'
     freehandWidth: 3,
@@ -913,6 +916,92 @@ function initCanvas() {
         if (e.key === 'Shift') App._shiftHeld = false;
     });
 
+    /* ================================================================
+       タブレット対応: 筆圧取得 + 2本指パン/ピンチズーム
+       - 筆圧: Fabric はマウスイベントで発火し pressure を持たないため、
+         PointerEvent から pointerType / pressure を別取得してブラシが参照する。
+       - 2本指: パン + ピンチズーム。1本指は従来どおりツール (描画/選択)。
+         2本目が触れたら進行中のフリーハンド描画/選択を中断する。
+    ================================================================ */
+    const upperEl = App.canvas.upperCanvasEl;
+    const recordPointer = (e) => {
+        App._lastPointerType = e.pointerType;
+        App._lastPointerPressure = e.pressure;
+    };
+    upperEl.addEventListener('pointerdown', recordPointer);
+    upperEl.addEventListener('pointermove', recordPointer);
+
+    const abortInProgress = () => {
+        if (App.canvas.isDrawingMode) {
+            const b = App.canvas.freeDrawingBrush;
+            if (b) {
+                b._points = [];
+                if (typeof b._reset === 'function') b._reset();
+            }
+            if (App.canvas.contextTop) App.canvas.clearContext(App.canvas.contextTop);
+            App._abortFreehand = true; // path:created で破棄
+        }
+        App.canvas.discardActiveObject();
+        App.canvas._currentTransform = null;
+        App._drawing = null;
+        App._lineStart = null;
+        removePreview();
+        App.canvas.requestRenderAll();
+    };
+
+    let touchGesture = null; // { d: 指間距離, mx/my: 中点 }
+    const tDist = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    const tMid = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+
+    upperEl.addEventListener(
+        'touchstart',
+        (e) => {
+            if (e.touches.length >= 2) {
+                if (!touchGesture) abortInProgress();
+                const m = tMid(e.touches[0], e.touches[1]);
+                touchGesture = { d: tDist(e.touches[0], e.touches[1]), mx: m.x, my: m.y };
+                e.preventDefault();
+                e.stopImmediatePropagation(); // Fabric に渡さない
+            }
+        },
+        { passive: false, capture: true }
+    );
+    upperEl.addEventListener(
+        'touchmove',
+        (e) => {
+            if (!touchGesture) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (e.touches.length < 2) return;
+            const d = tDist(e.touches[0], e.touches[1]);
+            const m = tMid(e.touches[0], e.touches[1]);
+            const rect = upperEl.getBoundingClientRect();
+            if (touchGesture.d > 0) {
+                let zoom = App.canvas.getZoom() * (d / touchGesture.d);
+                zoom = Math.min(20, Math.max(0.05, zoom));
+                App.canvas.zoomToPoint({ x: m.x - rect.left, y: m.y - rect.top }, zoom);
+            }
+            const v = App.canvas.viewportTransform;
+            v[4] += m.x - touchGesture.mx;
+            v[5] += m.y - touchGesture.my;
+            App.canvas.setViewportTransform(v);
+            touchGesture = { d, mx: m.x, my: m.y };
+            App._snapPt = null;
+            App.canvas.requestRenderAll();
+            drawGrid();
+            updateStatusBar();
+        },
+        { passive: false, capture: true }
+    );
+    const endTouch = (e) => {
+        if (touchGesture) {
+            e.stopImmediatePropagation();
+            if (e.touches.length === 0) touchGesture = null;
+        }
+    };
+    upperEl.addEventListener('touchend', endTouch, { passive: false, capture: true });
+    upperEl.addEventListener('touchcancel', endTouch, { passive: false, capture: true });
+
     App.canvas.on('mouse:down', function (opt) {
         const e = opt.e,
             ptr = App.canvas.getPointer(e);
@@ -1597,6 +1686,13 @@ function initCanvas() {
         applyPatternOrigin(obj);
     });
     App.canvas.on('path:created', (opt) => {
+        // 2本指ジェスチャ等で中断されたストロークは破棄
+        if (App._abortFreehand) {
+            App._abortFreehand = false;
+            if (opt.path) App.canvas.remove(opt.path);
+            App.canvas.requestRenderAll();
+            return;
+        }
         if (!opt.path) return;
         const path = opt.path;
         path.set({ selectable: false, evented: false });
@@ -2762,20 +2858,15 @@ function patchFreehandBrush(brush) {
     const origMove = brush.onMouseMove.bind(brush);
     const origUp = brush.onMouseUp ? brush.onMouseUp.bind(brush) : null;
 
+    // 筆圧は PointerEvent から記録した App._lastPointer* を参照する (ペンのみ。指/マウスは対象外)。
+    const penPressure = () => (App.freehandPressure && App._lastPointerType === 'pen' && App._lastPointerPressure > 0 ? App._lastPointerPressure : 0);
     brush.onMouseDown = function (pointer, opts) {
-        App._strokePressureMax = 0;
-        const p = opts?.e?.pressure;
-        if (App.freehandPressure && typeof p === 'number' && p > 0 && opts?.e?.pointerType !== 'mouse') {
-            App._strokePressureMax = p;
-        }
+        App._strokePressureMax = penPressure();
         return origDown(pointer, opts);
     };
     brush.onMouseMove = function (pointer, opts) {
-        const e = opts?.e;
-        const p = e?.pressure;
-        if (App.freehandPressure && typeof p === 'number' && p > 0 && e?.pointerType !== 'mouse') {
-            if (p > App._strokePressureMax) App._strokePressureMax = p;
-        }
+        const p = penPressure();
+        if (p > App._strokePressureMax) App._strokePressureMax = p;
         // Shift 押下中は直線にする: 内部の _points を [start, current] の2点に置き換えて再描画
         if (App._shiftHeld && Array.isArray(this._points) && this._points.length > 0) {
             this._points = [this._points[0]];
