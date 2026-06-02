@@ -209,6 +209,12 @@ const PATTERNS = [
     { id: 'brick', name: 'レンガ', file: 'レンガ.webp', color: '#9a5a3f', ground: 'indoor', wall: 'stone', scale: 0.2 },
     { id: 'cobblestone', name: '石畳', file: '石畳.webp', color: '#7a7368', ground: 'outdoor', wall: 'stone', scale: 0.4 },
     { id: 'forest', name: '森林', file: '森林.webp', color: '#3f6a3a', ground: 'outdoor', wall: null, scale: 0.4 },
+    { id: 'tile', name: 'タイル', file: 'タイル.webp', color: '#d2d2d2', ground: 'indoor', wall: null, scale: 0.4 },
+    { id: 'black-soil', name: '黒土', file: '黒土.webp', color: '#3a3026', ground: 'outdoor', wall: null, scale: 0.4 },
+    { id: 'cobblestone-round', name: '石畳(丸)', file: '石畳(丸).webp', color: '#7a7368', ground: 'outdoor', wall: 'stone', scale: 0.4 },
+    { id: 'lava', name: '溶岩', file: '溶岩.webp', color: '#5e2a20', ground: 'outdoor', wall: null, scale: 0.4 },
+    { id: 'sand', name: '砂', file: '砂.webp', color: '#d9c89a', ground: 'outdoor', wall: null, scale: 0.4 },
+    { id: 'gravel', name: '砂利', file: '砂利.webp', color: '#9a948a', ground: 'outdoor', wall: null, scale: 0.4 },
 ];
 
 /** id からパターン定義を取得する。組み込みパターン → ユーザー素材の順で検索。無ければ null。 */
