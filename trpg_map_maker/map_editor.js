@@ -6004,7 +6004,7 @@ async function loadMapFromUrl() {
     App.mapCreatedAt = rec.createdAt;
     const nameEl = document.getElementById('map-name-display');
     if (nameEl) nameEl.textContent = rec.name;
-    document.title = `${rec.name} | TRPGマップ作成ツール | 違法建築のTRPGラボ`;
+    document.title = `${rec.name} | TRPGマップエディタ | 違法建築のTRPGラボ`;
     restoreSaveData(rec.data);
     setSaveStatus('saved');
 }
