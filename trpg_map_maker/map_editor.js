@@ -84,17 +84,12 @@ const App = {
     decorStroke: null, // 同上 (stroke)
     decorShadowEnabled: false,
     _lastPointer: null, // 直近の canvas 座標カーソル位置 (装飾プレビューの即時再描画に使う)
-    _lastPointerType: null, // 直近 PointerEvent の pointerType ('pen'|'touch'|'mouse')
-    _lastPointerPressure: 0, // 直近 PointerEvent の筆圧 (0..1)。Fabric はマウスイベント発火で pressure を持たないため別取得
-    _abortFreehand: false, // 2本指ジェスチャ等で進行中フリーハンドを破棄するフラグ
     // ---- フリーハンド (Fabric brushes 拡張) ----
     freehandBrush: 'pencil', // 'pencil' | 'circle' | 'spray' | 'eraser'
     freehandWidth: 3,
     freehandColor: '#000000', // フリーハンド専用色 (シンプル描画の strokeColor とは独立)
     freehandOpacity: 1,
     freehandDecimation: 4, // 0=無効。fabric.PencilBrush.decimate (px 単位の許容誤差)
-    freehandPressure: true, // タブレット圧力検知 (e.pressure)
-    _strokePressureMax: 0, // 1ストローク中の最大 pressure
     // ---- 影 (新規描画時に適用、既存オブジェクトは obj.shadow としてそのまま保持)
     //     色/ぼかし/オフセットは地面と壁で共通。on/off だけ別状態。 ----
     groundShadowEnabled: false,
@@ -917,19 +912,11 @@ function initCanvas() {
     });
 
     /* ================================================================
-       タブレット対応: 筆圧取得 + 2本指パン/ピンチズーム
-       - 筆圧: Fabric はマウスイベントで発火し pressure を持たないため、
-         PointerEvent から pointerType / pressure を別取得してブラシが参照する。
+       タブレット対応: 2本指パン/ピンチズーム
        - 2本指: パン + ピンチズーム。1本指は従来どおりツール (描画/選択)。
          2本目が触れたら進行中のフリーハンド描画/選択を中断する。
     ================================================================ */
     const upperEl = App.canvas.upperCanvasEl;
-    const recordPointer = (e) => {
-        App._lastPointerType = e.pointerType;
-        App._lastPointerPressure = e.pressure;
-    };
-    upperEl.addEventListener('pointerdown', recordPointer);
-    upperEl.addEventListener('pointermove', recordPointer);
 
     const abortInProgress = () => {
         if (App.canvas.isDrawingMode) {
@@ -938,8 +925,9 @@ function initCanvas() {
                 b._points = [];
                 if (typeof b._reset === 'function') b._reset();
             }
+            // 2本指ジェスチャでは touchend が Fabric に渡らず onMouseUp/path:created が呼ばれないため、
+            // ここで点列と contextTop をクリアすればストロークは確定されず破棄される。
             if (App.canvas.contextTop) App.canvas.clearContext(App.canvas.contextTop);
-            App._abortFreehand = true; // path:created で破棄
         }
         App.canvas.discardActiveObject();
         App.canvas._currentTransform = null;
@@ -1686,13 +1674,6 @@ function initCanvas() {
         applyPatternOrigin(obj);
     });
     App.canvas.on('path:created', (opt) => {
-        // 2本指ジェスチャ等で中断されたストロークは破棄
-        if (App._abortFreehand) {
-            App._abortFreehand = false;
-            if (opt.path) App.canvas.remove(opt.path);
-            App.canvas.requestRenderAll();
-            return;
-        }
         if (!opt.path) return;
         const path = opt.path;
         path.set({ selectable: false, evented: false });
@@ -2794,7 +2775,6 @@ function actionBarHitIndex(localX, actions) {
 /* ================================================================
    フリーハンド (Fabric brushes 拡張)
    - ブラシ種類: pencil / circle / spray / eraser
-   - 筆圧検知 (PointerEvent.pressure を使い、ストローク内の最大値で width をスケール)
    - Shift で直線 (押下中の onMouseMove で中間点を捨て、最初+現在の2点で再描画)
    - 消しゴム: destination-out 合成で「下の絵を消す」path として生成
 ================================================================ */
@@ -2848,25 +2828,12 @@ function syncFreehandBrushProps() {
     }
 }
 
-/** ブラシインスタンスに「筆圧 + Shift 直線」のフックを刺す。同じブラシに二重適用しない。 */
+/** ブラシインスタンスに「Shift 直線」のフックを刺す。同じブラシに二重適用しない。 */
 function patchFreehandBrush(brush) {
     if (!brush || brush._patched) return;
     brush._patched = true;
-
-    // --- 筆圧: ストローク中の最大 pressure を _strokePressureMax に記録 ---
-    const origDown = brush.onMouseDown.bind(brush);
     const origMove = brush.onMouseMove.bind(brush);
-    const origUp = brush.onMouseUp ? brush.onMouseUp.bind(brush) : null;
-
-    // 筆圧は PointerEvent から記録した App._lastPointer* を参照する (ペンのみ。指/マウスは対象外)。
-    const penPressure = () => (App.freehandPressure && App._lastPointerType === 'pen' && App._lastPointerPressure > 0 ? App._lastPointerPressure : 0);
-    brush.onMouseDown = function (pointer, opts) {
-        App._strokePressureMax = penPressure();
-        return origDown(pointer, opts);
-    };
     brush.onMouseMove = function (pointer, opts) {
-        const p = penPressure();
-        if (p > App._strokePressureMax) App._strokePressureMax = p;
         // Shift 押下中は直線にする: 内部の _points を [start, current] の2点に置き換えて再描画
         if (App._shiftHeld && Array.isArray(this._points) && this._points.length > 0) {
             this._points = [this._points[0]];
@@ -2881,21 +2848,6 @@ function patchFreehandBrush(brush) {
         }
         return origMove(pointer, opts);
     };
-    if (origUp) {
-        brush.onMouseUp = function (opts) {
-            // 筆圧があったら最終 width をスケール (ストローク中の最大値 0..1 を 0.3..1.4 程度にマップ)
-            if (App.freehandPressure && App._strokePressureMax > 0) {
-                const base = parseInt(document.getElementById('freehand-width')?.value) || App.freehandWidth || 3;
-                const scale = 0.3 + App._strokePressureMax * 1.1; // 軽く強調
-                this.width = Math.max(1, Math.round(base * scale));
-            }
-            const ret = origUp(opts);
-            // 元の width に戻す (次ストロークが筆圧無しでも基本値に戻る)
-            this.width = parseInt(document.getElementById('freehand-width')?.value) || App.freehandWidth || 3;
-            App._strokePressureMax = 0;
-            return ret;
-        };
-    }
 }
 
 /* ----------------------------------------------------------------
@@ -5862,7 +5814,6 @@ function buildSaveData() {
         freehandColor: App.freehandColor,
         freehandOpacity: App.freehandOpacity,
         freehandDecimation: App.freehandDecimation,
-        freehandPressure: App.freehandPressure,
         gridVisible: App.gridVisible,
         gridColor: App.gridColor,
         gridLineWidth: App.gridLineWidth,
@@ -5986,14 +5937,11 @@ function restoreSaveData(data) {
     if (data.freehandColor) App.freehandColor = data.freehandColor;
     if (typeof data.freehandOpacity === 'number') App.freehandOpacity = data.freehandOpacity;
     if (typeof data.freehandDecimation === 'number') App.freehandDecimation = data.freehandDecimation;
-    if (typeof data.freehandPressure === 'boolean') App.freehandPressure = data.freehandPressure;
     // 復元値を各 input/タイルに反映
     const fwEl = document.getElementById('freehand-width');
     if (fwEl) fwEl.value = App.freehandWidth;
     const fdEl = document.getElementById('freehand-decimation');
     if (fdEl) fdEl.value = App.freehandDecimation;
-    const fpEl = document.getElementById('freehand-pressure');
-    if (fpEl) fpEl.checked = App.freehandPressure;
     App.gridVisible = data.gridVisible !== false;
     const gvEl = document.getElementById('grid-visible');
     if (gvEl) gvEl.checked = App.gridVisible;
@@ -6837,10 +6785,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('freehand-decimation')?.addEventListener('input', function () {
         App.freehandDecimation = parseInt(this.value) || 0;
         syncFreehandBrushProps();
-    });
-    // フリーハンド: 筆圧検知
-    document.getElementById('freehand-pressure')?.addEventListener('change', function () {
-        App.freehandPressure = this.checked;
     });
 
     // スナップ設定
