@@ -1224,6 +1224,65 @@
                 border-radius: 3px;
                 color: var(--text);
             }
+
+            /* 出力モーダル: 他ツール誘導ボタン */
+            .export-tools {
+                margin-top: 1rem;
+                padding-top: 0.9rem;
+                border-top: 1px solid var(--border);
+            }
+            .export-tools-label {
+                font-size: 0.74rem;
+                color: var(--text-dim);
+                margin-bottom: 0.6rem;
+            }
+            .export-tools-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.6rem;
+            }
+            .export-tool-btn {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                padding: 0.7rem 0.85rem;
+                border: 1px solid var(--border-bright);
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.03);
+                color: var(--text);
+                text-decoration: none;
+                transition: border-color 0.15s, background 0.15s, transform 0.05s;
+            }
+            .export-tool-btn:hover {
+                border-color: var(--accent);
+                background: rgba(255, 255, 255, 0.07);
+            }
+            .export-tool-btn:active {
+                transform: translateY(1px);
+            }
+            .export-tool-btn .material-symbols-outlined {
+                font-size: 1.5rem;
+                color: var(--accent);
+                flex-shrink: 0;
+            }
+            .export-tool-btn .ett-text {
+                display: flex;
+                flex-direction: column;
+                line-height: 1.25;
+            }
+            .export-tool-btn .ett-title {
+                font-size: 0.86rem;
+                font-weight: 600;
+            }
+            .export-tool-btn .ett-sub {
+                font-size: 0.68rem;
+                color: var(--text-dim);
+            }
+            @media (max-width: 480px) {
+                .export-tools-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
         </style>
     </head>
     <body>
@@ -2004,6 +2063,26 @@
                                 </div>
                             </div>
                             <div id="export-modal-info" style="text-align: center; font-size: 0.72rem; color: var(--text-dim)"></div>
+                        </div>
+                    </div>
+                    <!-- 他ツールへの誘導 (このマップに合わせて座標グリッド/定規を作成) -->
+                    <div class="export-tools">
+                        <div class="export-tools-label">このマップに重ねる素材も作れます（別タブで開きます）</div>
+                        <div class="export-tools-grid">
+                            <a id="export-link-grid" class="export-tool-btn" href="/grid_maker.html" target="_blank" rel="noopener">
+                                <span class="material-symbols-outlined">grid_on</span>
+                                <span class="ett-text">
+                                    <span class="ett-title">座標グリッド作成</span>
+                                    <span class="ett-sub" id="export-link-grid-sub">スクエア</span>
+                                </span>
+                            </a>
+                            <a id="export-link-ruler" class="export-tool-btn" href="/grid_ruler.html" target="_blank" rel="noopener">
+                                <span class="material-symbols-outlined">straighten</span>
+                                <span class="ett-text">
+                                    <span class="ett-title">定規作成</span>
+                                    <span class="ett-sub" id="export-link-ruler-sub">スクエア</span>
+                                </span>
+                            </a>
                         </div>
                     </div>
                 </div>

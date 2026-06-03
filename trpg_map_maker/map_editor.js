@@ -5607,6 +5607,19 @@ function openExportModal() {
     if (cellPxEl && !cellPxEl._userChanged) cellPxEl.value = cs;
     updateExportOutputSize();
     updateExportPreview();
+    // 誘導ボタン: マップのグリッド種別に合わせて飛び先を切替 (スクエア⇔ヘクス)
+    {
+        const isHex = (App.gridType || 'square').startsWith('hex');
+        const kind = isHex ? 'ヘクス' : 'スクエア';
+        const gridLink = document.getElementById('export-link-grid');
+        const rulerLink = document.getElementById('export-link-ruler');
+        const gridSub = document.getElementById('export-link-grid-sub');
+        const rulerSub = document.getElementById('export-link-ruler-sub');
+        if (gridLink) gridLink.href = isHex ? '/hex_maker.html' : '/grid_maker.html';
+        if (rulerLink) rulerLink.href = isHex ? '/hex_ruler.html' : '/grid_ruler.html';
+        if (gridSub) gridSub.textContent = kind;
+        if (rulerSub) rulerSub.textContent = kind;
+    }
     IKLab.openModal('export-modal');
     IKLab.initNumSpinners(document.getElementById('export-modal'));
 }
