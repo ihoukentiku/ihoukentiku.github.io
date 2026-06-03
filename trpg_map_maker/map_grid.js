@@ -5,7 +5,7 @@
    差し替え可能にする抽象層。
    App.gridType ('square' | 'hex-flat' | 'hex-flat-fit' | 'hex-pointy' | 'hex-pointy-fit')
    に対応するアダプタを GridAdapters[type] で参照する。
-   呼び出し側は ga() で現在のアダプタを取得して使う。
+   呼び出し側は gridAdapter() で現在のアダプタを取得して使う。
 
    インタフェース (各アダプタが実装するメソッド):
      pxToCell(x, y)
@@ -75,7 +75,7 @@ function walkEdgeLoopsToD(edges, unit) {
 const GridAdapters = {};
 
 /** 現在の App.gridType に対応する GridAdapter を返す。未対応なら square を返す。 */
-function ga() {
+function gridAdapter() {
     return GridAdapters[App.gridType] || GridAdapters.square;
 }
 

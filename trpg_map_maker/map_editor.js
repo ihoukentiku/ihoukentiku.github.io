@@ -405,7 +405,7 @@ function rgba(hex, a) {
 function snapToGrid(x, y) {
     if (!App.snapEnabled || App._shiftHeld) return null;
     const thresh = 18 / App.canvas.getZoom();
-    const candidates = ga().snapPoints(x, y);
+    const candidates = gridAdapter().snapPoints(x, y);
     let best = null,
         bestD = Infinity;
     for (const cand of candidates) {
@@ -1207,7 +1207,7 @@ function initCanvas() {
                 break;
             }
             case 'cell': {
-                const cellAddr = ga().pxToCell(ptr.x, ptr.y);
+                const cellAddr = gridAdapter().pxToCell(ptr.x, ptr.y);
                 const tool = document.querySelector('#cell-tool-tiles .tool-tile.active')?.dataset.cellTool || 'pen';
                 if (App.activeTool === 'ground') {
                     if (tool === 'fill') {
@@ -1288,8 +1288,8 @@ function initCanvas() {
     App.canvas.on('mouse:move', function (opt) {
         const ptr = App.canvas.getPointer(opt.e);
         {
-            const ca = ga().pxToCell(ptr.x, ptr.y);
-            document.getElementById('sb-coord').textContent = ga().formatCoord(ca.col, ca.row);
+            const ca = gridAdapter().pxToCell(ptr.x, ptr.y);
+            document.getElementById('sb-coord').textContent = gridAdapter().formatCoord(ca.col, ca.row);
         }
 
         if (isPanning) {
@@ -1544,7 +1544,7 @@ function initCanvas() {
 
         // セル塗り（ドラッグ） — シンプル/地面で塗り先レイヤーが異なる
         if (App._drawing && (App.activeTool === 'cell' || (App.activeTool === 'ground' && (App._drawing.cellTool === 'ground-pen' || App._drawing.cellTool === 'ground-eraser')))) {
-            const ca = ga().pxToCell(ptr.x, ptr.y);
+            const ca = gridAdapter().pxToCell(ptr.x, ptr.y);
             if (App._drawing.cellTool === 'ground-pen') {
                 handleGroundCellPaint(ca.col, ca.row, 'pen');
             } else if (App._drawing.cellTool === 'ground-eraser') {
@@ -1658,7 +1658,7 @@ function initCanvas() {
             if (obj._snapStart === undefined) {
                 obj._snapStart = { left: obj.left, top: obj.top };
             }
-            const adapter = ga();
+            const adapter = gridAdapter();
             const dx = obj.left - obj._snapStart.left;
             const dy = obj.top - obj._snapStart.top;
             const s = adapter.snapDelta(dx, dy);
@@ -1911,7 +1911,7 @@ function _initGridRenderer() {
             ctx.lineWidth = App.gridLineWidth;
             ctx.setLineDash(App.gridDashArray || []);
             // グリッド線描画は gridType ごとに差し替え可能 — GridAdapter に委譲
-            ga().drawGridLines(ctx, { wl, wt, wr, wb, zoom });
+            gridAdapter().drawGridLines(ctx, { wl, wt, wr, wb, zoom });
             ctx.restore();
         }
 
@@ -3475,7 +3475,7 @@ function handleCellPaint(col, row, tool) {
         App.selectedLayerIds = [layer._layerId];
         renderLayerList();
     }
-    const adapter = ga();
+    const adapter = gridAdapter();
     const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
         const colorStr = rgba(App.fillColor, App.fillOpacity);
@@ -3554,7 +3554,7 @@ function addCellToLayer(layer, key, entry, tempFill) {
     // 違う fill なら古い temp Rect を取り除いてから新しいのを置く
     if (existingTemp) removeTempChild(layer, existingTemp);
     layer._cellData.set(key, entry);
-    const adapter = ga();
+    const adapter = gridAdapter();
     const shape = adapter.createCellShape(entry.col, entry.row, tempFill);
     if (!shape) return;
     shape._temp = true;
@@ -3642,7 +3642,7 @@ function commitCellLayer(layer) {
         g.entries.push(entry);
     }
     // 各グループから fabric.Path を生成 (融合された 1 つの輪郭)
-    const adapter = ga();
+    const adapter = gridAdapter();
     for (const g of groups.values()) {
         const d = adapter.buildUnionPath(g.entries);
         if (!d) continue;
@@ -3701,7 +3701,7 @@ function handleGroundCellPaint(col, row, tool = 'pen') {
         App.selectedLayerIds = [layer._layerId];
         renderLayerList();
     }
-    const adapter = ga();
+    const adapter = gridAdapter();
     const key = adapter.cellKey(col, row);
     if (tool === 'pen') {
         const entry = makeGroundCellEntry(col, row);
@@ -3758,7 +3758,7 @@ function fillCells(col, row, layer, _unused) {
         setTransientStatus('セルレイヤーが空です');
         return;
     }
-    const adapter = ga();
+    const adapter = gridAdapter();
 
     // bbox: 既存セル (col, row) の最小/最大
     let minC = Infinity,
@@ -5995,7 +5995,7 @@ function restoreSaveData(data) {
             .getObjects()
             .filter((o) => o.isPreview)
             .forEach((o) => App.canvas.remove(o));
-        const adapter = ga();
+        const adapter = gridAdapter();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
                 // [#4] 生成時 (createCellLayer / createGroundCellLayer) と同じくキャッシュ有効で復元する
@@ -6297,7 +6297,7 @@ function restoreHistorySnapshot(snapshot, displayName) {
             .getObjects()
             .filter((o) => o.isPreview)
             .forEach((o) => App.canvas.remove(o));
-        const adapter = ga();
+        const adapter = gridAdapter();
         App.canvas.getObjects().forEach((obj) => {
             if ((obj._isCellLayer || obj._isTerrainLayer) && obj.type === 'group') {
                 // [#4 テスト] 生成時 (createCellLayer) と同じくキャッシュ有効で復元する
